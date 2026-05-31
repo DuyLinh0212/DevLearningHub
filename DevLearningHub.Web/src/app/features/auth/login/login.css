@@ -4,6 +4,8 @@
   width: 100vw;
   overflow: hidden;
   background-color: #000;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .left-panel {
@@ -41,7 +43,7 @@
 .logo-text {
   font-size: 3.5rem;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.04em; 
   background: linear-gradient(to right, #a855f7, #f43f5e, #f97316);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -69,7 +71,7 @@
     font-size: 1.75rem;
     font-weight: 700;
     color: #111827;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.025em;
   }
 
 .subtitle {
@@ -77,6 +79,7 @@
   font-size: 0.9rem;
   margin-top: 4px;
   margin-bottom: 28px;
+  letter-spacing: -0.01em;
 }
 
 .input-wrapper {
@@ -97,6 +100,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 0.95rem;
+  font-family: inherit;
   outline: none;
   transition: all 0.2s;
   background-color: #f9fafb;
@@ -125,8 +129,10 @@
     border-radius: 8px;
     background-color: #fff;
     color: #374151;
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: -0.01em;
     cursor: pointer;
     transition: all 0.2s;
   }
@@ -143,6 +149,7 @@
   color: #9ca3af;
   font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.05em;
   margin: 24px 0;
 }
 
@@ -167,8 +174,10 @@
   color: white;
   border: none;
   border-radius: 8px;
+  font-family: inherit;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
   cursor: pointer;
   margin-top: 20px;
   box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
@@ -183,7 +192,7 @@
 .footer-text {
   text-align: center;
   margin-top: 24px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #4b5563;
 }
 

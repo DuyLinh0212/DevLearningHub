@@ -1,0 +1,224 @@
+<div class="dashboard-container">
+
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" placeholder="Tìm kiếm tác vụ quản trị...">
+      </div>
+      <div class="top-nav-buttons">
+        <button class="btn-nav-tab" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">Bảng điều phối</button>
+        <button class="btn-nav-tab" [class.active]="activeTab === 'sandbox'" (click)="switchTab('sandbox')">Cấu hình Sandbox OJ</button>
+        <button class="btn-nav-tab" [class.active]="activeTab === 'logs'" (click)="switchTab('logs')">Logs hệ thống</button>
+        <button class="btn-create-new" (click)="openQuickModModal()"><i class="bi bi-shield-check"></i> Kiểm duyệt nhanh</button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+
+      @if (activeTab === 'dashboard') {
+      <section class="welcome-section">
+        <h1>Bảng Điều Phối Hệ Thống</h1>
+        <p>Giám sát chỉ số tăng trưởng, điều phối tài nguyên và giữ gìn không gian cộng đồng công nghệ HUIT</p>
+      </section>
+
+      <section class="stats-container">
+        @for (stat of adminStats; track stat.title) {
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-title">{{ stat.title }}</span>
+            <span class="stat-value">{{ stat.value }}</span>
+          </div>
+          <div class="stat-card-icon {{ stat.color }}"><i class="bi {{ stat.icon }}"></i></div>
+        </div>
+        }
+      </section>
+
+      <div class="middle-layout">
+        <section class="recommend-box">
+          <h2>Hàng đợi Kiểm duyệt & Đóng góp ({{ filteredQueue.length }})</h2>
+          <p class="section-subtitle">Phê duyệt nội dung đề xuất từ Tech Leads hoặc xử lý báo cáo vi phạm cộng đồng</p>
+
+          <div class="recommend-list">
+            @for (task of filteredQueue; track task.id) {
+            <div class="recommend-item">
+              <div class="row-icon-box-admin {{ task.typeClass }}">
+                <i class="bi {{ task.icon }}"></i>
+              </div>
+              <div class="item-details">
+                <div class="admin-title-row">
+                  <h4>{{ task.title }}</h4>
+                  <span class="admin-badge {{ task.typeClass }}">{{ task.typeText }}</span>
+                </div>
+                <p>
+                  <span><i class="bi bi-person"></i> Bởi: {{ task.author }}</span> &nbsp;•&nbsp;
+                  <span><i class="bi bi-clock"></i> {{ task.time }}</span>
+                </p>
+              </div>
+              <div class="admin-actions-right">
+                <button class="btn-action purple" (click)="approveTask(task.id)">Duyệt</button>
+                <button class="btn-action dark" (click)="rejectTask(task.id)">Từ chối</button>
+              </div>
+            </div>
+            } @empty {
+            <div class="admin-empty-state">
+              <i class="bi bi-check-all"></i>
+              <p>Hàng đợi trống sạch sẽ! Không có nội dung nào cần xử lý.</p>
+            </div>
+            }
+          </div>
+        </section>
+
+        <section class="leaderboard-box">
+          <h2>Trạng thái Sandbox Engine (OJ)</h2>
+          <p class="section-subtitle">Tình hình tài nguyên cụm máy chủ chấm bài tự động trực tuyến</p>
+
+          <div class="leaderboard-list">
+            @for (server of systemMetrics; track server.name) {
+            <div class="system-metric-row">
+              <div class="metric-info-top">
+                <span class="server-name"><i class="bi bi-cpu"></i> {{ server.name }}</span>
+                <span class="server-status" [class.healthy]="server.load <= 80">{{ server.load }}% Load</span>
+              </div>
+              <div class="quiz-progress-track">
+                <div class="quiz-progress-bar" [style.width.%]="server.load" [style.background]="server.load > 80 ? '#ef4444' : 'linear-gradient(to right, #3b82f6, #a855f7)'"></div>
+              </div>
+            </div>
+            }
+
+            <div class="core-team-panel">
+              <h4>Tech Leads tích cực nhất tuần</h4>
+              <div class="leader-item">
+                <div class="user-avatar-placeholder" style="background-image: url('https://i.pravatar.cc/40?img=33'); background-size: cover;"></div>
+                <div class="user-info">
+                  <h4>Nguyễn Hoàng Nam</h4>
+                  <p>Đóng góp 14 câu hỏi Backend</p>
+                </div>
+                <span class="xp-value">+700 XP</span>
+              </div>
+              <div class="leader-item">
+                <div class="user-avatar-placeholder" style="background-image: url('https://i.pravatar.cc/40?img=12'); background-size: cover;"></div>
+                <div class="user-info">
+                  <h4>Trần Minh Thu</h4>
+                  <p>Giải quyết 8 báo cáo Forum</p>
+                </div>
+                <span class="xp-value">+400 XP</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      }
+
+      @if (activeTab === 'sandbox') {
+      <section class="welcome-section">
+        <h1>Cấu Hình Sandbox Cluster (Online Judge)</h1>
+        <p>Thiết lập tài nguyên phần cứng bảo mật cho trình biên dịch mã nguồn chạy testcase tự động</p>
+      </section>
+
+      <div class="admin-config-grid">
+        <div class="creation-form-card">
+          <h3>Tham số thực thi mã nguồn Core</h3>
+          <p class="card-section-desc">Giới hạn biên dịch ngăn chặn sinh viên chạy vòng lặp vô hạn hoặc spam bộ nhớ VM</p>
+
+          <div class="input-field-row">
+            <div class="input-field-group">
+              <label>Thời gian chạy tối đa (Timeout)</label>
+              <div class="suffix-input-wrapper">
+                <input type="number" [(ngModel)]="ojConfig.timeout" style="padding-left: 14px;">
+                <span class="suffix-unit-text">ms</span>
+              </div>
+            </div>
+            <div class="input-field-group">
+              <label>Giới hạn bộ nhớ RAM</label>
+              <div class="suffix-input-wrapper">
+                <input type="number" [(ngModel)]="ojConfig.memoryLimit" style="padding-left: 14px;">
+                <span class="suffix-unit-text">MB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-field-group">
+            <label>Thư viện cấm import (Blacklist Packages)</label>
+            <input type="text" [(ngModel)]="ojConfig.forbiddenImports" placeholder="Ví dụ: System.IO, os, subprocess, child_process">
+          </div>
+
+          <div class="setting-toggle-row">
+            <div class="toggle-text-left">
+              <h4>Chế độ chấm bài song song (Parallel Execution)</h4>
+              <p>Kích hoạt chia tải đa luồng trên cụm Sandbox Node khi có hàng ngàn bài nộp cùng lúc</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="ojConfig.parallelCompile">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="admin-actions-row-form">
+            <button class="btn-create-new" style="margin: 0; padding: 10px 20px;" (click)="saveOJConfig()">
+              <i class="bi bi-save"></i> Áp dụng cấu hình
+            </button>
+
+            <button class="btn-admin-secondary" [disabled]="isRebooting" (click)="triggerMasterReboot()">
+              @if (isRebooting) {
+              <i class="bi bi-arrow-clockwise spin-animation"></i> <span>Đang tái khởi động Cluster...</span>
+              } @else {
+              <i class="bi bi-cpu-fill"></i> <span>Khởi động lại Cluster Node</span>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+
+      @if (activeTab === 'logs') {
+      <section class="welcome-section">
+        <h1>Nhật Ký Hoạt Động Hệ Thống (System Logs)</h1>
+        <p>Theo dõi luồng chạy, các lượt nộp bài, chấm điểm và sự cố bảo mật theo thời gian thực</p>
+      </section>
+
+      <div class="quiz-library-card" style="margin-top: 16px; padding: 0; overflow: hidden;">
+        <table class="admin-logs-table">
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Phân hệ</th>
+              <th>Mức độ</th>
+              <th>Nội dung sự kiện</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of systemLogs; track log.timestamp) {
+            <tr>
+              <td class="log-time">{{ log.timestamp }}</td>
+              <td><span class="log-subsystem">{{ log.subsystem }}</span></td>
+              <td><span class="log-level-badge {{ log.level }}">{{ log.level }}</span></td>
+              <td class="log-msg">{{ log.message }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+
+    </div>
+  </main>
+
+  @if (isQuickModModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3>Tác vụ Kiểm duyệt nhanh</h3>
+      <p>Hệ thống phát hiện đang có <span class="highlight-text">{{ moderationQueue.length }}</span> nội dung chờ xử lý trong hàng đợi điều phối.</p>
+      <p style="font-size: 0.85rem; color: var(--text-muted-dark); margin-top: -12px;">Hành động này sẽ tự động Phê duyệt/Duyệt tất cả các đóng góp bài học hợp lệ và dọn sạch hàng đợi.</p>
+      <div class="modal-actions-row">
+        <button class="btn-modal-cancel" (click)="closeQuickModModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="batchApproveAll()">Duyệt toàn bộ</button>
+      </div>
+    </div>
+  </div>
+  }
+
+</div>

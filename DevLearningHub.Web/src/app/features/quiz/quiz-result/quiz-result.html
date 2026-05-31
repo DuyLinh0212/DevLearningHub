@@ -18,7 +18,7 @@
 
     <section class="main-scorecard-panel">
       <div class="chart-section-left">
-        <div class="donut-chart-box" [style.background]="'conic-gradient(#22c55e 0% ' + summary.percentage + '%, #27272a ' + summary.percentage + '% 100%)'">
+        <div class="donut-chart-box" [style.background]="'conic-gradient(#22c55e 0% ' + summary.percentage + '%, var(--input-border) ' + summary.percentage + '% 100%)'">
           <div class="donut-center-mask">
             <span>{{ summary.percentage }}%</span>
           </div>

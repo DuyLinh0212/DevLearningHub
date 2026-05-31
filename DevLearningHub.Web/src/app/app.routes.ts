@@ -8,6 +8,9 @@ import { QuizPlayComponent } from './features/quiz/quiz-play/quiz-play';
 import { QuizResultComponent } from './features/quiz/quiz-result/quiz-result';
 import { quizAccessGuard } from './core/guards/quiz-access.guard';
 import { QuizCreateComponent } from './features/quiz/quiz-create/quiz-create';
+import { LandingComponent } from './features/landing/landing';
+import { AdminDashboardComponent } from './features/admin/admin-dashboard/admin-dashboard';
+
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -18,5 +21,7 @@ export const routes: Routes = [
   { path: 'quiz-play/:id', component: QuizPlayComponent, canActivate: [quizAccessGuard] },
   { path: 'quiz-result/:id', component: QuizResultComponent, canActivate: [quizAccessGuard] },
   { path: 'quiz-create', component: QuizCreateComponent },
-  { path: '', redirectTo: 'login', pathMatch: 'full' } 
+  { path: 'landing', component: LandingComponent },
+  { path: 'admin', component: AdminDashboardComponent },
+  { path: '', redirectTo: 'landing', pathMatch: 'full' } 
 ];

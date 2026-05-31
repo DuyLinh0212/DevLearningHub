@@ -1,1 +1,60 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --bg-main: #09090b;
+  --bg-sidebar: #121214;
+  --bg-card: #121214;
+  --bg-card-border: #1f1f23;
+  --bg-nested: #161619;
+  --border-nested: #232327;
+  --input-bg: #1a1a1e;
+  --input-border: #27272a;
+  --text-main: #ffffff;
+  --text-muted: #a1a1aa;
+  --text-muted-dark: #71717a;
+  --nav-link-color: #9ca3af;
+  --btn-white-bg: #ffffff;
+  --btn-white-text: #000000;
+  --footer-bg: #020204;
+  --footer-border: #1f1f23;
+}
+
+html.light-theme {
+  --bg-main: #f4f4f5;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-border: #e4e4e7;
+  --bg-nested: #fafafa;
+  --border-nested: #e4e4e7;
+  --input-bg: #ffffff;
+  --input-border: #d4d4d8;
+  --text-main: #09090b;
+  --text-muted: #4b5563;
+  --text-muted-dark: #71717a;
+  --nav-link-color: #4b5563;
+  --btn-white-bg: #111827;
+  --btn-white-text: #ffffff;
+  --footer-bg: #f3f4f6;
+  --footer-border: #e5e7eb;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-animation {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}

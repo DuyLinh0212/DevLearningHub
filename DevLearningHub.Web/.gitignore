@@ -1,15 +1,26 @@
-# Chặn rác của Visual Studio và VS Code
+# Chặn các file cấu hình ẩn của Visual Studio (VS)
 .vs/
-.vscode/
 *.suo
 *.user
-*.slnx.sqlite
+*.sln.docstates
+*.sqlite
 
-# Chặn rác biên dịch của Back-End .NET
-bin/
-obj/
+# Chặn thư mục build và cache của .NET API (Backend)
+**/bin/
+**/obj/
+[Dd]ebug/
+[Rr]elease/
+*.userprefs
+*.ide/
 
-# Chặn rác biên dịch của Front-End Angular
-.angular/
+# Chặn các thư mục node_modules và build của Angular/Node (Frontend)
 node_modules/
+.angular/
 dist/
+tmp/
+.sass-cache/
+
+# Chặn log hệ thống và file môi trường ẩn
+*.log
+.env
+.env.*
