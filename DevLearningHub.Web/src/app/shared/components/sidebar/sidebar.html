@@ -1,0 +1,30 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <img src="assets/images/logo.svg" alt="Logo Dev-Learning Hub" class="brand-logo-img">
+    <h2>Dev-Learning Hub</h2>
+  </div>
+
+  <div class="sidebar-search">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" placeholder="Tìm kiếm..." (keyup.enter)="onSidebarSearch($event)">
+    </div>
+  </div>
+
+  <nav class="sidebar-menu">
+    <a routerLink="/dashboard" routerLinkActive="active" class="menu-item"><i class="bi bi-grid-1x2"></i> Tổng quan</a>
+    <a routerLink="/quiz-bank" routerLinkActive="active" class="menu-item"><i class="bi bi-collection"></i> Kho Bộ đề</a>
+    <a routerLink="/code" routerLinkActive="active" class="menu-item"><i class="bi bi-code-slash"></i> Code</a>
+    <a routerLink="/forum" routerLinkActive="active" class="menu-item"><i class="bi bi-people"></i> Diễn đàn</a>
+    <a routerLink="/leaderboard" routerLinkActive="active" class="menu-item"><i class="bi bi-star"></i> Bảng xếp hạng</a>
+    <a routerLink="/notifications" routerLinkActive="active" class="menu-item"><i class="bi bi-bell"></i> Thông báo</a>
+    <div class="menu-heading">HỆ THỐNG</div>
+    <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
+  </nav>
+
+  <div class="sidebar-footer" style="padding: 16px 0; border-top: 1px solid #1f1f23; margin-top: auto;">
+    <a (click)="logout()" class="menu-item logout" style="color: #f43f5e; cursor: pointer;">
+      <i class="bi bi-box-arrow-left" style="color: #f43f5e;"></i> Đăng xuất
+    </a>
+  </div>
+</aside>

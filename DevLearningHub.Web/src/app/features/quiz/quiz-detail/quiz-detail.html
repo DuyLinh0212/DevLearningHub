@@ -1,0 +1,98 @@
+<div class="dashboard-container">
+
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <div class="dashboard-scroll-body">
+
+      <div class="detail-page-header">
+        <a routerLink="/quiz-bank" class="btn-icon-back">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+        <div class="header-text-block">
+          <h1>Chi tiết Bộ đề Trắc nghiệm</h1>
+          <p>Thông tin cơ bản, thiết lập thời gian và quy tắc cho bộ đề</p>
+        </div>
+      </div>
+
+      <div class="quiz-detail-grid">
+        <div class="detail-card">
+          <h3>Thông tin bộ đề</h3>
+          <p class="card-subtitle">Các thông tin hiển thị chính của bộ đề trắc nghiệm</p>
+
+          <div class="detail-form-group">
+            <label>Tiêu đề</label>
+            <div class="static-display-field">{{ quizTitle }}</div>
+          </div>
+
+          <div class="detail-form-group">
+            <label>Mô tả</label>
+            <div class="static-display-field text-area-mode">{{ quizDesc }}</div>
+          </div>
+
+          <div class="detail-form-row">
+            <div class="detail-form-group">
+              <label>Số lượng câu hỏi</label>
+              <div class="static-display-field">{{ quizQuestionsCount }} câu</div>
+            </div>
+            <div class="detail-form-group">
+              <label>Mức độ</label>
+              <div class="static-display-field">Trung bình</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Quy tắc phòng thi</h3>
+          <p class="card-subtitle">Cơ chế kiểm tra và cách thức hoạt động của phiên làm bài</p>
+
+          <div class="detail-form-group">
+            <label>Thời gian làm bài</label>
+            <div class="unit-input-field">
+              <i class="bi bi-clock"></i>
+              <span>{{ quizDuration }}</span>
+              <span class="field-unit-text">phút</span>
+            </div>
+          </div>
+
+          <div class="detail-form-group">
+            <label>Tỷ lệ làm đúng để đạt (%)</label>
+            <div class="unit-input-field">
+              <i class="bi bi-check-circle"></i>
+              <span>70</span>
+              <span class="field-unit-text">%</span>
+            </div>
+          </div>
+
+          <div class="rule-status-row">
+            <div class="rule-info-left">
+              <h4>Trộn ngẫu nhiên câu hỏi</h4>
+              <p>Tự động xáo trộn thứ tự các câu hỏi trong bộ đề khi sinh viên bấm làm bài</p>
+            </div>
+            <i class="bi bi-check2 rule-success-icon"></i>
+          </div>
+
+          <div class="rule-status-row">
+            <div class="rule-info-left">
+              <h4>Hiển thị kết quả ngay</h4>
+              <p>Cho phép sinh viên xem đáp án đúng/sai ngay sau khi bấm chọn câu trả lời</p>
+            </div>
+            <i class="bi bi-check2 rule-success-icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-action-footer">
+        <a routerLink="/quiz-bank" class="btn-footer-back">
+          <i class="bi bi-chevron-left"></i> Quay lại
+        </a>
+        @if (quizId) {
+        <a [routerLink]="['/quiz-play', quizId]" class="btn-footer-start">
+          Bắt đầu làm bài <i class="bi bi-chevron-right"></i>
+        </a>
+        }
+      </div>
+
+    </div>
+  </main>
+</div>

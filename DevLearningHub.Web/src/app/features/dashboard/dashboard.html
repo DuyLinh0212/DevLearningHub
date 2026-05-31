@@ -1,42 +1,15 @@
 <div class="dashboard-container">
 
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <img src="assets/images/logo.svg" alt="Logo Dev-Learning Hub" class="brand-logo-img">
-      <h2>Dev-Learning Hub</h2>
-    </div>
-
-    <div class="sidebar-search">
-      <div class="search-box">
-        <i class="bi bi-search"></i> <input type="text" placeholder="Tìm kiếm...">
-      </div>
-    </div>
-
-    <nav class="sidebar-menu">
-      <a href="#" class="menu-item active"><i class="bi bi-grid-1x2"></i> Tổng quan</a>
-      <a href="#" class="menu-item"><i class="bi bi-collection"></i> Kho Bộ đề</a>
-      <a href="#" class="menu-item"><i class="bi bi-code-slash"></i> Code</a>
-      <a href="#" class="menu-item"><i class="bi bi-people"></i> Diễn đàn</a>
-      <a href="#" class="menu-item"><i class="bi bi-star"></i> Bảng xếp hạng</a>
-      <a href="#" class="menu-item"><i class="bi bi-bell"></i> Thông báo</a>
-      <div class="menu-heading">HỆ THỐNG</div>
-      <a href="#" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
-
-    </nav>
-    <div class="sidebar-footer" style="padding: 16px 0; border-top: 1px solid #1f1f23; margin-top: auto;">
-      <a (click)="logout()" class="menu-item logout" style="color: #f43f5e; cursor: pointer;">
-        <i class="bi bi-box-arrow-left" style="color: #f43f5e;"></i> Đăng xuất
-      </a>
-    </div>
-  </aside>
+  <app-sidebar></app-sidebar>
 
   <main class="main-content">
 
     <header class="content-header">
       <div class="top-search">
-        <i class="bi bi-search"></i> <input type="text" placeholder="Tìm kiếm...">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Tìm kiếm..." (keyup.enter)="onGlobalSearch($event)">
       </div>
-      <button class="btn-create"><span class="plus-icon">+</span> Tạo mới</button>
+      <button class="btn-create" routerLink="/quiz-create"><span class="plus-icon">+</span> Tạo mới</button>
     </header>
 
     <div class="dashboard-scroll-body">
@@ -72,10 +45,10 @@
                 <h4>{{ item.title }}</h4>
                 <p>
                   <i class="bi bi-clock"></i> {{ item.time }} &nbsp;•&nbsp;
-                  <i class="bi bi-people"></i> {{ item.views }} lượt làm
+                  <i class="bi bi-people"></i> {{ item.views }} lượt làm cá nhân
                 </p>
               </div>
-              <button class="btn-action {{ item.btnClass }}">{{ item.btnText }}</button>
+              <button class="btn-action {{ item.btnClass }}" (click)="handleAction(item.id)">{{ item.btnText }}</button>
             </div>
             }
           </div>
@@ -110,14 +83,14 @@
 
         <div class="activity-grid">
           @for (act of activities; track act.title) {
-          <div class="activity-card">
+          <div class="activity-card" (click)="handleAction(act.id)" style="cursor: pointer;">
             <div class="card-top">
               <h4>{{ act.title }}</h4>
               <span class="chevron">›</span>
             </div>
             <p class="card-meta">
               <i class="bi bi-journal-text"></i> {{ act.questions }} câu hỏi &nbsp;&nbsp;&nbsp;&nbsp;
-              <i class="bi bi-people"></i> {{ act.attempts }} lượt làm
+              <i class="bi bi-people"></i> {{ act.attempts }} lượt làm của bạn
             </p>
             <div class="progress-container">
               <div class="progress-bar-wrapper">
