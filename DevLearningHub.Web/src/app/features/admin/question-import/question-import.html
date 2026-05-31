@@ -1,0 +1,119 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <header class="content-header">
+      <div class="top-nav-buttons" style="margin-left: 0;">
+        <button class="btn-nav-tab" routerLink="/admin/quiz"><i class="bi bi-chevron-left"></i> Quay lại Ngân hàng đề</button>
+        <button class="btn-nav-tab active">Trình nạp tệp Excel / JSON</button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Nhập Câu Hỏi Hàng Loạt</h1>
+        <p>Tiết kiệm thời gian bằng cách tải lên danh sách câu hỏi cấu trúc sẵn từ Excel hoặc JSON do các Tech Leads đóng góp.</p>
+      </section>
+
+      <div class="import-upload-grid" style="margin-top: 24px;">
+        <div class="drag-drop-zone"
+             [class.dragging]="isDragging"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event)"
+             (click)="fileInput.click()">
+
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.xlsx,.xls" style="display: none;">
+
+          @if (!fileSelected) {
+          <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+          <h3>Kéo thả tệp dữ liệu vào đây</h3>
+          <p class="upload-hint">Hỗ trợ định dạng cấu trúc tệp chuẩn .XLSX, .XLS hoặc .JSON (Dung lượng tối đa 5MB)</p>
+          } @else {
+          <i class="bi bi-file-earmark-bar-graph-fill file-active-icon"></i>
+          <h3 class="file-name-active">{{ fileName }}</h3>
+          <p class="file-size-tag">Kích thước: {{ fileSize }} &nbsp;•&nbsp; <span class="btn-remove-file" (click)="clearFile(); $event.stopPropagation();">Xóa chọn</span></p>
+          }
+        </div>
+      </div>
+
+      @if (fileSelected) {
+      <section class="stats-container" style="margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-title">Tổng số dòng quét thấy</span>
+            <span class="stat-value">{{ importSummary.total }} câu</span>
+          </div>
+          <div class="stat-card-icon blue"><i class="bi bi-database"></i></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-title">Dòng hợp lệ (Sẵn sàng nạp)</span>
+            <span class="stat-value" style="color: #22c55e;">{{ importSummary.valid }} câu</span>
+          </div>
+          <div class="stat-card-icon green"><i class="bi bi-check-circle-fill"></i></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-title">Phát hiện dòng lỗi cần sửa</span>
+            <span class="stat-value" style="color: #ef4444;">{{ importSummary.invalid }} câu</span>
+          </div>
+          <div class="stat-card-icon red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        </div>
+      </section>
+
+      <div class="quiz-library-card" style="margin-top: 24px; padding: 0; overflow: hidden;">
+        <div class="table-header-title-box" style="padding: 16px 20px; background-color: var(--bg-nested); border-bottom: 1px solid var(--bg-card-border); text-align: left;">
+          <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--text-main);">Nhật ký kiểm tra tính toàn vẹn dữ liệu tệp</h3>
+        </div>
+
+        <table class="admin-management-table">
+          <thead>
+            <tr>
+              <th style="width: 60px; text-align: center;">Dòng</th>
+              <th>Nội dung câu hỏi trắc nghiệm</th>
+              <th>Chủ đề</th>
+              <th>Mức độ</th>
+              <th style="text-align: center; width: 70px;">Điểm</th>
+              <th>Trạng thái tệp dữ liệu</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of parsedQuestions; track row.rowNum) {
+            <tr [style.background]="row.isValid ? 'transparent' : 'rgba(239, 68, 68, 0.03)'">
+              <td style="text-align: center;" class="tbl-mono">#{{ row.rowNum }}</td>
+              <td class="tbl-text-bold">
+                <div class="text-truncate-2">{{ row.text || '(Trống nội dung)' }}</div>
+                @if (row.isValid) {
+                <span class="tbl-sub-info" style="color: var(--text-muted-dark);">
+                  Lựa chọn: {{ row.optionsCount }} &nbsp;•&nbsp; Giải thích: {{ row.explanation || 'Chưa cấu hình' }}
+                </span>
+                }
+              </td>
+              <td><span class="admin-table-tag topic-tag">{{ row.topic || 'Chưa phân loại' }}</span></td>
+              <td><span class="admin-table-tag level-tag" [attr.data-level]="row.level">{{ row.level || 'Mặc định' }}</span></td>
+              <td style="text-align: center;" class="tbl-mono">{{ row.points }}đ</td>
+              <td>
+                @if (row.isValid) {
+                <span class="row-status-badge success"><span class="status-dot"></span> Hợp lệ</span>
+                } @else {
+                <span class="row-status-badge danger" [title]="row.errorMsg"><span class="status-dot"></span> Lỗi: {{ row.errorMsg }}</span>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="import-bottom-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 40px;">
+        <button class="btn-admin-secondary" (click)="clearFile()">Hủy bỏ</button>
+        <button class="btn-create-new" style="margin: 0; padding: 10px 24px;" [disabled]="importSummary.valid === 0" (click)="executeImport()">
+          <i class="bi bi-cloud-check-fill"></i> Tiến hành nạp dữ liệu ({{ importSummary.valid }} câu)
+        </button>
+      </div>
+      }
+
+    </div>
+  </main>
+</div>

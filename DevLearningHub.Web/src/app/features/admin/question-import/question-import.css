@@ -1,0 +1,95 @@
+@import '../../dashboard/dashboard.css';
+@import '../admin-dashboard/admin-dashboard.css';
+@import '../quiz-management/quiz-management.css';
+
+.drag-drop-zone {
+  border: 2px dashed var(--input-border);
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+  .drag-drop-zone:hover,
+  .drag-drop-zone.dragging {
+    border-color: #a855f7;
+    background-color: rgba(168, 85, 247, 0.02);
+  }
+
+.upload-icon {
+  font-size: 3.2rem;
+  color: var(--text-muted-dark);
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+
+.drag-drop-zone:hover .upload-icon {
+  color: #a855f7;
+}
+
+.drag-drop-zone h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 8px 0;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted-dark);
+  margin: 0;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.file-active-icon {
+  font-size: 3.2rem;
+  color: #22c55e;
+  margin-bottom: 16px;
+}
+
+.file-name-active {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #22c55e !important;
+  margin: 0 0 8px 0;
+}
+
+.file-size-tag {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.btn-remove-file {
+  color: #ef4444;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.row-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+  .row-status-badge.success {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  .row-status-badge.danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }

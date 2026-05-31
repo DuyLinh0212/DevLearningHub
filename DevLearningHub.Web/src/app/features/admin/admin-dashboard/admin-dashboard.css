@@ -366,3 +366,32 @@
   gap: 12px;
   justify-content: flex-start;
 }
+
+.top-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.btn-nav-tab {
+  white-space: nowrap;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+  .btn-nav-tab:hover {
+    color: var(--text-main);
+  }
+
+  .btn-nav-tab.active {
+    background-color: #6d28d9;
+    color: white;
+  }

@@ -13,7 +13,6 @@
         <button class="btn-nav-tab" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">Bảng điều phối</button>
         <button class="btn-nav-tab" [class.active]="activeTab === 'sandbox'" (click)="switchTab('sandbox')">Cấu hình Sandbox OJ</button>
         <button class="btn-nav-tab" [class.active]="activeTab === 'logs'" (click)="switchTab('logs')">Logs hệ thống</button>
-        <button class="btn-create-new" (click)="openQuickModModal()"><i class="bi bi-shield-check"></i> Kiểm duyệt nhanh</button>
       </div>
     </header>
 
@@ -91,22 +90,16 @@
 
             <div class="core-team-panel">
               <h4>Tech Leads tích cực nhất tuần</h4>
+              @for (leader of techLeads; track leader.name) {
               <div class="leader-item">
-                <div class="user-avatar-placeholder" style="background-image: url('https://i.pravatar.cc/40?img=33'); background-size: cover;"></div>
+                <div class="user-avatar-placeholder" [style.background-image]="'url(' + leader.img + ')'" style="background-size: cover;"></div>
                 <div class="user-info">
-                  <h4>Nguyễn Hoàng Nam</h4>
-                  <p>Đóng góp 14 câu hỏi Backend</p>
+                  <h4>{{ leader.name }}</h4>
+                  <p>{{ leader.info }}</p>
                 </div>
-                <span class="xp-value">+700 XP</span>
+                <span class="xp-value">+{{ leader.xp }} XP</span>
               </div>
-              <div class="leader-item">
-                <div class="user-avatar-placeholder" style="background-image: url('https://i.pravatar.cc/40?img=12'); background-size: cover;"></div>
-                <div class="user-info">
-                  <h4>Trần Minh Thu</h4>
-                  <p>Giải quyết 8 báo cáo Forum</p>
-                </div>
-                <span class="xp-value">+400 XP</span>
-              </div>
+              }
             </div>
           </div>
         </section>
@@ -119,50 +112,51 @@
         <p>Thiết lập tài nguyên phần cứng bảo mật cho trình biên dịch mã nguồn chạy testcase tự động</p>
       </section>
 
-      <div class="admin-config-grid">
-        <div class="creation-form-card">
+      <div class="admin-config-grid" style="margin-top: 20px;">
+        <div class="creation-form-card" style="background-color: var(--bg-card); padding: 24px; border-radius: 8px; border: 1px solid var(--bg-card-border);">
           <h3>Tham số thực thi mã nguồn Core</h3>
-          <p class="card-section-desc">Giới hạn biên dịch ngăn chặn sinh viên chạy vòng lặp vô hạn hoặc spam bộ nhớ VM</p>
+          <p class="card-section-desc" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Giới hạn biên dịch ngăn chặn sinh viên chạy vòng lặp vô hạn hoặc spam bộ nhớ VM</p>
 
-          <div class="input-field-row">
-            <div class="input-field-group">
+          <div class="input-field-row" style="display: flex; gap: 16px; margin-bottom: 16px;">
+            <div class="input-field-group" style="flex: 1;">
               <label>Thời gian chạy tối đa (Timeout)</label>
-              <div class="suffix-input-wrapper">
-                <input type="number" [(ngModel)]="ojConfig.timeout" style="padding-left: 14px;">
-                <span class="suffix-unit-text">ms</span>
+              <div class="suffix-input-wrapper" style="position: relative; display: flex; align-items: center;">
+                <input type="number" [(ngModel)]="ojConfig.timeout" style="padding-left: 14px; width: 100%; height: 38px; background: var(--bg-nested); border: 1px solid var(--border-nested); color: var(--text-main); border-radius: 6px; outline: none;">
+                <span class="suffix-unit-text" style="position: absolute; right: 14px; font-size: 0.8rem; color: var(--text-muted-dark); font-weight: 600;">ms</span>
               </div>
             </div>
-            <div class="input-field-group">
+            <div class="input-field-group" style="flex: 1;">
               <label>Giới hạn bộ nhớ RAM</label>
-              <div class="suffix-input-wrapper">
-                <input type="number" [(ngModel)]="ojConfig.memoryLimit" style="padding-left: 14px;">
-                <span class="suffix-unit-text">MB</span>
+              <div class="suffix-input-wrapper" style="position: relative; display: flex; align-items: center;">
+                <input type="number" [(ngModel)]="ojConfig.memoryLimit" style="padding-left: 14px; width: 100%; height: 38px; background: var(--bg-nested); border: 1px solid var(--border-nested); color: var(--text-main); border-radius: 6px; outline: none;">
+                <span class="suffix-unit-text" style="position: absolute; right: 14px; font-size: 0.8rem; color: var(--text-muted-dark); font-weight: 600;">MB</span>
               </div>
             </div>
           </div>
 
-          <div class="input-field-group">
-            <label>Thư viện cấm import (Blacklist Packages)</label>
-            <input type="text" [(ngModel)]="ojConfig.forbiddenImports" placeholder="Ví dụ: System.IO, os, subprocess, child_process">
+          <div class="input-field-group" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Thư viện cấm import (Blacklist Packages)</label>
+            <input type="text" [(ngModel)]="ojConfig.forbiddenImports" placeholder="Ví dụ: System.IO, os, subprocess, child_process" style="padding: 10px 14px; background: var(--bg-nested); border: 1px solid var(--border-nested); color: var(--text-main); border-radius: 6px; outline: none;">
           </div>
 
-          <div class="setting-toggle-row">
-            <div class="toggle-text-left">
-              <h4>Chế độ chấm bài song song (Parallel Execution)</h4>
-              <p>Kích hoạt chia tải đa luồng trên cụm Sandbox Node khi có hàng ngàn bài nộp cùng lúc</p>
+          <div class="setting-toggle-row" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background-color: var(--bg-nested); border-radius: 6px; margin-bottom: 24px; border: 1px solid var(--border-nested);">
+            <div class="toggle-text-left" style="text-align: left;">
+              <h4 style="margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Chế độ chấm bài song song (Parallel Execution)</h4>
+              <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: var(--text-muted-dark);">Kích hoạt chia tải đa luồng trên cụm Sandbox Node khi có hàng ngàn bài nộp cùng lúc</p>
             </div>
-            <label class="switch-control">
-              <input type="checkbox" [(ngModel)]="ojConfig.parallelCompile">
-              <span class="switch-slider"></span>
-            </label>
+            <label class="switch-control" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+              <input type="checkbox" [(ngModel)]="ojConfig.parallelCompile" style="opacity: 0; width: 0; height: 0;">
+              <span class="switch-slider" [style.background-color]="ojConfig.parallelCompile ? '#a855f7' : 'var(--border-nested)'" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; transition: .4s; border-radius: 22px;"></span>            </label>
           </div>
 
-          <div class="admin-actions-row-form">
-            <button class="btn-create-new" style="margin: 0; padding: 10px 20px;" (click)="saveOJConfig()">
+          <div class="admin-actions-row-form" style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn-create-new" style="margin: 0; padding: 10px 20px; background: linear-gradient(135deg, #a855f7, #6d28d9); border: none; color: white; font-weight: 600; border-radius: 6px; cursor: pointer;" (click)="saveOJConfig()">
               <i class="bi bi-save"></i> Áp dụng cấu hình
             </button>
-
-            <button class="btn-admin-secondary" [disabled]="isRebooting" (click)="triggerMasterReboot()">
+            <button type="button" style="padding: 10px 16px; background: var(--bg-nested); border: 1px solid var(--border-nested); color: var(--text-main); font-weight: 600; border-radius: 6px; cursor: pointer;" (click)="resetOJConfig()">
+              <i class="bi bi-arrow-counterclockwise"></i> Mặc định
+            </button>
+            <button class="btn-admin-secondary" [disabled]="isRebooting" (click)="triggerMasterReboot()" style="padding: 10px 16px; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-weight: 600; border-radius: 6px; cursor: pointer;">
               @if (isRebooting) {
               <i class="bi bi-arrow-clockwise spin-animation"></i> <span>Đang tái khởi động Cluster...</span>
               } @else {
@@ -180,23 +174,46 @@
         <p>Theo dõi luồng chạy, các lượt nộp bài, chấm điểm và sự cố bảo mật theo thời gian thực</p>
       </section>
 
-      <div class="quiz-library-card" style="margin-top: 16px; padding: 0; overflow: hidden;">
-        <table class="admin-logs-table">
+      <div class="logs-filter-toolbar" style="margin-top: 20px; display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <select [(ngModel)]="selectedLogLevel" style="padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--bg-card-border); color: var(--text-main); border-radius: 6px; outline: none; font-size: 0.85rem; font-weight: 600;">
+          <option value="ALL">Tất cả mức độ Log</option>
+          <option value="INFO">Mức độ: INFO</option>
+          <option value="SUCCESS">Mức độ: SUCCESS</option>
+          <option value="WARNING">Mức độ: WARNING</option>
+        </select>
+      </div>
+
+      <div class="quiz-library-card" style="margin-top: 4px; padding: 0; overflow: hidden; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--bg-card-border);">
+        <table class="admin-logs-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
           <thead>
-            <tr>
-              <th>Thời gian</th>
-              <th>Phân hệ</th>
-              <th>Mức độ</th>
-              <th>Nội dung sự kiện</th>
+            <tr style="background-color: var(--bg-nested); color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--bg-card-border);">
+              <th style="padding: 14px 16px; font-weight: 600; width: 110px;">Thời gian</th>
+              <th style="padding: 14px 16px; font-weight: 600; width: 130px;">Phân hệ</th>
+              <th style="padding: 14px 16px; font-weight: 600; width: 110px;">Mức độ</th>
+              <th style="padding: 14px 16px; font-weight: 600; text-align: left;">Nội dung sự kiện</th>
             </tr>
           </thead>
           <tbody>
-            @for (log of systemLogs; track log.timestamp) {
+            @for (log of filteredLogs; track log.id) {
+            <tr style="border-bottom: 1px solid var(--bg-card-border);">
+              <td style="padding: 12px 16px; font-family: monospace; color: var(--text-muted-dark);">{{ log.timestamp }}</td>
+              <td style="padding: 12px 16px; font-weight: 600; color: #3b82f6;">{{ log.subsystem }}</td>
+              <td style="padding: 12px 16px;">
+                <span class="log-level-badge"
+                      [style.color]="log.level === 'SUCCESS' ? '#22c55e' : log.level === 'WARNING' ? '#ef4444' : '#3b82f6'"
+                      [style.background-color]="log.level === 'SUCCESS' ? 'rgba(34,197,94,0.1)' : log.level === 'WARNING' ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)'"
+                      style="font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block;">
+                  {{ log.level }}
+                </span>
+              </td>
+              <td style="padding: 12px 16px; color: var(--text-muted); text-align: left;">{{ log.message }}</td>
+            </tr>
+            } @empty {
             <tr>
-              <td class="log-time">{{ log.timestamp }}</td>
-              <td><span class="log-subsystem">{{ log.subsystem }}</span></td>
-              <td><span class="log-level-badge {{ log.level }}">{{ log.level }}</span></td>
-              <td class="log-msg">{{ log.message }}</td>
+              <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted-dark);">
+                <i class="bi bi-filter-circle" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                Không tìm thấy dữ liệu nhật ký sự kiện nào phù hợp.
+              </td>
             </tr>
             }
           </tbody>

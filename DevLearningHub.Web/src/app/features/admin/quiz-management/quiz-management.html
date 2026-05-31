@@ -1,0 +1,308 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm câu hỏi, bộ đề...">
+      </div>
+
+      <div class="admin-header-actions">
+        <button class="btn-admin-act blue" routerLink="/admin/quiz/import">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
+        </button>
+
+        @if (currentSubTab === 'bank') {
+        <button class="btn-admin-act purple" (click)="openQuestionModal()">
+          <i class="bi bi-plus-lg"></i> Thêm câu hỏi
+        </button>
+        } @else {
+        <button class="btn-admin-act purple" (click)="openQuizSetModal()">
+          <i class="bi bi-folder-plus"></i> Tạo bộ đề mới
+        </button>
+        }
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+
+      <section class="welcome-section">
+        <h1>Quản Trị Phân Hệ Trắc Nghiệm</h1>
+        <p>Biên soạn ngân hàng câu hỏi cốt lõi, phê duyệt nội dung đóng góp và cấu hình phân phối bộ đề thi trắc nghiệm cộng đồng</p>
+      </section>
+
+      <div class="admin-tab-switcher-bar">
+        <button class="tab-switch-btn" [class.is-active]="currentSubTab === 'bank'" (click)="switchSubTab('bank')">
+          <i class="bi bi-database-fill"></i> Ngân hàng Câu hỏi
+        </button>
+        <button class="tab-switch-btn" [class.is-active]="currentSubTab === 'sets'" (click)="switchSubTab('sets')">
+          <i class="bi bi-folder-fill"></i> Cấu hình Bộ đề
+        </button>
+      </div>
+
+      @if (currentSubTab === 'bank') {
+      <div class="library-toolbar" style="margin-top: 20px;">
+        <div class="toolbar-pills">
+          <button class="pill" [class.active]="selectedTopic === 'all'" (click)="filterByTopic('all')">Tất cả chủ đề</button>
+          @for (t of topics; track t) {
+          <button class="pill" [class.active]="selectedTopic === t" (click)="filterByTopic(t)">{{ t }}</button>
+          }
+        </div>
+        <div class="toolbar-actions">
+          <select class="inline-filter" [(ngModel)]="selectedLevel">
+            <option value="all">Tất cả cấp độ</option>
+            <option value="Dễ">Dễ</option>
+            <option value="Trung bình">Trung bình</option>
+            <option value="Khó">Khó</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="quiz-library-card" style="margin-top: 16px; padding: 0; overflow: hidden;">
+        <table class="admin-management-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">ID</th>
+              <th>Nội dung câu hỏi</th>
+              <th>Chủ đề</th>
+              <th>Cấp độ</th>
+              <th style="text-align: center;">Điểm</th>
+              <th style="text-align: center;">Trạng thái</th>
+              <th style="text-align: center; width: 120px;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (q of filteredQuestions; track q.id) {
+            <tr [style.opacity]="q.isActive ? '1' : '0.4'">
+              <td style="text-align: center;" class="tbl-mono">#{{ q.id }}</td>
+              <td class="tbl-text-bold">
+                <div class="text-truncate-2">{{ q.text }}</div>
+                <span class="tbl-sub-info">Đáp án đúng: {{ getLetterPrefix(q.correctIndex) }} ({{ q.options[q.correctIndex] }})</span>
+              </td>
+              <td><span class="admin-table-tag topic-tag">{{ q.topic }}</span></td>
+              <td><span class="admin-table-tag level-tag" [attr.data-level]="q.level">{{ q.level }}</span></td>
+              <td style="text-align: center;" class="tbl-mono">{{ q.points }}đ</td>
+              <td style="text-align: center;">
+                <span class="status-badge" [class.public]="q.isActive" [class.draft]="!q.isActive">
+                  {{ q.isActive ? 'Hoạt động' : 'Đã ẩn' }}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <div class="tbl-actions-row">
+                  <button class="btn-tbl-icon" (click)="openQuestionModal(q)" title="Chỉnh sửa"><i class="bi bi-pencil-square"></i></button>
+                  <button class="btn-tbl-icon" [style.color]="q.isActive ? '#ef4444' : '#22c55e'" (click)="toggleQuestionStatus(q)">
+                    <i class="bi" [class.bi-eye-slash-fill]="q.isActive" [class.bi-eye-fill]="!q.isActive"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted-dark);">
+                <i class="bi bi-search" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                Không tìm thấy dữ liệu câu hỏi nào phù hợp.
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+
+      @if (currentSubTab === 'sets') {
+      <div class="quiz-rows-list" style="margin-top: 20px;">
+        @for (set of filteredQuizSets; track set.id) {
+        <div class="quiz-list-row" [style.opacity]="set.statusClass === 'public' ? '1' : '0.4'">
+          <div class="row-icon-box"><i class="bi bi-journal-text"></i></div>
+          <div class="row-content">
+            <div class="row-title-line">
+              <h3>{{ set.title }}</h3>
+              <span class="status-badge" [class.public]="set.statusClass === 'public'" [class.draft]="set.statusClass !== 'public'">
+                {{ set.status }}
+              </span>
+            </div>
+            <p class="row-description">{{ set.desc }}</p>
+            <div class="row-meta-tags">
+              <span><i class="bi bi-tags"></i> {{ set.topic }}</span>
+              <span><i class="bi bi-bar-chart"></i> Cấp độ: {{ set.level }}</span>
+              <span><i class="bi bi-clock"></i> {{ set.duration }} phút</span>
+              <span><i class="bi bi-database-check"></i> Đã gán: {{ set.questionsCount }} câu</span>
+            </div>
+          </div>
+          <div class="row-actions-right">
+            <button class="btn-view-quiz" (click)="openAssignModal(set)"><i class="bi bi-gear-fill"></i> Gán câu hỏi</button>
+            <button class="btn-view-quiz" style="background-color: var(--bg-nested);" (click)="openQuizSetModal(set)"><i class="bi bi-pencil"></i> Sửa</button>
+            <button class="btn-tbl-icon" [style.color]="set.statusClass === 'public' ? '#ef4444' : '#22c55e'" (click)="toggleQuizSetStatus(set)" style="padding: 6px; border: 1px solid var(--border-nested); border-radius: 6px; background: var(--bg-nested); width: 32px; height: 32px;" [title]="set.statusClass === 'public' ? 'Chuyển thành Bản nháp' : 'Phát hành công khai'">
+              <i class="bi" [class.bi-eye-slash-fill]="set.statusClass === 'public'" [class.bi-eye-fill]="set.statusClass !== 'public'"></i>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+    </div>
+  </main>
+
+  @if (isQuestionModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>{{ isEditingQuestion ? 'Cập nhật câu hỏi #' + editingQuestionId : 'Tạo câu hỏi mới' }}</h3>
+
+      <div class="admin-modal-form-body">
+        <div class="input-field-group">
+          <label>Nội dung câu hỏi trắc nghiệm</label>
+          <textarea [(ngModel)]="questionForm.text" placeholder="Nhập nội dung câu hỏi công nghệ..."></textarea>
+        </div>
+
+        <div class="input-field-row">
+          <div class="input-field-group">
+            <label>Chủ đề công nghệ</label>
+            <select [(ngModel)]="questionForm.topic">
+              @for (t of topics; track t) {
+              <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </div>
+          <div class="input-field-row" style="gap: 12px;">
+            <div class="input-field-group">
+              <label>Mức độ</label>
+              <select [(ngModel)]="questionForm.level">
+                <option value="Dễ">Dễ</option>
+                <option value="Trung bình">Trung bình</option>
+                <option value="Khó">Khó</option>
+              </select>
+            </div>
+            <div class="input-field-group">
+              <label>Số điểm</label>
+              <input type="number" [(ngModel)]="questionForm.points">
+            </div>
+          </div>
+        </div>
+
+        <label class="lbl-options-heading" style="margin-top: 14px; display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">
+          Thiết lập đáp án lựa chọn (Tích chọn nút tròn để cài làm ĐÁP ÁN ĐÚNG)
+        </label>
+
+        <div class="options-list-wrapper" style="margin-top: 8px; display: flex; flex-direction: column; gap: 10px;">
+          @for (opt of questionForm.options; track $index; let idx = $index) {
+          <div class="option-row-item" [class.is-selected-correct]="questionForm.correctIndex === idx" style="display: flex; align-items: center; gap: 10px; background-color: var(--bg-nested); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-nested);">
+            <label class="radio-custom-click" (click)="setCorrectAnswer(idx)" style="cursor: pointer;">
+              <div class="radio-outer-dot" style="width: 18px; height: 18px; border: 2px solid var(--input-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                @if (questionForm.correctIndex === idx) {
+                <div class="radio-inner-core" style="width: 10px; height: 10px; background-color: #a855f7; border-radius: 50%;"></div>
+                }
+              </div>
+            </label>
+            <span class="prefix-option-letter" style="font-weight: 700; color: var(--text-muted);">{{ getLetterPrefix(idx) }}.</span>
+            <input type="text" [(ngModel)]="questionForm.options[idx]" placeholder="Nhập nội dung phương án..." style="flex: 1; background: transparent; border: none; color: var(--text-main); outline: none; font-size: 0.85rem;">
+          </div>
+          }
+        </div>
+
+        <div class="input-field-group" style="margin-top: 16px;">
+          <label>Giải thích chi tiết đáp án (Hiện sau khi người học nộp bài)</label>
+          <input type="text" [(ngModel)]="questionForm.explanation" placeholder="Giải thích lý do lựa chọn này đúng theo tài liệu chuẩn...">
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeQuestionModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveQuestion()">Lưu dữ liệu</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (isAssignModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>Gán Câu hỏi vào bộ đề: <span style="color: #a855f7;">{{ selectedQuizSet?.title }}</span></h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted-dark); margin-top: -8px; margin-bottom: 16px;">
+        Tích chọn các câu hỏi dưới ngân hàng để thêm vào bộ đề phòng thi này. Dữ liệu sẽ tự động đồng bộ cấu trúc.
+      </p>
+
+      <div class="assign-questions-scroll-list">
+        @for (q of questionsBank; track q.id) {
+        @if (q.isActive && q.topic === selectedQuizSet?.topic) {
+        <div class="assign-item-row" [class.selected]="isQuestionInSet(q.id)" (click)="toggleQuestionInSet(q.id)">
+          <div class="assign-checkbox">
+            @if (isQuestionInSet(q.id)) { <i class="bi bi-check-lg"></i> }
+          </div>
+          <div class="assign-content-text">
+            <span class="lbl-mono-id">#{{ q.id }}</span>
+            <p class="assign-q-title">{{ q.text }}</p>
+            <span class="assign-q-meta">Cấp độ: {{ q.level }} &nbsp;•&nbsp; Điểm số: {{ q.points }}đ</span>
+          </div>
+        </div>
+        }
+        }
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 20px;">
+        <button class="btn-modal-confirm" (click)="closeAssignModal()">Hoàn tất thiết lập</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (isQuizSetModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>{{ isEditingQuizSet ? 'Cập nhật thông số bộ đề' : 'Tạo bộ đề thi mới' }}</h3>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Tiêu đề bộ đề thi</label>
+          <input type="text" [(ngModel)]="quizSetForm.title" placeholder="Ví dụ: Làm chủ Standalone Components Angular">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Mô tả tóm tắt nội dung</label>
+          <textarea [(ngModel)]="quizSetForm.desc" placeholder="Nhập mô tả chi tiết về phạm vi kiến thức, mục tiêu của bộ đề..."></textarea>
+        </div>
+
+        <div class="input-field-row" style="margin-top: 14px; display: flex; gap: 12px;">
+          <div class="input-field-group" style="flex: 1;">
+            <label>Chủ đề công nghệ</label>
+            <select [(ngModel)]="quizSetForm.topic">
+              @for (t of topics; track t) {
+              <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="input-field-group" style="flex: 1;">
+            <label>Mức độ phòng thi</label>
+            <select [(ngModel)]="quizSetForm.level">
+              <option value="Dễ">Dễ</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Khó">Khó</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-field-row" style="margin-top: 14px; display: flex; gap: 12px;">
+          <div class="input-field-group" style="flex: 1;">
+            <label>Thời gian giới hạn (Phút)</label>
+            <input type="number" [(ngModel)]="quizSetForm.duration" min="1">
+          </div>
+
+          <div class="input-field-group" style="flex: 1;">
+            <label>Tỷ lệ điểm đạt (%)</label>
+            <input type="number" [(ngModel)]="quizSetForm.passRate" min="1" max="100">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeQuizSetModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveQuizSet()">Lưu thông số</button>
+      </div>
+    </div>
+  </div>
+  }
+
+</div>

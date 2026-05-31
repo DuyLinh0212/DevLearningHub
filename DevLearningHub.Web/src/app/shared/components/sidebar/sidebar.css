@@ -1,1 +1,11 @@
 @import '../../../features/dashboard/dashboard.css';
+
+.menu-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted-dark);
+  padding: 16px 16px 8px 16px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: left;
+}
