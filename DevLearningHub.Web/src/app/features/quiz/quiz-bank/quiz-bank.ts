@@ -19,7 +19,14 @@ export class QuizBankComponent implements OnInit {
   selectedStatus: string = 'all';
 
   ngOnInit() {
-    this.quizzes = this.quizService.getAllQuizzes();
+    this.quizService.getAllQuizzes().subscribe({
+      next: (quizzes) => {
+        this.quizzes = quizzes;
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
 
     this.route.queryParams.subscribe(params => {
       if (params['search']) {

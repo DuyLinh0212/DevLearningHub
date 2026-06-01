@@ -39,22 +39,28 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.quizId = this.route.snapshot.paramMap.get('id') || '1';
-    this.quizData = this.quizService.getQuiz(this.quizId);
+    this.quizService.getQuiz(this.quizId).subscribe({
+      next: (quizData) => {
+        this.quizData = quizData;
+        this.quizTitle = this.quizData.title;
+        this.totalQuestions = this.quizData.questions ? this.quizData.questions.length : 0;
 
-    this.quizTitle = this.quizData.title;
-    this.totalQuestions = this.quizData.questions ? this.quizData.questions.length : 0;
+        this.timeLeft.set((this.quizData.duration || 15) * 60);
 
-    this.timeLeft.set((this.quizData.duration || 15) * 60);
+        this.questions = this.quizData.questions ? this.quizData.questions.slice() : [];
 
-    this.questions = this.quizData.questions ? this.quizData.questions.slice() : [];
+        if (this.quizData.shuffle && this.questions.length > 0) {
+          this.questions.sort(() => Math.random() - 0.5);
+        }
 
-    if (this.quizData.shuffle && this.questions.length > 0) {
-      this.questions.sort(() => Math.random() - 0.5);
-    }
-
-    this.selectedAnswers = new Array(this.totalQuestions).fill(null);
-    this.startTimer();
-    this.quizService.incrementAttempts(this.quizId);
+        this.selectedAnswers = new Array(this.totalQuestions).fill(null);
+        this.startTimer();
+        this.quizService.incrementAttempts(this.quizId);
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
 
   ngOnDestroy() {

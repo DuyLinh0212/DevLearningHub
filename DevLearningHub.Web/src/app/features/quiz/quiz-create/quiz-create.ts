@@ -53,30 +53,35 @@ export class QuizCreateComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['id']) {
         this.editingQuizId = params['id'];
-        const existingData = this.quizService.getQuiz(this.editingQuizId!);
+        this.quizService.getQuiz(this.editingQuizId!).subscribe({
+          next: (existingData) => {
+            if (existingData) {
+              this.quizMeta = {
+                title: existingData.title,
+                desc: existingData.desc,
+                topic: existingData.topic || 'Lập trình Backend',
+                level: existingData.level || 'Trung bình',
+                duration: existingData.duration,
+                passRate: existingData.passRate || 70,
+                shuffle: existingData.shuffle !== undefined ? existingData.shuffle : true,
+                instantResult: existingData.instantResult !== undefined ? existingData.instantResult : true
+              };
 
-        if (existingData) {
-          this.quizMeta = {
-            title: existingData.title,
-            desc: existingData.desc,
-            topic: existingData.topic || 'Lập trình Backend',
-            level: existingData.level || 'Trung bình',
-            duration: existingData.duration,
-            passRate: existingData.passRate || 70,
-            shuffle: existingData.shuffle !== undefined ? existingData.shuffle : true,
-            instantResult: existingData.instantResult !== undefined ? existingData.instantResult : true
-          };
-
-          if (existingData.questions && existingData.questions.length > 0) {
-            this.questions = existingData.questions.map((q: any) => ({
-              points: q.points,
-              type: q.type || 'single',
-              text: q.text,
-              options: [...q.options],
-              correctIndex: q.correctIndex
-            }));
+              if (existingData.questions && existingData.questions.length > 0) {
+                this.questions = existingData.questions.map((q: any) => ({
+                  points: q.points,
+                  type: q.type || 'single',
+                  text: q.text,
+                  options: [...q.options],
+                  correctIndex: q.correctIndex
+                }));
+              }
+            }
+          },
+          error: (err) => {
+            console.error(err);
           }
-        }
+        });
       }
     });
   }
@@ -123,14 +128,30 @@ export class QuizCreateComponent implements OnInit {
 
   saveDraft() {
     if (this.quizMeta.title.trim()) {
-      this.quizService.addCustomQuiz(this.quizMeta, this.questions, true, this.editingQuizId || undefined);
+      this.quizService.addCustomQuiz(this.quizMeta, this.questions, true, this.editingQuizId || undefined).subscribe({
+        next: () => {
+          this.router.navigate(['/quiz-bank']);
+        },
+        error: (err) => {
+          console.error(err);
+        }
+      });
+      return;
     }
     this.router.navigate(['/quiz-bank']);
   }
 
   completeQuiz() {
     if (this.quizMeta.title.trim()) {
-      this.quizService.addCustomQuiz(this.quizMeta, this.questions, false, this.editingQuizId || undefined);
+      this.quizService.addCustomQuiz(this.quizMeta, this.questions, false, this.editingQuizId || undefined).subscribe({
+        next: () => {
+          this.router.navigate(['/quiz-bank']);
+        },
+        error: (err) => {
+          console.error(err);
+        }
+      });
+      return;
     }
     this.router.navigate(['/quiz-bank']);
   }

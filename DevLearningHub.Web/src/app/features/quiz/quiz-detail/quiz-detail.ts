@@ -23,10 +23,16 @@ export class QuizDetailComponent implements OnInit {
   ngOnInit() {
     this.quizId = this.route.snapshot.paramMap.get('id') || '1';
 
-    const quizData = this.quizService.getQuiz(this.quizId);
-    this.quizTitle = quizData.title;
-    this.quizDesc = quizData.desc || 'Mô tả bộ đề đang được cập nhật.';
-    this.quizDuration = quizData.duration || 15;
-    this.quizQuestionsCount = quizData.questions ? quizData.questions.length : 0;
+    this.quizService.getQuiz(this.quizId).subscribe({
+      next: (quizData) => {
+        this.quizTitle = quizData.title;
+        this.quizDesc = quizData.desc || 'Mô tả bộ đề đang được cập nhật.';
+        this.quizDuration = quizData.duration || 15;
+        this.quizQuestionsCount = quizData.questions ? quizData.questions.length : 0;
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
 }

@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { QuizService } from '../services/quiz.service';
+import { map, catchError, of } from 'rxjs';
 
 export const quizAccessGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
@@ -12,11 +13,17 @@ export const quizAccessGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
-  const quiz = quizService.getQuiz(quizId);
-  if (quiz && quiz.statusClass === 'public') {
-    return true;
-  }
-
-  router.navigate(['/quiz-bank']);
-  return false;
+  return quizService.getQuiz(quizId).pipe(
+    map(quiz => {
+      if (quiz && quiz.statusClass === 'public') {
+        return true;
+      }
+      router.navigate(['/quiz-bank']);
+      return false;
+    }),
+    catchError(() => {
+      router.navigate(['/quiz-bank']);
+      return of(false);
+    })
+  );
 };

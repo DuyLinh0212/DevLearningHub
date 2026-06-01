@@ -76,7 +76,14 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   }
 
   loadQuizSets() {
-    this.quizSets = this.quizService.getAllQuizzes(true);
+    this.quizService.getAllQuizzes(true).subscribe({
+      next: (res) => {
+        this.quizSets = res;
+      },
+      error: (err: any) => {
+        console.error(err);
+      }
+    });
   }
 
   get filteredQuestions() {
@@ -113,8 +120,14 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   }
 
   toggleQuizSetStatus(set: any) {
-    this.quizService.toggleQuizStatus(set.id);
-    this.loadQuizSets();
+    this.quizService.toggleQuizStatus(set.id, set.statusClass).subscribe({
+      next: () => {
+        this.loadQuizSets();
+      },
+      error: (err: any) => {
+        console.error(err);
+      }
+    });
   }
 
   openQuestionModal(q: any | null = null) {
@@ -257,9 +270,15 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     }
 
     const targetId = this.isEditingQuizSet && this.editingQuizSetId ? this.editingQuizSetId : 'custom_' + Date.now();
-    this.quizService.saveQuizSetFromAdmin(targetId, this.quizSetForm);
-    this.loadQuizSets();
-    this.closeQuizSetModal();
+    this.quizService.saveQuizSetFromAdmin(targetId, this.quizSetForm).subscribe({
+      next: () => {
+        this.loadQuizSets();
+        this.closeQuizSetModal();
+      },
+      error: (err: any) => {
+        console.error(err);
+      }
+    });
   }
 
   private startLiveContributionSimulation() {

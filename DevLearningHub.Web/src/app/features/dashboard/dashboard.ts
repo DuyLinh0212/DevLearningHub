@@ -23,8 +23,18 @@ export class DashboardComponent implements OnInit {
   leaderboard: any[] = [];
 
   ngOnInit() {
-    this.quizzesData = this.quizService.getAllQuizzes();
+    this.quizService.getAllQuizzes().subscribe({
+      next: (quizzes) => {
+        this.quizzesData = quizzes;
+        this.buildDashboardData();
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
+  }
 
+  private buildDashboardData() {
     let sumAttempts = 0;
     let completedCount = 0;
 

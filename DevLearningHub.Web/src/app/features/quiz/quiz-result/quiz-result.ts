@@ -36,41 +36,47 @@ export class QuizResultComponent implements OnInit {
     this.quizService.incrementAttempts(this.quizId);
     this.summary.attempts = this.quizService.getAttempts(this.quizId);
 
-    const quizData = this.quizService.getQuiz(this.quizId);
     const userAnswers = this.quizService.getSavedAnswers();
 
-    this.quizTitle = quizData.title;
-    this.summary.timeDuration = this.quizService.getSavedTimeSpent();
+    this.quizService.getQuiz(this.quizId).subscribe({
+      next: (quizData) => {
+        this.quizTitle = quizData.title;
+        this.summary.timeDuration = this.quizService.getSavedTimeSpent();
 
-    let correct = 0;
-    let wrong = 0;
+        let correct = 0;
+        let wrong = 0;
 
-    this.reviewQuestions = quizData.questions.map((q: any, idx: number) => {
-      const uAns = userAnswers[idx];
-      const isCorrect = uAns === q.correctIndex;
+        this.reviewQuestions = quizData.questions.map((q: any, idx: number) => {
+          const uAns = userAnswers[idx];
+          const isCorrect = uAns === q.correctIndex;
 
-      if (isCorrect) correct++;
-      else wrong++;
+          if (isCorrect) correct++;
+          else wrong++;
 
-      const prefixes = ['A', 'B', 'C', 'D'];
+          const prefixes = ['A', 'B', 'C', 'D'];
 
-      return {
-        id: q.id,
-        text: q.text,
-        isCorrect: isCorrect,
-        userAnswer: uAns !== null ? `${prefixes[uAns]}. ${q.options[uAns]} — đáp án của bạn` : 'Không trả lời',
-        correctAnswer: !isCorrect ? `${prefixes[q.correctIndex]}. ${q.options[q.correctIndex]} — đáp án đúng` : '',
-        explanation: this.getExplanationForQuestion(q.id)
-      };
+          return {
+            id: q.id,
+            text: q.text,
+            isCorrect: isCorrect,
+            userAnswer: uAns !== null ? `${prefixes[uAns]}. ${q.options[uAns]} — đáp án của bạn` : 'Không trả lời',
+            correctAnswer: !isCorrect ? `${prefixes[q.correctIndex]}. ${q.options[q.correctIndex]} — đáp án đúng` : '',
+            explanation: this.getExplanationForQuestion(q.id)
+          };
+        });
+
+        this.summary.correctCount = correct;
+        this.summary.wrongCount = wrong;
+
+        const total = quizData.questions.length;
+        this.summary.percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+        this.summary.statusText = this.summary.percentage >= 70 ? 'Hoàn thành xuất sắc' : 'Cần cố gắng hơn';
+        this.summary.xpGained = correct * 50;
+      },
+      error: (err) => {
+        console.error(err);
+      }
     });
-
-    this.summary.correctCount = correct;
-    this.summary.wrongCount = wrong;
-
-    const total = quizData.questions.length;
-    this.summary.percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-    this.summary.statusText = this.summary.percentage >= 70 ? 'Hoàn thành xuất sắc' : 'Cần cố gắng hơn';
-    this.summary.xpGained = correct * 50;
   }
 
   private getExplanationForQuestion(id: number): string {

@@ -1,16 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [FormsModule, RouterLink, SidebarComponent],
+  imports: [CommonModule, FormsModule, SidebarComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
+  private quizService = inject(QuizService);
+
   activeTab: string = 'dashboard';
   searchText: string = '';
   selectedLogLevel: string = 'ALL';
@@ -83,6 +86,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.quizService.getAllQuizzes(true).subscribe({
+      next: (res) => {
+        console.log('Đồng bộ cổng API trắc nghiệm thành công:', res.length);
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
     this.startLiveSimulation();
   }
 

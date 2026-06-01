@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
 @Component({
@@ -11,6 +12,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
   styleUrl: './question-import.css'
 })
 export class QuestionImportComponent implements OnInit {
+  private quizService = inject(QuizService);
+
   isDragging: boolean = false;
   fileSelected: boolean = false;
   fileName: string = '';
@@ -65,6 +68,8 @@ export class QuestionImportComponent implements OnInit {
         level: 'Dễ',
         points: 10,
         optionsCount: 4,
+        options: ['Writable Signal', 'Readonly Signal', 'BehaviorSubject', 'Observable'],
+        correctIndex: 0,
         explanation: 'Hàm signal() khởi tạo một Writable Signal chứa giá trị phản xạ reactive hệ thống.',
         isValid: true,
         errorMsg: ''
@@ -76,6 +81,8 @@ export class QuestionImportComponent implements OnInit {
         level: 'Trung bình',
         points: 10,
         optionsCount: 4,
+        options: ['Khóa chính', 'Khóa ngoại', 'Chỉ mục độc nhất', 'Ràng buộc kiểm tra'],
+        correctIndex: 1,
         explanation: 'ForeignKey dùng để thiết lập tường minh mối quan hệ khóa ngoại giữa các thực thể bảng dữ liệu.',
         isValid: true,
         errorMsg: ''
@@ -87,6 +94,8 @@ export class QuestionImportComponent implements OnInit {
         level: 'Dễ',
         points: 0,
         optionsCount: 0,
+        options: [],
+        correctIndex: 0,
         explanation: '',
         isValid: false,
         errorMsg: 'Nội dung câu hỏi không được để trống.'
@@ -98,6 +107,8 @@ export class QuestionImportComponent implements OnInit {
         level: 'Trung bình',
         points: 10,
         optionsCount: 4,
+        options: ['UseRouting()', 'UseEndpoints()', 'UseAuthorization()', 'UseCors()'],
+        correctIndex: 0,
         explanation: '',
         isValid: false,
         errorMsg: 'Chỉ số Index đáp án đúng (CorrectIndex) nằm ngoài phạm vi lựa chọn.'
@@ -122,7 +133,15 @@ export class QuestionImportComponent implements OnInit {
   }
 
   executeImport() {
-    alert(`Hệ thống đã trích xuất sạch sẽ và nạp thành công ${this.importSummary.valid} câu hỏi hợp lệ từ tệp dữ liệu vào cơ sở dữ liệu hệ thống Dev-Learning Hub!`);
-    this.clearFile();
+    const validQuestions = this.parsedQuestions.filter(q => q.isValid);
+    this.quizService.importQuestions(validQuestions).subscribe({
+      next: () => {
+        alert(`Hệ thống đã trích xuất sạch sẽ và nạp thành công ${validQuestions.length} câu hỏi hợp lệ từ tệp dữ liệu vào cơ sở dữ liệu hệ thống Dev-Learning Hub!`);
+        this.clearFile();
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
 }
