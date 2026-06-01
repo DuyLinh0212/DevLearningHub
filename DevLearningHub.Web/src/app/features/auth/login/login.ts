@@ -15,15 +15,24 @@ export class LoginComponent {
   private router = inject(Router);
   private authService = inject(AuthService);
 
-  username: string = '';
-  email: string = '';
-  password: string = '';
-  errorMessage: string = '';
-  isLoading: boolean = false;
+  username = '';
+  email = '';
+  password = '';
+  errorMessage = '';
+  isLoading = false;
+  showPassword = false;
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
 
   onLogin() {
-    if ((!this.username.trim() && !this.email.trim()) || !this.password.trim()) {
-      alert('Vui lòng nhập đầy đủ thông tin đăng nhập!');
+    if (!this.username.trim() && !this.email.trim()) {
+      alert('Vui lòng nhập tên đăng nhập hoặc email!');
+      return;
+    }
+    if (!this.password.trim()) {
+      alert('Vui lòng nhập mật khẩu!');
       return;
     }
 
@@ -38,18 +47,17 @@ export class LoginComponent {
     this.authService.login(loginPayload).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        
-        const token = res.token || res.data?.token;
+        const target = res?.data || res;
+        const token = target?.accessToken || target?.token || '';
         if (token) {
           localStorage.setItem('accessToken', token);
         }
-        
         alert('Đăng nhập thành công!');
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!';
+        this.errorMessage = err.error?.message || 'Đăng nhập thất bại!';
         alert(this.errorMessage);
       }
     });

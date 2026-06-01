@@ -17,79 +17,105 @@ export class QuizService {
     return this.http.get<any>(`${this.apiUrl}/quiz-sets`, {
       params: isAdmin ? { includePrivate: true } : {}
     }).pipe(
-      map((res) => (res.data || []).map((quiz: any) => this.mapQuizSet(quiz)))
+      map((res) => {
+        const target = res?.data || res || [];
+        return (Array.isArray(target) ? target : []).map((quiz: any) => this.mapQuizSet(quiz));
+      })
     );
   }
 
   getQuiz(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/quiz-sets/${id}`).pipe(
-      map((res) => this.mapQuizSetDetail(res.data))
+      map((res) => this.mapQuizSetDetail(res?.data || res))
     );
+  }
+
+  getLeaderboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/users/leaderboard`);
+  }
+
+  getCurrentUser(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/users/me`);
   }
 
   toggleQuizStatus(id: string, currentStatusClass?: string): Observable<any> {
     const nextStatus = currentStatusClass === 'public' ? 'draft' : 'public';
     return this.http.put<any>(`${this.apiUrl}/quiz-sets/${id}`, {
       isPublic: nextStatus === 'public'
-    }).pipe(map((res) => res.data));
+    }).pipe(map((res) => res?.data || res));
   }
 
   deleteQuizSet(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/quiz-sets/${id}`).pipe(map((res) => res.data));
+    return this.http.delete<any>(`${this.apiUrl}/quiz-sets/${id}`).pipe(map((res) => res?.data || res));
   }
 
   saveQuizSetFromAdmin(id: string, form: any): Observable<any> {
     const payload = this.mapQuizSetPayload(form, form.statusClass !== 'draft');
     if (id && !id.startsWith('custom_')) {
-      return this.http.put<any>(`${this.apiUrl}/quiz-sets/${id}`, payload).pipe(map((res) => res.data));
+      return this.http.put<any>(`${this.apiUrl}/quiz-sets/${id}`, payload).pipe(map((res) => res?.data || res));
     } else {
-      return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res.data));
+      return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res?.data || res));
     }
   }
 
   addCustomQuiz(meta: any, questionsData: any[], isDraft: boolean, existingId?: string): Observable<any> {
     const payload = this.mapQuizSetPayload(meta, !isDraft);
-
     if (existingId && !existingId.startsWith('custom_')) {
-      return this.http.put<any>(`${this.apiUrl}/quiz-sets/${existingId}`, payload).pipe(map((res) => res.data));
+      return this.http.put<any>(`${this.apiUrl}/quiz-sets/${existingId}`, payload).pipe(map((res) => res?.data || res));
     } else {
-      return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res.data));
+      return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res?.data || res));
     }
   }
 
   importQuestions(questionsData: any[]): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/questions/import`, { questions: questionsData }).pipe(map((res) => res.data));
+    return this.http.post<any>(`${this.apiUrl}/questions/import`, questionsData).pipe(map((res) => res?.data || res));
+  }
+
+  startQuizSession(quizSetId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/quiz-sessions`, { quizSetId });
+  }
+
+  submitQuizSession(sessionId: string, answersPayload: any[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/quiz-sessions/${sessionId}/submit`, { answers: answersPayload });
+  }
+
+  getQuizSessionResult(sessionId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/quiz-sessions/${sessionId}/result`);
   }
 
   private mapQuizSet(quiz: any): any {
+    const id = quiz.id || quiz.Id || '';
+    const isPub = quiz.isPublic ?? quiz.IsPublic ?? true;
+    const qCount = quiz.questionCount ?? quiz.QuestionCount ?? (quiz.questions?.length || quiz.Questions?.length || 0);
+    
     return {
-      id: quiz.id,
-      title: quiz.title,
-      desc: quiz.description || '',
-      topicId: quiz.topicId,
-      topic: quiz.topic || '',
-      level: quiz.level || '',
-      duration: quiz.timeLimitSeconds ? Math.ceil(quiz.timeLimitSeconds / 60) : 15,
-      questions: quiz.questionCount || 0,
-      statusClass: quiz.isPublic ? 'public' : 'draft',
-      status: quiz.isPublic ? 'Đã phát hành' : 'Bản nháp',
-      attempts: 0
+      id,
+      title: quiz.title || quiz.Title || '',
+      desc: quiz.description || quiz.Description || '',
+      topicId: quiz.topicId || quiz.TopicId || '',
+      topic: quiz.topic || quiz.Topic || '',
+      level: quiz.level || quiz.Level || '',
+      duration: quiz.timeLimitSeconds ? Math.ceil(quiz.timeLimitSeconds / 60) : (quiz.TimeLimitSeconds ? Math.ceil(quiz.TimeLimitSeconds / 60) : 15),
+      questions: qCount,
+      statusClass: isPub ? 'public' : 'draft',
+      status: isPub ? 'Đã phát hành' : 'Bản nháp',
+      attempts: this.getAttempts(id)
     };
   }
 
   private mapQuizSetDetail(quiz: any): any {
+    const base = this.mapQuizSet(quiz);
+    const rawQuestions = quiz.questions || quiz.Questions || [];
+    
     return {
-      ...this.mapQuizSet({
-        ...quiz,
-        questionCount: quiz.questions?.length || 0
-      }),
+      ...base,
       shuffle: false,
       instantResult: true,
-      questions: (quiz.questions || []).map((question: any) => ({
-        id: question.questionId,
-        text: question.content,
-        level: question.level,
-        options: question.options || [],
+      questions: rawQuestions.map((question: any) => ({
+        id: question.questionId || question.Id,
+        text: question.content || question.Content || '',
+        level: question.level || question.Level || '',
+        options: question.options || question.Options || [],
         correctIndex: 0
       }))
     };
@@ -133,9 +159,9 @@ export class QuizService {
   }
 
   getUserXP(): number {
-    if (typeof window === 'undefined') return 600;
+    if (typeof window === 'undefined') return 0;
     const stored = localStorage.getItem('user_accumulated_xp');
-    return stored ? parseInt(stored, 10) : 600;
+    return stored ? parseInt(stored, 10) : 0;
   }
 
   addUserXP(xp: number): void {
@@ -145,11 +171,11 @@ export class QuizService {
   }
 
   getStreak(): number {
-    if (typeof window === 'undefined') return 5;
+    if (typeof window === 'undefined') return 1;
     const todayStr = new Date().toDateString();
     const lastActive = localStorage.getItem('user_last_active_date');
     const currentStreak = localStorage.getItem('user_streak_count');
-    let streak = currentStreak ? parseInt(currentStreak, 10) : 5;
+    let streak = currentStreak ? parseInt(currentStreak, 10) : 1;
     if (!lastActive) {
       localStorage.setItem('user_last_active_date', todayStr);
       localStorage.setItem('user_streak_count', streak.toString());

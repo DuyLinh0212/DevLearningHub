@@ -1,65 +1,69 @@
 import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/services/auth.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [RouterLink, FormsModule, CommonModule],
   templateUrl: './register.html',
-  styleUrl: './register.css',
+  styleUrl: './register.css'
 })
 export class RegisterComponent {
   private router = inject(Router);
-  private authService = inject(AuthService);
+  private http = inject(HttpClient);
 
-  // Các biến này phải khớp với [(ngModel)] bên file register.html
   fullName = '';
   username = '';
   email = '';
   password = '';
   confirmPassword = '';
-
   errorMessage = '';
   isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   onRegister() {
-    // 1. Kiểm tra dữ liệu rỗng
-    if (!this.fullName.trim() || !this.username.trim() || !this.email.trim() || !this.password) {
-      this.errorMessage = 'Vui lòng điền đầy đủ thông tin!';
+    if (!this.fullName.trim() || !this.username.trim() || !this.email.trim() || !this.password.trim()) {
+      alert('Vui lòng điền đầy đủ toàn bộ thông tin đăng ký!');
       return;
     }
 
-    // 2. Kiểm tra mật khẩu khớp nhau
     if (this.password !== this.confirmPassword) {
-      this.errorMessage = 'Mật khẩu xác nhận không trùng khớp!';
+      alert('Mật khẩu xác nhận không trùng khớp!');
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = '';
 
-    // 3. Tạo Payload để gửi lên Backend
-    const payload = {
-      fullName: this.fullName.trim(),
+    const registerPayload = {
       username: this.username.trim(),
       email: this.email.trim(),
-      password: this.password
+      password: this.password,
+      fullName: this.fullName.trim()
     };
 
-    // 4. Gọi Service
-    this.authService.register(payload).subscribe({
+    this.http.post('/api/auth/register', registerPayload).subscribe({
       next: () => {
         this.isLoading = false;
-        alert('Đăng ký tài khoản thành công!');
-        this.router.navigate(['/login']); // Điều hướng về login
+        alert('Đăng ký tài khoản học viên thành công!');
+        this.router.navigate(['/login']);
       },
       error: (err) => {
         this.isLoading = false;
-        // Bắt lỗi từ Backend trả về
-        this.errorMessage = err.error?.message || 'Đăng ký thất bại, thử lại nhé!';
+        this.errorMessage = err.error?.message || 'Đăng ký thất bại!';
+        alert(this.errorMessage);
       }
     });
   }

@@ -20,7 +20,7 @@ export const routes: Routes = [
   { path: 'quiz-bank', component: QuizBankComponent },
   { path: 'quiz/:id', component: QuizDetailComponent, canActivate: [quizAccessGuard] },
   { path: 'quiz-play/:id', component: QuizPlayComponent, canActivate: [quizAccessGuard] },
-  { path: 'quiz-result/:id', component: QuizResultComponent, canActivate: [quizAccessGuard] },
+  { path: 'quiz-result/:id', component: QuizResultComponent },
   { path: 'quiz-create', component: QuizCreateComponent },
   { path: 'landing', component: LandingComponent },
   { path: 'admin', component: AdminDashboardComponent },

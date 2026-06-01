@@ -7,6 +7,7 @@
     <h2>Kiểm tra - {{ quizTitle }}</h2>
   </header>
 
+  @if (questions && questions.length > 0) {
   <div class="quiz-play-workspace">
 
     <div class="workspace-left-section">
@@ -38,15 +39,15 @@
       </div>
 
       <div class="quiz-options-grid">
-        @for (opt of questions[currentQuestionIndex].options; track opt; let i = $index) {
-        <label [class]="'grid-option-item ' + getOptionClass(i)">
+        @for (opt of questions[currentQuestionIndex].options; track opt.id; let i = $index) {
+        <label [class]="'grid-option-item ' + getOptionClass(opt.id)">
           <input type="radio"
-                 [name]="'q-opt-' + currentQuestionIndex"
-                 [value]="i"
-                 [checked]="selectedAnswers[currentQuestionIndex] === i"
-                 (change)="onAnswerSelect(i)">
+                [name]="'q-opt-' + currentQuestionIndex"
+                [value]="opt.id"
+                [checked]="selectedAnswers[currentQuestionIndex]?.optionId === opt.id"
+                (change)="onAnswerSelect(opt.id, questions[currentQuestionIndex].id)">
           <span class="option-label-prefix">{{ i === 0 ? 'A' : i === 1 ? 'B' : i === 2 ? 'C' : 'D' }}</span>
-          <span class="option-label-text">{{ opt }}</span>
+          <span class="option-label-text">{{ opt.content }}</span>
         </label>
         }
       </div>
@@ -56,7 +57,7 @@
           <i class="bi bi-chevron-left"></i> Câu trước
         </button>
         <button class="btn-nav-action" (click)="nextQuestion()" [disabled]="currentQuestionIndex === questions.length - 1">
-          <i class="bi bi-chevron-right"></i> Câu tiếp theo <i class="bi bi-chevron-right"></i>
+          Câu tiếp theo <i class="bi bi-chevron-right"></i>
         </button>
       </div>
     </div>
@@ -105,6 +106,7 @@
     </div>
 
   </div>
+  }
 
   @if (isConfirmModalOpen) {
   <div class="modal-overlay">

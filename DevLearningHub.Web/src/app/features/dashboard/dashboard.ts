@@ -1,7 +1,8 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
 import { QuizService } from '../../core/services/quiz.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,9 +14,11 @@ import { QuizService } from '../../core/services/quiz.service';
 export class DashboardComponent implements OnInit {
   private router = inject(Router);
   private quizService = inject(QuizService);
+  private cdr = inject(ChangeDetectorRef);
 
   totalRealAttempts = 0;
   quizzesData: any[] = [];
+  userXpPoints = 0;
 
   stats: any[] = [];
   recommendations: any[] = [];
@@ -23,13 +26,37 @@ export class DashboardComponent implements OnInit {
   leaderboard: any[] = [];
 
   ngOnInit() {
-    this.quizService.getAllQuizzes().subscribe({
-      next: (quizzes) => {
-        this.quizzesData = quizzes;
+    forkJoin({
+      quizzes: this.quizService.getAllQuizzes(),
+      leaderboardRes: this.quizService.getLeaderboard(),
+      userProfile: this.quizService.getCurrentUser()
+    }).subscribe({
+      next: (result) => {
+        this.quizzesData = result.quizzes || [];
+        
+        const userData = result.userProfile?.data || result.userProfile;
+        this.userXpPoints = userData?.xpPoints ?? userData?.XpPoints ?? 0;
+
+        const lbData = result.leaderboardRes?.data || result.leaderboardRes || [];
+        const rawLeaderboard = Array.isArray(lbData) ? lbData : [];
+        
+        this.leaderboard = rawLeaderboard.map((u: any, idx: number) => ({
+          rank: u.rank ?? u.Rank ?? (idx + 1),
+          name: u.fullName || u.FullName || u.username || u.Username || 'Học viên',
+          role: u.role || u.Role || 'Web Developer',
+          xp: u.xpPoints ?? u.XpPoints ?? u.xp ?? u.Xp ?? 0
+        }));
+
         this.buildDashboardData();
       },
       error: (err) => {
         console.error(err);
+        this.quizService.getAllQuizzes().subscribe({
+          next: (quizzes) => {
+            this.quizzesData = quizzes || [];
+            this.buildDashboardData();
+          }
+        });
       }
     });
   }
@@ -39,20 +66,20 @@ export class DashboardComponent implements OnInit {
     let completedCount = 0;
 
     this.quizzesData.forEach(q => {
-      sumAttempts += q.attempts;
-      if (q.attempts > 0) {
+      const realAttempts = q.attempts || 0;
+      sumAttempts += realAttempts;
+      if (realAttempts > 0) {
         completedCount++;
       }
     });
     this.totalRealAttempts = sumAttempts;
 
     const totalPublicQuizzes = this.quizzesData.filter(q => q.statusClass === 'public').length;
-    const completionRate = totalPublicQuizzes > 0 ? Math.round((completedCount / totalPublicQuizzes) * 100) : 0;
     const realStreak = this.quizService.getStreak();
 
     this.stats = [
       { title: 'Quiz đã hoàn thành', value: `${completedCount} / ${totalPublicQuizzes}`, icon: 'bi-book', color: 'purple' },
-      { title: 'Bài Code đã Pass', value: '12 bài', icon: 'bi-calendar-check', color: 'green' },
+      { title: 'Điểm kinh nghiệm', value: `${this.userXpPoints} XP`, icon: 'bi-calendar-check', color: 'green' },
       { title: 'Tổng lượt làm Quiz', value: `${this.totalRealAttempts} lượt`, icon: 'bi-fire', color: 'blue' },
       { title: 'Lửa Streak', value: `${realStreak} ngày`, icon: 'bi-fire', color: 'orange' }
     ];
@@ -65,49 +92,27 @@ export class DashboardComponent implements OnInit {
           id: q.id,
           title: hasAttempted ? `Ôn tập: ${q.title}` : `Thử thách: ${q.title}`,
           time: hasAttempted ? 'Hôm nay' : 'Mới cập nhật',
-          views: q.attempts,
+          views: q.attempts || 0,
           btnText: hasAttempted ? 'Tiếp tục' : 'Làm ngay',
           btnClass: hasAttempted ? 'purple' : 'dark'
         };
       });
 
     this.activities = this.quizzesData.map(q => {
-      let mockProgress = 0;
-      if (q.id === '1') mockProgress = q.attempts > 0 ? 100 : 0;
-      if (q.id === '2') mockProgress = q.attempts > 0 ? 50 : 0;
-
       return {
         id: q.id,
         title: q.title,
-        questions: q.questions,
-        attempts: q.attempts,
-        progress: mockProgress
+        questions: q.questions || 0,
+        attempts: q.attempts || 0,
+        progress: q.attempts > 0 ? 100 : 0
       };
     });
 
-    const studentRealXP = this.quizService.getUserXP();
-
-    const systemCompetitors = [
-      { name: 'Alex John', role: 'C# Developer', xp: 950 },
-      { name: 'Emma Watson', role: 'Angular Expert', xp: 920 },
-      { name: 'Michael Clark', role: 'Python Master', xp: 710 },
-      { name: 'Sophia Green', role: 'Database Admin', xp: 680 },
-      { name: 'Lucia Wilde', role: 'Web Developer', xp: 550 },
-      { name: 'Ngọc Huỳnh', role: 'Web Developer', xp: studentRealXP }
-    ];
-
-    systemCompetitors.sort((a, b) => b.xp - a.xp);
-
-    this.leaderboard = systemCompetitors.slice(0, 5).map((user, index) => ({
-      rank: index + 1,
-      name: user.name,
-      role: user.role,
-      xp: user.xp
-    }));
+    this.cdr.detectChanges();
   }
 
   handleAction(quizId: string) {
-    this.router.navigate(['/quiz', quizId]);
+    this.router.navigate(['/quiz-play', quizId]);
   }
 
   onGlobalSearch(event: Event) {
