@@ -26,36 +26,41 @@
 .progress-card h3 {
   font-size: 1rem;
   color: var(--text-main);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   font-weight: 600;
 }
 
-.progress-bar-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.ana-progress-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
 }
 
-.progress-bar-track {
-  flex: 1;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  overflow: hidden;
+.ana-progress-track {
+  flex: 1 !important;
+  height: 12px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
 }
 
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #a855f7, #6366f1);
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.ana-progress-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #a855f7, #6366f1) !important;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.progress-number {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #a855f7;
-  min-width: 50px;
-  text-align: right;
+.ana-progress-number {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #a855f7 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: 55px !important;
+  text-align: right !important;
 }
 
 .topics-list-card {
