@@ -1,6 +1,0 @@
-@API_DEVLEARNINGHUB_HostAddress = http://localhost:5122
-
-GET {{API_DEVLEARNINGHUB_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
