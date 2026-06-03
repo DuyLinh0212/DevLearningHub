@@ -51,16 +51,36 @@ export class QuizService {
 
   saveQuizSetFromAdmin(id: string, form: any): Observable<any> {
     const payload = this.mapQuizSetPayload(form, form.statusClass !== 'draft');
-    if (id && !id.startsWith('custom_')) {
+    if (id && !id.toString().startsWith('custom_')) {
       return this.http.put<any>(`${this.apiUrl}/quiz-sets/${id}`, payload).pipe(map((res) => res?.data || res));
     } else {
       return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res?.data || res));
     }
   }
 
+  assignQuestionToSet(quizSetId: string, questionId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/quiz-sets/${quizSetId}/questions`, { questionId });
+  }
+
+  removeQuestionFromSet(quizSetId: string, questionId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/quiz-sets/${quizSetId}/questions/${questionId}`);
+  }
+
+  getAllQuestions(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/questions`);
+  }
+
+  saveQuestionFromAdmin(id: string, form: any): Observable<any> {
+    if (id && !id.toString().startsWith('new_')) {
+      return this.http.put<any>(`${this.apiUrl}/questions/${id}`, form).pipe(map((res) => res?.data || res));
+    } else {
+      return this.http.post<any>(`${this.apiUrl}/questions`, form).pipe(map((res) => res?.data || res));
+    }
+  }
+
   addCustomQuiz(meta: any, questionsData: any[], isDraft: boolean, existingId?: string): Observable<any> {
     const payload = this.mapQuizSetPayload(meta, !isDraft);
-    if (existingId && !existingId.startsWith('custom_')) {
+    if (existingId && !existingId.toString().startsWith('custom_')) {
       return this.http.put<any>(`${this.apiUrl}/quiz-sets/${existingId}`, payload).pipe(map((res) => res?.data || res));
     } else {
       return this.http.post<any>(`${this.apiUrl}/quiz-sets`, payload).pipe(map((res) => res?.data || res));
@@ -96,10 +116,11 @@ export class QuizService {
       topic: quiz.topic || quiz.Topic || '',
       level: quiz.level || quiz.Level || '',
       duration: quiz.timeLimitSeconds ? Math.ceil(quiz.timeLimitSeconds / 60) : (quiz.TimeLimitSeconds ? Math.ceil(quiz.TimeLimitSeconds / 60) : 15),
-      questions: qCount,
+      questionsCount: qCount,
       statusClass: isPub ? 'public' : 'draft',
       status: isPub ? 'Đã phát hành' : 'Bản nháp',
-      attempts: this.getAttempts(id)
+      attempts: this.getAttempts(id),
+      questionIds: quiz.questionIds || []
     };
   }
 

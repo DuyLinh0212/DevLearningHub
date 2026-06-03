@@ -12,6 +12,11 @@ import { LandingComponent } from './features/landing/landing';
 import { AdminDashboardComponent } from './features/admin/admin-dashboard/admin-dashboard';
 import { QuizManagementComponent } from './features/admin/quiz-management/quiz-management';
 import { QuestionImportComponent } from './features/admin/question-import/question-import';
+import { RoadmapManagementComponent } from './features/admin/roadmap-management/roadmap-management';
+import { RoadmapViewComponent } from './features/roadmap/roadmap-view/roadmap-view';
+import { TopicManagementComponent } from './features/admin/topic-management/topic-management';
+import { UserProgressComponent } from './features/user/user-progress/user-progress';
+
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -26,5 +31,9 @@ export const routes: Routes = [
   { path: 'admin', component: AdminDashboardComponent },
   { path: 'admin/quiz', component: QuizManagementComponent },
   { path: 'admin/quiz/import', component: QuestionImportComponent },
-  { path: '', redirectTo: 'landing', pathMatch: 'full' } 
+  { path: 'admin/roadmap', component: RoadmapManagementComponent },
+  { path: 'roadmap', component: RoadmapViewComponent },
+  { path: 'admin/topics', component: TopicManagementComponent },
+  { path: 'dashboard/progress', component: UserProgressComponent },
+  { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

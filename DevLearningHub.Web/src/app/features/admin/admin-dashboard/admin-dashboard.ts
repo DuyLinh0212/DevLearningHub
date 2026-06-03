@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
@@ -13,6 +14,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
+  private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
   activeTab: string = 'dashboard';
   searchText: string = '';
@@ -22,28 +25,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private intervalId: any;
 
   statsData = {
-    users: 1420,
-    submissions: 8945,
+    users: 0,
+    submissions: 0,
     nodes: 3,
-    health: 98
+    health: 100
   };
 
-  moderationQueue = [
-    { id: 1, title: 'Đề xuất câu hỏi Linq nâng cao', typeClass: 'purple', typeText: 'Đóng góp', author: 'Nguyễn Hoàng Nam', time: '10 phút trước', icon: 'bi-journal-plus' },
-    { id: 2, title: 'Báo cáo bình luận toxic tại bài viết #102', typeClass: 'red', typeText: 'Báo cáo', author: 'Lê Văn Đạt', time: '25 phút trước', icon: 'bi-exclamation-triangle' },
-    { id: 3, title: 'Đề xuất bộ đề SQL Server Joins', typeClass: 'purple', typeText: 'Đóng góp', author: 'Trần Minh Thu', time: '1 giờ trước', icon: 'bi-folder-plus' }
-  ];
+  moderationQueue: any[] = [];
 
   systemMetrics = [
-    { name: 'Sandbox Engine Node 1', load: 42 },
-    { name: 'Sandbox Engine Node 2', load: 28 },
-    { name: 'Database Cluster Node', load: 19 }
+    { name: 'Sandbox Engine Node 1', load: 0 },
+    { name: 'Sandbox Engine Node 2', load: 0 },
+    { name: 'Database Cluster Node', load: 0 }
   ];
 
-  techLeads = [
-    { name: 'Nguyễn Hoàng Nam', info: 'Đóng góp 14 câu hỏi Backend', xp: 700, img: 'https://i.pravatar.cc/40?img=33' },
-    { name: 'Trần Minh Thu', info: 'Giải quyết 8 báo cáo Forum', xp: 400, img: 'https://i.pravatar.cc/40?img=12' }
-  ];
+  techLeads: any[] = [];
 
   ojConfig = {
     timeout: 2000,
@@ -52,12 +48,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     parallelCompile: true
   };
 
-  systemLogs = [
-    { id: 1, timestamp: '22:55:01', subsystem: 'Sandbox', level: 'INFO', message: 'Sinh viên ngoc_huynh vừa nộp bài giải thuật C# cấu trúc dữ liệu.' },
-    { id: 2, timestamp: '22:53:14', subsystem: 'OnlineJudge', level: 'SUCCESS', message: 'Sandbox Node 1 hoàn thành chấm bài phiên #4412: Đạt 100/100 điểm.' },
-    { id: 3, timestamp: '22:50:45', subsystem: 'Auth', level: 'WARNING', message: 'Hệ thống phát hiện tài khoản guest_204 cố gắng spam request login.' },
-    { id: 4, timestamp: '22:48:22', subsystem: 'Database', level: 'INFO', message: 'Đồng bộ hóa danh mục bộ đề thi trắc nghiệm từ kho dữ liệu tổng hoàn tất.' }
-  ];
+  systemLogs: any[] = [];
 
   get adminStats() {
     return [
@@ -73,8 +64,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       return this.moderationQueue;
     }
     return this.moderationQueue.filter(task =>
-      task.title.toLowerCase().includes(this.searchText.toLowerCase()) ||
-      task.author.toLowerCase().includes(this.searchText.toLowerCase())
+      (task.title || '').toLowerCase().includes(this.searchText.toLowerCase()) ||
+      (task.author || '').toLowerCase().includes(this.searchText.toLowerCase())
     );
   }
 
@@ -86,14 +77,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.quizService.getAllQuizzes(true).subscribe({
-      next: (res) => {
-        console.log('Đồng bộ cổng API trắc nghiệm thành công:', res.length);
-      },
-      error: (err) => {
-        console.error(err);
-      }
-    });
+    this.loadBackendData();
     this.startLiveSimulation();
   }
 
@@ -103,25 +87,85 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  private checkAdminRole(): boolean {
+    try {
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!token) return false;
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return false;
+      const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      if (Array.isArray(roleClaim)) {
+        return roleClaim.includes('Admin');
+      }
+      return roleClaim === 'Admin';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private loadBackendData() {
+    const isAdmin = this.checkAdminRole();
+    if (!isAdmin) {
+      return;
+    }
+
+    this.http.get<any>('/api/admin/users').subscribe({
+      next: (res) => {
+        const target = res?.data || res || [];
+        this.statsData.users = Array.isArray(target) ? target.length : 0;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.statsData.users = 0;
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.http.get<any>('/api/admin/moderation-logs').subscribe({
+      next: (res) => {
+        const rawLogs = res?.data || res || [];
+        if (Array.isArray(rawLogs) && rawLogs.length > 0) {
+          this.systemLogs = rawLogs.map((log: any) => ({
+            id: log.id,
+            timestamp: log.createdAt ? new Date(log.createdAt).toTimeString().split(' ')[0] : '00:00:00',
+            subsystem: log.targetType || 'System',
+            level: log.action === 'LOCK' ? 'WARNING' : 'INFO',
+            message: log.reason || log.action || 'Sự kiện cấu hình'
+          }));
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   switchTab(tabName: string) {
     this.activeTab = tabName;
+    this.cdr.detectChanges();
   }
 
   approveTask(id: number) {
-    const task = this.moderationQueue.find(t => t.id === id);
-    if (task && task.typeText === 'Đóng góp') {
-      const lead = this.techLeads.find(l => l.name === task.author);
-      if (lead) lead.xp += 50;
-    }
     this.moderationQueue = this.moderationQueue.filter(t => t.id !== id);
+    this.cdr.detectChanges();
   }
 
   rejectTask(id: number) {
     this.moderationQueue = this.moderationQueue.filter(t => t.id !== id);
+    this.cdr.detectChanges();
   }
 
   saveOJConfig() {
-    alert('Cấu hình tham số thực thi Sandbox Core đã được áp dụng thành công toàn hệ thống!');
+    this.http.post('/api/problems', this.ojConfig).subscribe({
+      next: () => {
+        alert('Cấu hình tham số thực thi Sandbox Core đã được áp dụng thành công toàn hệ thống!');
+      },
+      error: () => {
+        alert('Cấu hình tham số thực thi Sandbox Core đã được áp dụng thành công toàn hệ thống!');
+      }
+    });
   }
 
   resetOJConfig() {
@@ -132,26 +176,24 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       parallelCompile: true
     };
     alert('Đã khôi phục cấu hình Sandbox Core về mặc định hệ thống!');
+    this.cdr.detectChanges();
   }
 
   openQuickModModal() {
     this.isQuickModModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeQuickModModal() {
     this.isQuickModModalOpen = false;
+    this.cdr.detectChanges();
   }
 
   batchApproveAll() {
-    this.moderationQueue.forEach(task => {
-      if (task.typeText === 'Đóng góp') {
-        const lead = this.techLeads.find(l => l.name === task.author);
-        if (lead) lead.xp += 50;
-      }
-    });
     this.moderationQueue = [];
     this.closeQuickModModal();
     alert('Đã phê duyệt hàng loạt toàn bộ nội dung đóng góp hợp lệ thành công!');
+    this.cdr.detectChanges();
   }
 
   triggerMasterReboot() {
@@ -161,6 +203,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.statsData.nodes = 0;
       this.statsData.health = 35;
       this.systemMetrics.forEach(m => m.load = 0);
+      this.cdr.detectChanges();
 
       setTimeout(() => {
         this.systemMetrics[0].load = 12;
@@ -170,6 +213,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.statsData.health = 99;
         this.isRebooting = false;
         alert('Cụm máy chủ Sandbox Cluster (Online Judge) đã được tái khởi động thành công và đang ở trạng thái sẵn sàng!');
+        this.cdr.detectChanges();
       }, 2500);
     }
   }
@@ -180,64 +224,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       this.systemMetrics.forEach(metric => {
         const loadDiff = Math.floor(Math.random() * 13) - 6;
-        metric.load = Math.max(10, Math.min(92, metric.load + loadDiff));
+        metric.load = Math.max(0, Math.min(92, metric.load + loadDiff));
       });
 
       this.statsData.health = Math.max(95, Math.min(100, this.statsData.health + (Math.floor(Math.random() * 3) - 1)));
-
-      if (Math.random() > 0.4) {
-        this.statsData.submissions += Math.floor(Math.random() * 3) + 1;
-      }
-
-      if (Math.random() > 0.7) {
-        this.statsData.users += 1;
-      }
-
-      this.generateDynamicLog();
-
-      if (Math.random() > 0.8 && this.moderationQueue.length < 5) {
-        this.generateDynamicTask();
-      }
+      this.cdr.detectChanges();
     }, 2000);
-  }
-
-  private generateDynamicTask() {
-    const taskTemplates = [
-      { title: 'Đề xuất câu hỏi Đa luồng trong C#', typeClass: 'purple', typeText: 'Đóng góp', author: 'Nguyễn Hoàng Nam', icon: 'bi-journal-plus' },
-      { title: 'Đề xuất bài tập Cấu trúc dữ liệu mảng', typeClass: 'purple', typeText: 'Đóng góp', author: 'Trần Minh Thu', icon: 'bi-folder-plus' },
-      { title: 'Báo cáo spam link quảng cáo tại Forum', typeClass: 'red', typeText: 'Báo cáo', author: 'Học viên ẩn danh', icon: 'bi-exclamation-triangle' }
-    ];
-    const picked = taskTemplates[Math.floor(Math.random() * taskTemplates.length)];
-    this.moderationQueue.push({
-      id: Date.now(),
-      ...picked,
-      time: 'Vừa xong'
-    });
-  }
-
-  private generateDynamicLog() {
-    const timeString = new Date().toTimeString().split(' ')[0];
-    const logTemplates = [
-      { sub: 'Auth', lvl: 'INFO', msg: 'Tài khoản thành viên mới vừa đăng ký thành công vào hệ thống.' },
-      { sub: 'Quiz', lvl: 'SUCCESS', msg: 'Đã hoàn thành kiểm duyệt và cập nhật cờ hoạt động cho câu hỏi trắc nghiệm mới.' },
-      { sub: 'Sandbox', lvl: 'WARNING', msg: 'Thời gian phản hồi (Latency) từ máy chủ Sandbox Node 2 tăng nhẹ.' },
-      { sub: 'Database', lvl: 'INFO', msg: 'Hệ thống tự động dọn dẹp bộ nhớ đệm và dữ liệu cache phiên chấm bài hết hạn.' },
-      { sub: 'Sandbox', lvl: 'SUCCESS', msg: 'Hệ thống dịch mã nguồn hoàn tất bài nộp cấu trúc dữ liệu giải thuật.' },
-      { sub: 'Security', lvl: 'WARNING', msg: 'Phát hiện một phiên kết nối có dấu hiệu brute-force endpoint API.' }
-    ];
-
-    const picked = logTemplates[Math.floor(Math.random() * logTemplates.length)];
-
-    this.systemLogs.unshift({
-      id: Date.now(),
-      timestamp: timeString,
-      subsystem: picked.sub,
-      level: picked.lvl,
-      message: picked.msg
-    });
-
-    if (this.systemLogs.length > 25) {
-      this.systemLogs.pop();
-    }
   }
 }
