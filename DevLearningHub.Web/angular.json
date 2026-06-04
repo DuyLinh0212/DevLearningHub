@@ -73,6 +73,11 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "tsconfig.spec.json",
+            "karmaConfig": "test-reporting/karma.conf.js",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "assets": [
               {
                 "glob": "**/*",

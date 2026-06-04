@@ -17,6 +17,9 @@
 node_modules/
 .angular/
 dist/
+out-tsc/
+coverage/
+test-reports/
 tmp/
 .sass-cache/
 

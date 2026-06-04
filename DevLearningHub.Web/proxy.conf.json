@@ -1,20 +1,8 @@
 {
   "/api": {
-    "target": "http://localhost:5122",
+    "target": "https://10w62wl2-7073.asse.devtunnels.ms/",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/quiz-sets": {
-    "target": "http://localhost:5122",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/questions": {
-    "target": "http://localhost:5122",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "warn"
   }
 }
