@@ -49,11 +49,28 @@ export class LoginComponent {
         this.isLoading = false;
         const target = res?.data || res;
         const token = target?.accessToken || target?.token || '';
+        
         if (token) {
           localStorage.setItem('accessToken', token);
+          
+          try {
+            const payloadPart = token.split('.')[1];
+            const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+            const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            const isAdmin = Array.isArray(roleClaim) 
+              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') 
+              : roleClaim?.toLowerCase() === 'admin';            
+            alert('Đăng nhập thành công!');
+            if (isAdmin) {
+              this.router.navigate(['/admin']);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          } catch (e) {
+            alert('Đăng nhập thành công!');
+            this.router.navigate(['/dashboard']);
+          }
         }
-        alert('Đăng nhập thành công!');
-        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isLoading = false;
