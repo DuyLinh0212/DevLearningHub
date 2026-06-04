@@ -1,0 +1,16 @@
+# Build outputs
+bin/
+obj/
+
+# Test outputs
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+coverage.*
+
+# IDE/user-specific files
+*.user
+*.suo
+*.rsuser
