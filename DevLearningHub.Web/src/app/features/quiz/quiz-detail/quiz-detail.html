@@ -37,7 +37,7 @@
             </div>
             <div class="detail-form-group">
               <label>Mức độ</label>
-              <div class="static-display-field">Trung bình</div>
+              <div class="static-display-field">{{ quizLevel }}</div>
             </div>
           </div>
         </div>
@@ -69,7 +69,11 @@
               <h4>Trộn ngẫu nhiên câu hỏi</h4>
               <p>Tự động xáo trộn thứ tự các câu hỏi trong bộ đề khi sinh viên bấm làm bài</p>
             </div>
-            <i class="bi bi-check2 rule-success-icon"></i>
+            @if (quizShuffle) {
+              <i class="bi bi-check2 rule-success-icon"></i>
+            } @else {
+              <i class="bi bi-dash-circle text-muted" style="font-size: 1.5rem;"></i>
+            }
           </div>
 
           <div class="rule-status-row">
@@ -77,7 +81,11 @@
               <h4>Hiển thị kết quả ngay</h4>
               <p>Cho phép sinh viên xem đáp án đúng/sai ngay sau khi bấm chọn câu trả lời</p>
             </div>
-            <i class="bi bi-check2 rule-success-icon"></i>
+            @if (quizInstantResult) {
+              <i class="bi bi-check2 rule-success-icon"></i>
+            } @else {
+              <i class="bi bi-dash-circle text-muted" style="font-size: 1.5rem;"></i>
+            }
           </div>
         </div>
       </div>

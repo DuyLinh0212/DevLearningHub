@@ -7,8 +7,8 @@
     <h2>Kết quả - {{ quizTitle }}</h2>
 
     <div class="header-action-buttons">
-      <a routerLink="/quiz-play/{{ quizId }}" class="btn-secondary-action-link">
-        <i class="bi bi-arrow-counterclockwise"></i> Làm lại
+      <a routerLink="/quiz-bank" class="btn-secondary-action-link">
+        <i class="bi bi-arrow-counterclockwise"></i> Quay lại kho đề
       </a>
       <button class="btn-secondary-action"><i class="bi bi-share"></i> Chia sẻ</button>
     </div>
@@ -26,31 +26,25 @@
         <div class="chart-info-text">
           <h3>{{ summary.statusText }}</h3>
           <p>Bạn đã trả lời đúng {{ summary.correctCount }}/{{ summary.correctCount + summary.wrongCount }} câu hỏi</p>
-          <div class="mini-badges-row">
-            <span class="m-badge badge-green"><span class="dot-g"></span> {{ summary.correctCount }} Đúng</span>
-            <span class="m-badge badge-red"><span class="dot-r"></span> {{ summary.wrongCount }} Sai</span>
-            <span class="m-badge badge-gray"><i class="bi bi-clock"></i> {{ summary.timeDuration }}</span>
-            <span class="m-badge badge-blue"><i class="bi bi-lightning-fill"></i> +{{ summary.xpGained }} XP</span>
-          </div>
         </div>
       </div>
 
-      <div class="metrics-grid-right">
+      <div class="metrics-grid-right stats-cards-grid-right">
         <div class="metric-small-card">
-          <span class="m-title">Tỷ lệ đúng</span>
-          <span class="m-value color-purple">{{ summary.percentage }}%</span>
+          <div class="m-title metric-card-label">Thời gian làm bài</div>
+          <span class="m-value metric-card-value text-color-purple color-purple">{{ summary.timeDuration }}</span>
         </div>
         <div class="metric-small-card">
-          <span class="m-title">Thời gian</span>
-          <span class="m-value color-pink">{{ summary.timeDuration }}</span>
+          <div class="m-title metric-card-label">Điểm kinh nghiệm</div>
+          <span class="m-value metric-card-value text-color-green color-indigo">+{{ summary.xpGained }} XP</span>
         </div>
         <div class="metric-small-card">
-          <span class="m-title">Xếp hạng</span>
-          <span class="m-value color-indigo">#{{ summary.rank }}</span>
+          <div class="m-title metric-card-label">Thứ hạng đề thi</div>
+          <span class="m-value metric-card-value text-color-amber color-pink">#{{ summary.rank }}</span>
         </div>
         <div class="metric-small-card">
-          <span class="m-title">Số lần làm</span>
-          <span class="m-value color-magenta">{{ summary.attempts }}</span>
+          <div class="m-title metric-card-label">Số lượt tham gia</div>
+          <span class="m-value metric-card-value text-color-magenta color-magenta">{{ summary.attempts }}</span>
         </div>
       </div>
     </section>
@@ -59,7 +53,7 @@
       @for (item of reviewQuestions; track item.id) {
       <div class="review-card-item">
         <div class="review-card-head">
-          <h4>Câu {{ item.id }} {{ item.text }}</h4>
+          <h4>Câu {{ item.id }}: {{ item.text }}</h4>
           <span class="row-status-badge" [class.success]="item.isCorrect">
             <span class="status-dot"></span> {{ item.isCorrect ? 'Đúng' : 'Sai' }}
           </span>
@@ -87,11 +81,6 @@
       }
     </section>
 
-    <div class="footer-center-action">
-      <a routerLink="/quiz-bank" class="btn-expand-all" style="text-decoration: none;">
-        Quay về Kho bộ đề <i class="bi bi-chevron-right"></i>
-      </a>
-    </div>
-
   </div>
-</div>
+
+</div> 

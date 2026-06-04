@@ -1,11 +1,12 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-quiz-play',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './quiz-play.html',
   styleUrl: './quiz-play.css'
 })
@@ -13,7 +14,9 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private quizService = inject(QuizService);
+  private cdr = inject(ChangeDetectorRef);
 
+  sessionId: string = '';
   quizId: string = '';
   quizData: any;
   quizTitle: string = '';
@@ -23,7 +26,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   isConfirmModalOpen = false;
   isExitModalOpen = false;
 
-  selectedAnswers: (number | null)[] = [];
+  selectedAnswers: (any | null)[] = [];
   bookmarkedQuestions: boolean[] = [];
 
   timeLeft = signal<number>(900);
@@ -39,23 +42,35 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.quizId = this.route.snapshot.paramMap.get('id') || '1';
-    this.quizService.getQuiz(this.quizId).subscribe({
-      next: (quizData) => {
-        this.quizData = quizData;
-        this.quizTitle = this.quizData.title;
-        this.totalQuestions = this.quizData.questions ? this.quizData.questions.length : 0;
+    this.quizService.startQuizSession(this.quizId).subscribe({
+      next: (res) => {
+        setTimeout(() => {
+          const target = res?.data || res;
+          if (!target) return;
 
-        this.timeLeft.set((this.quizData.duration || 15) * 60);
+          this.quizData = target;
+          this.sessionId = target.sessionId || '';
+          this.quizTitle = target.title || '';
+          this.totalQuestions = target.totalQuestions || (target.questions ? target.questions.length : 0);
+          this.timeLeft.set(target.timeLimitSeconds || 900);
 
-        this.questions = this.quizData.questions ? this.quizData.questions.slice() : [];
+          const rawQuestions = target.questions || [];
+          this.questions = rawQuestions.map((q: any) => {
+            return {
+              id: q.questionId || q.id,
+              text: q.content || '',
+              level: q.level || 'Beginner',
+              points: q.points || 10,
+              options: q.options || [],
+              correctIndex: -1
+            };
+          });
 
-        if (this.quizData.shuffle && this.questions.length > 0) {
-          this.questions.sort(() => Math.random() - 0.5);
-        }
-
-        this.selectedAnswers = new Array(this.totalQuestions).fill(null);
-        this.startTimer();
-        this.quizService.incrementAttempts(this.quizId);
+          this.selectedAnswers = new Array(this.totalQuestions).fill(null);
+          this.bookmarkedQuestions = new Array(this.totalQuestions).fill(false);
+          this.startTimer();
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
         console.error(err);
@@ -73,6 +88,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.timerInterval = setInterval(() => {
       if (this.timeLeft() > 0) {
         this.timeLeft.update((time: number) => time - 1);
+        this.cdr.detectChanges();
       } else {
         clearInterval(this.timerInterval);
         this.forceSubmitQuiz();
@@ -80,8 +96,13 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  onAnswerSelect(optionIndex: number) {
-    this.selectedAnswers[this.currentQuestionIndex] = optionIndex;
+  onAnswerSelect(optionId: string, questionId: string) {
+    this.selectedAnswers[this.currentQuestionIndex] = {
+      questionId: questionId,
+      selectedOptionId: optionId,
+      optionId: optionId
+    };
+    this.cdr.detectChanges();
   }
 
   toggleBookmark() {
@@ -112,27 +133,66 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.router.navigate(['/quiz-bank']);
   }
 
-  private getActualTimeSpent(): string {
-    const totalDurationSeconds = (this.quizData?.duration || 15) * 60;
-    const totalSec = totalDurationSeconds - this.timeLeft();
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m} phút ${s} giây`;
-  }
-
   confirmSubmit() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
-    this.quizService.saveResults(this.selectedAnswers, this.getActualTimeSpent(), this.quizId);
-    this.isConfirmModalOpen = false;
-    this.router.navigate(['/quiz-result', this.quizId]);
+
+    const submitPayload = this.questions.map((q, idx) => {
+      const ans = this.selectedAnswers[idx];
+      return {
+        questionId: q.id,
+        selectedOptionId: ans ? ans.selectedOptionId : null
+      };
+    });
+
+    sessionStorage.setItem('quiz_title', this.quizTitle);
+    sessionStorage.setItem('quiz_questions', JSON.stringify(
+      this.questions.map(q => ({
+        id: q.id,
+        text: q.text,
+        options: q.options
+      }))
+    ));
+
+    this.quizService.submitQuizSession(this.sessionId, submitPayload).subscribe({
+      next: () => {
+        this.isConfirmModalOpen = false;
+        this.router.navigate(['/quiz-result', this.sessionId]);
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
 
   forceSubmitQuiz() {
-    this.quizService.saveResults(this.selectedAnswers, this.getActualTimeSpent(), this.quizId);
-    this.isConfirmModalOpen = false;
-    this.router.navigate(['/quiz-result', this.quizId]);
+    const submitPayload = this.questions.map((q, idx) => {
+      const ans = this.selectedAnswers[idx];
+      return {
+        questionId: q.id,
+        selectedOptionId: ans ? ans.selectedOptionId : null
+      };
+    });
+
+    sessionStorage.setItem('quiz_title', this.quizTitle);
+    sessionStorage.setItem('quiz_questions', JSON.stringify(
+      this.questions.map(q => ({
+        id: q.id,
+        text: q.text,
+        options: q.options
+      }))
+    ));
+
+    this.quizService.submitQuizSession(this.sessionId, submitPayload).subscribe({
+      next: () => {
+        this.isConfirmModalOpen = false;
+        this.router.navigate(['/quiz-result', this.sessionId]);
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
 
   get answeredCount(): number {
@@ -152,29 +212,9 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     return Math.round((this.answeredCount / this.questions.length) * 100);
   }
 
-  getOptionClass(optionIndex: number): string {
+  getOptionClass(optionId: string): string {
     const currentSelected = this.selectedAnswers[this.currentQuestionIndex];
-    const isSelected = currentSelected === optionIndex;
-
-    if (!this.quizData?.instantResult) {
-      return isSelected ? 'selected' : '';
-    }
-
-    if (currentSelected === null) {
-      return '';
-    }
-
-    const correctIdx = this.questions[this.currentQuestionIndex].correctIndex;
-
-    if (optionIndex === correctIdx) {
-      return 'correct';
-    }
-
-    if (isSelected && optionIndex !== correctIdx) {
-      return 'incorrect';
-    }
-
-    return '';
+    return currentSelected && currentSelected.optionId === optionId ? 'selected' : '';
   }
 
   selectQuestion(index: number) {
@@ -192,6 +232,4 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
       this.currentQuestionIndex++;
     }
   }
-
-  
 }
