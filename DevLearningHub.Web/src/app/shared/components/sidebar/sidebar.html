@@ -11,10 +11,12 @@
       <input type="text" placeholder="Tìm kiếm..." (keyup.enter)="onSidebarSearch($event)">
     </div>
   </div>
-
+  
   <nav class="sidebar-menu">
     <a routerLink="/dashboard" routerLinkActive="active" class="menu-item"><i class="bi bi-grid-1x2"></i> Tổng quan</a>
     <a routerLink="/quiz-bank" routerLinkActive="active" class="menu-item"><i class="bi bi-collection"></i> Kho Bộ đề</a>
+    <a routerLink="/roadmap" routerLinkActive="active" class="menu-item"><i class="bi bi-bezier2"></i> Lộ trình học</a>
+    <a routerLink="/dashboard/progress" routerLinkActive="active" class="menu-item"><i class="bi bi-bar-chart-line-fill"></i> Phân tích năng lực</a>
     <a routerLink="/code" routerLinkActive="active" class="menu-item"><i class="bi bi-code-slash"></i> Code</a>
     <a routerLink="/forum" routerLinkActive="active" class="menu-item"><i class="bi bi-people"></i> Diễn đàn</a>
     <a routerLink="/leaderboard" routerLinkActive="active" class="menu-item"><i class="bi bi-star"></i> Bảng xếp hạng</a>
@@ -22,42 +24,42 @@
     <div class="menu-heading">HỆ THỐNG</div>
     <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
   </nav>
-
+  
   <div class="sidebar-footer" style="padding: 16px 0; border-top: 1px solid #1f1f23; margin-top: auto;">
     <a (click)="logout()" class="menu-item logout" style="color: #f43f5e; cursor: pointer; margin-bottom: 8px;">
       <i class="bi bi-box-arrow-left" style="color: #f43f5e;"></i> Đăng xuất
     </a>
-    <a routerLink="/admin" class="menu-item" style="background-color: rgba(168, 85, 247, 0.1); border-radius: 6px;">
-      <i class="bi bi-shield-lock-fill" style="color: #a855f7;"></i>
-      <span style="color: #c084fc; font-weight: 600;">Quản trị hệ thống</span>
+    
+    @if (isUserAdmin) {
+    <a routerLink="/admin" class="menu-item" style="background-color: rgba(168, 85, 247, 0.1); color: #c084fc; font-weight: 600;">
+      <i class="bi bi-shield-lock-fill"></i> Vùng Quản Trị Admin
     </a>
+    }
   </div>
-
-  } @else {
-  <div class="admin-profile-badge" style="padding: 12px 16px; margin-bottom: 16px; background: rgba(168, 85, 247, 0.05); border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.1); margin-left: 16px; margin-right: 16px; text-align: left;">
-    <div style="font-size: 0.75rem; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: 0.5px;">Quyền hạn</div>
-    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-top: 2px;"><i class="bi bi-shield-check"></i> Root Administrator</div>
-  </div>
-
+  } 
+  
+  @else {
   <nav class="sidebar-menu">
-    <div class="menu-heading">ĐIỀU PHỐI LÕI</div>
     <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
       <i class="bi bi-speedometer2"></i> Bảng điều phối
     </a>
-
-    <div class="menu-heading">PHÂN HỆ TRẮC NGHIỆM</div>
     <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
-      <i class="bi bi-journal-check"></i> Ngân hàng câu hỏi
+      <i class="bi bi-database-fill"></i> Quản lý Đề thi
     </a>
     <a routerLink="/admin/quiz/import" routerLinkActive="active" class="menu-item">
       <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
     </a>
-
+    <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-bezier2"></i> Quản lý Lộ trình
+    </a>
+    <a routerLink="/admin/topics" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-tags-fill"></i> Quản lý Chủ đề
+    </a>
     <div class="menu-heading">HẠ TẦNG KỸ THUẬT</div>
     <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-cpu-fill"></i> Sandbox Engine</a>
     <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-terminal-fill"></i> Logs hệ thống</a>
   </nav>
-
+  
   <div class="sidebar-footer" style="padding: 16px 0; border-top: 1px solid #1f1f23; margin-top: auto;">
     <a routerLink="/dashboard" class="menu-item" style="color: #38bdf8; font-weight: 600;">
       <i class="bi bi-box-arrow-left" style="color: #38bdf8;"></i> Thoát vùng Quản trị

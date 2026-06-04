@@ -1,18 +1,22 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { QuizService } from '../../../core/services/quiz.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-quiz-management',
   standalone: true,
-  imports: [FormsModule, RouterLink, SidebarComponent],
+  imports: [FormsModule, RouterLink, SidebarComponent, CommonModule],
   templateUrl: './quiz-management.html',
   styleUrl: './quiz-management.css'
 })
 export class QuizManagementComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
+  private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
   currentSubTab: string = 'bank';
   searchTerm: string = '';
@@ -24,21 +28,18 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     'Lập trình Backend',
     'Lập trình Frontend',
     'Cơ sở dữ liệu',
-    'Kiểm thử phần mềm'
+    'Kiểm thử phần mềm',
+    'Beginner'
   ];
 
-  questionsBank: any[] = [
-    { id: 1, text: 'Middleware nào trong .NET 9 dùng để bắt cấu hình xử lý lỗi ngoại lệ toàn cục?', topic: 'Lập trình Backend', level: 'Trung bình', points: 10, isActive: true, options: ['UseStatusCodePages()', 'UseExceptionHandler()', 'UseDeveloperExceptionPage()', 'UseRouting()'], correctIndex: 1, explanation: 'UseExceptionHandler là middleware chuẩn để bắt và xử lý ngoại lệ toàn cục trong môi trường Production.' },
-    { id: 2, text: 'Sự khác biệt chính giữa IEnumerable và IQueryable trong LINQ C# là gì?', topic: 'Lập trình Backend', level: 'Trung bình', points: 10, isActive: true, options: ['IEnumerable thực thi ở client, IQueryable thực thi ở server', 'IEnumerable chạy nhanh hơn IQueryable', 'IQueryable không hỗ trợ lazy loading', 'Không có sự khác biệt nào'], correctIndex: 0, explanation: 'IQueryable dịch truy vấn thành câu lệnh SQL để chạy phía Database Server, còn IEnumerable tải toàn bộ dữ liệu về RAM Client rồi mới lọc.' },
-    { id: 3, text: 'Angular Signals dùng hàm nào để lắng nghe biến đổi và tự động chạy logic phụ thuộc (Side Effect)?', topic: 'Lập trình Frontend', level: 'Khó', points: 10, isActive: true, options: ['computed()', 'effect()', 'signal()', 'untracked()'], correctIndex: 1, explanation: 'Hàm effect() được sử dụng khi cần chạy các đoạn mã side-effect mỗi khi các signal phụ thuộc bên trong nó có sự thay đổi giá trị.' },
-    { id: 4, text: 'Từ khóa [Key] trong Entity Framework Core có tác dụng quy định thuộc tính gì?', topic: 'Cơ sở dữ liệu', level: 'Dễ', points: 10, isActive: true, options: ['Khóa ngoại', 'Khóa chính', 'Chỉ mục Unique', 'Thuộc tính Not Null'], correctIndex: 1, explanation: 'Data Annotation [Key] dùng để chỉ định một thuộc tính cụ thể làm Khóa chính (Primary Key) cho bảng dữ liệu.' }
-  ];
-
+  questionsBank: any[] = [];
   quizSets: any[] = [];
+  selectedQuizSet: any = null;
 
   isQuestionModalOpen: boolean = false;
   isEditingQuestion: boolean = false;
-  editingQuestionId: number | null = null;
+  editingQuestionId: any = null;
+
   questionForm = {
     text: '',
     topic: 'Lập trình Backend',
@@ -49,24 +50,48 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     explanation: ''
   };
 
-  isAssignModalOpen: boolean = false;
-  selectedQuizSet: any = null;
-
   isQuizSetModalOpen: boolean = false;
   isEditingQuizSet: boolean = false;
-  editingQuizSetId: string | null = null;
+  editingQuizSetId: any = null;
+  isAssignModalOpen: boolean = false;
+
   quizSetForm = {
     title: '',
     desc: '',
+    description: '',
     topic: 'Lập trình Backend',
     level: 'Trung bình',
     duration: 15,
-    passRate: 70
+    passRate: 80,
+    mode: 'practice',
+    questionIds: [] as any[]
   };
 
+  get filteredQuestions() {
+    const list = this.questionsBank || [];
+    return list.filter(q => {
+      const matchSearch = (q.text || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                          (q.topic || '').toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchTopic = this.selectedTopic === 'all' || q.topic === this.selectedTopic;
+      const matchLevel = this.selectedLevel === 'all' || q.level === this.selectedLevel;
+      return matchSearch && matchTopic && matchLevel;
+    });
+  }
+
+  get filteredQuizSets() {
+    const list = this.quizSets || [];
+    return list.filter(s => {
+      const matchSearch = (s.title || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                          (s.description || '').toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchTopic = this.selectedTopic === 'all' || s.topic === this.selectedTopic;
+      const matchLevel = this.selectedLevel === 'all' || s.level === this.selectedLevel;
+      return matchSearch && matchTopic && matchLevel;
+    });
+  }
+
   ngOnInit() {
+    this.loadQuestions();
     this.loadQuizSets();
-    this.startLiveContributionSimulation();
   }
 
   ngOnDestroy() {
@@ -75,73 +100,135 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadQuizSets() {
-    this.quizService.getAllQuizzes(true).subscribe({
-      next: (res) => {
-        this.quizSets = res;
-      },
-      error: (err: any) => {
-        console.error(err);
-      }
-    });
-  }
-
-  get filteredQuestions() {
-    return this.questionsBank.filter(q => {
-      const matchSearch = q.text.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchTopic = this.selectedTopic === 'all' || q.topic === this.selectedTopic;
-      const matchLevel = this.selectedLevel === 'all' || q.level === this.selectedLevel;
-      return matchSearch && matchTopic && matchLevel;
-    });
-  }
-
-  get filteredQuizSets() {
-    return this.quizSets.filter(set =>
-      set.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      set.desc.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
-  }
-
-  switchSubTab(tabName: string) {
-    this.currentSubTab = tabName;
+  switchSubTab(tab: string) {
+    this.currentSubTab = tab;
+    this.selectedTopic = 'all';
+    this.selectedLevel = 'all';
     this.searchTerm = '';
+    this.cdr.detectChanges();
   }
 
   filterByTopic(topic: string) {
     this.selectedTopic = topic;
+    this.cdr.detectChanges();
   }
 
   getLetterPrefix(index: number): string {
-    return String.fromCharCode(65 + index);
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
+    return alphabet[index] || '';
   }
 
-  toggleQuestionStatus(q: any) {
-    q.isActive = !q.isActive;
+  setCorrectAnswer(index: number) {
+    this.questionForm.correctIndex = index;
+    this.cdr.detectChanges();
   }
 
-  toggleQuizSetStatus(set: any) {
-    this.quizService.toggleQuizStatus(set.id, set.statusClass).subscribe({
-      next: () => {
-        this.loadQuizSets();
+  shortenId(id: string | number): string {
+    if (!id) return '';
+    const strId = id.toString();
+    if (strId.startsWith('new_') || strId.startsWith('custom_')) return strId;
+    return strId.length > 8 ? strId.substring(0, 8) + '...' : strId;
+  }
+
+  loadQuestions() {
+    this.http.get<any>('/api/questions').subscribe({
+      next: (res: any) => {
+        const rawData = res?.data || res || [];
+        const dataArray = Array.isArray(rawData) ? rawData : [];
+        
+        this.questionsBank = dataArray.map((q: any) => {
+          const rawOptions = q.options || q.Options || [];
+          let cleanOptions: string[] = [];
+          
+          if (Array.isArray(rawOptions)) {
+            cleanOptions = rawOptions.map((o: any) => {
+              if (typeof o === 'string') return o;
+              return o?.text || o?.content || o?.Content || '';
+            });
+          }
+
+          return {
+            id: q.id || q.Id,
+            text: q.text || q.content || q.Content || 'Nội dung câu hỏi trống',
+            topic: q.topic || q.Topic || 'Beginner',
+            level: q.level || q.Level || 'Dễ',
+            points: q.points ?? q.Points ?? 10,
+            isActive: q.isActive ?? q.IsActive ?? true,
+            options: cleanOptions,
+            correctIndex: q.correctIndex ?? q.CorrectIndex ?? 0,
+            explanation: q.explanation || q.Explanation || ''
+          };
+        });
+
+        if (this.questionsBank.length === 0) {
+          this.setFallbackQuestions();
+        }
+        this.cdr.detectChanges();
       },
-      error: (err: any) => {
-        console.error(err);
+      error: () => {
+        this.setFallbackQuestions();
+        this.cdr.detectChanges();
       }
     });
   }
 
-  openQuestionModal(q: any | null = null) {
-    if (q) {
+  private setFallbackQuestions() {
+    this.questionsBank = [
+      { id: 'e7841aab-e444-46d9-980a-a6318b23235e', text: 'Để thực hiện kết nối và gọi API lấy dữ liệu trong Angular, chúng ta sử dụng Service nào?', topic: 'Beginner', level: 'Trung bình', points: 10, isActive: true, options: ['HttpClient', 'HttpModule', 'Router', 'ActivatedRoute'], correctIndex: 0, explanation: '' },
+      { id: '187c9fe9-ceb2-4dea-84b0-f27b473342bc', text: 'Trong Angular v17, tính năng nào dùng để thay thế cho cấu trúc *ngFor truyền thống?', topic: 'Beginner', level: 'Dễ', points: 10, isActive: true, options: ['@for', '@if', '@switch', '@defer'], correctIndex: 0, explanation: '' }
+    ];
+  }
+
+  loadQuizSets() {
+    this.quizService.getAllQuizzes(true).subscribe({
+      next: (res: any) => {
+        const rawData = res?.data || res || [];
+        const dataArray = Array.isArray(rawData) ? rawData : [];
+        
+        this.quizSets = dataArray.map((s: any) => ({
+          id: s.id,
+          title: s.title || '',
+          desc: s.desc || s.description || '',
+          description: s.description || s.desc || '',
+          topic: s.topic || 'Beginner',
+          level: s.level || 'Dễ',
+          duration: s.duration || 15,
+          questionsCount: s.questionsCount ?? s.questions ?? 0,
+          statusClass: s.statusClass || 'public',
+          status: s.status || 'Đã phát hành',
+          questionIds: s.questionIds || []
+        }));
+
+        if (this.quizSets.length === 0) {
+          this.setFallbackQuizSets();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.setFallbackQuizSets();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private setFallbackQuizSets() {
+    this.quizSets = [
+      { id: 'q1', title: 'Bộ đề thi C# Core nâng cao', description: 'Kiểm tra kiến thức Linq, Dependency Injection và Async Await.', topic: 'Beginner', level: 'Trung bình', duration: 20, passRate: 80, questionsCount: 2, statusClass: 'public', status: 'Đã phát hành', questionIds: ['e7841aab-e444-46d9-980a-a6318b23235e', '187c9fe9-ceb2-4dea-84b0-f27b473342bc'] }
+    ];
+  }
+
+  openQuestionModal(question: any = null) {
+    if (question) {
       this.isEditingQuestion = true;
-      this.editingQuestionId = q.id;
+      this.editingQuestionId = question.id;
       this.questionForm = {
-        text: q.text,
-        topic: q.topic,
-        level: q.level,
-        points: q.points,
-        options: [...q.options],
-        correctIndex: q.correctIndex,
-        explanation: q.explanation
+        text: question.text || '',
+        topic: question.topic || 'Lập trình Backend',
+        level: question.level || 'Trung bình',
+        points: question.points || 10,
+        options: question.options ? [...question.options] : ['', '', '', ''],
+        correctIndex: question.correctIndex ?? 0,
+        explanation: question.explanation || ''
       };
     } else {
       this.isEditingQuestion = false;
@@ -157,14 +244,16 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
       };
     }
     this.isQuestionModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeQuestionModal() {
     this.isQuestionModalOpen = false;
+    this.cdr.detectChanges();
   }
 
-  setCorrectAnswer(idx: number) {
-    this.questionForm.correctIndex = idx;
+  trackByIndex(index: number): number {
+    return index;
   }
 
   saveQuestion() {
@@ -172,133 +261,197 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
       alert('Vui lòng nhập nội dung câu hỏi!');
       return;
     }
-    if (this.questionForm.options.some(opt => !opt.trim())) {
-      alert('Vui lòng nhập đầy đủ nội dung cho cả 4 phương án!');
-      return;
-    }
 
-    if (this.isEditingQuestion && this.editingQuestionId !== null) {
-      const q = this.questionsBank.find(item => item.id === this.editingQuestionId);
-      if (q) {
-        Object.assign(q, {
-          text: this.questionForm.text,
-          topic: this.questionForm.topic,
-          level: this.questionForm.level,
-          points: this.questionForm.points,
-          options: [...this.questionForm.options],
-          correctIndex: this.questionForm.correctIndex,
-          explanation: this.questionForm.explanation
-        });
+    const request$ = this.isEditingQuestion && this.editingQuestionId
+      ? this.http.put<any>(`/api/questions/${this.editingQuestionId}`, this.questionForm)
+      : this.http.post<any>('/api/questions', this.questionForm);
+
+    request$.subscribe({
+      next: () => {
+        this.loadQuestions();
+        this.closeQuestionModal();
+        alert('Cập nhật thông tin câu hỏi thành công!');
+      },
+      error: (err: any) => {
+        alert(`Không thể lưu câu hỏi lên hệ thống Backend (Mã lỗi: ${err.status})`);
       }
-    } else {
-      const newId = this.questionsBank.length > 0 ? Math.max(...this.questionsBank.map(item => item.id)) + 1 : 1;
-      this.questionsBank.push({
-        id: newId,
-        text: this.questionForm.text,
-        topic: this.questionForm.topic,
-        level: this.questionForm.level,
-        points: this.questionForm.points,
-        isActive: true,
-        options: [...this.questionForm.options],
-        correctIndex: this.questionForm.correctIndex,
-        explanation: this.questionForm.explanation
-      });
-    }
-    this.closeQuestionModal();
+    });
   }
 
-  openAssignModal(set: any) {
-    this.selectedQuizSet = set;
+  toggleQuestionStatus(q: any) {
+    q.isActive = !q.isActive;
+    this.cdr.detectChanges();
+  }
+
+  toggleQuizSetStatus(set: any) {
+    this.quizService.toggleQuizStatus(set.id, set.statusClass).subscribe({
+      next: () => {
+        this.loadQuizSets();
+      },
+      error: (err: any) => {
+        set.statusClass = set.statusClass === 'public' ? 'draft' : 'public';
+        set.status = set.statusClass === 'public' ? 'Đã phát hành' : 'Bản nháp';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deleteQuestion(id: any) {
+    if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng đề thi không?')) {
+      this.http.delete<any>(`/api/questions/${id}`).subscribe({
+        next: () => {
+          this.loadQuestions();
+          alert('Đã xóa câu hỏi thành công!');
+        },
+        error: (err: any) => {
+          this.questionsBank = this.questionsBank.filter(q => q.id !== id);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  openQuizSetModal(quizSet: any = null) {
+    if (quizSet) {
+      this.isEditingQuizSet = true;
+      this.editingQuizSetId = quizSet.id;
+      this.selectedQuizSet = quizSet;
+      this.quizSetForm = {
+        title: quizSet.title || '',
+        desc: quizSet.desc || quizSet.description || '',
+        description: quizSet.description || quizSet.desc || '',
+        topic: quizSet.topic || 'Lập trình Backend',
+        level: quizSet.level || 'Trung bình',
+        duration: quizSet.duration || 15,
+        passRate: quizSet.passRate || 80,
+        mode: quizSet.mode || 'practice',
+        questionIds: quizSet.questionIds ? [...quizSet.questionIds] : []
+      };
+    } else {
+      this.isEditingQuizSet = false;
+      this.editingQuizSetId = null;
+      this.selectedQuizSet = null;
+      this.quizSetForm = {
+        title: '',
+        desc: '',
+        description: '',
+        topic: 'Lập trình Backend',
+        level: 'Trung bình',
+        duration: 15,
+        passRate: 80,
+        mode: 'practice',
+        questionIds: []
+      };
+    }
+    this.isQuizSetModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeQuizSetModal() {
+    this.isQuizSetModalOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  openAssignModal(quizSet: any) {
+    this.selectedQuizSet = quizSet;
     this.isAssignModalOpen = true;
+    this.isQuizSetModalOpen = false;
+    this.quizSetForm = {
+      title: quizSet.title || '',
+      desc: quizSet.desc || quizSet.description || '',
+      description: quizSet.description || quizSet.desc || '',
+      topic: quizSet.topic || 'Lập trình Backend',
+      level: quizSet.level || 'Trung bình',
+      duration: quizSet.duration || 15,
+      passRate: quizSet.passRate || 80,
+      mode: quizSet.mode || 'practice',
+      questionIds: quizSet.questionIds ? [...quizSet.questionIds] : []
+    };
+    this.cdr.detectChanges();
+  }
+
+  toggleQuestionInSet(qId: any) {
+    if (!this.selectedQuizSet) return;
+    
+    const idx = this.quizSetForm.questionIds.indexOf(qId);
+    if (idx > -1) {
+      this.quizService.removeQuestionFromSet(this.selectedQuizSet.id, qId).subscribe({
+        next: () => {
+          this.quizSetForm.questionIds.splice(idx, 1);
+          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.quizSetForm.questionIds.splice(idx, 1);
+          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      this.quizService.assignQuestionToSet(this.selectedQuizSet.id, qId).subscribe({
+        next: () => {
+          this.quizSetForm.questionIds.push(qId);
+          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.quizSetForm.questionIds.push(qId);
+          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  isQuestionSelectedInQuizSet(qId: any): boolean {
+    return this.quizSetForm.questionIds.includes(qId);
+  }
+
+  isQuestionInSet(qId: any): boolean {
+    return this.quizSetForm.questionIds.includes(qId);
   }
 
   closeAssignModal() {
     this.isAssignModalOpen = false;
     this.selectedQuizSet = null;
-  }
-
-  isQuestionInSet(id: number): boolean {
-    if (!this.selectedQuizSet) return false;
-    return this.selectedQuizSet.questionIds.includes(id);
-  }
-
-  toggleQuestionInSet(id: number) {
-    if (!this.selectedQuizSet) return;
-    const idx = this.selectedQuizSet.questionIds.indexOf(id);
-    if (idx > -1) {
-      this.selectedQuizSet.questionIds.splice(idx, 1);
-    } else {
-      this.selectedQuizSet.questionIds.push(id);
-    }
-  }
-
-  openQuizSetModal(set: any | null = null) {
-    if (set) {
-      this.isEditingQuizSet = true;
-      this.editingQuizSetId = set.id;
-      this.quizSetForm = {
-        title: set.title,
-        desc: set.desc,
-        topic: set.topic,
-        level: set.level,
-        duration: set.duration,
-        passRate: set.passRate || 70
-      };
-    } else {
-      this.isEditingQuizSet = false;
-      this.editingQuizSetId = null;
-      this.quizSetForm = {
-        title: '',
-        desc: '',
-        topic: 'Lập trình Backend',
-        level: 'Trung bình',
-        duration: 15,
-        passRate: 70
-      };
-    }
-    this.isQuizSetModalOpen = true;
-  }
-
-  closeQuizSetModal() {
-    this.isQuizSetModalOpen = false;
+    this.loadQuizSets();
+    this.cdr.detectChanges();
   }
 
   saveQuizSet() {
-    if (!this.quizSetForm.title.trim() || !this.quizSetForm.desc.trim()) {
-      alert('Vui lòng nhập đầy đủ tiêu đề và mô tả bộ đề!');
+    if (!this.quizSetForm.title.trim()) {
+      alert('Vui lòng nhập tiêu đề bộ đề thi!');
       return;
     }
 
+    this.quizSetForm.description = this.quizSetForm.desc;
+
     const targetId = this.isEditingQuizSet && this.editingQuizSetId ? this.editingQuizSetId : 'custom_' + Date.now();
+    
     this.quizService.saveQuizSetFromAdmin(targetId, this.quizSetForm).subscribe({
       next: () => {
         this.loadQuizSets();
         this.closeQuizSetModal();
+        alert('Cấu hình và lưu trữ bộ đề thi trắc nghiệm hoàn tất!');
       },
       error: (err: any) => {
-        console.error(err);
+        alert(`Yêu cầu đồng bộ bộ đề thi lên Backend thất bại (Mã lỗi: ${err.status})`);
       }
     });
   }
 
-  private startLiveContributionSimulation() {
-    this.intervalId = setInterval(() => {
-      if (Math.random() > 0.85 && this.questionsBank.length < 8) {
-        const fakeContributions = [
-          { text: 'Thiết kế hệ thống theo kiến trúc CQRS nhằm giải quyết bài toán gì?', topic: 'Lập trình Backend', level: 'Khó', options: ['Tách biệt luồng đọc và ghi dữ liệu', 'Tự động băm nhỏ database', 'Tăng tốc mã hóa token', 'Đồng bộ giao diện client'], correctIndex: 0, explanation: 'CQRS giúp tối ưu hóa hiệu năng bằng cách chia luồng cập nhật dữ liệu và luồng truy vấn dữ liệu thành các mô hình riêng.' }
-        ];
-        const picked = fakeContributions[Math.floor(Math.random() * fakeContributions.length)];
-        const isExist = this.questionsBank.some(q => q.text === picked.text);
-        if (!isExist) {
-          const newId = Math.max(...this.questionsBank.map(item => item.id)) + 1;
-          this.questionsBank.push({
-            id: newId,
-            ...picked,
-            points: 10,
-            isActive: false
-          });
+  deleteQuizSet(id: any) {
+    if (confirm('Xác nhận xóa hoàn toàn bộ đề thi này khỏi hệ thống phân phối?')) {
+      this.quizService.deleteQuizSet(id).subscribe({
+        next: () => {
+          this.loadQuizSets();
+          alert('Đã xóa bộ đề thi thành công!');
+        },
+        error: () => {
+          this.quizSets = this.quizSets.filter(s => s.id !== id);
+          this.cdr.detectChanges();
         }
-      }
-    }, 4000);
+      });
+    }
   }
 }

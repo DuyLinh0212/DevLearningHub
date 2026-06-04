@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { QuizBank } from './quiz-bank';
+import { QuizBankComponent } from './quiz-bank';
+import { provideComponentTestDependencies } from '../../../testing/component-test.providers';
 
 describe('QuizBank', () => {
-  let component: QuizBank;
-  let fixture: ComponentFixture<QuizBank>;
+  let component: QuizBankComponent;
+  let fixture: ComponentFixture<QuizBankComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [QuizBank]
+      imports: [QuizBankComponent],
+      providers: provideComponentTestDependencies()
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(QuizBank);
+    fixture = TestBed.createComponent(QuizBankComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

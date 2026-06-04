@@ -1,0 +1,57 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Tìm kiếm danh mục chủ đề...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openTopicModal()" [disabled]="true" title="Chức năng đang bảo trì">
+          <i class="bi bi-plus-lg"></i> Thêm chủ đề mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Trị Danh Mục Chủ Đề</h1>
+        <p>Quản lý các danh mục công nghệ, icon đại diện và trạng thái hiển thị cho lộ trình học tập.</p>
+      </section>
+
+      <div class="topic-grid">
+        @for (t of topics; track t.id; let i = $index) {
+        <div class="topic-card">
+            <div class="topic-icon-box">
+            <i class="bi {{ t.icon || 'bi-code-slash' }}"></i>
+            </div>
+            
+            <div class="topic-info">
+            <h3>{{ t.name }}</h3>
+            <span style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">
+                Danh mục #{{ i + 1 }}
+            </span>
+            </div>
+
+            <div class="topic-actions">
+            <label class="switch-toggle">
+                <input type="checkbox" [checked]="t.isActive" disabled> 
+                <span class="slider"></span>
+            </label>
+            <button class="btn-icon-only" (click)="openEditModal(t)">
+                <i class="bi bi-pencil"></i>
+            </button>
+            </div>
+        </div>
+        } @empty {
+        <div class="empty-state-box">
+            <i class="bi bi-stack"></i>
+            <h3>Chưa có chủ đề nào</h3>
+            <p>Hãy yêu cầu Backend nạp dữ liệu chủ đề vào Database.</p>
+        </div>
+        }
+        </div>
+    </div>
+  </main>
+</div>
