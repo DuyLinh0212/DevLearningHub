@@ -8,6 +8,8 @@ namespace DevLearningHub.Test;
 
 public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
 {
+    private const string DefaultPassword = "123456";
+
     private readonly HttpClient _client;
 
     public AuthApiTests(CustomWebApplicationFactory factory)
@@ -18,199 +20,116 @@ public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Register_WithValidData_ShouldReturnOkAndToken()
     {
-        var request = new
-        {
-            username = "testuser01",
-            email = "testuser01@gmail.com",
-            password = "123456",
-            fullName = "Test User"
-        };
-
-        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
+        var response = await RegisterAsync(
+            username: "testuser01",
+            email: "testuser01@gmail.com",
+            fullName: "Test User"
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var json = await response.Content.ReadAsStringAsync();
+        var root = await ReadRootAsync(response);
 
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-
-        Assert.True(root.GetProperty("success").GetBoolean());
+        AssertSuccess(root);
 
         var data = root.GetProperty("data");
 
-        Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("accessToken").GetString()));
-        Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("refreshToken").GetString()));
-        Assert.True(data.TryGetProperty("expiresAt", out _));
-
-        var user = data.GetProperty("user");
-
-        Assert.Equal("testuser01", user.GetProperty("username").GetString());
-        Assert.Equal("testuser01@gmail.com", user.GetProperty("email").GetString());
-        Assert.Equal("Test User", user.GetProperty("fullName").GetString());
+        AssertAuthDataHasTokens(data);
+        AssertUser(data, "testuser01", "testuser01@gmail.com", "Test User");
     }
 
     [Fact]
     public async Task Register_WithDuplicateUsernameOrEmail_ShouldReturnConflict()
     {
-        var request = new
-        {
-            username = "duplicateuser",
-            email = "duplicate@gmail.com",
-            password = "123456",
-            fullName = "Duplicate User"
-        };
+        var firstResponse = await RegisterAsync(
+            username: "duplicateuser",
+            email: "duplicate@gmail.com",
+            fullName: "Duplicate User"
+        );
 
-        var firstResponse = await _client.PostAsJsonAsync("/api/auth/register", request);
-        var secondResponse = await _client.PostAsJsonAsync("/api/auth/register", request);
+        var secondResponse = await RegisterAsync(
+            username: "duplicateuser",
+            email: "duplicate@gmail.com",
+            fullName: "Duplicate User"
+        );
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
 
-        var json = await secondResponse.Content.ReadAsStringAsync();
+        var root = await ReadRootAsync(secondResponse);
 
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-
-        Assert.False(root.GetProperty("success").GetBoolean());
-        Assert.Contains("already exists", root.GetProperty("message").GetString());
+        AssertFail(root, "already exists");
     }
 
     [Fact]
     public async Task Login_WithCorrectUsernameOrEmailAndPassword_ShouldReturnOkAndToken()
     {
-        // Arrange: đăng ký user trước để có tài khoản trong InMemory DB
-        var registerRequest = new
-        {
-            username = "loginuser01",
-            email = "loginuser01@gmail.com",
-            password = "123456",
-            fullName = "Login User"
-        };
+        await RegisterAsync(
+            username: "loginuser01",
+            email: "loginuser01@gmail.com",
+            fullName: "Login User"
+        );
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        var response = await LoginAsync(
+            usernameOrEmail: "loginuser01@gmail.com",
+            password: DefaultPassword
+        );
 
-        var loginRequest = new
-        {
-            usernameOrEmail = "loginuser01@gmail.com",
-            password = "123456"
-        };
-
-        // Act: gọi API login
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
-
-        // Assert: kiểm tra status code
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var json = await response.Content.ReadAsStringAsync();
+        var root = await ReadRootAsync(response);
 
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-
-        Assert.True(root.GetProperty("success").GetBoolean());
+        AssertSuccess(root);
 
         var data = root.GetProperty("data");
 
-        Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("accessToken").GetString()));
-        Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("refreshToken").GetString()));
-        Assert.True(data.TryGetProperty("expiresAt", out _));
-
-        var user = data.GetProperty("user");
-
-        Assert.Equal("loginuser01", user.GetProperty("username").GetString());
-        Assert.Equal("loginuser01@gmail.com", user.GetProperty("email").GetString());
-        Assert.Equal("Login User", user.GetProperty("fullName").GetString());
+        AssertAuthDataHasTokens(data);
+        AssertUser(data, "loginuser01", "loginuser01@gmail.com", "Login User");
     }
 
     [Fact]
     public async Task Login_WithIncorrectPasswordOrUsername_ShouldReturnUnauthorized()
     {
-        // Arrange: tạo user trước để test sai password
-        var registerRequest = new
-        {
-            username = "wrongloginuser01",
-            email = "wrongloginuser01@gmail.com",
-            password = "123456",
-            fullName = "Wrong Login User"
-        };
+        await RegisterAsync(
+            username: "wrongloginuser01",
+            email: "wrongloginuser01@gmail.com",
+            fullName: "Wrong Login User"
+        );
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        var response = await LoginAsync(
+            usernameOrEmail: "wrongloginuser01@gmail.com",
+            password: "wrongpassword"
+        );
 
-        var loginRequest = new
-        {
-            usernameOrEmail = "wrongloginuser01@gmail.com",
-            password = "wrongpassword"
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
-
-        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
-        var json = await response.Content.ReadAsStringAsync();
+        var root = await ReadRootAsync(response);
 
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-
-        Assert.False(root.GetProperty("success").GetBoolean());
-        Assert.Equal("Invalid credentials.", root.GetProperty("message").GetString());
+        AssertFail(root, "Invalid credentials.");
     }
 
     [Fact]
     public async Task Refresh_WithValidRefreshToken_ShouldReturnOkAndNewTokens()
     {
-        // Arrange: đăng ký user để lấy refreshToken ban đầu
-        var registerRequest = new
-        {
-            username = "refreshuser01",
-            email = "refreshuser01@gmail.com",
-            password = "123456",
-            fullName = "Refresh User"
-        };
+        var oldRefreshToken = await RegisterAndGetRefreshTokenAsync(
+            username: "refreshuser01",
+            email: "refreshuser01@gmail.com",
+            fullName: "Refresh User"
+        );
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        var response = await RefreshAsync(oldRefreshToken);
 
-        var registerJson = await registerResponse.Content.ReadAsStringAsync();
-        using var registerDocument = JsonDocument.Parse(registerJson);
-
-        var oldRefreshToken = registerDocument
-            .RootElement
-            .GetProperty("data")
-            .GetProperty("refreshToken")
-            .GetString();
-
-        Assert.False(string.IsNullOrWhiteSpace(oldRefreshToken));
-
-        var refreshRequest = new
-        {
-            refreshToken = oldRefreshToken
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
-
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var json = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(json);
+        var root = await ReadRootAsync(response);
 
-        var root = document.RootElement;
-
-        Assert.True(root.GetProperty("success").GetBoolean());
+        AssertSuccess(root);
 
         var data = root.GetProperty("data");
 
-        var newAccessToken = data.GetProperty("accessToken").GetString();
-        var newRefreshToken = data.GetProperty("refreshToken").GetString();
+        AssertAuthDataHasTokens(data);
 
-        Assert.False(string.IsNullOrWhiteSpace(newAccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(newRefreshToken));
-        Assert.True(data.TryGetProperty("expiresAt", out _));
+        var newRefreshToken = data.GetProperty("refreshToken").GetString();
 
         Assert.NotEqual(oldRefreshToken, newRefreshToken);
     }
@@ -218,96 +137,40 @@ public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Refresh_WithOldRefreshTokenAfterRotation_ShouldReturnUnauthorized()
     {
-        // Arrange: đăng ký user để lấy refreshToken ban đầu
-        var registerRequest = new
-        {
-            username = "refreshuser02",
-            email = "refreshuser02@gmail.com",
-            password = "123456",
-            fullName = "Refresh User 02"
-        };
+        var oldRefreshToken = await RegisterAndGetRefreshTokenAsync(
+            username: "refreshuser02",
+            email: "refreshuser02@gmail.com",
+            fullName: "Refresh User 02"
+        );
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var registerJson = await registerResponse.Content.ReadAsStringAsync();
-        using var registerDocument = JsonDocument.Parse(registerJson);
-
-        var oldRefreshToken = registerDocument
-            .RootElement
-            .GetProperty("data")
-            .GetProperty("refreshToken")
-            .GetString();
-
-        Assert.False(string.IsNullOrWhiteSpace(oldRefreshToken));
-
-        var refreshRequest = new
-        {
-            refreshToken = oldRefreshToken
-        };
-
-        // Act lần 1: refresh thành công, token cũ bị revoke
-        var firstRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
+        var firstRefreshResponse = await RefreshAsync(oldRefreshToken);
         Assert.Equal(HttpStatusCode.OK, firstRefreshResponse.StatusCode);
 
-        // Act lần 2: dùng lại refreshToken cũ
-        var secondRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
+        var secondRefreshResponse = await RefreshAsync(oldRefreshToken);
 
-        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, secondRefreshResponse.StatusCode);
 
-        var json = await secondRefreshResponse.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(json);
+        var root = await ReadRootAsync(secondRefreshResponse);
 
-        var root = document.RootElement;
-
-        Assert.False(root.GetProperty("success").GetBoolean());
-        Assert.Equal("Refresh token is invalid or expired.", root.GetProperty("message").GetString());
+        AssertFail(root, "Refresh token is invalid or expired.");
     }
 
     [Fact]
     public async Task Logout_WithValidRefreshToken_ShouldReturnOkAndRevokedTrue()
     {
-        // Arrange: đăng ký user để lấy refreshToken
-        var registerRequest = new
-        {
-            username = "logoutuser01",
-            email = "logoutuser01@gmail.com",
-            password = "123456",
-            fullName = "Logout User"
-        };
+        var refreshToken = await RegisterAndGetRefreshTokenAsync(
+            username: "logoutuser01",
+            email: "logoutuser01@gmail.com",
+            fullName: "Logout User"
+        );
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        var response = await LogoutAsync(refreshToken);
 
-        var registerJson = await registerResponse.Content.ReadAsStringAsync();
-        using var registerDocument = JsonDocument.Parse(registerJson);
-
-        var refreshToken = registerDocument
-            .RootElement
-            .GetProperty("data")
-            .GetProperty("refreshToken")
-            .GetString();
-
-        Assert.False(string.IsNullOrWhiteSpace(refreshToken));
-
-        var logoutRequest = new
-        {
-            refreshToken = refreshToken
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/logout", logoutRequest);
-
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var json = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(json);
+        var root = await ReadRootAsync(response);
 
-        var root = document.RootElement;
-
-        Assert.True(root.GetProperty("success").GetBoolean());
+        AssertSuccess(root);
 
         var data = root.GetProperty("data");
 
@@ -317,54 +180,146 @@ public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Logout_WithAlreadyRevokedRefreshToken_ShouldReturnOkAndRevokedFalse()
     {
-        // Arrange: đăng ký user để lấy refreshToken
-        var registerRequest = new
+        var refreshToken = await RegisterAndGetRefreshTokenAsync(
+            username: "logoutuser02",
+            email: "logoutuser02@gmail.com",
+            fullName: "Logout User 02"
+        );
+
+        var firstLogoutResponse = await LogoutAsync(refreshToken);
+        Assert.Equal(HttpStatusCode.OK, firstLogoutResponse.StatusCode);
+
+        var secondLogoutResponse = await LogoutAsync(refreshToken);
+
+        Assert.Equal(HttpStatusCode.OK, secondLogoutResponse.StatusCode);
+
+        var root = await ReadRootAsync(secondLogoutResponse);
+
+        AssertSuccess(root);
+
+        var data = root.GetProperty("data");
+
+        Assert.False(data.GetProperty("revoked").GetBoolean());
+        Assert.Equal("Token already revoked.", root.GetProperty("message").GetString());
+    }
+
+    // =========================
+    // Helper methods
+    // =========================
+
+    private async Task<HttpResponseMessage> RegisterAsync(
+        string username,
+        string email,
+        string fullName,
+        string password = DefaultPassword)
+    {
+        var request = new
         {
-            username = "logoutuser02",
-            email = "logoutuser02@gmail.com",
-            password = "123456",
-            fullName = "Logout User 02"
+            username,
+            email,
+            password,
+            fullName
         };
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        return await _client.PostAsJsonAsync("/api/auth/register", request);
+    }
 
-        var registerJson = await registerResponse.Content.ReadAsStringAsync();
-        using var registerDocument = JsonDocument.Parse(registerJson);
+    private async Task<HttpResponseMessage> LoginAsync(
+        string usernameOrEmail,
+        string password)
+    {
+        var request = new
+        {
+            usernameOrEmail,
+            password
+        };
 
-        var refreshToken = registerDocument
-            .RootElement
+        return await _client.PostAsJsonAsync("/api/auth/login", request);
+    }
+
+    private async Task<HttpResponseMessage> RefreshAsync(string refreshToken)
+    {
+        var request = new
+        {
+            refreshToken
+        };
+
+        return await _client.PostAsJsonAsync("/api/auth/refresh", request);
+    }
+
+    private async Task<HttpResponseMessage> LogoutAsync(string refreshToken)
+    {
+        var request = new
+        {
+            refreshToken
+        };
+
+        return await _client.PostAsJsonAsync("/api/auth/logout", request);
+    }
+
+    private async Task<string> RegisterAndGetRefreshTokenAsync(
+        string username,
+        string email,
+        string fullName)
+    {
+        var response = await RegisterAsync(username, email, fullName);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var root = await ReadRootAsync(response);
+
+        AssertSuccess(root);
+
+        var refreshToken = root
             .GetProperty("data")
             .GetProperty("refreshToken")
             .GetString();
 
         Assert.False(string.IsNullOrWhiteSpace(refreshToken));
 
-        var logoutRequest = new
-        {
-            refreshToken = refreshToken
-        };
+        return refreshToken!;
+    }
 
-        // Act lần 1: logout thành công, token bị revoke
-        var firstLogoutResponse = await _client.PostAsJsonAsync("/api/auth/logout", logoutRequest);
-        Assert.Equal(HttpStatusCode.OK, firstLogoutResponse.StatusCode);
+    private static async Task<JsonElement> ReadRootAsync(HttpResponseMessage response)
+    {
+        var json = await response.Content.ReadAsStringAsync();
 
-        // Act lần 2: logout lại cùng refreshToken
-        var secondLogoutResponse = await _client.PostAsJsonAsync("/api/auth/logout", logoutRequest);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, secondLogoutResponse.StatusCode);
-
-        var json = await secondLogoutResponse.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(json);
 
-        var root = document.RootElement;
+        return document.RootElement.Clone();
+    }
 
+    private static void AssertSuccess(JsonElement root)
+    {
         Assert.True(root.GetProperty("success").GetBoolean());
+    }
 
-        var data = root.GetProperty("data");
+    private static void AssertFail(JsonElement root, string expectedMessage)
+    {
+        Assert.False(root.GetProperty("success").GetBoolean());
+        Assert.Contains(expectedMessage, root.GetProperty("message").GetString());
+    }
 
-        Assert.False(data.GetProperty("revoked").GetBoolean());
-        Assert.Equal("Token already revoked.", root.GetProperty("message").GetString());
+    private static void AssertAuthDataHasTokens(JsonElement data)
+    {
+        var accessToken = data.GetProperty("accessToken").GetString();
+        var refreshToken = data.GetProperty("refreshToken").GetString();
+
+        Assert.False(string.IsNullOrWhiteSpace(accessToken));
+        Assert.False(string.IsNullOrWhiteSpace(refreshToken));
+        Assert.True(data.TryGetProperty("expiresAt", out _));
+    }
+
+    private static void AssertUser(
+        JsonElement data,
+        string expectedUsername,
+        string expectedEmail,
+        string expectedFullName)
+    {
+        var user = data.GetProperty("user");
+
+        Assert.Equal(expectedUsername, user.GetProperty("username").GetString());
+        Assert.Equal(expectedEmail, user.GetProperty("email").GetString());
+        Assert.Equal(expectedFullName, user.GetProperty("fullName").GetString());
     }
 }
