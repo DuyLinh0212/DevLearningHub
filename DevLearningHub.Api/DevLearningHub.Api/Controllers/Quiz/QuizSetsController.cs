@@ -70,6 +70,7 @@ public class QuizSetsController : ControllerBase
         var quizSet = await _db.QuizSets
             .Include(qs => qs.QuizSetQuestions)
             .ThenInclude(qsq => qsq.Question)
+            .ThenInclude(q => q.QuestionOptions)
             .AsNoTracking()
             .FirstOrDefaultAsync(qs => qs.Id == id);
 
@@ -78,7 +79,8 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<QuizSetDetailResponse>.Fail("Quiz set not found."));
         }
 
-        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || quizSet.CreatedBy != userId))
+        var isOwner = User.TryGetUserId(out var userId) && quizSet.CreatedBy == userId;
+        if (!quizSet.IsPublic && !isOwner)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Forbidden."));
         }
@@ -100,7 +102,20 @@ public class QuizSetsController : ControllerBase
                     QuestionId = qsq.QuestionId,
                     Content = qsq.Question.Content,
                     Level = qsq.Question.Level,
-                    OrderIndex = qsq.OrderIndex
+                    Explanation = qsq.Question.Explanation,
+                    OrderIndex = qsq.OrderIndex,
+                    Options = isOwner
+                        ? qsq.Question.QuestionOptions
+                            .OrderBy(option => option.OrderIndex)
+                            .Select(option => new QuestionOptionResponse
+                            {
+                                Id = option.Id,
+                                Content = option.Content,
+                                IsCorrect = option.IsCorrect,
+                                OrderIndex = option.OrderIndex
+                            })
+                            .ToList()
+                        : new List<QuestionOptionResponse>()
                 })
                 .ToList()
         };
@@ -118,9 +133,22 @@ public class QuizSetsController : ControllerBase
             return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Unauthorized."));
         }
 
-        if (request.TopicId.HasValue && !await _db.Topics.AnyAsync(t => t.Id == request.TopicId && t.IsActive))
+        if (!await IsActiveUserAsync(userId))
+        {
+            return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        var topic = await ResolveOrCreateTopicAsync(request.TopicId, request.Topic);
+        if ((request.TopicId.HasValue || !string.IsNullOrWhiteSpace(request.Topic)) && topic == null)
         {
             return BadRequest(ApiResponse<QuizSetResponse>.Fail("Topic not found."));
+        }
+
+        var resolvedTopicId = topic?.Id;
+        var questionValidationError = await ValidateQuestionsAsync(request.Questions, resolvedTopicId);
+        if (questionValidationError != null)
+        {
+            return BadRequest(ApiResponse<QuizSetResponse>.Fail(questionValidationError));
         }
 
         var quizSet = new QuizSet
@@ -132,26 +160,16 @@ public class QuizSetsController : ControllerBase
             Mode = string.IsNullOrWhiteSpace(request.Mode) ? "practice" : request.Mode.Trim(),
             TimeLimitSeconds = request.TimeLimitSeconds,
             IsPublic = request.IsPublic,
-            TopicId = request.TopicId,
+            TopicId = resolvedTopicId,
             Level = request.Level?.Trim(),
             CreatedAt = DateTime.UtcNow
         };
 
         _db.QuizSets.Add(quizSet);
+        AddNewQuestionsToQuizSet(quizSet.Id, userId, resolvedTopicId, request.Questions);
         await _db.SaveChangesAsync();
 
-        var response = new QuizSetResponse
-        {
-            Id = quizSet.Id,
-            Title = quizSet.Title,
-            Description = quizSet.Description,
-            Mode = quizSet.Mode,
-            TimeLimitSeconds = quizSet.TimeLimitSeconds,
-            IsPublic = quizSet.IsPublic,
-            TopicId = quizSet.TopicId,
-            Level = quizSet.Level,
-            QuestionCount = 0
-        };
+        var response = MapQuizSetResponse(quizSet, request.Questions?.Count ?? 0);
 
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
@@ -166,6 +184,11 @@ public class QuizSetsController : ControllerBase
             return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Unauthorized."));
         }
 
+        if (!await IsActiveUserAsync(userId))
+        {
+            return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
         var quizSet = await _db.QuizSets.FirstOrDefaultAsync(qs => qs.Id == id);
         if (quizSet == null)
         {
@@ -177,9 +200,22 @@ public class QuizSetsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
 
-        if (request.TopicId.HasValue && !await _db.Topics.AnyAsync(t => t.Id == request.TopicId && t.IsActive))
+        var topic = await ResolveOrCreateTopicAsync(request.TopicId, request.Topic);
+        if ((request.TopicId.HasValue || !string.IsNullOrWhiteSpace(request.Topic)) && topic == null)
         {
             return BadRequest(ApiResponse<QuizSetResponse>.Fail("Topic not found."));
+        }
+
+        var resolvedTopicId = topic?.Id;
+        var questionValidationError = await ValidateQuestionsAsync(request.Questions, resolvedTopicId);
+        if (questionValidationError != null)
+        {
+            return BadRequest(ApiResponse<QuizSetResponse>.Fail(questionValidationError));
+        }
+
+        if (request.Questions != null && await _db.QuizSessions.AnyAsync(session => session.QuizSetId == id))
+        {
+            return BadRequest(ApiResponse<QuizSetResponse>.Fail("Questions cannot be changed after the quiz set has sessions."));
         }
 
         quizSet.Title = request.Title.Trim();
@@ -187,23 +223,19 @@ public class QuizSetsController : ControllerBase
         quizSet.Mode = string.IsNullOrWhiteSpace(request.Mode) ? quizSet.Mode : request.Mode.Trim();
         quizSet.TimeLimitSeconds = request.TimeLimitSeconds;
         quizSet.IsPublic = request.IsPublic;
-        quizSet.TopicId = request.TopicId;
+        quizSet.TopicId = resolvedTopicId;
         quizSet.Level = request.Level?.Trim();
+
+        if (request.Questions != null)
+        {
+            await ReplaceQuizSetQuestionsAsync(quizSet.Id, userId, resolvedTopicId, request.Questions);
+        }
 
         await _db.SaveChangesAsync();
 
-        var response = new QuizSetResponse
-        {
-            Id = quizSet.Id,
-            Title = quizSet.Title,
-            Description = quizSet.Description,
-            Mode = quizSet.Mode,
-            TimeLimitSeconds = quizSet.TimeLimitSeconds,
-            IsPublic = quizSet.IsPublic,
-            TopicId = quizSet.TopicId,
-            Level = quizSet.Level,
-            QuestionCount = await _db.QuizSetQuestions.CountAsync(qsq => qsq.QuizSetId == quizSet.Id)
-        };
+        var questionCount = request.Questions?.Count
+            ?? await _db.QuizSetQuestions.CountAsync(qsq => qsq.QuizSetId == quizSet.Id);
+        var response = MapQuizSetResponse(quizSet, questionCount);
 
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
@@ -361,5 +393,227 @@ public class QuizSetsController : ControllerBase
             .ToList();
 
         return Ok(ApiResponse<List<QuizSetQuestionResponse>>.Ok(response));
+    }
+
+    private async Task<Topic?> ResolveOrCreateTopicAsync(Guid? topicId, string? topicName)
+    {
+        if (topicId.HasValue)
+        {
+            var topicById = await _db.Topics.FirstOrDefaultAsync(topic => topic.Id == topicId.Value && topic.IsActive);
+            if (topicById != null)
+            {
+                return topicById;
+            }
+        }
+
+        var normalizedName = topicName?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName) || normalizedName.Length > 100)
+        {
+            return null;
+        }
+
+        var existingTopic = await _db.Topics.FirstOrDefaultAsync(topic => topic.Name == normalizedName);
+        if (existingTopic != null)
+        {
+            existingTopic.IsActive = true;
+            return existingTopic;
+        }
+
+        var newTopic = new Topic
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+            Slug = $"topic-{Guid.NewGuid():N}",
+            Description = $"Created automatically for quiz sets in {normalizedName}.",
+            Icon = "bi-journal-check",
+            IsActive = true
+        };
+
+        _db.Topics.Add(newTopic);
+        return newTopic;
+    }
+
+    private async Task<bool> IsActiveUserAsync(Guid userId)
+    {
+        return await _db.Users.AnyAsync(user => user.Id == userId && user.IsActive && !user.IsLocked);
+    }
+
+    private async Task<string?> ValidateQuestionsAsync(
+        List<QuizSetQuestionWriteRequest>? questions,
+        Guid? defaultTopicId)
+    {
+        if (questions == null)
+        {
+            return null;
+        }
+
+        if (questions.Count > short.MaxValue)
+        {
+            return "Quiz set contains too many questions.";
+        }
+
+        var topicIds = new HashSet<Guid>();
+
+        for (var index = 0; index < questions.Count; index++)
+        {
+            var question = questions[index];
+            var questionNumber = index + 1;
+            var topicId = question.TopicId ?? defaultTopicId;
+
+            if (!topicId.HasValue)
+            {
+                return $"Topic is required for question {questionNumber}.";
+            }
+
+            topicIds.Add(topicId.Value);
+
+            if (string.IsNullOrWhiteSpace(question.Content))
+            {
+                return $"Content is required for question {questionNumber}.";
+            }
+
+            if (question.Options == null ||
+                question.Options.Count < 2 ||
+                question.Options.Count > byte.MaxValue + 1 ||
+                question.Options.Any(option => string.IsNullOrWhiteSpace(option.Content)) ||
+                !question.Options.Any(option => option.IsCorrect))
+            {
+                return $"Question {questionNumber} requires at least two non-empty options and one correct answer.";
+            }
+        }
+
+        var activeTopicIds = await _db.Topics
+            .Where(topic => topicIds.Contains(topic.Id) && topic.IsActive)
+            .Select(topic => topic.Id)
+            .ToListAsync();
+        activeTopicIds.AddRange(_db.ChangeTracker
+            .Entries<Topic>()
+            .Where(entry => entry.State == EntityState.Added && entry.Entity.IsActive && topicIds.Contains(entry.Entity.Id))
+            .Select(entry => entry.Entity.Id));
+
+        return activeTopicIds.Distinct().Count() == topicIds.Count ? null : "Topic not found.";
+    }
+
+    private void AddNewQuestionsToQuizSet(
+        Guid quizSetId,
+        Guid userId,
+        Guid? defaultTopicId,
+        List<QuizSetQuestionWriteRequest>? requests)
+    {
+        if (requests == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < requests.Count; index++)
+        {
+            var request = requests[index];
+            var question = BuildQuestion(request, userId, request.TopicId ?? defaultTopicId!.Value);
+
+            _db.Questions.Add(question);
+            _db.QuestionOptions.AddRange(BuildOptions(question.Id, request.Options));
+            _db.QuizSetQuestions.Add(new QuizSetQuestion
+            {
+                QuizSetId = quizSetId,
+                QuestionId = question.Id,
+                OrderIndex = (short)index
+            });
+        }
+    }
+
+    private async Task ReplaceQuizSetQuestionsAsync(
+        Guid quizSetId,
+        Guid userId,
+        Guid? defaultTopicId,
+        List<QuizSetQuestionWriteRequest> requests)
+    {
+        var existingLinks = await _db.QuizSetQuestions
+            .Where(link => link.QuizSetId == quizSetId)
+            .ToListAsync();
+        _db.QuizSetQuestions.RemoveRange(existingLinks);
+
+        var requestedIds = requests
+            .Where(request => request.Id.HasValue)
+            .Select(request => request.Id!.Value)
+            .ToHashSet();
+        var existingQuestions = await _db.Questions
+            .Include(question => question.QuestionOptions)
+            .Where(question => requestedIds.Contains(question.Id) && question.CreatedBy == userId)
+            .ToDictionaryAsync(question => question.Id);
+
+        for (var index = 0; index < requests.Count; index++)
+        {
+            var request = requests[index];
+            Question question;
+
+            if (request.Id.HasValue && existingQuestions.TryGetValue(request.Id.Value, out var existingQuestion))
+            {
+                question = existingQuestion;
+                question.TopicId = request.TopicId ?? defaultTopicId!.Value;
+                question.Content = request.Content.Trim();
+                question.Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim();
+                question.Explanation = request.Explanation?.Trim();
+                question.IsActive = true;
+
+                _db.QuestionOptions.RemoveRange(question.QuestionOptions);
+                _db.QuestionOptions.AddRange(BuildOptions(question.Id, request.Options));
+            }
+            else
+            {
+                question = BuildQuestion(request, userId, request.TopicId ?? defaultTopicId!.Value);
+                _db.Questions.Add(question);
+                _db.QuestionOptions.AddRange(BuildOptions(question.Id, request.Options));
+            }
+
+            _db.QuizSetQuestions.Add(new QuizSetQuestion
+            {
+                QuizSetId = quizSetId,
+                QuestionId = question.Id,
+                OrderIndex = (short)index
+            });
+        }
+    }
+
+    private static Question BuildQuestion(QuizSetQuestionWriteRequest request, Guid userId, Guid topicId)
+    {
+        return new Question
+        {
+            Id = Guid.NewGuid(),
+            TopicId = topicId,
+            CreatedBy = userId,
+            Content = request.Content.Trim(),
+            Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim(),
+            Explanation = request.Explanation?.Trim(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    private static List<QuestionOption> BuildOptions(Guid questionId, List<QuestionOptionRequest> requests)
+    {
+        return requests.Select((request, index) => new QuestionOption
+        {
+            Id = Guid.NewGuid(),
+            QuestionId = questionId,
+            Content = request.Content.Trim(),
+            IsCorrect = request.IsCorrect,
+            OrderIndex = request.OrderIndex ?? (byte)index
+        }).ToList();
+    }
+
+    private static QuizSetResponse MapQuizSetResponse(QuizSet quizSet, int questionCount)
+    {
+        return new QuizSetResponse
+        {
+            Id = quizSet.Id,
+            Title = quizSet.Title,
+            Description = quizSet.Description,
+            Mode = quizSet.Mode,
+            TimeLimitSeconds = quizSet.TimeLimitSeconds,
+            IsPublic = quizSet.IsPublic,
+            TopicId = quizSet.TopicId,
+            Level = quizSet.Level,
+            QuestionCount = questionCount
+        };
     }
 }

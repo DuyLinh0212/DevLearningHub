@@ -15,6 +15,8 @@ namespace DevLearningHub.Api.Controllers.Auth;
 // Auth endpoints: register, login, refresh, logout.
 public class AuthController : ControllerBase
 {
+    private const string DefaultUserRoleName = "user";
+
     private readonly DevLearningHubContext _db;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ITokenService _tokenService;
@@ -49,7 +51,7 @@ public class AuthController : ControllerBase
             return Conflict(ApiResponse<AuthResponse>.Fail("Username or email already exists."));
         }
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -65,7 +67,16 @@ public class AuthController : ControllerBase
 
         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
+        var defaultRole = await GetOrCreateDefaultUserRoleAsync(now);
+
         _db.Users.Add(user);
+        _db.UserRoles.Add(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = defaultRole.Id,
+            AssignedAt = now
+        });
+
         await _db.SaveChangesAsync();
 
         await WriteAuditAsync(user.Id, "auth.register", "user", user.Id, null);
@@ -170,6 +181,37 @@ public class AuthController : ControllerBase
         await WriteAuditAsync(storedToken.UserId, "auth.logout", "user", storedToken.UserId, null);
 
         return Ok(ApiResponse<object>.Ok(new { revoked = true }));
+    }
+
+    private async Task<Role> GetOrCreateDefaultUserRoleAsync(DateTime now)
+    {
+        var role = await _db.Roles.FirstOrDefaultAsync(r =>
+            r.Name.ToLower() == DefaultUserRoleName);
+
+        if (role != null)
+        {
+            if (!role.IsActive)
+            {
+                role.IsActive = true;
+                role.UpdatedAt = now;
+            }
+
+            return role;
+        }
+
+        role = new Role
+        {
+            Id = Guid.NewGuid(),
+            Name = DefaultUserRoleName,
+            Description = "Nguoi dung thuong",
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        _db.Roles.Add(role);
+
+        return role;
     }
 
     private async Task<AuthResponse> BuildAuthResponseAsync(User user)

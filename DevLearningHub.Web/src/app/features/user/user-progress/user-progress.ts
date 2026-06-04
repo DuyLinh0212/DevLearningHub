@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ProgressService } from '../../../core/services/progress.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { Chart } from 'chart.js/auto';
+import type { TooltipItem } from 'chart.js';
 
 @Component({
   selector: 'app-user-progress',
@@ -128,7 +129,7 @@ export class UserProgressComponent implements OnInit {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (context) => ` Độ chính xác: ${context.formattedValue}%`
+            label: (context: TooltipItem<'radar'>) => ` Độ chính xác: ${context.formattedValue}%`
           }
         }
       }

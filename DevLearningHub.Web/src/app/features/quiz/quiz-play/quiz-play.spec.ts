@@ -17,25 +17,27 @@ describe('QuizPlay', () => {
         {
           provide: QuizService,
           useValue: {
-            getQuiz: jasmine.createSpy('getQuiz').and.returnValue(of({
-              id: '1',
-              title: 'Sample Quiz',
-              duration: 15,
-              shuffle: false,
-              instantResult: true,
-              questions: [
-                {
-                  id: 1,
-                  points: 10,
-                  level: 'Easy',
-                  text: 'Sample question?',
-                  options: ['A', 'B', 'C', 'D'],
-                  correctIndex: 0
-                }
-              ]
+            startQuizSession: jasmine.createSpy('startQuizSession').and.returnValue(of({
+              data: {
+                sessionId: 'session-1',
+                quizSetId: '1',
+                title: 'Sample Quiz',
+                timeLimitSeconds: 900,
+                totalQuestions: 1,
+                questions: [
+                  {
+                    questionId: 'question-1',
+                    content: 'Sample question?',
+                    level: 'Easy',
+                    options: [
+                      { id: 'option-1', content: 'A', orderIndex: 0 },
+                      { id: 'option-2', content: 'B', orderIndex: 1 }
+                    ]
+                  }
+                ]
+              }
             })),
-            incrementAttempts: jasmine.createSpy('incrementAttempts'),
-            saveResults: jasmine.createSpy('saveResults')
+            submitQuizSession: jasmine.createSpy('submitQuizSession').and.returnValue(of({ data: {} }))
           }
         }
       ]

@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TopicManagement } from './topic-management';
+import { provideComponentTestDependencies } from '../../../testing/component-test.providers';
+import { TopicManagementComponent } from './topic-management';
 
 describe('TopicManagement', () => {
-  let component: TopicManagement;
-  let fixture: ComponentFixture<TopicManagement>;
+  let component: TopicManagementComponent;
+  let fixture: ComponentFixture<TopicManagementComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TopicManagement]
+      imports: [TopicManagementComponent],
+      providers: provideComponentTestDependencies()
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TopicManagement);
+    fixture = TestBed.createComponent(TopicManagementComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RoadmapView } from './roadmap-view';
+import { provideComponentTestDependencies } from '../../../testing/component-test.providers';
+import { RoadmapViewComponent } from './roadmap-view';
 
 describe('RoadmapView', () => {
-  let component: RoadmapView;
-  let fixture: ComponentFixture<RoadmapView>;
+  let component: RoadmapViewComponent;
+  let fixture: ComponentFixture<RoadmapViewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RoadmapView]
+      imports: [RoadmapViewComponent],
+      providers: provideComponentTestDependencies()
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RoadmapView);
+    fixture = TestBed.createComponent(RoadmapViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

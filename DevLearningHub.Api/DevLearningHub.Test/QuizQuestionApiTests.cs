@@ -370,6 +370,50 @@ public class QuizQuestionApiTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ImportQuestions_WithWebJsonPayload_ShouldCreateTopicAndQuestion()
+    {
+        var auth = await RegisterAndGetAuthAsync(
+            username: "webjsonimporter7410",
+            email: "webjsonimporter7410@gmail.com",
+            fullName: "Web Json Importer 7410");
+
+        var requests = new[]
+        {
+            new
+            {
+                text = "Which password is the strongest?",
+                topic = "Information Security 7410",
+                level = "beginner",
+                points = 2,
+                options = new[] { "12345678", "Strong!Password#7410" },
+                correctIndex = 1,
+                explanation = "Long and complex passwords are harder to guess."
+            }
+        };
+
+        var response = await SendWithBearerAsync(HttpMethod.Post, "/api/questions/import", auth.AccessToken, requests);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadDocumentAsync(response);
+        var data = document.RootElement.GetProperty("data");
+
+        Assert.Equal(1, data.GetProperty("createdCount").GetInt32());
+        Assert.Equal(0, data.GetProperty("skippedCount").GetInt32());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+        var topic = db.Topics.Single(topic => topic.Name == "Information Security 7410");
+        var question = db.Questions.Single(question => question.Content == "Which password is the strongest?");
+        var options = db.QuestionOptions.Where(option => option.QuestionId == question.Id).OrderBy(option => option.OrderIndex).ToList();
+
+        Assert.Equal(topic.Id, question.TopicId);
+        Assert.Equal(2, options.Count);
+        Assert.False(options[0].IsCorrect);
+        Assert.True(options[1].IsCorrect);
+    }
+
+    [Fact]
     public async Task ImportQuestions_WithEmptyList_ShouldReturnBadRequest()
     {
         var auth = await RegisterAndGetAuthAsync(

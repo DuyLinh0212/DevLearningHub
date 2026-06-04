@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace DevLearningHub.Api.Dtos.Quiz;
 
@@ -61,6 +62,45 @@ public class UpdateQuestionRequest
     public List<QuestionOptionRequest> Options { get; set; } = new();
 }
 
+// Flexible bulk import payload supporting API-shaped and Web JSON files.
+public class ImportQuestionRequest
+{
+    public Guid? TopicId { get; set; }
+
+    public string? Topic { get; set; }
+
+    public string? Content { get; set; }
+
+    public string? Text { get; set; }
+
+    public string? Level { get; set; }
+
+    public string? Explanation { get; set; }
+
+    public int? CorrectIndex { get; set; }
+
+    public int? Points { get; set; }
+
+    public List<JsonElement> Options { get; set; } = new();
+}
+
+public class QuizSetQuestionWriteRequest
+{
+    public Guid? Id { get; set; }
+
+    public Guid? TopicId { get; set; }
+
+    [Required]
+    public string Content { get; set; } = string.Empty;
+
+    public string? Level { get; set; }
+
+    public string? Explanation { get; set; }
+
+    [MinLength(2)]
+    public List<QuestionOptionRequest> Options { get; set; } = new();
+}
+
 // Question response payloads.
 public class QuestionOptionResponse
 {
@@ -109,7 +149,12 @@ public class CreateQuizSetRequest
 
     public Guid? TopicId { get; set; }
 
+    [MaxLength(100)]
+    public string? Topic { get; set; }
+
     public string? Level { get; set; }
+
+    public List<QuizSetQuestionWriteRequest>? Questions { get; set; }
 }
 
 public class UpdateQuizSetRequest
@@ -128,7 +173,12 @@ public class UpdateQuizSetRequest
 
     public Guid? TopicId { get; set; }
 
+    [MaxLength(100)]
+    public string? Topic { get; set; }
+
     public string? Level { get; set; }
+
+    public List<QuizSetQuestionWriteRequest>? Questions { get; set; }
 }
 
 public class AssignQuestionRequest
@@ -169,7 +219,11 @@ public class QuizSetQuestionResponse
 
     public string Level { get; set; } = string.Empty;
 
+    public string? Explanation { get; set; }
+
     public short OrderIndex { get; set; }
+
+    public List<QuestionOptionResponse> Options { get; set; } = new();
 }
 
 public class QuizSetDetailResponse

@@ -4,6 +4,13 @@
   <main class="main-content">
     <div class="dashboard-scroll-body">
 
+      @if (saveError) {
+      <div class="quiz-form-message error">
+        <i class="bi bi-exclamation-circle"></i>
+        <span>{{ saveError }}</span>
+      </div>
+      }
+
       @if (currentStep === 1) {
       <div class="create-header-row">
         <a routerLink="/quiz-bank" class="btn-back-arrow"><i class="bi bi-chevron-left"></i></a>
@@ -12,8 +19,10 @@
           <p>Nhập thông tin cơ bản, thiết lập thời gian và cấu hình quy tắc cho bộ đề</p>
         </div>
         <div class="header-action-buttons">
-          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim()" (click)="saveDraft()">Lưu nháp</button>
-          <button class="btn-purple-preview" [disabled]="!quizMeta.title.trim()" (click)="openPreview()">Xem trước</button>
+          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
+            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
+          </button>
+          <button class="btn-purple-preview" [disabled]="!quizMeta.title.trim() || isSaving" (click)="openPreview()">Xem trước</button>
         </div>
       </div>
 
@@ -35,9 +44,12 @@
           <div class="input-field-row">
             <div class="input-field-group">
               <label>Chủ đề</label>
-              <select [(ngModel)]="quizMeta.topic">
-                @for (topic of topics; track topic) {
-                <option [value]="topic">{{ topic }}</option>
+              <select [(ngModel)]="quizMeta.topic" (ngModelChange)="onTopicChange($event)">
+                @if (topics.length === 0) {
+                <option value="">Chưa có chủ đề khả dụng</option>
+                }
+                @for (topic of topics; track topic.name) {
+                <option [value]="topic.name">{{ topic.name }}</option>
                 }
               </select>
             </div>
@@ -100,7 +112,7 @@
 
       <div class="create-action-footer">
         <button class="btn-footer-back" routerLink="/quiz-bank">Quay lại</button>
-        <button class="btn-footer-next" [disabled]="!quizMeta.title.trim()" (click)="nextStep()">Tiếp theo <i class="bi bi-chevron-right"></i></button>
+        <button class="btn-footer-next" [disabled]="!quizMeta.title.trim() || isSaving" (click)="nextStep()">Tiếp theo <i class="bi bi-chevron-right"></i></button>
       </div>
       } @else {
       <div class="create-header-row">
@@ -110,15 +122,38 @@
           <p>Thêm câu hỏi, thiết lập đáp án và cấu hình bộ đề</p>
         </div>
         <div class="header-action-buttons">
-          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim()" (click)="saveDraft()">Lưu nháp</button>
-          <button class="btn-purple-preview" (click)="openPreview()">Xem trước</button>
+          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
+            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
+          </button>
+          <button class="btn-purple-preview" [disabled]="isSaving" (click)="openPreview()">Xem trước</button>
         </div>
       </div>
 
       <div class="questions-builder-container">
         <div class="builder-card-main">
-          <h3>Biên soạn Câu hỏi</h3>
-          <p class="card-section-desc">Tạo mới và quản lý danh sách câu hỏi chi tiết cho bộ đề</p>
+          <div class="builder-title-row">
+            <div>
+              <h3>Biên soạn Câu hỏi</h3>
+              <p class="card-section-desc">Nhập thủ công hoặc import JSON để thêm câu hỏi vào bộ đề</p>
+            </div>
+            <label class="btn-import-questions">
+              <i class="bi bi-cloud-arrow-up"></i> Import JSON
+              <input type="file" accept=".json,application/json" (change)="onQuestionFileSelected($event)">
+            </label>
+          </div>
+
+          @if (importFeedback) {
+          <div class="quiz-form-message success">
+            <i class="bi bi-check-circle"></i>
+            <span>{{ importFeedback }}</span>
+          </div>
+          }
+          @if (importError) {
+          <div class="quiz-form-message error">
+            <i class="bi bi-exclamation-circle"></i>
+            <span>{{ importError }}</span>
+          </div>
+          }
 
           @for (q of questions; track qIdx; let qIdx = $index) {
           <div class="question-item-block">
@@ -179,7 +214,7 @@
 
       <div class="create-action-footer justify-end">
         <button class="btn-footer-back spacing-right-btn" (click)="prevStep()">Quay lại</button>
-        <button class="btn-footer-complete" (click)="openPreview()">Xem trước & Hoàn tất</button>
+        <button class="btn-footer-complete" [disabled]="isSaving" (click)="openPreview()">Xem trước & Hoàn tất</button>
       </div>
       }
 
@@ -228,7 +263,9 @@
 
       <div class="preview-modal-footer">
         <button class="btn-modal-cancel" (click)="closePreview()">Tiếp tục chỉnh sửa</button>
-        <button class="btn-modal-confirm" (click)="completeQuiz()">Xuất bản ngay</button>
+        <button class="btn-modal-confirm" [disabled]="isSaving" (click)="completeQuiz()">
+          {{ isSaving ? 'Đang xuất bản...' : 'Xuất bản ngay' }}
+        </button>
       </div>
     </div>
   </div>

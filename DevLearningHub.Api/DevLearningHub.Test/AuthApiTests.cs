@@ -1,7 +1,10 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using DevLearningHub.Api.Entities;
 using DevLearningHub.Test.Factories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace DevLearningHub.Test;
@@ -11,9 +14,11 @@ public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
     private const string DefaultPassword = "123456";
 
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public AuthApiTests(CustomWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -36,6 +41,38 @@ public class AuthApiTests : IClassFixture<CustomWebApplicationFactory>
 
         AssertAuthDataHasTokens(data);
         AssertUser(data, "testuser01", "testuser01@gmail.com", "Test User");
+    }
+
+    [Fact]
+    public async Task Register_WithValidData_ShouldAssignDefaultUserRole()
+    {
+        var response = await RegisterAsync(
+            username: "defaultroleuser01",
+            email: "defaultroleuser01@gmail.com",
+            fullName: "Default Role User"
+        );
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var root = await ReadRootAsync(response);
+        AssertSuccess(root);
+
+        var userId = root
+            .GetProperty("data")
+            .GetProperty("user")
+            .GetProperty("id")
+            .GetGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+
+        var userRole = await db.UserRoles
+            .Include(ur => ur.Role)
+            .SingleOrDefaultAsync(ur => ur.UserId == userId);
+
+        Assert.NotNull(userRole);
+        Assert.Equal("user", userRole!.Role.Name);
+        Assert.True(userRole.Role.IsActive);
     }
 
     [Fact]

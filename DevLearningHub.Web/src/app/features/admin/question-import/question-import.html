@@ -4,15 +4,15 @@
   <main class="main-content">
     <header class="content-header">
       <div class="top-nav-buttons" style="margin-left: 0;">
-        <button class="btn-nav-tab" routerLink="/admin/quiz"><i class="bi bi-chevron-left"></i> Quay lại Ngân hàng đề</button>
-        <button class="btn-nav-tab active">Trình nạp tệp Excel / JSON</button>
+        <button class="btn-nav-tab" [routerLink]="backLink"><i class="bi bi-chevron-left"></i> Quay lại Ngân hàng đề</button>
+        <button class="btn-nav-tab active">Trình nạp tệp JSON</button>
       </div>
     </header>
 
     <div class="dashboard-scroll-body">
       <section class="welcome-section">
         <h1>Nhập Câu Hỏi Hàng Loạt</h1>
-        <p>Tiết kiệm thời gian bằng cách tải lên danh sách câu hỏi cấu trúc sẵn từ Excel hoặc JSON do các Tech Leads đóng góp.</p>
+        <p>Tiết kiệm thời gian bằng cách tải lên danh sách câu hỏi JSON có cấu trúc sẵn.</p>
       </section>
 
       <div class="import-upload-grid" style="margin-top: 24px;">
@@ -23,12 +23,12 @@
              (drop)="onDrop($event)"
              (click)="fileInput.click()">
 
-          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.xlsx,.xls" style="display: none;">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,application/json" style="display: none;">
 
           @if (!fileSelected) {
           <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
           <h3>Kéo thả tệp dữ liệu vào đây</h3>
-          <p class="upload-hint">Hỗ trợ định dạng cấu trúc tệp chuẩn .XLSX, .XLS hoặc .JSON (Dung lượng tối đa 5MB)</p>
+          <p class="upload-hint">Hỗ trợ tệp .JSON, dung lượng tối đa 5MB</p>
           } @else {
           <i class="bi bi-file-earmark-bar-graph-fill file-active-icon"></i>
           <h3 class="file-name-active">{{ fileName }}</h3>
@@ -108,8 +108,8 @@
 
       <div class="import-bottom-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 40px;">
         <button class="btn-admin-secondary" (click)="clearFile()">Hủy bỏ</button>
-        <button class="btn-create-new" style="margin: 0; padding: 10px 24px;" [disabled]="importSummary.valid === 0" (click)="executeImport()">
-          <i class="bi bi-cloud-check-fill"></i> Tiến hành nạp dữ liệu ({{ importSummary.valid }} câu)
+        <button class="btn-create-new" style="margin: 0; padding: 10px 24px;" [disabled]="importSummary.valid === 0 || isImporting" (click)="executeImport()">
+          <i class="bi bi-cloud-check-fill"></i> {{ isImporting ? 'Đang nạp dữ liệu...' : 'Tiến hành nạp dữ liệu (' + importSummary.valid + ' câu)' }}
         </button>
       </div>
       }

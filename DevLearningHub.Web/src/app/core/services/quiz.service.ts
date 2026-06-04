@@ -79,7 +79,10 @@ export class QuizService {
   }
 
   addCustomQuiz(meta: any, questionsData: any[], isDraft: boolean, existingId?: string): Observable<any> {
-    const payload = this.mapQuizSetPayload(meta, !isDraft);
+    const payload = {
+      ...this.mapQuizSetPayload(meta, !isDraft),
+      questions: questionsData.map((question) => this.mapQuestionPayload(question, meta))
+    };
     if (existingId && !existingId.toString().startsWith('custom_')) {
       return this.http.put<any>(`${this.apiUrl}/quiz-sets/${existingId}`, payload).pipe(map((res) => res?.data || res));
     } else {
@@ -133,11 +136,17 @@ export class QuizService {
       shuffle: false,
       instantResult: true,
       questions: rawQuestions.map((question: any) => ({
-        id: question.questionId || question.Id,
+        id: question.questionId || question.QuestionId || question.id || question.Id,
         text: question.content || question.Content || '',
         level: question.level || question.Level || '',
-        options: question.options || question.Options || [],
-        correctIndex: 0
+        explanation: question.explanation || question.Explanation || '',
+        options: (question.options || question.Options || []).map((option: any) =>
+          typeof option === 'string' ? option : option.content || option.Content || ''
+        ),
+        correctIndex: Math.max(
+          0,
+          (question.options || question.Options || []).findIndex((option: any) => option.isCorrect ?? option.IsCorrect)
+        )
       }))
     };
   }
@@ -150,7 +159,25 @@ export class QuizService {
       timeLimitSeconds: (form.duration || 15) * 60,
       isPublic,
       topicId: form.topicId || null,
+      topic: form.topic || null,
       level: form.level || null
+    };
+  }
+
+  private mapQuestionPayload(question: any, meta: any): any {
+    const options = Array.isArray(question.options) ? question.options : [];
+
+    return {
+      id: question.id || null,
+      topicId: question.topicId || meta.topicId || null,
+      content: question.text || question.content || '',
+      level: question.level || meta.level || null,
+      explanation: question.explanation || '',
+      options: options.map((option: any, index: number) => ({
+        content: typeof option === 'string' ? option : option?.content || option?.Content || '',
+        isCorrect: index === question.correctIndex,
+        orderIndex: index
+      }))
     };
   }
 

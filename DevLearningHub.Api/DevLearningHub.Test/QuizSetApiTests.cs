@@ -84,6 +84,114 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateQuizSet_WithQuestions_ShouldCreateAndAssignQuestions()
+    {
+        var auth = await RegisterAndGetAuthAsync(
+            username: "quizsetquestions7510",
+            email: "quizsetquestions7510@gmail.com",
+            fullName: "Quiz Set Questions 7510");
+
+        var topicId = await SeedTopicAsync(
+            name: "Quiz Set Topic 7510",
+            slug: "quiz-set-topic-7510");
+
+        var request = new
+        {
+            title = "Quiz set with questions 7510",
+            description = "Created with manual or imported questions.",
+            mode = "practice",
+            timeLimitSeconds = 900,
+            isPublic = true,
+            topicId,
+            level = "beginner",
+            questions = new[]
+            {
+                new
+                {
+                    topicId,
+                    content = "Question created with quiz set 7510",
+                    level = "beginner",
+                    explanation = "Two is the correct answer.",
+                    options = new[]
+                    {
+                        new { content = "Two", isCorrect = true, orderIndex = (byte)0 },
+                        new { content = "Three", isCorrect = false, orderIndex = (byte)1 }
+                    }
+                }
+            }
+        };
+
+        var response = await SendWithBearerAsync(HttpMethod.Post, "/api/quiz-sets", auth.AccessToken, request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadDocumentAsync(response);
+        var data = document.RootElement.GetProperty("data");
+        var quizSetId = data.GetProperty("id").GetGuid();
+
+        Assert.Equal(1, data.GetProperty("questionCount").GetInt32());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+        var link = db.QuizSetQuestions.Single(link => link.QuizSetId == quizSetId);
+        var question = db.Questions.Single(question => question.Id == link.QuestionId);
+        var options = db.QuestionOptions.Where(option => option.QuestionId == question.Id).ToList();
+
+        Assert.Equal(topicId, question.TopicId);
+        Assert.Equal("Question created with quiz set 7510", question.Content);
+        Assert.Equal(2, options.Count);
+        Assert.Single(options, option => option.IsCorrect);
+    }
+
+    [Fact]
+    public async Task CreateQuizSet_WithTopicName_ShouldCreateTopicAndUseItForQuestions()
+    {
+        var auth = await RegisterAndGetAuthAsync(
+            username: "quizsettopicname7511",
+            email: "quizsettopicname7511@gmail.com",
+            fullName: "Quiz Set Topic Name 7511");
+
+        var request = new
+        {
+            title = "Quiz set with topic name 7511",
+            mode = "practice",
+            timeLimitSeconds = 600,
+            isPublic = true,
+            topic = "Automatically Created Topic 7511",
+            level = "beginner",
+            questions = new[]
+            {
+                new
+                {
+                    content = "Question using an automatically created topic 7511",
+                    options = new[]
+                    {
+                        new { content = "Correct", isCorrect = true },
+                        new { content = "Wrong", isCorrect = false }
+                    }
+                }
+            }
+        };
+
+        var response = await SendWithBearerAsync(HttpMethod.Post, "/api/quiz-sets", auth.AccessToken, request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadDocumentAsync(response);
+        var quizSetId = document.RootElement.GetProperty("data").GetProperty("id").GetGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+        var topic = db.Topics.Single(topic => topic.Name == "Automatically Created Topic 7511");
+        var quizSet = db.QuizSets.Single(quizSet => quizSet.Id == quizSetId);
+        var questionId = db.QuizSetQuestions.Single(link => link.QuizSetId == quizSetId).QuestionId;
+        var question = db.Questions.Single(question => question.Id == questionId);
+
+        Assert.Equal(topic.Id, quizSet.TopicId);
+        Assert.Equal(topic.Id, question.TopicId);
+    }
+
+    [Fact]
     public async Task UpdateQuizSet_WithOwnerToken_ShouldReturnUpdatedQuizSet()
     {
         var auth = await RegisterAndGetAuthAsync(

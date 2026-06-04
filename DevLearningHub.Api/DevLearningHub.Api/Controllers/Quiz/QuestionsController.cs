@@ -5,6 +5,9 @@ using DevLearningHub.Api.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 
 namespace DevLearningHub.Api.Controllers.Quiz;
 
@@ -14,6 +17,7 @@ namespace DevLearningHub.Api.Controllers.Quiz;
 public class QuestionsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+
 
     public QuestionsController(DevLearningHubContext db)
     {
@@ -188,11 +192,16 @@ public class QuestionsController : ControllerBase
     [HttpPost("import")]
     [Authorize]
     // Bulk import questions from a list payload.
-    public async Task<ActionResult<ApiResponse<ImportQuestionsResultResponse>>> ImportQuestions([FromBody] List<CreateQuestionRequest> requests)
+    public async Task<ActionResult<ApiResponse<ImportQuestionsResultResponse>>> ImportQuestions([FromBody] List<ImportQuestionRequest> requests)
     {
         if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(ApiResponse<ImportQuestionsResultResponse>.Fail("Unauthorized."));
+        }
+
+        if (!await _db.Users.AnyAsync(user => user.Id == userId && user.IsActive && !user.IsLocked))
+        {
+            return Unauthorized(ApiResponse<ImportQuestionsResultResponse>.Fail("Your session is no longer valid. Please sign in again."));
         }
 
         if (requests == null || requests.Count == 0)
@@ -202,34 +211,56 @@ public class QuestionsController : ControllerBase
 
         var errors = new List<string>();
         var created = 0;
+        var topics = await _db.Topics.ToListAsync();
+        var usedSlugs = topics.Select(topic => topic.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var request in requests)
         {
-            if (!await _db.Topics.AnyAsync(t => t.Id == request.TopicId && t.IsActive))
+            var content = request.Content ?? request.Text;
+            if (string.IsNullOrWhiteSpace(content))
             {
-                errors.Add($"Topic not found: {request.TopicId}");
+                errors.Add("Question content is required.");
                 continue;
             }
 
-            if (request.Options.Count < 2 || !request.Options.Any(o => o.IsCorrect))
+            if (!string.IsNullOrWhiteSpace(request.Level) && request.Level.Trim().Length > 20)
             {
-                errors.Add($"Invalid options for question: {request.Content}");
+                errors.Add($"Level is too long for question: {content}");
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Topic) && request.Topic.Trim().Length > 100)
+            {
+                errors.Add($"Topic name is too long for question: {content}");
+                continue;
+            }
+
+            if (!TryParseImportOptions(request, out var parsedOptions))
+            {
+                errors.Add($"Invalid options for question: {content}");
+                continue;
+            }
+
+            var topic = ResolveOrCreateImportTopic(request, topics, usedSlugs);
+            if (topic == null)
+            {
+                errors.Add($"Topic not found for question: {content}");
                 continue;
             }
 
             var question = new Question
             {
                 Id = Guid.NewGuid(),
-                TopicId = request.TopicId,
+                TopicId = topic.Id,
                 CreatedBy = userId,
-                Content = request.Content.Trim(),
+                Content = content.Trim(),
                 Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim(),
                 Explanation = request.Explanation?.Trim(),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
-            var options = request.Options.Select((option, index) => new QuestionOption
+            var options = parsedOptions.Select((option, index) => new QuestionOption
             {
                 Id = Guid.NewGuid(),
                 QuestionId = question.Id,
@@ -254,6 +285,176 @@ public class QuestionsController : ControllerBase
 
         return Ok(ApiResponse<ImportQuestionsResultResponse>.Ok(response));
     }
+
+    private Topic? ResolveOrCreateImportTopic(
+        ImportQuestionRequest request,
+        List<Topic> topics,
+        HashSet<string> usedSlugs)
+    {
+        if (request.TopicId.HasValue)
+        {
+            var topicById = topics.FirstOrDefault(topic => topic.Id == request.TopicId.Value && topic.IsActive);
+            if (topicById != null)
+            {
+                return topicById;
+            }
+        }
+
+        var topicName = request.Topic?.Trim();
+        if (string.IsNullOrWhiteSpace(topicName))
+        {
+            return null;
+        }
+
+        var existingTopic = topics.FirstOrDefault(topic =>
+            string.Equals(topic.Name, topicName, StringComparison.OrdinalIgnoreCase));
+
+        if (existingTopic != null)
+        {
+            existingTopic.IsActive = true;
+            return existingTopic;
+        }
+
+        var topic = new Topic
+        {
+            Id = Guid.NewGuid(),
+            Name = topicName,
+            Slug = BuildUniqueTopicSlug(topicName, usedSlugs),
+            Description = $"Created automatically when importing questions for {topicName}.",
+            Icon = "bi-shield-check",
+            IsActive = true
+        };
+
+        topics.Add(topic);
+        _db.Topics.Add(topic);
+        return topic;
+    }
+
+    private static bool TryParseImportOptions(
+        ImportQuestionRequest request,
+        out List<ParsedImportOption> parsedOptions)
+    {
+        parsedOptions = new List<ParsedImportOption>();
+
+        if (request.Options == null || request.Options.Count > byte.MaxValue + 1)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < request.Options.Count; index++)
+        {
+            var option = request.Options[index];
+            string? content = null;
+            var isCorrect = request.CorrectIndex == index;
+            byte? orderIndex = (byte)index;
+
+            if (option.ValueKind == JsonValueKind.String)
+            {
+                content = option.GetString();
+            }
+            else if (option.ValueKind == JsonValueKind.Object)
+            {
+                content = GetJsonString(option, "content", "Content");
+                isCorrect = GetJsonBoolean(option, "isCorrect", "IsCorrect") ?? isCorrect;
+                orderIndex = GetJsonByte(option, "orderIndex", "OrderIndex") ?? orderIndex;
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                parsedOptions.Clear();
+                return false;
+            }
+
+            parsedOptions.Add(new ParsedImportOption(content, isCorrect, orderIndex));
+        }
+
+        return parsedOptions.Count >= 2 && parsedOptions.Any(option => option.IsCorrect);
+    }
+
+    private static string? GetJsonString(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString();
+            }
+        }
+
+        return null;
+    }
+
+    private static bool? GetJsonBoolean(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (element.TryGetProperty(propertyName, out var value) &&
+                (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False))
+            {
+                return value.GetBoolean();
+            }
+        }
+
+        return null;
+    }
+
+    private static byte? GetJsonByte(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (element.TryGetProperty(propertyName, out var value) &&
+                value.ValueKind == JsonValueKind.Number &&
+                value.TryGetByte(out var number))
+            {
+                return number;
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildUniqueTopicSlug(string topicName, HashSet<string> usedSlugs)
+    {
+        var decomposed = topicName.Normalize(NormalizationForm.FormD);
+        var slugBuilder = new StringBuilder();
+
+        foreach (var character in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(character))
+            {
+                slugBuilder.Append(char.ToLowerInvariant(character));
+            }
+            else if (slugBuilder.Length > 0 && slugBuilder[^1] != '-')
+            {
+                slugBuilder.Append('-');
+            }
+        }
+
+        var baseSlug = slugBuilder.ToString().Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug))
+        {
+            baseSlug = "topic";
+        }
+
+        baseSlug = baseSlug.Length > 90 ? baseSlug[..90].TrimEnd('-') : baseSlug;
+        var slug = baseSlug;
+        var suffix = 2;
+
+        while (!usedSlugs.Add(slug))
+        {
+            var suffixText = $"-{suffix++}";
+            slug = $"{baseSlug[..Math.Min(baseSlug.Length, 100 - suffixText.Length)]}{suffixText}";
+        }
+
+        return slug;
+    }
+
+    private sealed record ParsedImportOption(string Content, bool IsCorrect, byte? OrderIndex);
 
     private static QuestionResponse MapQuestionResponse(Question question)
     {

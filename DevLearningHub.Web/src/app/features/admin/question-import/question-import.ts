@@ -1,6 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
@@ -15,16 +15,22 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 })
 export class QuestionImportComponent implements OnInit {
   private quizService = inject(QuizService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   isDragging: boolean = false;
   fileSelected: boolean = false;
   fileName: string = '';
   fileSize: string = '';
+  backLink: string = '/quiz-bank';
+  isImporting: boolean = false;
 
   importSummary = { total: 0, valid: 0, invalid: 0 };
   parsedQuestions: any[] = [];
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.backLink = this.router.url.startsWith('/admin') ? '/admin/quiz' : '/quiz-bank';
+  }
 
   onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -52,27 +58,64 @@ export class QuestionImportComponent implements OnInit {
     if (files && files.length > 0) {
       this.handleFileProcessing(files[0]);
     }
+    event.target.value = '';
   }
 
   private handleFileProcessing(file: File) {
     this.fileSelected = true;
     this.fileName = file.name;
     this.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+    this.parsedQuestions = [];
+    this.importSummary = { total: 0, valid: 0, invalid: 0 };
     
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Tệp JSON không được vượt quá 5MB.');
+      this.clearFile();
+      return;
+    }
+
+    if (fileExtension !== 'json') {
+      alert('Trình nạp hiện chỉ hỗ trợ tệp JSON.');
+      this.clearFile();
+      return;
+    }
 
     if (fileExtension === 'json') {
       const reader = new FileReader();
       reader.onload = (e: any) => {
         try {
           const rawData = JSON.parse(e.target.result);
-          const dataArray = Array.isArray(rawData) ? rawData : (rawData.questions || [rawData]);
+          const dataArray = Array.isArray(rawData)
+            ? rawData
+            : Array.isArray(rawData?.questions)
+              ? rawData.questions
+              : rawData && typeof rawData === 'object'
+                ? [rawData]
+                : [];
+
+          if (dataArray.length === 0) {
+            throw new Error('Question list is empty.');
+          }
           
           this.parsedQuestions = dataArray.map((q: any, index: number) => {
-            const hasText = !!q.text?.trim();
-            const hasTopic = !!q.topic?.trim();
-            const hasOptions = Array.isArray(q.options) && q.options.length >= 2;
-            const validIndex = typeof q.correctIndex === 'number' && q.correctIndex >= 0 && q.correctIndex < (q.options?.length || 0);
+            const text = q.text ?? q.Text ?? q.content ?? q.Content ?? '';
+            const topic = q.topic ?? q.Topic ?? '';
+            const topicId = q.topicId ?? q.TopicId ?? null;
+            const rawOptions = Array.isArray(q.options ?? q.Options) ? q.options ?? q.Options : [];
+            const options = rawOptions.map((option: any) =>
+              typeof option === 'string' ? option : option?.content ?? option?.Content ?? ''
+            );
+            const optionCorrectIndex = rawOptions.findIndex((option: any) =>
+              typeof option === 'object' && Boolean(option?.isCorrect ?? option?.IsCorrect)
+            );
+            const rawCorrectIndex = q.correctIndex ?? q.CorrectIndex;
+            const correctIndex = Number.isInteger(rawCorrectIndex) ? Number(rawCorrectIndex) : optionCorrectIndex;
+            const hasText = typeof text === 'string' && !!text.trim();
+            const hasTopic = (typeof topic === 'string' && !!topic.trim()) || !!topicId;
+            const hasOptions = options.length >= 2 && options.every((option: string) => !!option.trim());
+            const validIndex = correctIndex >= 0 && correctIndex < options.length;
             const isValid = hasText && hasTopic && hasOptions && validIndex;
 
             let errorMsg = '';
@@ -83,88 +126,38 @@ export class QuestionImportComponent implements OnInit {
 
             return {
               rowNum: index + 1,
-              text: q.text || 'Nội dung trống',
-              topic: q.topic || 'Chưa phân loại',
-              level: q.level || 'Trung bình',
-              points: q.points || 10,
-              optionsCount: q.options ? q.options.length : 0,
-              options: q.options || [],
-              correctIndex: q.correctIndex ?? 0,
-              explanation: q.explanation || '',
+              text: text || 'Nội dung trống',
+              topic: topic || 'Chưa phân loại',
+              topicId,
+              level: q.level ?? q.Level ?? 'Trung bình',
+              points: q.points ?? q.Points ?? 10,
+              optionsCount: options.length,
+              options,
+              correctIndex,
+              explanation: q.explanation ?? q.Explanation ?? '',
               isValid: isValid,
               errorMsg: errorMsg
             };
           });
           this.calculateSummary();
+          this.cdr.detectChanges();
         } catch (err) {
           alert('Tệp tin Định dạng JSON không hợp lệ hoặc bị lỗi cấu trúc đóng ngoặc!');
           this.clearFile();
         }
       };
+      reader.onerror = () => {
+        alert('Unable to read the selected JSON file.');
+        this.clearFile();
+      };
       reader.readAsText(file);
-    } else {
-      this.parsedQuestions = [
-        {
-          rowNum: 1,
-          text: 'Ứng dụng quản trị Dev-Learning Hub chạy trên nền tảng framework nào ở Frontend?',
-          topic: 'Kiến thức tổng hợp',
-          level: 'Dễ',
-          points: 10,
-          optionsCount: 4,
-          options: ['Angular', 'React', 'Vue', 'Svelte'],
-          correctIndex: 0,
-          explanation: 'Hệ thống được phát triển dựa trên cấu trúc Component độc lập của Angular.',
-          isValid: true,
-          errorMsg: ''
-        },
-        {
-          rowNum: 2,
-          text: 'Lệnh dịch mã nguồn nào của hệ thống .NET Core dùng để chạy ngầm dự án Web API?',
-          topic: 'Lập trình Backend',
-          level: 'Trung bình',
-          points: 10,
-          optionsCount: 4,
-          options: ['dotnet run', 'dotnet build', 'dotnet watch', 'dotnet clean'],
-          correctIndex: 0,
-          explanation: '',
-          isValid: true,
-          errorMsg: ''
-        },
-        {
-          rowNum: 3,
-          text: 'Mã lỗi phản hồi nào từ Server biểu thị tài khoản đăng nhập không có quyền truy cập tài nguyên?',
-          topic: 'Kiến thức tổng hợp',
-          level: 'Dễ',
-          points: 10,
-          optionsCount: 3,
-          options: ['401 Unauthorized', '403 Forbidden', '404 Not Found'],
-          correctIndex: 1,
-          explanation: '403 Forbidden đại diện cho việc từ chối phân quyền truy cập hệ thống.',
-          isValid: true,
-          errorMsg: ''
-        },
-        {
-          rowNum: 4,
-          text: 'Cấu trúc định tuyến RouterLink trong Angular được dùng để làm gì?',
-          topic: 'Lập trình Frontend',
-          level: 'Dễ',
-          points: 10,
-          optionsCount: 0,
-          options: [],
-          correctIndex: -1,
-          explanation: '',
-          isValid: false,
-          errorMsg: 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.'
-        }
-      ];
-      this.calculateSummary();
     }
   }
 
   private calculateSummary() {
     this.importSummary.total = this.parsedQuestions.length;
     this.importSummary.valid = this.parsedQuestions.filter(q => q.isValid).length;
-    this.importSummary.invalid = this.parsedQuestions.filter(q => !q.invalid).length;
+    this.importSummary.invalid = this.parsedQuestions.filter(q => !q.isValid).length;
   }
 
   clearFile() {
@@ -173,12 +166,18 @@ export class QuestionImportComponent implements OnInit {
     this.fileSize = '';
     this.parsedQuestions = [];
     this.importSummary = { total: 0, valid: 0, invalid: 0 };
+    this.cdr.detectChanges();
   }
 
   executeImport() {
+    if (this.isImporting) {
+      return;
+    }
+
     const validQuestions = this.parsedQuestions.filter(q => q.isValid).map(q => ({
       text: q.text,
       topic: q.topic,
+      topicId: q.topicId,
       level: q.level,
       points: q.points,
       options: q.options,
@@ -191,14 +190,19 @@ export class QuestionImportComponent implements OnInit {
       return;
     }
 
+    this.isImporting = true;
     this.quizService.importQuestions(validQuestions).subscribe({
-      next: () => {
-        alert(`Đã nạp thành công hoàn tất ${validQuestions.length} câu hỏi vào kho ngân hàng đề thi!`);
+      next: (result) => {
+        this.isImporting = false;
+        const createdCount = result?.createdCount ?? validQuestions.length;
+        const skippedCount = result?.skippedCount ?? 0;
+        alert(`Đã nạp ${createdCount} câu hỏi vào ngân hàng đề.${skippedCount > 0 ? ` Bỏ qua ${skippedCount} câu không hợp lệ.` : ''}`);
         this.clearFile();
       },
       error: (err) => {
-        alert(`Yêu cầu nạp tệp lên Backend thất bại (Mã lỗi: ${err.status}). Giao diện sẽ tự động lưu trữ dữ liệu cục bộ an toàn.`);
-        this.clearFile();
+        this.isImporting = false;
+        alert(err?.error?.message || `Không thể nạp câu hỏi (mã lỗi ${err.status}). Vui lòng đăng nhập lại hoặc kiểm tra dữ liệu.`);
+        this.cdr.detectChanges();
       }
     });
   }
