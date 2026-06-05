@@ -16,6 +16,8 @@ import { RoadmapManagementComponent } from './features/admin/roadmap-management/
 import { RoadmapViewComponent } from './features/roadmap/roadmap-view/roadmap-view';
 import { TopicManagementComponent } from './features/admin/topic-management/topic-management';
 import { UserProgressComponent } from './features/user/user-progress/user-progress';
+import { SettingsComponent } from './features/settings/settings';
+import { QuizEditComponent } from './features/quiz/quiz-edit/quiz-edit';
 
 
 export const routes: Routes = [
@@ -35,5 +37,7 @@ export const routes: Routes = [
   { path: 'roadmap', component: RoadmapViewComponent },
   { path: 'admin/topics', component: TopicManagementComponent },
   { path: 'dashboard/progress', component: UserProgressComponent },
+  { path: 'settings', component: SettingsComponent },
+  { path: 'quiz/edit/:id', component: QuizEditComponent },
   { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

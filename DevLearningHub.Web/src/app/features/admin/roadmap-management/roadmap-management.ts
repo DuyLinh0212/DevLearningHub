@@ -136,27 +136,25 @@ export class RoadmapManagementComponent implements OnInit {
   }
 
   toggleTopicInRoadmap(topicId: string) {
-    const idx = this.assignedTopicIds.indexOf(topicId);
-    if (idx > -1) {
-      this.roadmapService.removeTopicFromRoadmap(this.selectedRoadmap.id, topicId).subscribe({
-        next: () => {
-          this.executeToggleOption(idx);
-        },
-        error: () => {
-          this.executeToggleOption(idx);
-        }
+      if (!this.selectedRoadmap) return;
+      
+      const isAssigned = this.assignedTopicIds.includes(topicId);
+      
+      const obs = isAssigned 
+          ? this.roadmapService.removeTopicFromRoadmap(this.selectedRoadmap.id, topicId)
+          : this.roadmapService.addTopicToRoadmap(this.selectedRoadmap.id, topicId, this.assignedTopicIds.length + 1);
+
+      obs.subscribe({
+          next: (res: any) => {
+              this.loadRoadmaps(); 
+              this.cdr.detectChanges();
+              alert('Cập nhật chủ đề thành công!');
+          },
+          error: (err) => {
+              console.error(err);
+              alert('Lỗi: Không thể cập nhật chủ đề!');
+          }
       });
-    } else {
-      const orderIndex = this.assignedTopicIds.length + 1;
-      this.roadmapService.addTopicToRoadmap(this.selectedRoadmap.id, topicId, orderIndex).subscribe({
-        next: () => {
-          this.executePushOption(topicId);
-        },
-        error: () => {
-          this.executePushOption(topicId);
-        }
-      });
-    }
   }
 
   private executeToggleOption(idx: number) {

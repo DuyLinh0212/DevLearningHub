@@ -71,6 +71,9 @@
             </div>
 
             <div class="row-actions-right">
+              @if (compareIds(quiz.createdBy, currentUserId)) {
+                <button class="btn-view-quiz" [routerLink]="['/quiz/edit', quiz.id]">Sửa</button>
+              }
               @if (quiz.statusClass === 'public') {
               <button class="btn-view-quiz" [routerLink]="['/quiz', quiz.id]">Xem</button>
               } @else if (quiz.statusClass === 'draft') {

@@ -24,18 +24,10 @@
 
       <form (ngSubmit)="onLogin()">
         <div class="form-group">
-          <label for="username">Tên đăng nhập</label>
+          <label for="usernameOrEmail">Tên đăng nhập hoặc Email</label>
           <div class="input-wrapper">
             <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-            <input id="username" type="text" [(ngModel)]="username" name="username" placeholder="John Doe">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="email">Email</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-            <input id="email" type="email" [(ngModel)]="email" name="email" placeholder="name@example.com">
+            <input id="usernameOrEmail" type="text" [(ngModel)]="usernameOrEmail" name="usernameOrEmail" placeholder="Nhập tên tài khoản hoặc email của bạn...">
           </div>
         </div>
 

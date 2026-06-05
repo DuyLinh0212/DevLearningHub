@@ -419,26 +419,35 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   }
 
   saveQuizSet() {
-    if (!this.quizSetForm.title.trim()) {
-      alert('Vui lòng nhập tiêu đề bộ đề thi!');
-      return;
+    if (!this.quizSetForm.title?.trim()) {
+        alert('Vui lòng nhập tiêu đề!');
+        return;
     }
 
-    this.quizSetForm.description = this.quizSetForm.desc;
+    const payload = {
+        title: this.quizSetForm.title.trim(),
+        description: this.quizSetForm.desc || '',
+        mode: this.quizSetForm.mode || 'practice',
+        timeLimitSeconds: (this.quizSetForm.duration || 15) * 60, 
+        isPublic: true,
+        topicId: this.selectedQuizSet?.topicId || null, 
+        level: this.quizSetForm.level || 'beginner'
+    };
 
     const targetId = this.isEditingQuizSet && this.editingQuizSetId ? this.editingQuizSetId : 'custom_' + Date.now();
     
-    this.quizService.saveQuizSetFromAdmin(targetId, this.quizSetForm).subscribe({
-      next: () => {
-        this.loadQuizSets();
-        this.closeQuizSetModal();
-        alert('Cấu hình và lưu trữ bộ đề thi trắc nghiệm hoàn tất!');
-      },
-      error: (err: any) => {
-        alert(`Yêu cầu đồng bộ bộ đề thi lên Backend thất bại (Mã lỗi: ${err.status})`);
-      }
+    this.quizService.saveQuizSetFromAdmin(targetId, payload).subscribe({
+        next: () => {
+            this.loadQuizSets();
+            this.closeQuizSetModal();
+            alert('Lưu thành công!');
+        },
+        error: (err: any) => {
+            console.error('Lỗi Payload:', payload);
+            alert(`Backend từ chối dữ liệu (Mã lỗi: ${err.status})`);
+        }
     });
-  }
+}
 
   deleteQuizSet(id: any) {
     if (confirm('Xác nhận xóa hoàn toàn bộ đề thi này khỏi hệ thống phân phối?')) {

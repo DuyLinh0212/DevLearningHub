@@ -102,10 +102,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     this.http.get<any>('/api/admin/users').subscribe({
       next: (res: any) => {
+        console.log('Dữ liệu thô từ API đổ về:', res);
+        
         let target = [];
-        if (Array.isArray(res)) target = res;
-        else if (res && Array.isArray(res.$values)) target = res.$values;
-        else if (res && Array.isArray(res.data)) target = res.data;
+        
+        if (res?.data?.items) {
+          target = Array.isArray(res.data.items) ? res.data.items : (res.data.items.$values || []);
+        } else if (res?.items) {
+          target = Array.isArray(res.items) ? res.items : (res.items.$values || []);
+        } else if (Array.isArray(res?.data)) {
+          target = res.data;
+        } else if (Array.isArray(res)) {
+          target = res;
+        }
 
         this.usersList = target;
         this.statsData.users = this.usersList.length;
@@ -140,20 +149,30 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  updateUserRole(userId: number, currentRole: string) {
-    const nextRole = currentRole.toLowerCase() === 'admin' ? 'User' : 'Admin';
-    this.http.put(`/api/admin/users/${userId}/role`, { role: nextRole }).subscribe({
-      next: () => {
-        const user = this.usersList.find(u => u.id === userId);
-        if (user) user.role = nextRole;
-        alert('Cập nhật quyền hạn thành viên thành công!');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        alert('Không thể cập nhật quyền! Vui lòng kiểm tra kết nối API Backend.');
+      updateUserRole(userId: any, currentRole: string) {
+        const nextRole = currentRole.toLowerCase() === 'admin' ? 'User' : 'Admin';
+        
+        const payload = { role: nextRole };
+
+        this.http.put(`/api/admin/users/${userId}/role`, payload).subscribe({
+          next: () => {
+            const targetUserId = userId.toString().toLowerCase();
+            const user = this.usersList.find(u => u.id.toString().toLowerCase() === targetUserId);
+            
+            if (user) {
+              user.roles = [nextRole]; 
+            }
+            
+            alert('Cập nhật quyền hạn thành viên thành công!');
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.error('API Error details:', err);
+            const msg = err.error?.message || 'Vui lòng kiểm tra console log';
+            alert(`Không thể cập nhật quyền! Lỗi: ${msg}`);
+          }
+        });
       }
-    });
-  }
 
   toggleUserActiveStatus(userId: number) {
     this.http.post(`/api/admin/users/${userId}/toggle-status`, {}).subscribe({

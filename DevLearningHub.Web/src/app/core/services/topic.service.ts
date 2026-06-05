@@ -22,16 +22,19 @@ export class TopicService {
     );
   }
 
-//   createTopic(data: { name: string, icon: string }): Observable<any> {
-//     return this.http.post<any>(this.apiUrl, data);
-//   }
+  createTopic(data: { name: string, description?: string, icon?: string }): Observable<any> {
+    return this.http.post<any>(this.apiUrl, data);
+  }
 
-//   updateTopic(id: string, data: any): Observable<any> {
-//     return this.http.put<any>(`${this.apiUrl}/${id}`, data);
-//   }
+  updateTopic(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data);
+  }
 
-//   toggleTopicStatus(id: string, isActive: boolean): Observable<any> {
-//     return this.http.patch<any>(`${this.apiUrl}/${id}/status`, { isActive });
-//   }
-  
+  deleteTopic(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+
+  toggleTopicStatus(id: string, isActive: boolean): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/status`, { isActive });
+  }
 }

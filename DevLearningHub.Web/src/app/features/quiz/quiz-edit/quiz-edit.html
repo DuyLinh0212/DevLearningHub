@@ -1,0 +1,42 @@
+<div class="edit-quiz-container" *ngIf="isCreator">
+  <div class="edit-header">
+    <h2>Chỉnh sửa bộ đề</h2>
+    <p>Cập nhật thông tin chi tiết cho bộ đề của bạn</p>
+  </div>
+
+  <div class="edit-card">
+    <form (ngSubmit)="saveQuiz()" #editForm="ngForm">
+      <div class="form-group">
+        <label>Tên bộ đề</label>
+        <input type="text" name="title" [(ngModel)]="quizData.title" required>
+      </div>
+
+      <div class="form-group">
+        <label>Mô tả bộ đề</label>
+        <textarea name="description" [(ngModel)]="quizData.description" rows="3"></textarea>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Số lượng câu hỏi</label>
+          <input type="number" name="totalQuestions" [(ngModel)]="quizData.totalQuestions" required>
+        </div>
+
+        <div class="form-group">
+          <label>Mức độ (Level)</label>
+          <select name="level" [(ngModel)]="quizData.level" required>
+            <option value="beginner">Beginner (Dễ)</option>
+            <option value="intermediate">Intermediate (Trung bình)</option>
+            <option value="advanced">Advanced (Khó)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save" [disabled]="isSaving || !editForm.form.valid">
+          {{ isSaving ? 'ĐANG LƯU...' : 'LƯU THAY ĐỔI' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

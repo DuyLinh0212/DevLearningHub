@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+=======
+import { Component, OnInit, inject, ChangeDetectorRef} from '@angular/core';
+>>>>>>> Stashed changes
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -11,11 +15,13 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
   imports: [RouterLink, FormsModule, SidebarComponent, CommonModule],
   templateUrl: './question-import.html',
   styleUrl: './question-import.css'
-  
 })
 export class QuestionImportComponent implements OnInit {
   private quizService = inject(QuizService);
+<<<<<<< Updated upstream
   private router = inject(Router);
+=======
+>>>>>>> Stashed changes
   private cdr = inject(ChangeDetectorRef);
 
   isDragging: boolean = false;
@@ -99,6 +105,7 @@ export class QuestionImportComponent implements OnInit {
             throw new Error('Question list is empty.');
           }
           
+<<<<<<< Updated upstream
           this.parsedQuestions = dataArray.map((q: any, index: number) => {
             const text = q.text ?? q.Text ?? q.content ?? q.Content ?? '';
             const topic = q.topic ?? q.Topic ?? '';
@@ -117,13 +124,50 @@ export class QuestionImportComponent implements OnInit {
             const hasOptions = options.length >= 2 && options.every((option: string) => !!option.trim());
             const validIndex = correctIndex >= 0 && correctIndex < options.length;
             const isValid = hasText && hasTopic && hasOptions && validIndex;
+=======
+        this.parsedQuestions = dataArray.map((q: any, index: number) => {
+          const contentText = q.content || q.text || q.questionText || '';
+          
+          let options = q.options;
+          if (!options && q.optionA) {
+            options = [q.optionA, q.optionB, q.optionC, q.optionD].filter(o => o);
+          }
+>>>>>>> Stashed changes
 
-            let errorMsg = '';
-            if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
-            else if (!hasTopic) errorMsg = 'Chưa phân loại chủ đề bài học.';
-            else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
-            else if (!validIndex) errorMsg = 'Chỉ số đáp án đúng (CorrectIndex) không nằm trong phạm vi lựa chọn.';
+          let correctIndex = q.correctIndex;
+          if (typeof q.correctAnswer === 'string') {
+            const charMap: any = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+            correctIndex = charMap[q.correctAnswer.toUpperCase()] ?? 0;
+          }
 
+          const hasText = !!contentText.toString().trim();
+          const hasTopic = !!(q.topicId || q.topic || 'Kiến thức chung');
+          const hasOptions = Array.isArray(options) && options.length >= 2;
+          const validIndex = typeof correctIndex === 'number' && correctIndex >= 0 && correctIndex < options.length;
+
+          const isValid = hasText && hasTopic && hasOptions && validIndex;
+
+          let errorMsg = '';
+          if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
+          else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
+          else if (!validIndex) errorMsg = 'Đáp án đúng không hợp lệ.';
+
+          return {
+            rowNum: index + 1,
+            text: contentText,
+            topic: q.topicId || q.topic || 'Kiến thức chung',
+            level: q.level || 'Trung bình',
+            points: q.points || 10,
+            optionsCount: options ? options.length : 0,
+            options: options || [],
+            correctIndex: correctIndex,
+            explanation: q.explanation || '',
+            isValid: isValid,
+            errorMsg: errorMsg
+          };
+        });
+
+<<<<<<< Updated upstream
             return {
               rowNum: index + 1,
               text: text || 'Nội dung trống',
@@ -139,6 +183,8 @@ export class QuestionImportComponent implements OnInit {
               errorMsg: errorMsg
             };
           });
+=======
+>>>>>>> Stashed changes
           this.calculateSummary();
           this.cdr.detectChanges();
         } catch (err) {
@@ -151,6 +197,12 @@ export class QuestionImportComponent implements OnInit {
         this.clearFile();
       };
       reader.readAsText(file);
+<<<<<<< Updated upstream
+=======
+    } else {
+      this.parsedQuestions = [];
+      this.calculateSummary();
+>>>>>>> Stashed changes
     }
   }
 
@@ -170,6 +222,7 @@ export class QuestionImportComponent implements OnInit {
   }
 
   executeImport() {
+<<<<<<< Updated upstream
     if (this.isImporting) {
       return;
     }
@@ -184,6 +237,33 @@ export class QuestionImportComponent implements OnInit {
       correctIndex: q.correctIndex,
       explanation: q.explanation
     }));
+=======
+    const validQuestions = this.parsedQuestions.filter(q => q.isValid).map(q => {
+      let formattedOptions = [];
+      
+      if (q.options.length > 0 && typeof q.options[0] === 'string') {
+        formattedOptions = q.options.map((opt: string, idx: number) => ({
+          content: opt,
+          isCorrect: idx == q.correctIndex,
+          orderIndex: idx
+        }));
+      } else {
+        formattedOptions = q.options.map((opt: any, idx: number) => ({
+          content: opt.content || opt.Content || '',
+          isCorrect: opt.isCorrect !== undefined ? opt.isCorrect : (opt.IsCorrect || false),
+          orderIndex: opt.orderIndex ?? opt.OrderIndex ?? idx
+        }));
+      }
+
+      return {
+        topicId: q.topic,
+        content: q.text,
+        level: q.level.toString().toLowerCase(),
+        explanation: q.explanation,
+        options: formattedOptions
+      };
+    });
+>>>>>>> Stashed changes
 
     if (validQuestions.length === 0) {
       alert('Không tìm thấy câu hỏi nào hợp lệ để tiến hành nạp vào hệ thống!');
@@ -200,9 +280,14 @@ export class QuestionImportComponent implements OnInit {
         this.clearFile();
       },
       error: (err) => {
+<<<<<<< Updated upstream
         this.isImporting = false;
         alert(err?.error?.message || `Không thể nạp câu hỏi (mã lỗi ${err.status}). Vui lòng đăng nhập lại hoặc kiểm tra dữ liệu.`);
         this.cdr.detectChanges();
+=======
+        alert(`Yêu cầu nạp tệp lên Backend thất bại (Mã lỗi: ${err.status}). Hãy đảm bảo cột Chủ đề trong file JSON là chuỗi ID Guid hợp lệ dưới Database!`);
+        this.clearFile();
+>>>>>>> Stashed changes
       }
     });
   }
