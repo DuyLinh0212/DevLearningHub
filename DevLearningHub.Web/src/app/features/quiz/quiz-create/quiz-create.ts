@@ -22,17 +22,12 @@ export class QuizCreateComponent implements OnInit {
   currentStep: number = 1;
   isPreviewModalOpen: boolean = false;
   editingQuizId: string | null = null;
-<<<<<<< Updated upstream
   isSaving: boolean = false;
   saveError: string = '';
   importFeedback: string = '';
   importError: string = '';
   topics: any[] = [];
   private readonly defaultTopicNames = [
-=======
-
-  topics: string[] = [
->>>>>>> Stashed changes
     'Lập trình Backend',
     'Lập trình Frontend',
     'Cơ sở dữ liệu',
@@ -43,14 +38,9 @@ export class QuizCreateComponent implements OnInit {
   quizMeta = {
     title: '',
     desc: '',
-<<<<<<< Updated upstream
     topicId: '',
     topic: '',
     level: 'Trung bình',
-=======
-    topic: 'Lập trình Backend',
-    level: 'intermediate',
->>>>>>> Stashed changes
     duration: 15,
     passRate: 70,
     shuffle: true,
@@ -60,26 +50,7 @@ export class QuizCreateComponent implements OnInit {
   questions: any[] = [this.createEmptyQuestion()];
 
   ngOnInit() {
-<<<<<<< Updated upstream
     this.loadTopics();
-=======
-    this.route.queryParams.subscribe(params => {
-      if (params['id']) {
-        this.editingQuizId = params['id'];
-        this.quizService.getQuiz(this.editingQuizId!).subscribe({
-          next: (existingData) => {
-            if (existingData) {
-              this.quizMeta = {
-                title: existingData.title,
-                desc: existingData.desc,
-                topic: existingData.topic || 'Lập trình Backend',
-                level: existingData.level || 'intermediate',
-                duration: existingData.duration,
-                passRate: existingData.passRate || 70,
-                shuffle: existingData.shuffle !== undefined ? existingData.shuffle : true,
-                instantResult: existingData.instantResult !== undefined ? existingData.instantResult : true
-              };
->>>>>>> Stashed changes
 
     this.route.queryParams.subscribe(params => {
       if (!params['id']) {
