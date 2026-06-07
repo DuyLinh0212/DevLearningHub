@@ -1,0 +1,86 @@
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../core/services/auth.service'; 
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [RouterLink, FormsModule, CommonModule],
+  templateUrl: './login.html',
+  styleUrl: './login.css',
+})
+export class LoginComponent {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
+
+  usernameOrEmail = '';
+  password = '';
+  errorMessage = '';
+  isLoading = false;
+  showPassword = false;
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  onLogin() {
+    if (!this.usernameOrEmail.trim() || !this.password.trim()) {
+      this.errorMessage = 'Vui lòng điền đầy đủ thông tin!';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    const loginPayload = {
+      usernameOrEmail: this.usernameOrEmail.trim(),
+      password: this.password
+    };
+
+    this.authService.login(loginPayload).subscribe({
+      next: (res: any) => {
+        this.isLoading = false;
+        const target = res?.data || res;
+        const token = target?.accessToken || target?.token || '';
+        
+        if (token) {
+          localStorage.setItem('accessToken', token);
+          
+          try {
+            const payloadPart = token.split('.')[1];
+            const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+            
+            const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            const isAdmin = Array.isArray(roleClaim) 
+              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') 
+              : roleClaim?.toLowerCase() === 'admin';            
+            
+            if (!isAdmin) {
+              this.errorMessage = 'Bạn không có quyền truy cập cổng Quản trị!';
+              localStorage.removeItem('accessToken');
+              this.cdr.detectChanges();
+              return;
+            }
+
+            this.router.navigate(['/admin']);
+            
+          } catch (e) {
+            this.errorMessage = 'Lỗi xác thực quyền hạn hệ thống.';
+            localStorage.removeItem('accessToken');
+            this.cdr.detectChanges();
+          }
+        } else {
+          this.errorMessage = 'Hệ thống không trả về Token.';
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Đăng nhập thất bại!';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+}

@@ -1,0 +1,81 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+    <header class="content-header">
+      <div class="top-nav-buttons" style="margin-left: 0;">
+        <button class="btn-nav-tab" [routerLink]="backLink"><i class="bi bi-chevron-left"></i> Quay lại Ngân hàng</button>
+        <button class="btn-nav-tab active">Trình nạp tệp (JSON/Excel)</button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Nhập Câu Hỏi Hàng Loạt</h1>
+        <p>Hỗ trợ tệp <strong>.JSON</strong> hoặc <strong>.XLSX</strong>. Đảm bảo cấu trúc cột khớp với định dạng hệ thống.</p>
+      </section>
+
+      <div class="import-upload-grid">
+        <div class="drag-drop-zone" [class.dragging]="isDragging"
+             (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
+             (click)="fileInput.click()">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.xlsx,.xls" style="display: none;">
+          @if (!fileSelected) {
+            <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+            <h3>Chọn hoặc kéo thả tệp tại đây</h3>
+            <p class="upload-hint">JSON hoặc Excel (5MB)</p>
+          } @else {
+            <i class="bi bi-file-earmark-spreadsheet-fill file-active-icon"></i>
+            <h3 class="file-name-active">{{ fileName }}</h3>
+            <p class="file-size-tag">{{ fileSize }} &nbsp;•&nbsp; <span class="btn-remove-file" (click)="clearFile(); $event.stopPropagation();">Xóa</span></p>
+          }
+        </div>
+      </div>
+
+      @if (fileSelected) {
+      <section class="stats-container" style="margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div class="stat-card"><div class="stat-info"><span class="stat-title">Tổng số</span><span class="stat-value">{{ importSummary.total }}</span></div><div class="stat-card-icon blue"><i class="bi bi-list-ol"></i></div></div>
+        <div class="stat-card"><div class="stat-info"><span class="stat-title">Hợp lệ</span><span class="stat-value" style="color: #22c55e;">{{ importSummary.valid }}</span></div><div class="stat-card-icon green"><i class="bi bi-check-circle-fill"></i></div></div>
+        <div class="stat-card"><div class="stat-info"><span class="stat-title">Lỗi</span><span class="stat-value" style="color: #ef4444;">{{ importSummary.invalid }}</span></div><div class="stat-card-icon red"><i class="bi bi-exclamation-triangle-fill"></i></div></div>
+      </section>
+
+      <div class="quiz-library-card" style="margin-top: 24px; padding: 0; overflow-x: auto;">
+        <table class="admin-management-table" style="min-width: 900px;">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Dòng</th>
+              <th>Câu hỏi</th>
+              <th>Chủ đề</th>
+              <th>Cấp độ</th>
+              <th style="text-align: center;">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of parsedQuestions; track row.rowNum) {
+            <tr [class.row-error]="!row.isValid">
+              <td class="tbl-mono">#{{ row.rowNum }}</td>
+              <td>
+                <div class="text-truncate-2" style="max-width: 300px;">{{ row.text }}</div>
+              </td>
+              <td>{{ row.topic || '---' }}</td>
+              <td>{{ row.level }}</td>
+              <td>
+                <span class="row-status-badge" [class.success]="row.isValid" [class.danger]="!row.isValid">
+                  {{ row.isValid ? 'Sẵn sàng' : 'Lỗi: ' + row.errorMsg }}
+                </span>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="import-bottom-actions">
+        <button class="btn-admin-secondary" (click)="clearFile()">Hủy</button>
+        <button class="btn-create-new" [disabled]="importSummary.valid === 0 || isImporting" (click)="executeImport()">
+          {{ isImporting ? 'Đang nạp...' : 'Tiến hành nạp (' + importSummary.valid + ' câu)' }}
+        </button>
+      </div>
+      }
+    </div>
+  </main>
+</div>

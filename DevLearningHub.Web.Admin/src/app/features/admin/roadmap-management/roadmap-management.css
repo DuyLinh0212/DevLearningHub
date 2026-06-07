@@ -1,0 +1,177 @@
+@import '../../dashboard/dashboard.css';
+@import '../../admin/admin-dashboard/admin-dashboard.css';
+@import '../../admin/quiz-management/quiz-management.css';
+
+.quiz-rows-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.empty-state-box-roadmap {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--bg-card);
+  border: 2px dashed var(--input-border);
+  border-radius: 12px;
+  margin-top: 20px;
+  color: var(--text-muted);
+}
+
+.empty-state-box-roadmap i {
+  font-size: 3rem;
+  color: var(--text-muted-dark);
+  opacity: 0.4;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.input-modal-flex-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin-top: 16px !important;
+  margin-bottom: 8px !important;
+}
+
+.input-field-group-flex {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.input-field-group-flex label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input-field-group-flex select {
+  width: 100% !important;
+  height: 38px !important;
+  box-sizing: border-box !important;
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.modal-subtitle-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted-dark);
+  margin-top: -8px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.btn-view-quiz-edit {
+  padding: 8px 14px;
+  background-color: var(--bg-nested);
+  color: var(--text-main);
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.btn-view-quiz-edit:hover {
+  background-color: var(--bg-card-border);
+}
+
+.btn-tbl-delete-icon {
+  color: #ef4444;
+  padding: 6px;
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+  background: var(--bg-nested);
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.btn-tbl-delete-icon:hover {
+  background-color: rgba(239, 64, 64, 0.08);
+}
+
+.assign-questions-scroll-list {
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 6px;
+}
+
+.modal-actions-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 28px !important; /* Đẩy cụm nút xuống dưới tạo khoảng cách thở */
+  padding-top: 16px !important;
+  border-top: 1px solid var(--bg-card-border, #2d2d38); /* Thêm vạch kẻ mảnh phân cách cho sang xịn mịn */
+  clear: both !important;
+}
+
+.btn-modal-cancel, .btn-modal-confirm {
+  height: 38px !important; /* Đồng bộ chiều cao nút bấm bằng với select box */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ==========================================================================
+   ⚡ PHÂN HỆ MOBILE RESPONSIVE CHỐNG VỠ KHUNG HÀNG LỘ TRÌNH ADM (COMPATIBLE)
+   ========================================================================== */
+@media (max-width: 992px) {
+  .quiz-list-row {
+    flex-direction: column; /* Đảo khối lộ trình thành hàng dọc chống bóp nghẹt chữ */
+    align-items: flex-start !important;
+    gap: 16px;
+    padding: 20px !important;
+  }
+
+  .row-actions-right {
+    width: 100%;
+    margin-left: 0 !important;
+    justify-content: flex-start;
+    border-top: 1px solid var(--bg-card-border);
+    padding-top: 14px;
+    gap: 10px;
+  }
+  
+  .btn-view-quiz, .btn-view-quiz-edit {
+    flex: 1;
+    justify-content: center;
+    padding: 10px !important;
+  }
+
+  .btn-tbl-delete-icon {
+    height: 38px;
+    width: 38px;
+  }
+}
+
+@media (max-width: 576px) {
+  .input-modal-flex-row {
+    grid-template-columns: 1fr; /* Duỗi phẳng dropdown lựa chọn trong Modal thành hàng dọc */
+    gap: 12px;
+  }
+}

@@ -1,0 +1,125 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Tìm kiếm định hướng lộ trình học tập...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openRoadmapModal()">
+          <i class="bi bi-node-plus-fill"></i> Tạo lộ trình mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Trị Lộ Trình Học Tập (Roadmaps)</h1>
+        <p>Cấu hình bản đồ định hướng sự nghiệp vĩ mô, phân cấp kỹ năng và phân phối chuỗi chủ đề bài học chuẩn công nghiệp.</p>
+      </section>
+
+      <div class="quiz-rows-list">
+        @for (rm of roadmaps; track rm.id) {
+        <div class="quiz-list-row">
+          <div class="row-icon-box">
+            <i class="bi bi-bezier2"></i>
+          </div>
+          <div class="row-content">
+            <div class="row-title-line">
+              <h3>{{ rm.title }}</h3>
+              <span class="status-badge public">{{ rm.level }}</span>
+            </div>
+            <p class="row-description">{{ rm.description || 'Chưa cấu hình tóm tắt nội dung hướng nghiệp.' }}</p>
+            <div class="row-meta-tags">
+              <span><i class="bi bi-person-workspace"></i> Vai trò: {{ rm.targetRole }}</span>
+              <span><i class="bi bi-diagram-3"></i> Số chặng công nghệ: {{ rm.topicsCount }} danh mục</span>
+            </div>
+          </div>
+          <div class="row-actions-right">
+            <button class="btn-view-quiz" (click)="openAssignModal(rm)"><i class="bi bi-gear-fill"></i> Sắp xếp chặng học</button>
+            <button class="btn-view-quiz-edit" (click)="openRoadmapModal(rm)"><i class="bi bi-pencil"></i> Sửa</button>
+            <button class="btn-tbl-delete-icon" (click)="deleteRoadmap(rm.id)" title="Xóa lộ trình">
+              <i class="bi bi-trash3-fill"></i>
+            </button>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-state-box-roadmap">
+          <i class="bi bi-bezier2"></i>
+          <h3>Chưa có lộ trình nào được tạo</h3>
+          <p>Hãy bấm nút "Tạo lộ trình mới" ở thanh tiêu đề góc phải để bắt đầu cấu hình định hướng ngành học!</p>
+        </div>
+        }
+      </div>
+    </div>
+  </main>
+
+  @if (isRoadmapModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>{{ isEditingRoadmap ? 'Cập nhật thông số lộ trình định hướng' : 'Khởi tạo lộ trình nghề nghiệp mới' }}</h3>
+      <div class="admin-modal-form-body">
+        <div class="input-field-group">
+          <label>Tên lộ trình định hướng</label>
+          <input type="text" [(ngModel)]="roadmapForm.title" placeholder="Ví dụ: Lộ trình trở thành C# Web Backend Developer">
+        </div>
+        <div class="input-field-group">
+          <label>Mô tả tổng quan lộ trình</label>
+          <textarea [(ngModel)]="roadmapForm.description" placeholder="Nhập mục tiêu đầu ra kiến thức của lộ trình..."></textarea>
+        </div>
+        <div class="input-modal-flex-row">
+          <div class="input-field-group-flex">
+            <label>Vai trò hướng đến</label>
+            <select [(ngModel)]="roadmapForm.targetRole">
+              <option value="Backend Developer">Backend Developer</option>
+              <option value="Frontend Developer">Frontend Developer</option>
+              <option value="Fullstack Developer">Fullstack Developer</option>
+              <option value="Software QA / Tester">Software QA / Tester</option>
+            </select>
+          </div>
+          <div class="input-field-group-flex">
+            <label>Phân cấp lộ trình</label>
+            <select [(ngModel)]="roadmapForm.level">
+              <option value="Cơ bản">Cơ bản</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Nâng cao">Nâng cao</option>
+              <option value="Chuyên sâu">Chuyên sâu</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions-row">
+        <button class="btn-modal-cancel" (click)="closeRoadmapModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveRoadmap()">Lưu thông số</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (isAssignModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>Cấu hình chặng học: <span style="color: #a855f7;">{{ selectedRoadmap?.title }}</span></h3>
+      <p class="modal-subtitle-desc">Tích chọn các chặng công nghệ dưới ngân hàng danh mục chủ đề để gán vào cây lộ trình học tập.</p>
+      
+      <div class="assign-questions-scroll-list">
+        @for (t of availableTopics; track t.id) {
+        <div class="assign-item-row" [class.selected]="isTopicInRoadmap(t.id)" (click)="toggleTopicInRoadmap(t.id)">
+          <div class="assign-checkbox">
+            @if (isTopicInRoadmap(t.id)) { <i class="bi bi-check-lg"></i> }
+          </div>
+          <div class="assign-content-text">
+            <p class="assign-q-title"><i class="bi bi-tags" style="color: #a855f7; margin-right: 4px;"></i> {{ t.name }}</p>
+          </div>
+        </div>
+        }
+      </div>
+      <div class="modal-actions-row" style="margin-top: 20px;">
+        <button class="btn-modal-confirm" (click)="closeAssignModal()">Hoàn tất thiết lập</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

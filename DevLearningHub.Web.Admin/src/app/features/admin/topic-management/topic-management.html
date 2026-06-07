@@ -1,0 +1,86 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterTopics()" placeholder="Tìm kiếm danh mục chủ đề học tập...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openTopicModal()">
+          <i class="bi bi-tags-fill"></i> Tạo chủ đề mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Trị Danh Mục Chủ Đề</h1>
+        <p>Phân loại nền tảng công nghệ, gán biểu tượng nhận diện vĩ mô làm lõi cây phân phối Lộ trình và Bộ đề thi.</p>
+      </section>
+
+      <div class="topic-grid">
+        @for (t of filteredTopics; track t.id) {
+          <div class="topic-card">
+            <div class="topic-icon-box">
+              <i class="bi {{ t.icon || 'bi-code-slash' }}"></i>
+            </div>
+            <div class="topic-info">
+              <h3>{{ t.name }}</h3>
+              <p [title]="t.description">{{ t.description || 'Chưa có mô tả chi tiết cho danh mục công nghệ này.' }}</p>
+            </div>
+            <div class="topic-actions-right-zone">
+              <button (click)="openTopicModal(t)" class="btn-tbl-icon-edit" title="Chỉnh sửa"><i class="bi bi-pencil-square"></i></button>
+              <button (click)="deleteTopic(t.id)" class="btn-tbl-icon-delete" title="Xóa chủ đề"><i class="bi bi-trash3-fill"></i></button>
+            </div>
+          </div>
+        } @empty {
+          @if (!isLoading) {
+            <div class="empty-state-box-topic">
+              <i class="bi bi-tags"></i>
+              <h3>Hệ thống trống sạch</h3>
+              <p>Chưa có danh mục chủ đề nào được khởi tạo. Hãy bấm nút phía góc phải để tạo mới!</p>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </main>
+
+  @if (isTopicModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>{{ isEditingTopic ? 'Cập nhật danh mục chủ đề' : 'Khởi tạo chủ đề công nghệ mới' }}</h3>
+      
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Tên chủ đề công nghệ</label>
+          <input type="text" [(ngModel)]="topicForm.name" placeholder="Ví dụ: Lập trình C# nâng cao hoặc .NET 9 Core">
+        </div>
+        
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Biểu tượng hiển thị (Bootstrap Icon Class)</label>
+          <select [(ngModel)]="topicForm.icon">
+            <option value="bi-code-slash">Lập trình chung (&lt;/&gt;)</option>
+            <option value="bi-database-fill">Cơ sở dữ liệu (Database)</option>
+            <option value="bi-browser-edge">Frontend / Web Browser</option>
+            <option value="bi-shield-lock-fill">An toàn bảo mật (Cyber Security)</option>
+            <option value="bi-terminal-fill">Kiểm thử tự động (Software Testing)</option>
+          </select>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Mô tả chi tiết định hướng phạm vi</label>
+          <textarea [(ngModel)]="topicForm.description" placeholder="Nhập tóm tắt mô tả cốt lõi kiến thức định vị danh mục này..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeTopicModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveTopic()">Lưu thông số</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>
