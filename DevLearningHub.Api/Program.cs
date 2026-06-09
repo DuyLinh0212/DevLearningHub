@@ -1,4 +1,5 @@
-using System.Text;
+﻿using System.Text;
+using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -70,7 +71,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AppPolicies.AdminOnly, policy =>
+    {
+        policy.RequireRole(AppRoles.Admin);
+    });
+});
 
 var app = builder.Build();
 
@@ -89,3 +96,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

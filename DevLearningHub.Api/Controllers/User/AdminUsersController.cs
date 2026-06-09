@@ -1,3 +1,4 @@
+﻿using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
@@ -9,7 +10,7 @@ namespace DevLearningHub.Api.Controllers.Users;
 
 [ApiController]
 [Route("api/admin/users")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AppPolicies.AdminOnly)]
 public class AdminUsersController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
@@ -297,3 +298,4 @@ public class PagedResult<T>
 
     public int TotalPages => PageSize == 0 ? 0 : (int)Math.Ceiling((double)TotalCount / PageSize);
 }
+
