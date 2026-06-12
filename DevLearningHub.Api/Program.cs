@@ -1,4 +1,9 @@
+<<<<<<<< HEAD:DevLearningHub.Api/DevLearningHub.Api/Program.cs
 using System.Text;
+========
+﻿using System.Text;
+using DevLearningHub.Api.Authorization;
+>>>>>>>> origin/fix/id-admin:DevLearningHub.Api/Program.cs
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -70,7 +75,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AppPolicies.AdminOnly, policy =>
+    {
+        policy.RequireRole(AppRoles.Admin);
+    });
+});
 
 var app = builder.Build();
 
@@ -81,7 +92,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+<<<<<<<< HEAD:DevLearningHub.Api/DevLearningHub.Api/Program.cs
 //app.UseHttpsRedirection();
+========
+
+>>>>>>>> origin/fix/id-admin:DevLearningHub.Api/Program.cs
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -89,4 +104,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+<<<<<<<< HEAD:DevLearningHub.Api/DevLearningHub.Api/Program.cs
 public partial class Program { }
+========
+
+>>>>>>>> origin/fix/id-admin:DevLearningHub.Api/Program.cs
