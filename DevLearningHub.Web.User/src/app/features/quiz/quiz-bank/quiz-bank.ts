@@ -56,7 +56,11 @@ export class QuizBankComponent implements OnInit {
 loadQuizzes() {
   console.log('=== USER_BANK: KHỞI CHẠY DEBUG ĐỂ TÌM BỘ ĐỀ ===');
   
-  this.http.get<any>('/api/quiz-sets').subscribe({
+  const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+
+  this.http.get<any>('/api/quiz-sets', {
+    params: hasToken ? { includePrivate: true } : {}
+  }).subscribe({
     next: (res: any) => {
       // 1. In hẳn dữ liệu gốc của Nam trả về xem có gì bên trong
       console.log('👉 [DEBUG DỮ LIỆU GỐC TỪ BACKEND]:', res);
@@ -69,10 +73,11 @@ loadQuizzes() {
         console.log(`🔍 Quét thấy bộ đề: ${quiz.title} | questionCount gốc từ API =`, quiz.questionCount);
 
         return {
-          id: quiz.id,
+          id: quiz.id || quiz.Id,
+          createdBy: quiz.createdBy || quiz.CreatedBy || '',
           title: quiz.title || 'Bộ đề chưa đặt tên',
           desc: quiz.description || 'Chưa có mô tả.',
-          questions: quiz.questionCount ?? 0, 
+          questions: quiz.questionCount ?? quiz.QuestionCount ?? 0, 
           duration: quiz.timeLimitSeconds ? Math.floor(quiz.timeLimitSeconds / 60) : 15,
           attempts: quiz.attempts || 0,
           statusClass: quiz.isPublic ? 'public' : 'draft',

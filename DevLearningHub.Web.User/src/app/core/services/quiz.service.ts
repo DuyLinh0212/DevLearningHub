@@ -120,6 +120,7 @@ startQuizSession(quizSetId: string): Observable<any> {
     
     return {
       id,
+      createdBy: quiz.createdBy || quiz.CreatedBy || '',
       title: quiz.title || quiz.Title || '',
       desc: quiz.description || quiz.Description || '',
       topicId: quiz.topicId || quiz.TopicId || '',

@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service'; 
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -28,6 +29,10 @@ export class LoginComponent {
   }
 
   onLogin() {
+    if (this.isLoading) {
+      return;
+    }
+
     console.log('=== BẮT ĐẦU TIẾN TRÌNH ĐĂNG NHẬP PHÂN HỆ USER ===');
     this.errorMessage = '';
 
@@ -45,7 +50,12 @@ export class LoginComponent {
 
     console.log('Payload gửi lên api/auth/login:', loginPayload);
 
-    this.authService.login(loginPayload).subscribe({
+    this.authService.login(loginPayload).pipe(
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
       next: (res: any) => {
         this.isLoading = false;
         console.log('API phản hồi thành công:', res);

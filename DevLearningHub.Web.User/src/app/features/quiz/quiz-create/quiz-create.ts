@@ -84,7 +84,7 @@ export class QuizCreateComponent implements OnInit {
           this.quizMeta = {
             title: target.title || '',
             desc: target.description || target.desc || '',
-            topicId: target.topicId || '',
+            topicId: target.topicId || this.quizMeta.topicId || this.topics[0]?.id || '',
             level: uiLevel,
             duration: target.timeLimitSeconds ? Math.floor(target.timeLimitSeconds / 60) : 15,
             passRate: target.passRate || 70,
@@ -336,8 +336,15 @@ export class QuizCreateComponent implements OnInit {
       mappedLevel = 'intermediate';
     }
 
-    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const validTopicId = guidRegex.test(this.quizMeta.topicId) ? this.quizMeta.topicId : null;
+    const requestedTopicId = this.getValidTopicId();
+    const requestedTopicName = requestedTopicId ? null : this.getSelectedTopicName();
+
+    if (!requestedTopicId && !requestedTopicName && questions.length > 0) {
+      this.isSaving = false;
+      this.saveError = 'Vui lòng chọn chủ đề hợp lệ trước khi lưu câu hỏi.';
+      this.cdr.detectChanges();
+      return;
+    }
 
     const quizSetPayload = {
       title: this.quizMeta.title.trim(),
@@ -345,7 +352,8 @@ export class QuizCreateComponent implements OnInit {
       mode: 'practice', 
       timeLimitSeconds: (this.quizMeta.duration || 15) * 60,
       isPublic: !isDraft,
-      topicId: validTopicId,
+      topicId: requestedTopicId,
+      topic: requestedTopicName,
       level: mappedLevel
     };
 
@@ -357,9 +365,17 @@ export class QuizCreateComponent implements OnInit {
       next: (quizRes: any) => {
         const createdQuiz = quizRes?.data || quizRes;
         const quizSetId = createdQuiz?.id || this.editingQuizId;
+        const resolvedTopicId = createdQuiz?.topicId || createdQuiz?.TopicId || requestedTopicId;
 
         if (!quizSetId || questions.length === 0) {
           this.router.navigate(['/quiz-bank']);
+          return;
+        }
+
+        if (!resolvedTopicId) {
+          this.isSaving = false;
+          this.saveError = 'Không thể xác định chủ đề sau khi lưu bộ đề.';
+          this.cdr.detectChanges();
           return;
         }
 
@@ -372,7 +388,7 @@ export class QuizCreateComponent implements OnInit {
           }));
 
           const questionPayload = {
-            topicId: validTopicId,
+            topicId: resolvedTopicId,
             content: q.text.trim(),
             level: mappedLevel,
             explanation: q.explanation ? q.explanation.trim() : null,
@@ -407,9 +423,11 @@ export class QuizCreateComponent implements OnInit {
                 if (completedRequests === questions.length) this.router.navigate(['/quiz-bank']);
               }
             },
-            error: () => {
-              completedRequests++;
-              if (completedRequests === questions.length) this.router.navigate(['/quiz-bank']);
+            error: (err: any) => {
+              console.error('Không thể lưu câu hỏi:', err);
+              this.isSaving = false;
+              this.saveError = this.getApiError(err);
+              this.cdr.detectChanges();
             }
           });
         });
@@ -429,6 +447,28 @@ export class QuizCreateComponent implements OnInit {
       if (firstError) return String(firstError);
     }
     return err?.error?.message || err?.message || 'Không thể lưu bộ đề. Vui lòng thử lại.';
+  }
+
+  private getValidTopicId(): string | null {
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (guidRegex.test(this.quizMeta.topicId || '')) {
+      return this.quizMeta.topicId;
+    }
+
+    const fallbackTopic = this.topics.find(topic => guidRegex.test(topic?.id || ''));
+    if (fallbackTopic?.id) {
+      this.quizMeta.topicId = fallbackTopic.id;
+      return fallbackTopic.id;
+    }
+
+    return null;
+  }
+
+  private getSelectedTopicName(): string | null {
+    const selectedTopic = this.topics.find(topic => topic?.id === this.quizMeta.topicId);
+    const name = (selectedTopic?.name || '').toString().trim();
+    return name || null;
   }
 
   getTopicName(topicId: string): string {

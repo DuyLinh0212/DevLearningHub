@@ -73,7 +73,8 @@ export class DashboardComponent implements OnInit {
               console.log('Dữ liệu phân tích năng lực thực tế từ DB:', statsData);
               this.totalQuizTaken = statsData.totalQuizTaken ?? 0;
               this.userXpPoints = statsData.totalXP ?? userData?.xpPoints ?? 0;
-              this.averageScore = statsData.avgScore ?? 0;
+              const rawAverageScore = statsData.avgScore ?? 0;
+              this.averageScore = rawAverageScore <= 1 ? rawAverageScore * 10 : rawAverageScore;
               this.userRank = statsData.rank ?? 0;
             }
 
@@ -110,12 +111,9 @@ export class DashboardComponent implements OnInit {
     });
     this.totalRealAttempts = sumAttempts;
 
-    // Tổng số lượng đề thi đang mở trên hệ thống
-    const totalPublicQuizzes = this.quizzesData.filter(q => q.isPublic === true || q.statusClass === 'public').length;
-
     // 🎯 ĐỒNG BỘ 4 CHIẾC HỘP THẦN THÁNH THEO ĐÚNG ĐỐI TƯỢNG TRẢ VỀ CỦA API STATS
     this.stats = [
-      { title: 'Quiz đã hoàn thành', value: `${this.totalQuizTaken} / ${totalPublicQuizzes || this.quizzesData.length}`, icon: 'bi-book', color: 'purple' },
+      { title: 'Quiz đã hoàn thành', value: `${this.totalQuizTaken}`, icon: 'bi-book', color: 'purple' },
       { title: 'Điểm kinh nghiệm', value: `${this.userXpPoints} XP`, icon: 'bi-gem', color: 'green' },
       { title: 'Điểm số trung bình', value: `${this.averageScore.toFixed(1)}đ`, icon: 'bi-check-circle-fill', color: 'blue' },
       { title: 'Thứ hạng hệ thống', value: this.userRank > 0 ? `Hạng ${this.userRank}` : 'Chưa xếp hạng', icon: 'bi-trophy-fill', color: 'orange' }

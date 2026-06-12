@@ -478,3 +478,126 @@
   font-size: 0.75rem;
   color: var(--text-muted-dark);
 }
+
+.row-actions-right {
+  position: relative;
+}
+
+.quiz-row-menu {
+  position: relative;
+  z-index: 20;
+}
+
+.btn-kebab {
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  background: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+}
+
+.quiz-row-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.28);
+  padding: 6px;
+  z-index: 40;
+}
+
+.quiz-row-menu-panel button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.quiz-row-menu-panel button:hover {
+  background: var(--bg-nested);
+}
+
+.quiz-row-menu-panel button.danger {
+  color: #ef4444;
+}
+
+.menu-click-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.assign-modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.assign-modal-toolbar input {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+  color: var(--text-main);
+  padding: 9px 12px;
+  outline: none;
+}
+
+.assign-modal-toolbar span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.assign-content-text {
+  min-width: 0;
+}
+
+.assign-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-assign-toggle {
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: rgba(168, 85, 247, 0.08);
+  color: #c084fc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.assign-item-row.selected .btn-assign-toggle {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.assign-empty-state {
+  padding: 22px;
+  border: 1px dashed var(--border-nested);
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.85rem;
+}

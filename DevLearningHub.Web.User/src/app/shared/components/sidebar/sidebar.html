@@ -9,6 +9,15 @@
     </button>
   </div>
 
+  <a routerLink="/settings" class="sidebar-profile">
+    <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="sidebar-profile-avatar">
+    <div class="sidebar-profile-info">
+      <strong>{{ profile.displayName }}</strong>
+      <span>{{ profile.email || 'Tài khoản học viên' }}</span>
+      <small>{{ profile.xpPoints }} XP</small>
+    </div>
+  </a>
+
   <div class="sidebar-search">
     <div class="search-box">
       <i class="bi bi-search"></i>

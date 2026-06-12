@@ -41,8 +41,8 @@
               <strong style="color: #c084fc; font-size: 0.95rem; margin-left: 4px;">{{ xpPoints }} XP</strong>
             </div>
 
-            <input type="file" #fileInput (change inversion)="onFileSelected($event)" accept="image/*" style="display: none;">
-            <button type="button" class="btn-action-avatar" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+            <button type="button" class="btn-action-avatar" (click)="fileInput.click()" [disabled]="isUploadingAvatar">
               <i class="bi bi-cloud-arrow-up"></i> Đổi ảnh đại diện
             </button>
           </div>
@@ -72,7 +72,7 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-submit-save" [disabled]="isSaving || !settingsForm.form.valid">
+              <button type="submit" class="btn-submit-save" [disabled]="isSaving || isUploadingAvatar || !settingsForm.form.valid">
                 <i class="bi bi-cloud-arrow-up-fill" style="margin-right: 4px;"></i>
                 {{ isSaving ? 'ĐANG LƯU HỒ SƠ...' : 'CẬP NHẬT HỒ SƠ' }}
               </button>
