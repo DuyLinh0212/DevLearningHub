@@ -1,7 +1,4 @@
-<<<<<<<< HEAD:DevLearningHub.Api/DevLearningHub.Api/Controllers/User/AdminUsersController.cs
-========
 ﻿using DevLearningHub.Api.Authorization;
->>>>>>>> origin/fix/id-admin:DevLearningHub.Api/Controllers/User/AdminUsersController.cs
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
