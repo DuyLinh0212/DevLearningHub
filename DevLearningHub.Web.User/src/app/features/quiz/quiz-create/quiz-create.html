@@ -1,0 +1,276 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <div class="dashboard-scroll-body">
+
+      @if (saveError) {
+      <div class="quiz-form-message error">
+        <i class="bi bi-exclamation-circle"></i>
+        <span>{{ saveError }}</span>
+      </div>
+      }
+
+      @if (currentStep === 1) {
+      <div class="create-header-row">
+        <a routerLink="/quiz-bank" class="btn-back-arrow"><i class="bi bi-chevron-left"></i></a>
+        <div class="header-main-text">
+          <h1>Tạo Bộ đề mới</h1>
+          <p>Nhập thông tin cơ bản, thiết lập thời gian và cấu hình quy tắc cho bộ đề</p>
+        </div>
+        <div class="header-action-buttons">
+          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
+            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
+          </button>
+          <button class="btn-purple-preview" [disabled]="!quizMeta.title.trim() || isSaving" (click)="openPreview()">Xem trước</button>
+        </div>
+      </div>
+
+      <div class="wizard-grid-layout">
+        <div class="creation-form-card">
+          <h3>Thông tin bộ đề</h3>
+          <p class="card-section-desc">Các thông tin hiển thị chính của bộ đề trắc nghiệm</p>
+
+          <div class="input-field-group">
+            <label>Tiêu đề</label>
+            <input type="text" [(ngModel)]="quizMeta.title" placeholder="Ví dụ: Tổng quan Kiến trúc Web API với .NET 9">
+          </div>
+
+          <div class="input-field-group">
+            <label>Mô tả</label>
+            <textarea [(ngModel)]="quizMeta.desc" placeholder="Nhập tóm tắt nội dung đánh giá năng lực của bộ đề thi này..."></textarea>
+          </div>
+
+          <div class="input-field-row">
+            <div class="input-field-group">
+              <label>Chủ đề</label>
+              <select [(ngModel)]="quizMeta.topicId">
+                @if (topics.length === 0) {
+                <option value="">Chưa có chủ đề khả dụng</option>
+                }
+                @for (topic of topics; track topic.id) {
+                <option [value]="topic.id">{{ topic.name }}</option>
+                }
+              </select>
+            </div>
+              <div class="input-field-group">
+                <label>Mức độ</label>
+                <select [(ngModel)]="quizMeta.level">
+                  <option value="beginner">Dễ</option>
+                  <option value="medium">Trung bình</option>
+                  <option value="hard">Khó</option>
+                </select>
+              </div>
+          </div>
+        </div>
+
+        <div class="creation-form-card">
+          <h3>Cấu hình bộ đề</h3>
+          <p class="card-section-desc">Thiết lập cơ chế kiểm tra và cách thức hoạt động của phiên làm bài</p>
+
+          <div class="input-field-group">
+            <label>Thời gian làm bài</label>
+            <div class="suffix-input-wrapper">
+              <i class="bi bi-clock prefix-icon-inside"></i>
+              <input type="number" [(ngModel)]="quizMeta.duration">
+              <span class="suffix-unit-text">phút</span>
+            </div>
+          </div>
+
+          <div class="input-field-group">
+            <label>Tỷ lệ làm đúng để đạt (%)</label>
+            <div class="suffix-input-wrapper">
+              <i class="bi bi-check-circle prefix-icon-inside"></i>
+              <input type="number" [(ngModel)]="quizMeta.passRate">
+              <span class="suffix-unit-text">%</span>
+            </div>
+          </div>
+
+          <div class="setting-toggle-row">
+            <div class="toggle-text-left">
+              <h4>Trộn ngẫu nhiên câu hỏi</h4>
+              <p>Tự động xáo trộn thứ tự các câu hỏi trong bộ đề khi sinh viên bấm làm bài</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="quizMeta.shuffle">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="create-action-footer">
+        <button class="btn-footer-back" routerLink="/quiz-bank">Quay lại</button>
+        <button class="btn-footer-next" [disabled]="!quizMeta.title.trim() || isSaving" (click)="nextStep()">Tiếp theo <i class="bi bi-chevron-right"></i></button>
+      </div>
+      } @else {
+      <div class="create-header-row">
+        <button class="btn-back-arrow" (click)="prevStep()"><i class="bi bi-chevron-left"></i></button>
+        <div class="header-main-text">
+          <h1>Tạo Bộ đề mới</h1>
+          <p>Thêm câu hỏi, thiết lập đáp án và cấu hình bộ đề</p>
+        </div>
+        <div class="header-action-buttons">
+          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
+            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
+          </button>
+          <button class="btn-purple-preview" [disabled]="isSaving" (click)="openPreview()">Xem trước</button>
+        </div>
+      </div>
+
+      <div class="questions-builder-container">
+        <div class="builder-card-main">
+          <div class="builder-title-row">
+            <div>
+              <h3>Biên soạn Câu hỏi</h3>
+              <p class="card-section-desc">Nhập thủ công hoặc import JSON để thêm câu hỏi vào bộ đề</p>
+            </div>
+              <label class="btn-import-questions">
+                <i class="bi bi-cloud-arrow-up"></i> Import Excel / JSON
+                <input type="file" accept=".json,application/json,.xlsx,.xls" (change)="onQuestionFileSelected($event)">
+              </label>
+          </div>
+
+          @if (importFeedback) {
+          <div class="quiz-form-message success">
+            <i class="bi bi-check-circle"></i>
+            <span>{{ importFeedback }}</span>
+          </div>
+          }
+          @if (importError) {
+          <div class="quiz-form-message error">
+            <i class="bi bi-exclamation-circle"></i>
+            <span>{{ importError }}</span>
+          </div>
+          }
+
+          @for (q of questions; track qIdx; let qIdx = $index) {
+          <div class="question-item-block">
+            <div class="question-block-top">
+              <span class="lbl-q-title">Câu hỏi {{ qIdx + 1 }}</span>
+
+              <div class="q-meta-inputs-right">
+                <div class="inline-points-input">
+                  <span>Điểm số:</span>
+                  <input type="number" [(ngModel)]="q.points">
+                </div>
+
+                <select class="select-q-type" [(ngModel)]="q.type">
+                  <option value="single">Trắc nghiệm (Một đáp án)</option>
+                </select>
+
+                <button class="btn-delete-q" (click)="removeQuestion(qIdx)" [disabled]="questions.length === 1">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="input-field-group row-text-area-margin">
+              <label>Nội dung câu hỏi</label>
+              <textarea [(ngModel)]="q.text" placeholder="Nhập nội dung câu hỏi trắc nghiệm..."></textarea>
+            </div>
+
+          <div class="options-list-wrapper">
+            <label class="lbl-options-heading">Các phương án trả lời</label>
+            @for (opt of q.options; track $index; let oIdx = $index) {
+            <div class="option-row-item" [class.is-selected-correct]="q.correctIndex === oIdx">
+              <div class="radio-custom-click" (click)="setCorrectAnswer(qIdx, oIdx)">
+                <div class="radio-outer-dot">
+                  @if (q.correctIndex === oIdx) {
+                    <div class="radio-inner-core"></div>
+                  }
+                </div>
+              </div>
+              
+              <span class="prefix-option-letter">{{ ['A', 'B', 'C', 'D'][oIdx] }}.</span>
+              
+              <input type="text" 
+                    [(ngModel)]="q.options[oIdx]" 
+                    placeholder="Nhập nội dung phương án..." 
+                    style="width: 100%; flex: 1; min-width: 0;"> 
+            </div>
+            }
+          </div>
+          <div class="input-field-group" style="margin-top: 16px;">
+            <label style="display: flex; align-items: center; gap: 6px;">
+              <i class="bi bi-lightbulb-fill" style="color: #eab308;"></i> Giải thích đáp án (Lời giải chi tiết)
+            </label>
+            <textarea [(ngModel)]="q.explanation" 
+                      placeholder="Nhập kiến thức bổ trợ, lý do chọn đáp án đúng hoặc tài liệu tham khảo cho học viên (Sẽ hiển thị sau khi nộp bài)..."
+                      style="height: 80px; font-size: 0.82rem;"></textarea>
+          </div>
+          </div>
+          }
+
+          <button class="btn-dashed-add-question" (click)="addQuestion()">
+            <i class="bi bi-plus-lg"></i> Thêm câu hỏi mới
+          </button>
+        </div>
+      </div>
+
+      <div class="create-action-footer justify-end">
+        <button class="btn-footer-back spacing-right-btn" (click)="prevStep()">Quay lại</button>
+        <button class="btn-footer-complete" [disabled]="isSaving" (click)="openPreview()">Xem trước & Hoàn tất</button>
+      </div>
+      }
+
+    </div>
+  </main>
+
+  @if (isPreviewModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box preview-mode-box">
+      <div class="preview-modal-header">
+        <h3>Xem trước bộ đề</h3>
+        <button class="btn-close-preview" (click)="closePreview()"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <div class="preview-modal-body">
+        <div class="preview-meta-section">
+          <h2>{{ quizMeta.title }}</h2>
+          <p class="preview-desc">{{ quizMeta.desc || 'Chưa có mô tả.' }}</p>
+          <div class="preview-badges-grid">
+            <span><i class="bi bi-tag"></i> {{ getTopicName(quizMeta.topicId) }}</span>
+            <span><i class="bi bi-bar-chart"></i> Mức độ: {{ getLevelName(quizMeta.level) }}</span>
+            <span><i class="bi bi-clock"></i> Thời gian: {{ quizMeta.duration }} phút</span>
+            <span><i class="bi bi-check2-circle"></i> Điểm đạt: {{ quizMeta.passRate }}%</span>
+            <span><i class="bi bi-shuffle"></i> Trộn đề: {{ quizMeta.shuffle ? 'Bật' : 'Tắt' }}</span>
+          </div>
+        </div>
+
+        <div class="preview-questions-list">
+          <h4>Danh sách câu hỏi ({{ questions.length }} câu)</h4>
+          @for (q of questions; track $index; let qIdx = $index) {
+          <div class="preview-q-card">
+            <p class="pq-text"><strong>Câu {{ qIdx + 1 }}:</strong> {{ q.text || '(Chưa điền nội dung câu hỏi)' }}</p>
+            <div class="pq-options">
+              @for (opt of q.options; track $index; let oIdx = $index) {
+              <div class="pq-opt-item" [class.pq-correct]="q.correctIndex === oIdx">
+                <span>{{ oIdx === 0 ? 'A.' : oIdx === 1 ? 'B.' : oIdx === 2 ? 'C.' : 'D.' }}</span> {{ opt || '(Trống)' }}
+                @if (q.correctIndex === oIdx) { <i class="bi bi-check-lg"></i> }
+              </div>
+              }
+            </div>
+            @if (q.explanation && q.explanation.trim()) {
+              <div class="pq-explanation-preview" style="margin-top: 12px; padding: 10px 14px; background: rgba(168, 85, 247, 0.05); border-left: 3px solid #6d28d9; border-radius: 6px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+                <strong style="color: #a78bfa; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                  <i class="bi bi-patch-question-fill"></i> Lời giải:
+                </strong> 
+                {{ q.explanation }}
+              </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="preview-modal-footer">
+        <button class="btn-modal-cancel" (click)="closePreview()">Tiếp tục chỉnh sửa</button>
+        <button class="btn-modal-confirm" [disabled]="isSaving" (click)="completeQuiz()">
+          {{ isSaving ? 'Đang xuất bản...' : 'Xuất bản ngay' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

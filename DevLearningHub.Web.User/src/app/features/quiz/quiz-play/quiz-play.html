@@ -1,0 +1,154 @@
+<div class="quiz-play-container" style="word-wrap: break-word; overflow-wrap: anywhere;">
+
+  @if (noQuestionsError) {
+  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 2rem;">
+    <div style="background-color: #1e1e24; border: 1px solid #2d2d38; padding: 3rem; border-radius: 16px; max-width: 500px;">
+      <i class="bi bi-exclamation-triangle" style="font-size: 3.5rem; color: #f59e0b; display: block; margin-bottom: 1.5rem;"></i>
+      <h3 style="font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 0.75rem;">Bộ đề chưa sẵn sàng</h3>
+      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Bộ đề thi này hiện tại chưa có câu hỏi nào. Vui lòng quay lại sau.</p>
+      <button routerLink="/quiz-bank" style="background-color: #a855f7; color: white; border: none; padding: 0.75rem 2rem; font-weight: 600; border-radius: 8px; cursor: pointer;">Quay lại kho đề</button>
+    </div>
+  </div>
+  } @else {
+    <header class="quiz-play-header" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: #1e1e24; border-bottom: 1px solid #2d2d38;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <button class="btn-header-back" (click)="openExitModal()" style="background: none; border: none; color: white; cursor: pointer;"><i class="bi bi-chevron-left" style="font-size: 1.2rem;"></i></button>
+        <h2 style="margin: 0; font-size: 1.1rem; color: white; max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ quizTitle }}</h2>
+      </div>
+      
+      <div class="user-room-identity" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #121214; border-radius: 20px; border: 1px solid #2d2d38;">
+        <img [src]="userAvatar" alt="User Avatar" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1px solid #a855f7;">
+        <span style="color: #e4e4e7; font-size: 0.85rem; font-weight: 500; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ userFullName }}</span>
+      </div>
+    </header>
+
+    @if (questions && questions.length > 0) {
+    <div class="quiz-play-workspace">
+
+      <div class="workspace-left-section">
+        <div class="progress-info-line">
+          <span>Câu hỏi: {{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
+          <span>Đã hoàn thành {{ completionPercentage }}%</span>
+        </div>
+
+        <div class="quiz-progress-track">
+          <div class="quiz-progress-bar" [style.width.%]="completionPercentage"></div>
+        </div>
+
+        <div class="question-main-card" style="word-break: break-word;">
+          <div class="question-badges-row">
+            <span class="badge-points">{{ questions[currentQuestionIndex].points }} điểm</span>
+            <span class="badge-timer" [class.time-critical]="timeLeft() < 60">
+              <i class="bi bi-clock"></i> {{ formattedTime() }}
+            </span>
+            <button class="btn-badge-action" [class.is-bookmarked]="bookmarkedQuestions[currentQuestionIndex]" (click)="toggleBookmark()">
+              <i class="bi" [class.bi-flag-fill]="bookmarkedQuestions[currentQuestionIndex]" [class.bi-flag]="!bookmarkedQuestions[currentQuestionIndex]"></i>
+              {{ bookmarkedQuestions[currentQuestionIndex] ? 'Đã đánh dấu' : 'Đánh dấu' }}
+            </button>
+            <span class="badge-level">{{ questions[currentQuestionIndex].level }}</span>
+          </div>
+
+          <p class="question-display-text" style="font-size: 1.05rem; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">{{ questions[currentQuestionIndex].text }}</p>
+        </div>
+
+        <div class="quiz-options-grid">
+          @for (opt of questions[currentQuestionIndex].options; track opt.id; let i = $index) {
+          <label [class]="'grid-option-item ' + getOptionClass(opt.id)" style="word-break: break-word;">
+            <input type="radio"
+                  [name]="'q-opt-' + currentQuestionIndex"
+                  [value]="opt.id"
+                  [checked]="selectedAnswers[currentQuestionIndex]?.optionId === opt.id"
+                  (change)="onAnswerSelect(opt.id, questions[currentQuestionIndex].id)">
+            <span class="option-label-prefix">{{ i === 0 ? 'A' : i === 1 ? 'B' : i === 2 ? 'C' : 'D' }}</span>
+            <span class="option-label-text" style="word-wrap: break-word;">{{ opt.content }}</span>
+          </label>
+          }
+        </div>
+
+        <div class="workspace-nav-row">
+          <button class="btn-nav-action" (click)="prevQuestion()" [disabled]="currentQuestionIndex === 0">
+            <i class="bi bi-chevron-left"></i> Câu trước
+          </button>
+          <button class="btn-nav-action" (click)="nextQuestion()" [disabled]="currentQuestionIndex === questions.length - 1">
+            Câu tiếp theo <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="workspace-right-section">
+        <div class="quiz-status-card">
+          <h3>Thống kê câu hỏi</h3>
+          <div class="numbers-status-grid">
+            @for (q of questions; track q.id; let idx = $index) {
+            <button class="num-status-item"
+                    [class.active]="idx === currentQuestionIndex"
+                    [class.answered]="selectedAnswers[idx] !== null"
+                    [class.bookmarked]="bookmarkedQuestions[idx]"
+                    (click)="selectQuestion(idx)">
+              {{ idx + 1 }}
+            </button>
+            }
+          </div>
+          <div class="status-legends-list">
+            <div class="legend-item-line">
+              <span class="legend-dot answered"></span>
+              <span class="legend-text">Đã trả lời ({{ answeredCount }})</span>
+            </div>
+            <div class="legend-item-line">
+              <span class="legend-dot unanswered"></span>
+              <span class="legend-text">Chưa trả lời ({{ unansweredCount }})</span>
+            </div>
+            <div class="legend-item-line">
+              <span class="legend-dot bookmarked"></span>
+              <span class="legend-text">Đã đánh dấu ({{ bookmarkedCount }})</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-submit-card">
+          <h3>Nộp bài</h3>
+          @if (unansweredCount > 0) {
+          <p>Còn {{ unansweredCount }} câu chưa trả lời. Bạn có chắc muốn nộp không?</p>
+          } @else {
+          <p>Bạn đã hoàn thành toàn bộ câu hỏi! Hãy rà soát lại thật kỹ trước khi ấn nút nộp bài nhé.</p>
+          }
+          <button class="btn-final-submit" (click)="openConfirmModal()">
+            Nộp bài <i class="bi bi-box-arrow-up"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+    }
+  }
+
+  @if (isConfirmModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3>Xác nhận nộp bài</h3>
+      @if (unansweredCount > 0) {
+      <p>Bạn vẫn còn <span class="highlight-text">{{ unansweredCount }}</span> câu hỏi chưa hoàn thành. Bạn có chắc chắn muốn nộp bài thi ngay không?</p>
+      } @else {
+      <p>Tuyệt vời! Bạn đã hoàn thành toàn bộ câu hỏi. Bạn có chắc chắn muốn nộp bài thi để hệ thống tiến hành chấm điểm không?</p>
+      }
+      <div class="modal-actions-row">
+        <button class="btn-modal-cancel" (click)="closeConfirmModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="confirmSubmit()">Xác nhận nộp</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (isExitModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3>Hủy bỏ bài thi?</h3>
+      <p>Bạn có chắc chắn muốn rời khỏi phòng thi không? Toàn bộ đáp án bạn đã chọn sẽ <span class="highlight-text">bị xóa sạch</span> và không được hệ thống lưu lại.</p>
+      <div class="modal-actions-row">
+        <button class="btn-modal-cancel" (click)="closeExitModal()">Làm tiếp</button>
+        <button class="btn-modal-confirm" (click)="confirmExit()">Rời khỏi</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

@@ -1,0 +1,134 @@
+@import '../../../features/dashboard/dashboard.css';
+
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  background-color: var(--bg-sidebar, #121215);
+  border-right: 1px solid var(--border-nested, #2d2d38);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  flex-shrink: 0;
+}
+
+.brand-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-img {
+  width: 32px;
+  height: 32px;
+}
+
+.sidebar-brand h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.btn-sidebar-close-mobile {
+  display: none; /* Mặc định giấu kín trên màn hình máy tính lớn */
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1.25rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-menu {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+}
+
+.menu-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #52525b;
+  padding: 16px 16px 8px 12px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 16px;
+  border-top: 1px solid #2d2d38;
+  margin-top: auto;
+}
+
+.logout {
+  color: #f43f5e !important;
+  cursor: pointer;
+}
+
+.sidebar-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.15);
+  border-radius: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.3);
+}
+
+/* ==========================================================================
+   ⚡ PHÂN HỆ MOBILE RESPONSIVE CHO SIDEBAR ADMIN (SLIDE-IN ANIMATION)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    z-index: 99999 !important;
+    transform: translateX(-100%); /* Trượt hẳn sang bên trái màn hình ẩn đi */
+    box-shadow: 20px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Thêm class này khi bấm nút Hamburger mở menu */
+  .sidebar.is-mobile-open {
+    transform: translateX(0);
+  }
+
+  .btn-sidebar-close-mobile {
+    display: flex;
+  }
+
+  .sidebar-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99998 !important;
+  }
+}

@@ -1,0 +1,124 @@
+@import '../../dashboard/dashboard.css';
+@import '../admin-dashboard/admin-dashboard.css';
+
+/* --- UPLOAD ZONE --- */
+.import-upload-grid {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.drag-drop-zone {
+  border: 2px dashed var(--border-nested);
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  box-sizing: border-box;
+}
+
+.drag-drop-zone:hover, .drag-drop-zone.dragging {
+  border-color: #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+}
+
+.upload-icon { font-size: 3rem; color: var(--text-muted); margin-bottom: 12px; }
+.file-active-icon { font-size: 3rem; color: #22c55e; margin-bottom: 12px; }
+
+/* --- TABLE STYLING TỐI ƯU HIỂN THỊ TEXT --- */
+.quiz-library-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  width: 100%;
+  overflow-x: auto !important; /* Kích hoạt thanh cuộn ngang khi màn hình co rút */
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-management-table {
+  width: 100%;
+  min-width: 900px; /* Ép bảng giữ nguyên form không bị bóp nghẹt */
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-management-table th {
+  background: var(--bg-nested);
+  color: var(--text-muted);
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bg-card-border);
+  font-weight: 600;
+}
+
+.admin-management-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bg-card-border);
+  color: var(--text-main);
+  white-space: normal !important; /* Ép chữ xuống hàng tự động khi câu hỏi dài */
+}
+
+/* Đảm bảo text hiển thị bung rộng */
+.text-truncate-2 {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-main, #ffffff);
+  word-break: break-word;
+}
+
+/* --- BADGES & ACTIONS --- */
+.row-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.row-status-badge.success { color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+.row-status-badge.danger { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+.tbl-mono { font-family: 'Courier New', monospace; color: var(--text-muted-dark); }
+
+/* --- ACTION FOOTER --- */
+.import-bottom-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 0;
+}
+
+/* ==========================================================================
+   ⚡ PHÂN HỆ MOBILE RESPONSIVE CHỐNG TÀNG HÌNH LAYOUT
+   ========================================================================== */
+@media (max-width: 768px) {
+  .main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px !important;
+    overflow-x: hidden;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  .import-bottom-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-create-new, .btn-admin-secondary {
+    width: 100% !important;
+    justify-content: center;
+    padding: 12px !important;
+  }
+}

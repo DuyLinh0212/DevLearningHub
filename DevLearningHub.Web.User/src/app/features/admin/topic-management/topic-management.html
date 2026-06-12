@@ -1,0 +1,41 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterTopics()" placeholder="Tìm kiếm danh mục chủ đề...">
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Trị Danh Mục Chủ Đề</h1>
+      </section>
+
+      <div class="topic-grid">
+        @for (t of filteredTopics; track t.id) {
+          <div class="topic-card">
+            <div class="topic-icon-box">
+              <i class="bi {{ t.icon || 'bi-code-slash' }}"></i>
+            </div>
+            <div class="topic-info">
+              <h3>{{ t.name }}</h3>
+              <p>{{ t.description }}</p>
+            </div>
+            <div class="topic-actions">
+              <input type="checkbox" [checked]="t.isActive" disabled>
+              <button (click)="deleteTopic(t.id)" class="btn-delete">Xóa</button>
+            </div>
+          </div>
+        } @empty {
+          @if (!isLoading) {
+            <div class="empty-state-box">
+              <h3>Chưa có chủ đề nào</h3>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </main>
+</div>

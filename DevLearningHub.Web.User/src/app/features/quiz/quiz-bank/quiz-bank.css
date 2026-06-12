@@ -1,0 +1,405 @@
+@import '../../dashboard/dashboard.css';
+
+.top-nav-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-nav-tab {
+  background-color: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0; /* Giữ nguyên kích thước nút không cho co rúm chữ */
+}
+
+.btn-nav-tab:hover {
+  color: var(--text-main);
+}
+
+.btn-nav-tab.active {
+  background-color: #6d28d9;
+  color: white;
+}
+
+.btn-create-new {
+  background: linear-gradient(135deg, #a855f7, #6d28d9);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0; /* Ép nút Tạo mới không bị bóp nghẹt diện tích */
+}
+
+.quiz-library-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 24px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.library-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.library-header p {
+  color: var(--text-muted-dark);
+  font-size: 0.85rem;
+  margin: 4px 0 0 0;
+}
+
+.library-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.toolbar-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.pill:hover {
+  color: var(--text-main);
+  background-color: var(--bg-card-border);
+}
+
+.pill.active {
+  background-color: var(--bg-card-border);
+  color: var(--text-main);
+  border-color: var(--input-border);
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.library-search {
+  width: 240px;
+}
+
+.inline-filter {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 6px;
+  padding: 8px 12px;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.inline-filter i {
+  font-size: 0.9rem;
+  color: var(--text-muted-dark);
+}
+
+.quiz-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quiz-list-row {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  padding: 16px;
+  border-radius: 6px;
+  gap: 16px;
+  transition: background-color 0.3s ease, border-color 0.2s;
+}
+
+.quiz-list-row:hover {
+  border-color: var(--text-muted-dark);
+}
+
+.row-icon-box {
+  width: 40px;
+  height: 40px;
+  background-color: var(--bg-main);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a855f7;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.row-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row-title-line h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.status-badge.public {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.status-badge.hidden {
+  background-color: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+}
+
+.status-badge.draft {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.row-description {
+  color: var(--text-muted-dark);
+  font-size: 0.8rem;
+  margin: 6px 0;
+  word-wrap: break-word;
+}
+
+.row-meta-tags {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-muted-dark);
+  font-size: 0.75rem;
+}
+
+.row-meta-tags i {
+  font-size: 0.85rem;
+  color: var(--text-muted-dark);
+}
+
+.updated-time {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.row-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-view-quiz {
+  background-color: var(--bg-card-border);
+  color: var(--text-muted);
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-view-quiz:hover {
+  background-color: var(--border-nested);
+  color: var(--text-main);
+}
+
+.btn-more-options {
+  background: transparent;
+  border: none;
+  color: var(--text-muted-dark);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.btn-more-options:hover {
+  color: var(--text-main);
+}
+
+/* ==========================================================================
+   KHU VỰC CẤU HÌNH MOBILE RESPONSIVE ĐÃ ĐƯỢC ĐỒNG BỘ & SỬA LỖI TRÀN HEADER
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* TỰ ĐỘNG ĐIỀU CHỈNH CHỨA CONTAINER */
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* GIẢI PHÓNG CHIỀU CAO GÁN CỨNG (FIX LỖI CHỒNG NÚT) */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    height: auto !important; /* Mở khóa để thích ứng dòng xếp dọc */
+  }
+
+  .top-search {
+    width: 100% !important;
+  }
+
+  /* THANH ĐIỀU HƯỚNG TAB TRƯỢT NGANG TỰ NHIÊN TRÊN ĐIỆN THOẠI */
+  .top-nav-buttons {
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 6px;
+    gap: 8px !important;
+    display: flex !important;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn-nav-tab, .btn-create-new {
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .library-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .toolbar-pills {
+    overflow-x: auto !important;
+    padding-bottom: 6px;
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pill {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .library-search {
+    width: 100% !important;
+  }
+
+  .quiz-list-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .row-icon-box {
+    display: none !important;
+  }
+
+  .row-title-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .row-title-line h3 {
+    font-size: 0.9rem;
+    width: auto;
+    flex: 1;
+  }
+
+  .row-meta-tags {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .updated-time {
+    margin-left: 0;
+    width: 100%;
+    color: var(--text-muted-dark);
+    margin-top: 2px;
+  }
+
+  .row-actions-right {
+    width: 100%;
+    border-top: 1px solid var(--border-nested);
+    padding-top: 10px;
+    margin-top: 4px;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .btn-view-quiz {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px !important;
+  }
+
+  /* ĐỒNG BỘ KHÔNG GIAN CUỘN SAU KHI HEADER CO GIÃN DYNAMIC */
+  .dashboard-scroll-body {
+    height: auto !important;
+    flex: 1;
+  }
+}

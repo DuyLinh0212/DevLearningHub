@@ -1,0 +1,172 @@
+@import '../../dashboard/dashboard.css';
+
+.analytics-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: flex-start;
+}
+
+.stats-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.progress-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.progress-card h3 {
+  font-size: 1rem;
+  color: var(--text-main);
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+/* ÉP TIẾN ĐỘ GIÃN RỘNG TOÀN KHUNG HÌNH 100% */
+.ana-progress-container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+
+.ana-progress-track {
+  flex: 1 !important; /* Buộc thanh ray phải chiếm trọn toàn bộ không gian còn trống */
+  height: 12px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.ana-progress-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #a855f7, #6366f1) !important;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ana-progress-number {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #a855f7 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: 55px !important;
+  text-align: right !important;
+}
+
+.topics-list-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.topics-list-card h3 {
+  font-size: 0.95rem;
+  margin: 0 0 16px 0;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.topic-progress-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.topic-progress-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.topic-title {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.topic-sub-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.topic-score-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.chart-right {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-right h3 {
+  font-size: 1rem;
+  margin: 0 0 20px 0;
+  color: var(--text-main);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 340px;
+}
+
+.empty-state-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 30px 0;
+  margin: 0;
+}
+
+@media (max-width: 992px) {
+  .analytics-layout {
+    grid-template-columns: 1fr; /* Bóp sập layout 2 cột về 1 cột đứng thẳng dứt khoát */
+    gap: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .topic-progress-item {
+    flex-direction: column; /* Biến đổi dòng danh mục thành hàng dọc trên điện thoại nhỏ */
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .topic-score-badge {
+    align-self: flex-start;
+  }
+}

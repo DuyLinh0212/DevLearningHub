@@ -1,0 +1,47 @@
+<aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
+  <div class="sidebar-brand">
+    <div class="brand-info">
+      <img src="assets/images/logo.svg" alt="Logo Dev-Learning Hub" class="brand-logo-img">
+      <h2>Dev-Learning Hub</h2>
+    </div>
+    <button class="btn-sidebar-close-mobile" (click)="toggleMobileSidebar()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-menu">
+    <div class="menu-heading">ĐIỀU PHỐI</div>
+    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
+      <i class="bi bi-speedometer2"></i> Bảng điều phối
+    </a>
+    <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-database-fill"></i> Quản lý Đề thi
+    </a>
+    <a routerLink="/admin/quiz/import" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
+    </a>
+    <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-bezier2"></i> Quản lý Lộ trình
+    </a>
+    <a routerLink="/admin/topics" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-tags-fill"></i> Quản lý Chủ đề
+    </a>
+    
+    <div class="menu-heading">HẠ TẦNG KỸ THUẬT</div>
+    <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-cpu-fill"></i> Sandbox Engine</a>
+    <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-terminal-fill"></i> Logs hệ thống</a>
+
+    <div class="menu-heading">HỆ THỐNG</div>
+    <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
+  </nav>
+  
+  <div class="sidebar-footer">
+    <a (click)="logout()" class="menu-item logout">
+      <i class="bi bi-box-arrow-left"></i> Đăng xuất
+    </a>
+  </div>
+</aside>
+
+@if (isMobileOpen) {
+  <div class="sidebar-mobile-overlay" (click)="toggleMobileSidebar()"></div>
+}

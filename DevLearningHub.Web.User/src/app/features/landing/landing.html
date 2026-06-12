@@ -1,0 +1,306 @@
+<div class="landing-wrapper">
+
+  <div class="hero-wrapper">
+    <header class="landing-navbar">
+      <div class="nav-brand">
+        <span class="logo-text-short">Dev-Learning Hub</span>
+      </div>
+      <nav class="nav-links">
+        <a href="javascript:void(0)" [class.active-link]="currentSlide === 0" (click)="setSlide(0)">Trắc nghiệm</a>
+        <a href="javascript:void(0)" [class.active-link]="currentSlide === 1" (click)="setSlide(1)">Thử thách Code</a>
+        <a href="javascript:void(0)" [class.active-link]="currentSlide === 2" (click)="setSlide(2)">Diễn đàn</a>
+        <a href="#topics">Lộ trình học</a>
+      </nav>
+      <div class="nav-auth-btns">
+        <button class="btn-theme-toggle" (click)="themeService.toggleTheme()" [title]="themeService.isDarkMode() ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối'">
+          @if (themeService.isDarkMode()) {
+          <i class="bi bi-sun-fill"></i>
+          } @else {
+          <i class="bi bi-moon-stars-fill"></i>
+          }
+        </button>
+
+        <a routerLink="/login" class="btn-nav-login">Đăng nhập</a>
+        <a routerLink="/register" class="btn-nav-register">Đăng ký</a>
+      </div>
+    </header>
+
+    <div class="mega-slider">
+      <div class="slider-track" [style.transform]="'translateX(-' + currentSlide * 100 + '%)'">
+
+        <div class="slide-pane">
+          <div class="slide-bg-watermark">
+            <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?q=80&w=1200" alt="Quiz System">
+          </div>
+          <div class="center-glow glow-purple"></div>
+          <div class="slide-content">
+            <div class="hero-badge">
+              <i class="bi bi-stars"></i>
+              <span>Hệ sinh thái học tập tích hợp</span>
+            </div>
+            <h1 class="hero-main-title">
+              Luyện Trắc Nghiệm,<br>
+              <span class="gradient-text-orange">Chiến Trình Code</span>
+            </h1>
+            <p class="hero-desc">
+              Nền tảng toàn diện tích hợp 3 phân hệ cốt lõi: Ôn luyện lý thuyết chuyên ngành qua trắc nghiệm, thực hành viết code trực tuyến với trình chấm bài tự động và không gian thảo luận cộng đồng.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/register" class="btn-hero-gradient">Bắt đầu ngay</a>
+              <a href="#topics" class="btn-hero-white">Khám phá kho đề</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-pane">
+          <div class="slide-bg-watermark">
+            <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200" alt="Online Judge">
+          </div>
+          <div class="center-glow glow-blue"></div>
+          <div class="slide-content">
+            <div class="hero-badge">
+              <i class="bi bi-terminal"></i>
+              <span>Online Judge thực chiến</span>
+            </div>
+            <h1 class="hero-main-title">
+              Thực Hành Viết Code,<br>
+              <span class="gradient-text-orange">Chấm Điểm Tự Động</span>
+            </h1>
+            <p class="hero-desc">
+              Trình biên dịch mã nguồn trực tuyến mạnh mẽ. Hỗ trợ chạy testcase tự động cho các ngôn ngữ phổ biến như C#, Python, JavaScript và SQL Core ngay trên trình duyệt.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/register" class="btn-hero-gradient">Thử thách ngay</a>
+              <a href="javascript:void(0)" (click)="setSlide(0)" class="btn-hero-white">Quay lại ôn đề</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-pane">
+          <div class="slide-bg-watermark">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200" alt="Forum Dev">
+          </div>
+          <div class="center-glow glow-pink"></div>
+          <div class="slide-content">
+            <div class="hero-badge">
+              <i class="bi bi-people"></i>
+              <span>Không gian thảo luận mở</span>
+            </div>
+            <h1 class="hero-main-title">
+              Kết Nối Diễn Đàn,<br>
+              <span class="gradient-text-orange">Chia Sẻ Kiến Thức</span>
+            </h1>
+            <p class="hero-desc">
+              Hỏi đáp lỗi bug, thảo luận thuật toán tối ưu và tích lũy điểm cống hiến cùng cộng đồng hàng ngàn sinh viên công nghệ tài năng của HUIT.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/register" class="btn-hero-gradient">Tham gia cộng đồng</a>
+              <a href="javascript:void(0)" (click)="setSlide(1)" class="btn-hero-white">Xem bài tập Code</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="slider-arrow prev" (click)="prevSlide()">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button class="slider-arrow next" (click)="nextSlide()">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+
+      <div class="slider-controls-bottom">
+        <div class="hero-users-mock">
+          <div class="avatar-group">
+            <img src="https://i.pravatar.cc/40?img=33" alt="avatar">
+            <img src="https://i.pravatar.cc/40?img=12" alt="avatar">
+            <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
+            <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
+          </div>
+          <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+        </div>
+
+        <div class="slider-dots">
+          @for (s of [0, 1, 2]; track s) {
+          <span class="dot" [class.active]="currentSlide === s" (click)="setSlide(s)"></span>
+          }
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section id="topics" class="topics-section">
+    <div class="section-tag">
+      <i class="bi bi-folder2-open"></i> Chủ đề công nghệ
+    </div>
+    <h2 class="section-title">Khám phá <span class="gradient-text-purple">Công nghệ & Chủ đề Học tập</span></h2>
+    <p class="section-subtitle">Lựa chọn chủ đề công nghệ phù hợp để nâng cao năng lực lập trình và tích lũy điểm XP</p>
+
+    <div class="topics-grid">
+      <div class="topic-card border-blue">
+        <div class="topic-icon bg-blue"><i class="bi bi-layers"></i></div>
+        <h3>Lập trình Web API (.NET 9)</h3>
+        <p>Ôn tập kiến trúc REST API, Dependency Injection, Controllers và EF Core</p>
+        <a routerLink="/login" class="topic-link text-blue">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="topic-card border-green">
+        <div class="topic-icon bg-green"><i class="bi bi-check-square"></i></div>
+        <h3>Giao diện ứng dụng (Angular 20)</h3>
+        <p>Làm chủ Standalone Components, Angular Signals, Forms và Kỹ thuật Binding</p>
+        <a routerLink="/login" class="topic-link text-green">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="topic-card border-purple">
+        <div class="topic-icon bg-purple"><i class="bi bi-diagram-3"></i></div>
+        <h3>Cấu trúc dữ liệu & Giải thuật</h3>
+        <p>Rèn luyện tư duy tối ưu thuật toán qua các bài tập thực hành viết code trực tuyến</p>
+        <a routerLink="/login" class="topic-link text-purple">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="topic-card border-pink">
+        <div class="topic-icon bg-pink"><i class="bi bi-database"></i></div>
+        <h3>Cơ sở dữ liệu SQL Server</h3>
+        <p>Thiết kế sơ đồ ERD, tối ưu hóa quan hệ phức tạp và các câu lệnh truy vấn</p>
+        <a routerLink="/login" class="topic-link text-pink">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="topic-card border-orange">
+        <div class="topic-icon bg-orange"><i class="bi bi-globe"></i></div>
+        <h3>Hệ thống Trắc nghiệm (Quiz)</h3>
+        <p>Tham gia thi thử đếm ngược thời gian, xem lại đáp án kèm giải thích chi tiết</p>
+        <a routerLink="/login" class="topic-link text-orange">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="topic-card border-red">
+        <div class="topic-icon bg-red"><i class="bi bi-terminal"></i></div>
+        <h3>Trình chấm bài (Online Judge)</h3>
+        <p>Nộp mã nguồn trực tuyến, thực thi mã nguồn và chấm điểm tự động qua các testcase ẩn</p>
+        <a routerLink="/login" class="topic-link text-red">Khách phá ngay <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="why-section">
+    <div class="section-tag">
+      <i class="bi bi-star"></i> Tính năng nổi bật
+    </div>
+    <h2 class="section-title">Tại sao <span class="gradient-text-purple">chọn Dev-Learning Hub?</span></h2>
+    <p class="section-subtitle">Khám phá kho câu hỏi trắc nghiệm và thử thách lập trình đa dạng để kiểm tra và bứt phá giới hạn năng lực</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feat-icon text-purple"><i class="bi bi-cpu"></i></div>
+        <h3>Lộ trình cá nhân hóa</h3>
+        <p>Gợi ý các bộ đề trắc nghiệm và bài tập lập trình phù hợp theo từng cấp độ người dùng</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feat-icon text-orange"><i class="bi bi-gift"></i></div>
+        <h3>Cơ chế Tích lũy Phần thưởng</h3>
+        <p>Hệ thống tích điểm kinh nghiệm (XP) và cấp chứng nhận đóng góp cho học viên năng nổ</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feat-icon text-blue"><i class="bi bi-people"></i></div>
+        <h3>Bảng điều khiển</h3>
+        <p>Công cụ quản lý ngân hàng câu hỏi, import dữ liệu hàng loạt từ Excel/JSON dễ dàng</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feat-icon text-green"><i class="bi bi-bar-chart-line"></i></div>
+        <h3>Theo dõi tiến độ học tập</h3>
+        <p>Dashboard cá nhân hiển thị trực quan tỷ lệ đúng/sai và tần suất rèn luyện theo thời gian</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feat-icon text-yellow"><i class="bi bi-trophy"></i></div>
+        <h3>Bảng xếp hạng Cạnh tranh</h3>
+        <p>Vinh danh các lập trình viên xuất sắc có số điểm XP cao nhất hệ thống hàng tuần</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feat-icon text-magenta"><i class="bi bi-phone"></i></div>
+        <h3>Tối ưu giao diện di động</h3>
+        <p>Thiết kế hiện đại, responsive theo tiêu chí Mobile First giúp ôn luyện mượt mà mọi lúc mọi nơi</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="cta-banner-card">
+      <div class="cta-left-content">
+        <h2>Sẵn sàng bắt đầu hành trình nâng cấp kỹ năng?</h2>
+        <p>Hãy tham gia cùng hàng ngàn sinh viên công nghệ. Tạo tài khoản ngay hôm nay để trải nghiệm hệ sinh thái học tập trọn vẹn</p>
+        <div class="cta-buttons">
+          <a routerLink="/register" class="btn-cta-white">Tạo tài khoản</a>
+          <a routerLink="/login" class="btn-cta-outline">Khám phá ngay</a>
+        </div>
+      </div>
+      <div class="cta-right-graphic">
+        <div class="graphic-mock-window">
+          <div class="window-header">
+            <span class="window-dot red"></span>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+            <span class="window-title">dev-learning-hub.ts</span>
+          </div>
+          <div class="window-body">
+            <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=600" alt="Code Hub Preview">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="main-landing-footer">
+    <div class="footer-top-columns">
+      <div class="footer-info-col">
+        <h3 class="footer-logo-title">Dev-Learning Hub</h3>
+        <p class="footer-brand-desc">Hệ sinh thái học tập tích hợp toàn diện dành cho sinh viên CNTT và lập trình viên.</p>
+        <div class="footer-socials">
+          <a href="#"><i class="bi bi-facebook"></i></a>
+          <a href="#"><i class="bi bi-twitter-x"></i></a>
+          <a href="#"><i class="bi bi-instagram"></i></a>
+          <a href="#"><i class="bi bi-linkedin"></i></a>
+          <a href="#"><i class="bi bi-youtube"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-links-col">
+        <h4>Liên kết nhanh</h4>
+        <a href="#">Trang chủ</a>
+        <a href="#">Về chúng tôi</a>
+        <a href="#">Tính năng</a>
+        <a href="#">Bảng giá</a>
+        <a href="#">Liên hệ</a>
+      </div>
+
+      <div class="footer-links-col">
+        <h4>Dành cho Giảng viên</h4>
+        <a href="#">Tổng quan</a>
+        <a href="#">Hướng dẫn</a>
+        <a href="#">Tuyển dụng</a>
+        <a href="#">Văn hóa</a>
+        <a href="#">Blog công nghệ</a>
+      </div>
+
+      <div class="footer-links-col contact-col">
+        <h4>Liên hệ với chúng tôi</h4>
+        <p><i class="bi bi-envelope"></i> mim879584@gmail.com</p>
+        <p><i class="bi bi-telephone"></i> 0942530584</p>
+        <p><i class="bi bi-geo-alt"></i> Viện Chuyển đổi số iDX - Đại học Công thương TP.HCM (HUIT)</p>
+      </div>
+    </div>
+
+    <div class="footer-bottom-bar">
+      <p class="copyright">Copyright © 2026 Dev-Learning Hub Team</p>
+      <div class="footer-legal-links">
+        <span>All Rights Reserved</span>
+        <a href="#">Điều khoản & Điều kiện</a>
+        <a href="#">Chính sách bảo mật</a>
+      </div>
+    </div>
+  </footer>
+</div>

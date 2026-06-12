@@ -1,0 +1,11 @@
+# Chặn các file rác hệ thống và IDE
+.vs/
+*.rar
+*.zip
+.idea/
+.vscode/
+
+# Chặn file build và thư mục dependencies của Angular bên trong các sub-folders
+**/node_modules/
+**/.angular/
+**/dist/
