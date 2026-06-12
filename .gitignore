@@ -9,3 +9,7 @@
 **/node_modules/
 **/.angular/
 **/dist/
+# .NET generated files
+**/bin/
+**/obj/
+*.csproj.user
