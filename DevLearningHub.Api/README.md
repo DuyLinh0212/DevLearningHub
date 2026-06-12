@@ -419,6 +419,146 @@ Bảng liên quan:
 - `roadmap_topics`
 - `topics`
 
+## Nhóm API Forum & Community
+
+Module diễn đàn gồm bài viết, comment lồng nhau, vote, tag và kiểm duyệt nội dung.
+
+### Phân quyền dùng chung
+
+- `Public`: không cần đăng nhập.
+- `User+`: cần JWT hợp lệ (mọi role).
+- `Moderator+`: role `Moderator` hoặc `Admin`, qua policy `ModeratorOrAdmin`.
+
+Quy ước sửa/xóa:
+
+- Sửa bài viết / comment: chỉ chủ sở hữu.
+- Xóa bài viết / comment: chủ sở hữu, hoặc `Moderator`/`Admin` xóa bất kỳ.
+- Ẩn nội dung vi phạm: dùng endpoint `moderate` (chỉ `Moderator+`), không xóa dữ liệu.
+
+### Posts
+
+Base route: `api/posts`
+
+| Method | Endpoint | Auth | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Public | Danh sách bài viết, có phân trang, tìm kiếm và lọc theo tag |
+| `POST` | `/` | User+ | Tạo bài viết mới |
+| `GET` | `/{id}` | Public | Chi tiết bài viết, tự tăng `view_count` |
+| `PUT` | `/{id}` | User+ | Sửa bài viết (chủ sở hữu) |
+| `DELETE` | `/{id}` | User+ | Xóa bài viết (chủ sở hữu hoặc Moderator+) |
+| `POST` | `/{id}/vote` | User+ | Upvote/Downvote bài viết |
+| `GET` | `/{id}/comments` | Public | Lấy comment dạng cây lồng nhau |
+| `POST` | `/{id}/comments` | User+ | Thêm comment hoặc reply |
+| `POST` | `/{id}/moderate` | Moderator+ | Ẩn/bỏ ẩn bài viết và ghi `moderation_logs` |
+
+`GET /api/posts` query:
+
+- `page`: trang hiện tại, mặc định `1`.
+- `pageSize`: số bản ghi mỗi trang, mặc định `20`, tối đa `100`.
+- `search`: tìm theo tiêu đề hoặc nội dung.
+- `tag`: lọc theo `slug` của tag.
+- `authorId`: lọc theo tác giả.
+
+Response là `PagedResponse<T>`:
+
+```json
+{
+  "items": [],
+  "totalCount": 0,
+  "page": 1,
+  "pageSize": 20,
+  "totalPages": 0
+}
+```
+
+`POST /api/posts` body ví dụ:
+
+```json
+{
+  "title": "Làm sao tối ưu EF Core?",
+  "bodyMarkdown": "Mình đang gặp N+1 query...",
+  "imageUrl": null,
+  "tagIds": ["b0000000-0000-0000-0000-000000000002"]
+}
+```
+
+`POST /api/posts/{id}/vote` body:
+
+```json
+{ "voteType": "up" }
+```
+
+- `voteType`: `"up"` hoặc `"down"`.
+- Bấm lại cùng loại sẽ bỏ vote; bấm loại khác sẽ đổi chiều. Mỗi user một vote trên một đối tượng.
+- Response trả về `upvotes`, `downvotes` đã đếm lại và `myVote` (`"up"`/`"down"`/`null`).
+
+### Comments
+
+Base route: `api/comments`
+
+| Method | Endpoint | Auth | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `PUT` | `/{id}` | User+ | Sửa comment (chủ sở hữu) |
+| `DELETE` | `/{id}` | User+ | Xóa comment và toàn bộ reply con (chủ sở hữu hoặc Moderator+) |
+| `POST` | `/{id}/vote` | User+ | Upvote/Downvote comment |
+| `POST` | `/{id}/accept` | User+ | Đánh dấu Best Answer (chỉ tác giả bài viết) |
+| `POST` | `/{id}/moderate` | Moderator+ | Ẩn/bỏ ẩn comment và ghi `moderation_logs` |
+
+Ghi chú:
+
+- `accept` chỉ tác giả bài viết được dùng; set `posts.accepted_comment_id` và `comments.is_accepted`. Gọi lại trên cùng comment sẽ bỏ đánh dấu.
+- Comment bị ẩn sẽ tự mất trạng thái Best Answer và không xuất hiện trong cây comment công khai.
+
+### Tags
+
+Base route: `api/tags`
+
+| Method | Endpoint | Auth | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Public | Danh sách tất cả tag |
+| `POST` | `/` | Moderator+ | Tạo tag mới |
+| `PUT` | `/{id}` | Moderator+ | Sửa tag |
+| `DELETE` | `/{id}` | Moderator+ | Xóa tag và gỡ khỏi mọi bài viết |
+
+`POST /api/tags` body ví dụ:
+
+```json
+{ "name": "ASP.NET Core", "colorHex": "#5c2d91" }
+```
+
+- `slug` được sinh tự động từ `name`; `name` và `slug` phải là duy nhất.
+- `colorHex` không bắt buộc, mặc định `#6366f1`.
+
+### Moderation
+
+Body dùng chung cho `POST /api/posts/{id}/moderate` và `POST /api/comments/{id}/moderate`:
+
+```json
+{ "reason": "Vi phạm quy định cộng đồng", "hidden": true }
+```
+
+- `hidden`: `true` để ẩn (mặc định), `false` để bỏ ẩn.
+- Mỗi lần gọi tạo một bản ghi trong `moderation_logs` với `action` là `hide`/`unhide`.
+
+Bảng liên quan tới toàn module:
+
+- `posts`
+- `comments`
+- `votes`
+- `tags`
+- `post_tags`
+- `moderation_logs`
+
+### Seed dữ liệu test nhanh
+
+File `Database/SeedForumTestData.sql` tạo sẵn tài khoản và tag để test:
+
+- `admin` / `Admin@123` — role `Admin`.
+- `moderator` / `Mod@12345` — role `Moderator`.
+- 5 tag mẫu (C#, ASP.NET Core, JavaScript, SQL, Hỏi đáp).
+
+Chạy script này sau khi import database chính. Đăng nhập qua `POST /api/auth/login` để lấy token test các endpoint `Moderator+`.
+
 ## Mapping Database Chính
 
 Mapping EF Core nằm trong:
@@ -435,7 +575,7 @@ Các bảng chính đã có mapping:
 | Quiz | `topics`, `questions`, `question_options`, `quiz_sets`, `quiz_set_questions`, `quiz_sessions`, `quiz_answers` |
 | Progress | `user_topic_progress`, `xp_transactions` |
 | Roadmap | `roadmaps`, `roadmap_topics` |
-| Community/khác | `posts`, `comments`, `votes`, `notifications`, `moderation_logs` |
+| Community/khác | `posts`, `comments`, `votes`, `tags`, `post_tags`, `notifications`, `moderation_logs` |
 | Coding problem | `problems`, `test_cases`, `submissions`, `submission_test_results`, `programming_languages` |
 
 ## Các Điểm Cần Seed Dữ Liệu
