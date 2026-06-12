@@ -117,6 +117,8 @@ public class QuestionResponse
 {
     public Guid Id { get; set; }
 
+    public Guid CreatedBy { get; set; }
+
     public Guid TopicId { get; set; }
 
     public string Content { get; set; } = string.Empty;
@@ -194,6 +196,8 @@ public class QuizSetResponse
 {
     public Guid Id { get; set; }
 
+    public Guid CreatedBy { get; set; }
+
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
@@ -229,6 +233,8 @@ public class QuizSetQuestionResponse
 public class QuizSetDetailResponse
 {
     public Guid Id { get; set; }
+
+    public Guid CreatedBy { get; set; }
 
     public string Title { get; set; } = string.Empty;
 

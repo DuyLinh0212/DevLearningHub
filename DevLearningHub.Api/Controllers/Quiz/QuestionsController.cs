@@ -1,3 +1,4 @@
+using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
@@ -124,7 +125,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<QuestionResponse>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId)
+        if (question.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden."));
         }
@@ -178,7 +179,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId)
+        if (question.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -467,6 +468,7 @@ public class QuestionsController : ControllerBase
         return new QuestionResponse
         {
             Id = question.Id,
+            CreatedBy = question.CreatedBy,
             TopicId = question.TopicId,
             Content = question.Content,
             Level = question.Level,

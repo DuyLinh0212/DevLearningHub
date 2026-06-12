@@ -68,16 +68,12 @@ public class AuthController : ControllerBase
         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
         var defaultRole = await GetOrCreateDefaultUserRoleAsync(now);
+        await _db.SaveChangesAsync();
 
         _db.Users.Add(user);
-        _db.UserRoles.Add(new UserRole
-        {
-            UserId = user.Id,
-            RoleId = defaultRole.Id,
-            AssignedAt = now
-        });
-
         await _db.SaveChangesAsync();
+
+        await EnsureDefaultUserRoleAsync(user.Id, defaultRole.Id, now);
 
         await WriteAuditAsync(user.Id, "auth.register", "user", user.Id, null);
 
@@ -212,6 +208,27 @@ public class AuthController : ControllerBase
         _db.Roles.Add(role);
 
         return role;
+    }
+
+    private async Task EnsureDefaultUserRoleAsync(Guid userId, Guid roleId, DateTime assignedAt)
+    {
+        var alreadyAssigned = await _db.UserRoles.AnyAsync(ur =>
+            ur.UserId == userId &&
+            ur.RoleId == roleId);
+
+        if (alreadyAssigned)
+        {
+            return;
+        }
+
+        _db.UserRoles.Add(new UserRole
+        {
+            UserId = userId,
+            RoleId = roleId,
+            AssignedAt = assignedAt
+        });
+
+        await _db.SaveChangesAsync();
     }
 
     private async Task<AuthResponse> BuildAuthResponseAsync(User user)

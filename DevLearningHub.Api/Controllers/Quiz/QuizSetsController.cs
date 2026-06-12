@@ -1,3 +1,4 @@
+using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
@@ -36,7 +37,10 @@ public class QuizSetsController : ControllerBase
 
         if (includePrivate && User.TryGetUserId(out var userId))
         {
-            query = query.Where(qs => qs.IsPublic || qs.CreatedBy == userId);
+            if (!User.IsInRole(AppRoles.Admin))
+            {
+                query = query.Where(qs => qs.IsPublic || qs.CreatedBy == userId);
+            }
         }
         else
         {
@@ -48,6 +52,7 @@ public class QuizSetsController : ControllerBase
             .Select(qs => new QuizSetResponse
             {
                 Id = qs.Id,
+                CreatedBy = qs.CreatedBy,
                 Title = qs.Title,
                 Description = qs.Description,
                 Mode = qs.Mode,
@@ -80,7 +85,9 @@ public class QuizSetsController : ControllerBase
         }
 
         var isOwner = User.TryGetUserId(out var userId) && quizSet.CreatedBy == userId;
-        if (!quizSet.IsPublic && !isOwner)
+        var isAdmin = User.IsInRole(AppRoles.Admin);
+        var canManage = isOwner || isAdmin;
+        if (!quizSet.IsPublic && !canManage)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Forbidden."));
         }
@@ -88,6 +95,7 @@ public class QuizSetsController : ControllerBase
         var response = new QuizSetDetailResponse
         {
             Id = quizSet.Id,
+            CreatedBy = quizSet.CreatedBy,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,
@@ -104,7 +112,7 @@ public class QuizSetsController : ControllerBase
                     Level = qsq.Question.Level,
                     Explanation = qsq.Question.Explanation,
                     OrderIndex = qsq.OrderIndex,
-                    Options = isOwner
+                    Options = canManage
                         ? qsq.Question.QuestionOptions
                             .OrderBy(option => option.OrderIndex)
                             .Select(option => new QuestionOptionResponse
@@ -195,7 +203,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<QuizSetResponse>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId)
+        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
@@ -256,7 +264,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId)
+        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -291,7 +299,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId)
+        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -343,7 +351,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId)
+        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -376,7 +384,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<List<QuizSetQuestionResponse>>.Fail("Quiz set not found."));
         }
 
-        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || quizSet.CreatedBy != userId))
+        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
         }
@@ -536,10 +544,16 @@ public class QuizSetsController : ControllerBase
             .Where(request => request.Id.HasValue)
             .Select(request => request.Id!.Value)
             .ToHashSet();
-        var existingQuestions = await _db.Questions
+        var existingQuestionQuery = _db.Questions
             .Include(question => question.QuestionOptions)
-            .Where(question => requestedIds.Contains(question.Id) && question.CreatedBy == userId)
-            .ToDictionaryAsync(question => question.Id);
+            .Where(question => requestedIds.Contains(question.Id));
+
+        if (!User.IsInRole(AppRoles.Admin))
+        {
+            existingQuestionQuery = existingQuestionQuery.Where(question => question.CreatedBy == userId);
+        }
+
+        var existingQuestions = await existingQuestionQuery.ToDictionaryAsync(question => question.Id);
 
         for (var index = 0; index < requests.Count; index++)
         {
@@ -606,6 +620,7 @@ public class QuizSetsController : ControllerBase
         return new QuizSetResponse
         {
             Id = quizSet.Id,
+            CreatedBy = quizSet.CreatedBy,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,

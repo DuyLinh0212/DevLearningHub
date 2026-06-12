@@ -140,10 +140,35 @@
             <button class="btn-tbl-icon" [style.color]="set.statusClass === 'public' ? '#ef4444' : '#22c55e'" (click)="toggleQuizSetStatus(set)" style="padding: 6px; border: 1px solid var(--border-nested); border-radius: 6px; background: var(--bg-nested); width: 32px; height: 32px;" [title]="set.statusClass === 'public' ? 'Chuyển thành Bản nháp' : 'Phát hành công khai'">
               <i class="bi" [class.bi-eye-slash-fill]="set.statusClass === 'public'" [class.bi-eye-fill]="set.statusClass !== 'public'"></i>
             </button>
+            <div class="quiz-row-menu">
+              <button class="btn-tbl-icon btn-kebab" (click)="toggleQuizSetMenu(set.id, $event)" title="Tùy chọn bộ đề">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+              @if (activeQuizSetMenuId === set.id) {
+              <div class="quiz-row-menu-panel">
+                <button type="button" (click)="openQuizSetEditorFromMenu(set)">
+                  <i class="bi bi-pencil-square"></i> Sửa thông tin
+                </button>
+                <button type="button" (click)="openAssignModalFromMenu(set)">
+                  <i class="bi bi-ui-checks-grid"></i> Thêm/xóa câu hỏi
+                </button>
+                <button type="button" (click)="toggleQuizSetStatus(set); closeQuizSetMenu()">
+                  <i class="bi" [class.bi-eye-slash-fill]="set.statusClass === 'public'" [class.bi-eye-fill]="set.statusClass !== 'public'"></i>
+                  {{ set.statusClass === 'public' ? 'Chuyển thành bản nháp' : 'Phát hành' }}
+                </button>
+                <button type="button" class="danger" (click)="deleteQuizSet(set.id); closeQuizSetMenu()">
+                  <i class="bi bi-trash3"></i> Xóa bộ đề
+                </button>
+              </div>
+              }
+            </div>
           </div>
         </div>
         }
       </div>
+      @if (activeQuizSetMenuId) {
+      <div class="menu-click-shield" (click)="closeQuizSetMenu()"></div>
+      }
       }
 
     </div>
@@ -227,8 +252,16 @@
         Tích chọn các câu hỏi dưới ngân hàng để thêm vào bộ đề phòng thi này. Dữ liệu sẽ tự động đồng bộ cấu trúc.
       </p>
 
+      <div class="assign-modal-toolbar">
+        <input type="text" [(ngModel)]="assignSearchTerm" placeholder="Tìm câu hỏi trong chủ đề này...">
+        <span>{{ quizSetForm.questionIds.length }} câu đã gán</span>
+      </div>
+
       <div class="assign-questions-scroll-list">
-        @for (q of questionsBank; track q.id) {
+        @if (isLoadingAssignQuestions) {
+        <div class="assign-empty-state">Đang tải danh sách câu hỏi...</div>
+        } @else {
+        @for (q of assignableQuestions; track q.id) {
         @if (q.isActive && q.topicId === selectedQuizSet?.topicId) {
         <div class="assign-item-row" [class.selected]="isQuestionInSet(q.id)" (click)="toggleQuestionInSet(q.id)">
           <div class="assign-checkbox">
@@ -239,12 +272,25 @@
             <p class="assign-q-title">{{ q.text }}</p>
             <span class="assign-q-meta">Cấp độ: {{ getLevelName(q.level) }} &nbsp;•&nbsp; Điểm số: {{ q.points }}đ</span>
           </div>
+          <div class="assign-row-actions">
+            <button type="button" class="btn-assign-toggle" (click)="$event.stopPropagation(); toggleQuestionInSet(q.id)">
+              {{ isQuestionInSet(q.id) ? 'Xóa' : 'Thêm' }}
+            </button>
+            <button type="button" class="btn-tbl-icon" (click)="openQuestionEditorFromAssign(q, $event)" title="Sửa câu hỏi">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+          </div>
         </div>
+        }
+        }
+        @empty {
+        <div class="assign-empty-state">Không có câu hỏi phù hợp với chủ đề bộ đề.</div>
         }
         }
       </div>
 
       <div class="modal-actions-row" style="margin-top: 20px;">
+        <button class="btn-modal-cancel" (click)="openQuestionModal()"><i class="bi bi-plus-lg"></i> Tạo câu hỏi mới</button>
         <button class="btn-modal-confirm" (click)="closeAssignModal()">Hoàn tất thiết lập</button>
       </div>
     </div>

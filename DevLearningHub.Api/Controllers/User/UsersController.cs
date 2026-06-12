@@ -2,6 +2,7 @@ using DevLearningHub.Api.Dtos.Auth;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -74,6 +75,51 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Upload and save the current user's avatar using Cloudinary.
+    /// </summary>
+    [HttpPost("me/avatar")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadAvatar(
+        [FromForm] IFormFile? file,
+        [FromServices] CloudinaryService cloudinaryService)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<UserProfileResponse>.Fail("Unauthorized."));
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<UserProfileResponse>.Fail("Please choose an image file."));
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return NotFound(ApiResponse<UserProfileResponse>.Fail("User not found."));
+        }
+
+        try
+        {
+            var uploadResult = await cloudinaryService.UploadAvatarAsync(userId, file);
+            user.AvatarUrl = uploadResult.Url;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<UserProfileResponse>.Fail(ex.Message));
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user), "Avatar updated."));
+    }
+
+    /// <summary>
     /// Get learning statistics for a user.
     /// </summary>
     [HttpGet("{id:guid}/stats")]
@@ -97,8 +143,19 @@ public class UsersController : ControllerBase
             .Select(s => new { Score = s.Score!.Value, s.TotalQuestions })
             .ToListAsync();
 
-        // Rank is calculated from the current XP snapshot on users.xp_points.
-        var rank = await _db.Users.CountAsync(u => u.XpPoints > user.XpPoints) + 1;
+        var userXp = scoreRows.Sum(session => CalculateXp(session.Score));
+        var userXpRows = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive)
+            .Select(u => new
+            {
+                u.Id,
+                Xp = _db.QuizSessions
+                    .Where(s => s.UserId == u.Id && s.Status == "completed" && s.Score.HasValue)
+                    .Sum(s => (int?)s.Score!.Value) ?? 0
+            })
+            .ToListAsync();
+        var rank = userXpRows.Count(row => CalculateXp(row.Xp) > userXp) + 1;
         var avgScore = scoreRows.Count == 0
             ? 0
             : scoreRows.Average(s => (double)s.Score / s.TotalQuestions);
@@ -107,7 +164,7 @@ public class UsersController : ControllerBase
         {
             UserId = user.Id,
             TotalQuizTaken = totalQuizTaken,
-            TotalXP = user.XpPoints,
+            TotalXP = userXp,
             AvgScore = Math.Round(avgScore, 4),
             Rank = rank
         };
@@ -127,20 +184,40 @@ public class UsersController : ControllerBase
         var users = await _db.Users
             .AsNoTracking()
             .Where(u => u.IsActive)
-            .OrderByDescending(u => u.XpPoints)
-            .ThenBy(u => u.Username)
-            .Take(top)
+            .OrderBy(u => u.Username)
             .ToListAsync();
 
-        var entries = users.Select((user, index) => new LeaderboardEntryResponse
-        {
-            Rank = index + 1,
-            UserId = user.Id,
-            Username = user.Username,
-            FullName = user.FullName ?? user.Username,
-            AvatarUrl = user.AvatarUrl,
-            XP = user.XpPoints
-        }).ToList();
+        var userIds = users.Select(user => user.Id).ToList();
+        var completedScores = await _db.QuizSessions
+            .AsNoTracking()
+            .Where(session => userIds.Contains(session.UserId) && session.Status == "completed" && session.Score.HasValue)
+            .GroupBy(session => session.UserId)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                Score = group.Sum(session => session.Score!.Value)
+            })
+            .ToDictionaryAsync(row => row.UserId, row => row.Score);
+
+        var entries = users
+            .Select(user => new
+            {
+                User = user,
+                XP = CalculateXp(completedScores.GetValueOrDefault(user.Id))
+            })
+            .OrderByDescending(row => row.XP)
+            .ThenBy(row => row.User.Username)
+            .Take(top)
+            .Select((row, index) => new LeaderboardEntryResponse
+            {
+                Rank = index + 1,
+                UserId = row.User.Id,
+                Username = row.User.Username,
+                FullName = row.User.FullName ?? row.User.Username,
+                AvatarUrl = row.User.AvatarUrl,
+                XP = row.XP
+            })
+            .ToList();
 
         return Ok(ApiResponse<List<LeaderboardEntryResponse>>.Ok(entries));
     }
@@ -156,6 +233,11 @@ public class UsersController : ControllerBase
             AvatarUrl = user.AvatarUrl,
             XpPoints = user.XpPoints
         };
+    }
+
+    private static int CalculateXp(int correctAnswers)
+    {
+        return correctAnswers * 50;
     }
 }
 

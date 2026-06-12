@@ -28,6 +28,9 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   questionsBank: any[] = [];
   quizSets: any[] = [];
   selectedQuizSet: any = null;
+  activeQuizSetMenuId: any = null;
+  isLoadingAssignQuestions: boolean = false;
+  assignSearchTerm: string = '';
 
   isQuestionModalOpen: boolean = false;
   isEditingQuestion: boolean = false;
@@ -81,6 +84,15 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  get assignableQuestions() {
+    const search = this.assignSearchTerm.trim().toLowerCase();
+    return (this.questionsBank || []).filter(q => {
+      const belongsToTopic = !this.selectedQuizSet?.topicId || q.topicId === this.selectedQuizSet.topicId;
+      const matchesSearch = !search || (q.text || '').toLowerCase().includes(search);
+      return q.isActive && belongsToTopic && matchesSearch;
+    });
+  }
+
   ngOnInit() {
     this.loadTopics();
     this.loadQuestions();
@@ -104,6 +116,27 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   filterByTopic(topicId: string) {
     this.selectedTopic = topicId;
     this.cdr.detectChanges();
+  }
+
+  toggleQuizSetMenu(setId: any, event: MouseEvent) {
+    event.stopPropagation();
+    this.activeQuizSetMenuId = this.activeQuizSetMenuId === setId ? null : setId;
+    this.cdr.detectChanges();
+  }
+
+  closeQuizSetMenu() {
+    this.activeQuizSetMenuId = null;
+    this.cdr.detectChanges();
+  }
+
+  openQuizSetEditorFromMenu(quizSet: any) {
+    this.closeQuizSetMenu();
+    this.openQuizSetModal(quizSet);
+  }
+
+  openAssignModalFromMenu(quizSet: any) {
+    this.closeQuizSetMenu();
+    this.openAssignModal(quizSet);
   }
 
   getLetterPrefix(index: number): string {
@@ -157,11 +190,12 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   }
 
 loadQuizSets() {
-    this.http.get<any>('/api/quiz-sets').subscribe({
+    this.http.get<any>('/api/quiz-sets', { params: { includePrivate: true } }).subscribe({
       next: (res: any) => {
         const rawSets = res?.data || [];
         this.quizSets = rawSets.map((s: any) => ({
           id: s.id,
+          createdBy: s.createdBy || s.CreatedBy || '',
           title: s.title,
           desc: s.description || '',
           topicId: s.topicId,
@@ -342,6 +376,7 @@ toggleQuizSetStatus(set: any) {
     this.selectedQuizSet = quizSet;
     this.isAssignModalOpen = true;
     this.isQuizSetModalOpen = false;
+    this.assignSearchTerm = '';
     this.quizSetForm = {
       title: quizSet.title || '',
       desc: quizSet.desc || quizSet.description || '',
@@ -353,7 +388,52 @@ toggleQuizSetStatus(set: any) {
       mode: quizSet.mode || 'practice',
       questionIds: quizSet.questionIds ? [...quizSet.questionIds] : []
     };
+    this.loadQuizSetQuestionIds(quizSet.id);
     this.cdr.detectChanges();
+  }
+
+  loadQuizSetQuestionIds(quizSetId: any) {
+    if (!quizSetId) {
+      this.setSelectedQuizSetQuestionIds([]);
+      return;
+    }
+
+    this.isLoadingAssignQuestions = true;
+    this.http.get<any>(`/api/quiz-sets/${quizSetId}/questions`).subscribe({
+      next: (res: any) => {
+        const rawQuestions = res?.data || res || [];
+        const questionIds = (Array.isArray(rawQuestions) ? rawQuestions : [])
+          .map((q: any) => q.questionId || q.QuestionId || q.id || q.Id)
+          .filter((id: any) => !!id);
+        this.setSelectedQuizSetQuestionIds(questionIds);
+      },
+      error: () => {
+        alert('Không thể tải danh sách câu hỏi đang có trong bộ đề.');
+      },
+      complete: () => {
+        this.isLoadingAssignQuestions = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private setSelectedQuizSetQuestionIds(questionIds: any[]) {
+    const uniqueIds = Array.from(new Set(questionIds));
+    this.quizSetForm.questionIds = uniqueIds;
+
+    if (this.selectedQuizSet) {
+      this.selectedQuizSet.questionIds = [...uniqueIds];
+      this.selectedQuizSet.questionsCount = uniqueIds.length;
+
+      const index = this.quizSets.findIndex(set => set.id === this.selectedQuizSet.id);
+      if (index > -1) {
+        this.quizSets[index] = {
+          ...this.quizSets[index],
+          questionIds: [...uniqueIds],
+          questionsCount: uniqueIds.length
+        };
+      }
+    }
   }
 
   toggleQuestionInSet(qId: any) {
@@ -363,30 +443,31 @@ toggleQuizSetStatus(set: any) {
     if (idx > -1) {
       this.quizService.removeQuestionFromSet(this.selectedQuizSet.id, qId).subscribe({
         next: () => {
-          this.quizSetForm.questionIds.splice(idx, 1);
-          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.setSelectedQuizSetQuestionIds(this.quizSetForm.questionIds.filter(id => id !== qId));
           this.cdr.detectChanges();
         },
         error: () => {
-          this.quizSetForm.questionIds.splice(idx, 1);
-          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          alert('Không thể xóa câu hỏi khỏi bộ đề.');
           this.cdr.detectChanges();
         }
       });
     } else {
       this.quizService.assignQuestionToSet(this.selectedQuizSet.id, qId).subscribe({
         next: () => {
-          this.quizSetForm.questionIds.push(qId);
-          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          this.setSelectedQuizSetQuestionIds([...this.quizSetForm.questionIds, qId]);
           this.cdr.detectChanges();
         },
         error: () => {
-          this.quizSetForm.questionIds.push(qId);
-          this.selectedQuizSet.questionsCount = this.quizSetForm.questionIds.length;
+          alert('Không thể thêm câu hỏi vào bộ đề.');
           this.cdr.detectChanges();
         }
       });
     }
+  }
+
+  openQuestionEditorFromAssign(question: any, event: MouseEvent) {
+    event.stopPropagation();
+    this.openQuestionModal(question);
   }
 
   isQuestionSelectedInQuizSet(qId: any): boolean {

@@ -789,7 +789,7 @@ public partial class DevLearningHubContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.ToTable("users");
+            entity.ToTable("users", tb => tb.UseSqlOutputClause(false));
 
             entity.HasIndex(e => e.Email, "UQ_users_email").IsUnique();
 

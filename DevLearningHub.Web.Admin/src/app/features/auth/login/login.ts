@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service'; 
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -27,6 +28,10 @@ export class LoginComponent {
   }
 
   onLogin() {
+    if (this.isLoading) {
+      return;
+    }
+
     if (!this.usernameOrEmail.trim() || !this.password.trim()) {
       this.errorMessage = 'Vui lòng điền đầy đủ thông tin!';
       return;
@@ -40,7 +45,12 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.authService.login(loginPayload).subscribe({
+    this.authService.login(loginPayload).pipe(
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
       next: (res: any) => {
         this.isLoading = false;
         const target = res?.data || res;

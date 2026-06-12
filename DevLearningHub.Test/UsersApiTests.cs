@@ -108,7 +108,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
 
         Assert.Equal(auth.UserId, data.GetProperty("userId").GetGuid());
         Assert.Equal(2, data.GetProperty("totalQuizTaken").GetInt32());
-        Assert.Equal(0, data.GetProperty("totalXP").GetInt32());
+        Assert.Equal(450, data.GetProperty("totalXP").GetInt32());
         Assert.Equal(0.75, data.GetProperty("avgScore").GetDouble());
         Assert.True(data.GetProperty("rank").GetInt32() >= 1);
     }
@@ -142,7 +142,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(1, first.GetProperty("rank").GetInt32());
         Assert.Equal(leaderId, first.GetProperty("userId").GetGuid());
         Assert.Equal("leaderboard_max_01", first.GetProperty("username").GetString());
-        Assert.Equal(9999, first.GetProperty("xp").GetInt32());
+        Assert.Equal(10000, first.GetProperty("xp").GetInt32());
     }
 
     [Fact]
@@ -375,8 +375,19 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
         var existing = db.Users.FirstOrDefault(u => u.Username == "leaderboard_max_01");
         if (existing != null)
         {
-            existing.XpPoints = 9999;
             existing.IsActive = true;
+            db.QuizSessions.RemoveRange(db.QuizSessions.Where(session => session.UserId == existing.Id));
+            db.QuizSessions.Add(new QuizSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = existing.Id,
+                QuizSetId = Guid.NewGuid(),
+                Score = 200,
+                TotalQuestions = 200,
+                Status = "completed",
+                StartedAt = DateTime.UtcNow.AddMinutes(-2),
+                EndedAt = DateTime.UtcNow.AddMinutes(-1)
+            });
             await db.SaveChangesAsync();
             return existing.Id;
         }
@@ -388,7 +399,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
             Email = "leaderboard_max_01@gmail.com",
             PasswordHash = "not-used-in-this-test",
             FullName = "Leaderboard Max 01",
-            XpPoints = 9999,
+            XpPoints = 0,
             IsActive = true,
             IsLocked = false,
             CreatedAt = DateTime.UtcNow,
@@ -396,6 +407,17 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         db.Users.Add(user);
+        db.QuizSessions.Add(new QuizSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            QuizSetId = Guid.NewGuid(),
+            Score = 200,
+            TotalQuestions = 200,
+            Status = "completed",
+            StartedAt = DateTime.UtcNow.AddMinutes(-2),
+            EndedAt = DateTime.UtcNow.AddMinutes(-1)
+        });
         await db.SaveChangesAsync();
 
         return user.Id;

@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -14,6 +15,7 @@ import { HttpClient } from '@angular/common/http';
 export class RegisterComponent {
   private router = inject(Router);
   private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
   fullName = '';
   username = '';
@@ -34,6 +36,10 @@ export class RegisterComponent {
   }
 
   onRegister() {
+    if (this.isLoading) {
+      return;
+    }
+
     if (!this.fullName.trim() || !this.username.trim() || !this.email.trim() || !this.password.trim()) {
       alert('Vui lòng điền đầy đủ toàn bộ thông tin đăng ký!');
       return;
@@ -54,7 +60,12 @@ export class RegisterComponent {
       fullName: this.fullName.trim()
     };
 
-    this.http.post('/api/auth/register', registerPayload).subscribe({
+    this.http.post('/api/auth/register', registerPayload).pipe(
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
       next: () => {
         this.isLoading = false;
         alert('Đăng ký tài khoản học viên thành công!');

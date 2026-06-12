@@ -112,8 +112,9 @@ public class QuizSessionsController : ControllerBase
             .ThenInclude(qsq => qsq.Question)
             .ThenInclude(q => q.QuestionOptions)
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-        if (session == null)
+        if (session == null || user == null)
         {
             return NotFound(ApiResponse<QuizResultResponse>.Fail("Session not found."));
         }
@@ -128,10 +129,21 @@ public class QuizSessionsController : ControllerBase
             return BadRequest(ApiResponse<QuizResultResponse>.Fail("Answers are required."));
         }
 
+        var submittedQuestionIds = request.Answers
+            .Select(answer => answer.QuestionId)
+            .Distinct()
+            .ToHashSet();
+
         var questionMap = session.QuizSet.QuizSetQuestions
             .OrderBy(qsq => qsq.OrderIndex)
             .Select(qsq => qsq.Question)
+            .Where(question => submittedQuestionIds.Contains(question.Id))
             .ToDictionary(q => q.Id, q => q);
+
+        if (questionMap.Count == 0 || questionMap.Count != submittedQuestionIds.Count)
+        {
+            return BadRequest(ApiResponse<QuizResultResponse>.Fail("Submitted answers contain invalid questions."));
+        }
 
         var answersByQuestion = request.Answers
             .GroupBy(a => a.QuestionId)
@@ -167,9 +179,12 @@ public class QuizSessionsController : ControllerBase
         }
 
         session.Score = (short)score;
+        session.TotalQuestions = (short)questionMap.Count;
         session.Status = "completed";
         session.EndedAt = DateTime.UtcNow;
         session.TimeTakenSeconds = request.TimeTakenSeconds ?? (int?)(session.EndedAt.Value - session.StartedAt).TotalSeconds;
+        user.XpPoints += CalculateXp(score);
+        user.UpdatedAt = DateTime.UtcNow;
 
         _db.QuizAnswers.AddRange(results);
         await UpdateProgressAsync(userId, session.QuizSet.TopicId, score, session.TotalQuestions);
@@ -274,5 +289,10 @@ public class QuizSessionsController : ControllerBase
         progress.CorrectAnswers += score;
         progress.BestScore = progress.BestScore.HasValue ? Math.Max(progress.BestScore.Value, score) : score;
         progress.LastPracticedAt = DateTime.UtcNow;
+    }
+
+    private static int CalculateXp(int correctAnswers)
+    {
+        return correctAnswers * 50;
     }
 }
