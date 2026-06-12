@@ -1,11 +1,11 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using DevLearningHub.Api.Entities;
 using DevLearningHub.Test.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using DevLearningHub.Api.Entities;
 
 namespace DevLearningHub.Test;
 
