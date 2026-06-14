@@ -1,62 +1,72 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/dashboard">Báo cáo</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Phân tích năng lực</span>
+  </div>
+</header>
 
-  <main class="main-content">
-    <div class="dashboard-scroll-body" style="padding: 24px;">
-      <section class="welcome-section">
-        <h1>Phân Tích Năng Lực Chuyên Sâu</h1>
-        <p>Hệ thống tự động bóc tách hiệu suất trả lời trắc nghiệm để lập bản đồ mạng nhện kỹ năng thực tế của bạn.</p>
-      </section>
+<div class="dashboard-scroll-body">
+  <section class="welcome-section">
+    <h1>Phân tích kết quả học tập</h1>
+    <p>Thống kê chi tiết hiệu suất làm bài trắc nghiệm và đánh giá mức độ thông thạo kiến thức lập trình của bạn.</p>
+  </section>
 
-      <div class="analytics-layout">
+  @if (progressData.length > 0) {
+  <div class="analytics-layout">
+    
+    <div class="stats-left">
+      <div class="progress-card">
+        <h3>Tỷ lệ chính xác tổng thể</h3>
+        <div class="ana-progress-container">
+          <div class="ana-progress-track">
+            <div class="ana-progress-fill" [style.width.%]="overallAccuracy"></div>
+          </div>
+          <span class="ana-progress-number">{{ overallAccuracy }}%</span>
+        </div>
+      </div>
+
+      <div class="topics-list-card">
+        <h3>Chi tiết năng lực theo danh mục</h3>
         
-        <div class="stats-left">
-          <div class="progress-card">
-            <h3>Tỷ lệ chính xác tổng thể</h3>
-            <div class="ana-progress-container">
-              <div class="ana-progress-track">
-                <div class="ana-progress-fill" [style.width.%]="overallAccuracy"></div>
+        <div class="analytics-items-vertical-list">
+          @for (item of progressData; track item.topicId) {
+          <div class="topic-progress-item">
+            <div class="item-left-text">
+              <p class="topic-title">{{ item.topicName }}</p>
+              <div class="topic-meta-sub-row">
+                <span><i class="bi bi-collection"></i> Đã làm: {{ item.totalQuestions }} câu ({{ item.totalAttempts }} lượt)</span>
+                <span>• Kỷ lục: {{ item.bestScore }} điểm</span>
               </div>
-              <span class="ana-progress-number">{{ overallAccuracy }}%</span>
+            </div>
+            <div class="item-right-badge">
+              <span class="topic-score-badge">Mức độ thông thạo: {{ item.accuracy }}%</span>
+              <p class="last-date-text">Gần nhất: {{ item.lastPracticed }}</p>
             </div>
           </div>
-
-          <div class="topics-list-card">
-            <h3>Chi tiết năng lực theo danh mục</h3>
-            
-            <div class="analytics-items-vertical-list">
-              @for (item of progressData; track item.topicId) {
-              <div class="topic-progress-item">
-                <div class="item-left-text">
-                  <p class="topic-title">{{ item.topicName }}</p>
-                  <div class="topic-meta-sub-row">
-                    <span><i class="bi bi-collection"></i> Làm: {{ item.totalQuestions }} câu ({{ item.totalAttempts }} lượt)</span>
-                    <span>• Kỷ lục: {{ item.bestScore }} điểm</span>
-                  </div>
-                </div>
-                <div class="item-right-badge">
-                  <span class="topic-score-badge">{{ item.accuracy }}% thông thạo</span>
-                  <p class="last-date-text">Gần nhất: {{ item.lastPracticed }}</p>
-                </div>
-              </div>
-              } @empty {
-                <div class="empty-analytics-box">
-                  <i class="bi bi-bar-chart-line"></i>
-                  <p class="empty-state-text">Bạn chưa thực hiện bài trắc nghiệm nào để ghi nhận tiến độ.</p>
-                </div>
-              }
-            </div>
-          </div>
+          }
         </div>
-
-        <div class="chart-right">
-          <h3><i class="bi bi-radar"></i> Biểu đồ Radar kỹ năng</h3>
-          <div class="chart-canvas-container">
-            <canvas #radarCanvas></canvas>
-          </div>
-        </div>
-
       </div>
     </div>
-  </main>
+
+    <div class="chart-right">
+      <h3><i class="bi bi-radar"></i> Biểu đồ radar năng lực</h3>
+      <div class="chart-canvas-container">
+        <canvas #radarCanvas></canvas>
+      </div>
+    </div>
+
+  </div>
+  } @else {
+    <div class="empty-state-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); margin: 40px auto 0 auto; text-align: center; max-width: 680px; box-shadow: var(--shadow-soft);">
+       <div class="empty-icon-glow" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(168, 85, 247, 0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+         <i class="bi bi-graph-up-arrow" style="font-size: 2.2rem; color: #a855f7;"></i>
+       </div>
+       <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; font-family: 'Inter', sans-serif;">Chưa có dữ liệu phân tích năng lực</h3>
+       <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 500px; line-height: 1.6; margin-bottom: 32px; font-family: 'Inter', sans-serif;">
+         Hệ thống chưa ghi nhận kết quả bài thi chính thức nào từ cơ sở dữ liệu. Hãy tham gia ôn luyện hoặc thi thử ngay tại Thư viện đề để kích hoạt tính năng phân tích biểu đồ năng lực!
+       </p>
+       <a routerLink="/quiz-bank" class="btn-go-to-library" style="background: linear-gradient(to right, #6d28d9, #be123c); color: white; text-decoration: none; padding: 12px 32px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.95rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(109, 40, 217, 0.25);">
+         Vào Thư viện đề <i class="bi bi-arrow-right" style="margin-left: 4px;"></i>
+       </a>
+    </div>
+  }
 </div>

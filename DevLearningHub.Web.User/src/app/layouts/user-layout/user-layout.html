@@ -1,0 +1,18 @@
+<div class="dashboard-container">
+  <!-- Mobile Header Bar -->
+  <header class="mobile-top-bar">
+    <button class="btn-hamburger-mobile" (click)="toggleSidebar()" title="Mở menu">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="mobile-logo-brand">
+      <img src="assets/images/logo.png" alt="Logo" class="mobile-logo-img" style="width: 36px; height: 36px; margin-right: 8px; object-fit: contain;">
+      <span class="mobile-brand-name" style="font-family: 'Anton', sans-serif; text-transform: uppercase; font-size: 1.1rem; background: linear-gradient(to right, #f43f5e, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Dev-Learning Hub</span>
+    </div>
+    <div style="width: 36px;"></div>
+  </header>
+
+  <app-sidebar #sidebar></app-sidebar>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

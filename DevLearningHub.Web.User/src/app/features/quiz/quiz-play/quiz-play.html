@@ -4,21 +4,23 @@
   <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 2rem;">
     <div style="background-color: #1e1e24; border: 1px solid #2d2d38; padding: 3rem; border-radius: 16px; max-width: 500px;">
       <i class="bi bi-exclamation-triangle" style="font-size: 3.5rem; color: #f59e0b; display: block; margin-bottom: 1.5rem;"></i>
-      <h3 style="font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 0.75rem;">Bộ đề chưa sẵn sàng</h3>
-      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Bộ đề thi này hiện tại chưa có câu hỏi nào. Vui lòng quay lại sau.</p>
+      <h3 style="font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 0.75rem;">Bộ đề thi chưa có câu hỏi</h3>
+      <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">Bộ đề ôn tập này hiện chưa được cập nhật câu hỏi. Vui lòng quay lại kho đề để chọn bộ đề khác.</p>
       <button routerLink="/quiz-bank" style="background-color: #a855f7; color: white; border: none; padding: 0.75rem 2rem; font-weight: 600; border-radius: 8px; cursor: pointer;">Quay lại kho đề</button>
     </div>
   </div>
   } @else {
-    <header class="quiz-play-header" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: #1e1e24; border-bottom: 1px solid #2d2d38;">
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <button class="btn-header-back" (click)="openExitModal()" style="background: none; border: none; color: white; cursor: pointer;"><i class="bi bi-chevron-left" style="font-size: 1.2rem;"></i></button>
-        <h2 style="margin: 0; font-size: 1.1rem; color: white; max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ quizTitle }}</h2>
+    <header class="quiz-play-header content-header" style="height: 64px; padding: 0; margin-bottom: 24px;">
+      <div class="top-breadcrumb">
+        <button class="btn-header-back" (click)="openExitModal()" style="border: none; background: none; margin-right: 8px;">
+          <i class="bi bi-chevron-left" style="font-size: 1.1rem; color: var(--text-main);"></i>
+        </button>
+        <span>Phòng thi</span> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span style="font-weight: 700; color: #c084fc;">{{ quizTitle }}</span>
       </div>
       
-      <div class="user-room-identity" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #121214; border-radius: 20px; border: 1px solid #2d2d38;">
-        <img [src]="userAvatar" alt="User Avatar" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1px solid #a855f7;">
-        <span style="color: #e4e4e7; font-size: 0.85rem; font-weight: 500; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ userFullName }}</span>
+      <div class="user-room-identity">
+        <img [src]="userAvatar" alt="User Avatar">
+        <span>{{ userFullName }}</span>
       </div>
     </header>
 
@@ -28,7 +30,7 @@
       <div class="workspace-left-section">
         <div class="progress-info-line">
           <span>Câu hỏi: {{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
-          <span>Đã hoàn thành {{ completionPercentage }}%</span>
+          <span>Tiến độ: {{ completionPercentage }}%</span>
         </div>
 
         <div class="quiz-progress-track">
@@ -69,6 +71,7 @@
           <button class="btn-nav-action" (click)="prevQuestion()" [disabled]="currentQuestionIndex === 0">
             <i class="bi bi-chevron-left"></i> Câu trước
           </button>
+          <span class="nav-keyboard-hint"><i class="bi bi-keyboard"></i> Dùng ← → để di chuyển</span>
           <button class="btn-nav-action" (click)="nextQuestion()" [disabled]="currentQuestionIndex === questions.length - 1">
             Câu tiếp theo <i class="bi bi-chevron-right"></i>
           </button>
@@ -108,9 +111,9 @@
         <div class="quiz-submit-card">
           <h3>Nộp bài</h3>
           @if (unansweredCount > 0) {
-          <p>Còn {{ unansweredCount }} câu chưa trả lời. Bạn có chắc muốn nộp không?</p>
+          <p>Bạn còn {{ unansweredCount }} câu hỏi chưa trả lời. Bạn có chắc chắn muốn nộp bài luôn không?</p>
           } @else {
-          <p>Bạn đã hoàn thành toàn bộ câu hỏi! Hãy rà soát lại thật kỹ trước khi ấn nút nộp bài nhé.</p>
+          <p>Bạn đã trả lời hết các câu hỏi! Hãy rà soát lại bài làm thật kỹ trước khi nộp nhé.</p>
           }
           <button class="btn-final-submit" (click)="openConfirmModal()">
             Nộp bài <i class="bi bi-box-arrow-up"></i>
@@ -127,9 +130,9 @@
     <div class="modal-box">
       <h3>Xác nhận nộp bài</h3>
       @if (unansweredCount > 0) {
-      <p>Bạn vẫn còn <span class="highlight-text">{{ unansweredCount }}</span> câu hỏi chưa hoàn thành. Bạn có chắc chắn muốn nộp bài thi ngay không?</p>
+      <p>Bạn vẫn còn <span class="highlight-text">{{ unansweredCount }}</span> câu hỏi chưa trả lời. Bạn có chắc chắn muốn nộp bài thi ngay bây giờ không?</p>
       } @else {
-      <p>Tuyệt vời! Bạn đã hoàn thành toàn bộ câu hỏi. Bạn có chắc chắn muốn nộp bài thi để hệ thống tiến hành chấm điểm không?</p>
+      <p>Bạn đã trả lời toàn bộ câu hỏi. Bạn có muốn nộp bài để hệ thống chấm điểm không?</p>
       }
       <div class="modal-actions-row">
         <button class="btn-modal-cancel" (click)="closeConfirmModal()">Hủy bỏ</button>
@@ -142,8 +145,8 @@
   @if (isExitModalOpen) {
   <div class="modal-overlay">
     <div class="modal-box">
-      <h3>Hủy bỏ bài thi?</h3>
-      <p>Bạn có chắc chắn muốn rời khỏi phòng thi không? Toàn bộ đáp án bạn đã chọn sẽ <span class="highlight-text">bị xóa sạch</span> và không được hệ thống lưu lại.</p>
+      <h3>Thoát phòng thi?</h3>
+      <p>Bạn có chắc chắn muốn thoát khỏi phòng thi? Kết quả lượt làm bài hiện tại sẽ không được lưu lại.</p>
       <div class="modal-actions-row">
         <button class="btn-modal-cancel" (click)="closeExitModal()">Làm tiếp</button>
         <button class="btn-modal-confirm" (click)="confirmExit()">Rời khỏi</button>

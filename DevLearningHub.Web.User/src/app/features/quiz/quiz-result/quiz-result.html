@@ -1,14 +1,16 @@
 <div class="quiz-play-container">
 
-  <header class="quiz-play-header" style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 15px;">
-          <a routerLink="/quiz-bank" class="btn-header-back"><i class="bi bi-chevron-left"></i></a>
-          <h2>Kết quả - {{ quizTitle }}</h2>
+  <header class="quiz-play-header content-header" style="height: 64px; padding: 0; margin-bottom: 24px;">
+      <div class="top-breadcrumb">
+          <a routerLink="/quiz-bank" class="btn-header-back" style="border: none; background: none; margin-right: 8px; text-decoration: none; display: inline-flex; align-items: center;">
+            <i class="bi bi-chevron-left" style="font-size: 1.1rem; color: var(--text-main);"></i>
+          </a>
+          <a routerLink="/quiz-bank">Phòng thi</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span style="font-weight: 700; color: #c084fc;">Kết quả - {{ quizTitle }}</span>
       </div>
 
-      <div class="user-identity-badge" style="display: flex; align-items: center; gap: 8px; background: #121214; padding: 6px 12px; border-radius: 20px; border: 1px solid #2d2d38;">
-          <img [src]="userAvatar" style="width: 28px; height: 28px; border-radius: 50%;">
-          <span style="color: white; font-size: 0.9rem;">{{ userName }}</span>
+      <div class="user-room-identity" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--bg-card-border);">
+          <img [src]="userAvatar" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1px solid #a855f7;">
+          <span style="color: var(--text-main); font-size: 0.85rem; font-weight: 500;">{{ userName }}</span>
       </div>
   </header>
 
@@ -23,7 +25,7 @@
         </div>
         <div class="chart-info-text">
           <h3>{{ summary.statusText }}</h3>
-          <p>Bạn đã trả lời đúng {{ summary.correctCount }}/{{ summary.correctCount + summary.wrongCount }} câu hỏi</p>
+          <p>Bạn đã trả lời chính xác {{ summary.correctCount }}/{{ summary.correctCount + summary.wrongCount }} câu hỏi</p>
         </div>
       </div>
 
@@ -36,14 +38,17 @@
           <div class="m-title metric-card-label">Điểm kinh nghiệm</div>
           <span class="m-value metric-card-value text-color-green color-indigo">+{{ summary.xpGained }} XP</span>
         </div>
+        <!-- Ẩn các chỉ số dựa trên localStorage do BE chưa có API -->
+        @if (false) {
         <div class="metric-small-card">
-          <div class="m-title metric-card-label">Thứ hạng đề thi</div>
+          <div class="m-title metric-card-label">Thứ hạng lượt làm</div>
           <span class="m-value metric-card-value text-color-amber color-pink">#{{ summary.rank }}</span>
         </div>
         <div class="metric-small-card">
           <div class="m-title metric-card-label">Số lượt tham gia</div>
           <span class="m-value metric-card-value text-color-magenta color-magenta">{{ summary.attempts }}</span>
         </div>
+        }
       </div>
     </section>
 
@@ -73,7 +78,7 @@
         </div>
 
         <div class="explanation-box">
-          <p><strong>Giải thích:</strong> {{ item.explanation }}</p>
+          <p><strong>Lời giải:</strong> {{ item.explanation }}</p>
         </div>
       </div>
       }

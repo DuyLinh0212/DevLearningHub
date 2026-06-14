@@ -20,34 +20,39 @@
         <p>Cấu hình bản đồ định hướng sự nghiệp vĩ mô, phân cấp kỹ năng và phân phối chuỗi chủ đề bài học chuẩn công nghiệp.</p>
       </section>
 
-      <div class="quiz-rows-list">
+      <div class="quiz-grid-list" style="margin-top: 20px;">
         @for (rm of roadmaps; track rm.id) {
-        <div class="quiz-list-row">
-          <div class="row-icon-box">
-            <i class="bi bi-bezier2"></i>
-          </div>
-          <div class="row-content">
-            <div class="row-title-line">
-              <h3>{{ rm.title }}</h3>
-              <span class="status-badge public">{{ rm.level }}</span>
-            </div>
-            <p class="row-description">{{ rm.description || 'Chưa cấu hình tóm tắt nội dung hướng nghiệp.' }}</p>
-            <div class="row-meta-tags">
-              <span><i class="bi bi-person-workspace"></i> Vai trò: {{ rm.targetRole }}</span>
-              <span><i class="bi bi-diagram-3"></i> Số chặng công nghệ: {{ rm.topicsCount }} danh mục</span>
+        <div class="quiz-card-item">
+          <div class="card-header-line" style="display: flex; align-items: center; width: 100%;">
+            <span class="status-badge public" style="background-color: rgba(168, 85, 247, 0.12); color: #a855f7;">
+              {{ rm.level }}
+            </span>
+            
+            <div class="btn-more-options-wrapper" style="position: relative; display: inline-block; margin-left: auto;">
+              <button class="btn-tbl-delete-icon" (click)="deleteRoadmap(rm.id)" title="Xóa lộ trình" style="background: transparent; border: none; color: #ef4444; font-size: 1rem; cursor: pointer; padding: 4px;">
+                <i class="bi bi-trash3"></i>
+              </button>
             </div>
           </div>
-          <div class="row-actions-right">
-            <button class="btn-view-quiz" (click)="openAssignModal(rm)"><i class="bi bi-gear-fill"></i> Sắp xếp chặng học</button>
-            <button class="btn-view-quiz-edit" (click)="openRoadmapModal(rm)"><i class="bi bi-pencil"></i> Sửa</button>
-            <button class="btn-tbl-delete-icon" (click)="deleteRoadmap(rm.id)" title="Xóa lộ trình">
-              <i class="bi bi-trash3-fill"></i>
-            </button>
+
+          <div class="card-content-area" (click)="openAssignModal(rm)" style="cursor: pointer; flex: 1; display: flex; flex-direction: column; text-align: left; margin-bottom: 12px; margin-top: 10px;">
+            <h3 class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0 0 6px 0; line-height: 1.4;">{{ rm.title }}</h3>
+            <p class="card-description" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin: 0;">{{ rm.description || 'Chưa cấu hình tóm tắt nội dung hướng nghiệp.' }}</p>
+          </div>
+
+          <div class="card-meta-row" style="display: flex; align-items: center; gap: 10px; color: var(--text-muted-dark); font-size: 0.72rem; margin-bottom: 12px; border-top: 1px solid var(--border-nested); padding-top: 10px; flex-wrap: wrap;">
+            <span><i class="bi bi-person-workspace"></i> Vai trò: {{ rm.targetRole }}</span>
+            <span><i class="bi bi-diagram-3"></i> Số chặng: {{ rm.topicsCount }} danh mục</span>
+          </div>
+
+          <div class="card-actions-row" style="display: flex; gap: 8px; width: 100%;">
+            <button class="btn-card-action btn-primary" (click)="openAssignModal(rm)" style="flex: 1;">Sắp xếp chặng</button>
+            <button class="btn-card-action btn-edit" (click)="openRoadmapModal(rm)" style="flex: 1;">Sửa</button>
           </div>
         </div>
         } @empty {
-        <div class="empty-state-box-roadmap">
-          <i class="bi bi-bezier2"></i>
+        <div class="empty-state-box-roadmap" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted-dark);">
+          <i class="bi bi-bezier2" style="font-size: 2.5rem; display: block; margin-bottom: 12px; color: var(--text-muted-dark);"></i>
           <h3>Chưa có lộ trình nào được tạo</h3>
           <p>Hãy bấm nút "Tạo lộ trình mới" ở thanh tiêu đề góc phải để bắt đầu cấu hình định hướng ngành học!</p>
         </div>

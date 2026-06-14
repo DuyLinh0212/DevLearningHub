@@ -252,4 +252,16 @@ startQuizSession(quizSetId: string): Observable<any> {
     }
     return streak;
   }
+
+  getQuizProgress(quizId: string): number {
+    return 0;
+  }
+
+  saveQuizProgress(quizId: string, answeredCount: number, originalTotalCount: number): void {}
+
+  saveLocalTopicProgress(quizId: string, quizTitle: string, correctCount: number, totalQuestions: number): void {}
+
+  getLocalTopicProgress(): any[] {
+    return [];
+  }
 }

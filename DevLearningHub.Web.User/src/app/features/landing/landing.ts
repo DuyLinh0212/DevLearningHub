@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { QuizService } from '../../core/services/quiz.service';
 
@@ -14,19 +14,55 @@ import { QuizService } from '../../core/services/quiz.service';
 export class LandingComponent implements OnInit, OnDestroy {
   themeService = inject(ThemeService);
   private quizService = inject(QuizService);
+  private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
 
   currentSlide: number = 0;
   totalSlides: number = 3;
   autoplayInterval: any;
   featuredQuizzes: any[] = [];
 
+  isLoggedIn: boolean = false;
+  currentUser: any = null;
+
   ngOnInit() {
     this.startAutoplay();
     this.loadFeaturedQuizzes();
+    this.checkLoginStatus();
   }
 
   ngOnDestroy() {
     this.stopAutoplay();
+  }
+
+  checkLoginStatus() {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (token) {
+        this.isLoggedIn = true;
+        this.quizService.getCurrentUser().subscribe({
+          next: (res: any) => {
+            this.currentUser = res?.data || res;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.isLoggedIn = false;
+            this.currentUser = null;
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    }
+  }
+
+  logout() {
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+    this.isLoggedIn = false;
+    this.currentUser = null;
+    this.cdr.detectChanges();
+    this.router.navigate(['/login']);
   }
 
   startAutoplay() {

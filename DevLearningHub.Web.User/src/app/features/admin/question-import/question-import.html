@@ -23,12 +23,12 @@
              (drop)="onDrop($event)"
              (click)="fileInput.click()">
 
-          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,application/json" style="display: none;">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.xlsx,.xls" style="display: none;">
 
           @if (!fileSelected) {
           <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
           <h3>Kéo thả tệp dữ liệu vào đây</h3>
-          <p class="upload-hint">Hỗ trợ tệp .JSON, dung lượng tối đa 5MB</p>
+          <p class="upload-hint">Hỗ trợ tệp .JSON, .XLSX, .XLS (Tối đa 5MB)</p>
           } @else {
           <i class="bi bi-file-earmark-bar-graph-fill file-active-icon"></i>
           <h3 class="file-name-active">{{ fileName }}</h3>

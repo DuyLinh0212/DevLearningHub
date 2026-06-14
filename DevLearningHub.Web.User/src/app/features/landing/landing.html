@@ -20,19 +20,28 @@
           }
         </button>
 
-        <a routerLink="/login" class="btn-nav-login">Đăng nhập</a>
-        <a routerLink="/register" class="btn-nav-register">Đăng ký</a>
+        @if (isLoggedIn) {
+          <div class="user-nav-profile" style="display: flex; align-items: center; gap: 12px;">
+            <a routerLink="/dashboard" class="user-info-link" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-main);">
+              <img [src]="currentUser?.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #a855f7;">
+              <span class="nav-user-name" style="font-weight: 600; font-size: 0.85rem;">{{ currentUser?.fullName || currentUser?.username || 'Học viên' }}</span>
+            </a>
+            <button class="btn-nav-logout" (click)="logout()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
+              Đăng xuất
+            </button>
+          </div>
+        } @else {
+          <a routerLink="/login" class="btn-nav-login">Đăng nhập</a>
+          <a routerLink="/register" class="btn-nav-register">Đăng ký</a>
+        }
       </div>
     </header>
 
     <div class="mega-slider">
       <div class="slider-track" [style.transform]="'translateX(-' + currentSlide * 100 + '%)'">
 
+        <!-- SLIDE 1 -->
         <div class="slide-pane">
-          <div class="slide-bg-watermark">
-            <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?q=80&w=1200" alt="Quiz System">
-          </div>
-          <div class="center-glow glow-purple"></div>
           <div class="slide-content">
             <div class="hero-badge">
               <i class="bi bi-stars"></i>
@@ -49,14 +58,27 @@
               <a routerLink="/register" class="btn-hero-gradient">Bắt đầu ngay</a>
               <a href="#topics" class="btn-hero-white">Khám phá kho đề</a>
             </div>
+            
+            <div class="hero-users-mock">
+              <div class="avatar-group">
+                <img src="https://i.pravatar.cc/40?img=33" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=12" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
+              </div>
+              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+            </div>
+          </div>
+          <div class="slide-graphic">
+            <div class="graphic-glow-container">
+              <div class="graphic-glow glow-purple"></div>
+              <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?q=80&w=1200" alt="Quiz System" class="graphic-img">
+            </div>
           </div>
         </div>
 
+        <!-- SLIDE 2 -->
         <div class="slide-pane">
-          <div class="slide-bg-watermark">
-            <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200" alt="Online Judge">
-          </div>
-          <div class="center-glow glow-blue"></div>
           <div class="slide-content">
             <div class="hero-badge">
               <i class="bi bi-terminal"></i>
@@ -73,14 +95,27 @@
               <a routerLink="/register" class="btn-hero-gradient">Thử thách ngay</a>
               <a href="javascript:void(0)" (click)="setSlide(0)" class="btn-hero-white">Quay lại ôn đề</a>
             </div>
+            
+            <div class="hero-users-mock">
+              <div class="avatar-group">
+                <img src="https://i.pravatar.cc/40?img=33" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=12" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
+              </div>
+              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+            </div>
+          </div>
+          <div class="slide-graphic">
+            <div class="graphic-glow-container">
+              <div class="graphic-glow glow-blue"></div>
+              <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200" alt="Online Judge" class="graphic-img">
+            </div>
           </div>
         </div>
 
+        <!-- SLIDE 3 -->
         <div class="slide-pane">
-          <div class="slide-bg-watermark">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200" alt="Forum Dev">
-          </div>
-          <div class="center-glow glow-pink"></div>
           <div class="slide-content">
             <div class="hero-badge">
               <i class="bi bi-people"></i>
@@ -97,6 +132,22 @@
               <a routerLink="/register" class="btn-hero-gradient">Tham gia cộng đồng</a>
               <a href="javascript:void(0)" (click)="setSlide(1)" class="btn-hero-white">Xem bài tập Code</a>
             </div>
+            
+            <div class="hero-users-mock">
+              <div class="avatar-group">
+                <img src="https://i.pravatar.cc/40?img=33" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=12" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
+                <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
+              </div>
+              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+            </div>
+          </div>
+          <div class="slide-graphic">
+            <div class="graphic-glow-container">
+              <div class="graphic-glow glow-pink"></div>
+              <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200" alt="Forum Dev" class="graphic-img">
+            </div>
           </div>
         </div>
 
@@ -110,16 +161,6 @@
       </button>
 
       <div class="slider-controls-bottom">
-        <div class="hero-users-mock">
-          <div class="avatar-group">
-            <img src="https://i.pravatar.cc/40?img=33" alt="avatar">
-            <img src="https://i.pravatar.cc/40?img=12" alt="avatar">
-            <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
-            <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
-          </div>
-          <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
-        </div>
-
         <div class="slider-dots">
           @for (s of [0, 1, 2]; track s) {
           <span class="dot" [class.active]="currentSlide === s" (click)="setSlide(s)"></span>

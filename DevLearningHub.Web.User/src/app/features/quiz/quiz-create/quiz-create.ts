@@ -4,13 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { QuizService } from '../../../core/services/quiz.service';
 import { TopicService } from '../../../core/services/topic.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-quiz-create',
   standalone: true,
-  imports: [RouterLink, FormsModule, SidebarComponent],
+  imports: [RouterLink, FormsModule],
   templateUrl: './quiz-create.html',
   styleUrl: './quiz-create.css'
 })
@@ -23,6 +22,7 @@ export class QuizCreateComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   currentStep: number = 1;
+  activeQuestionIndex: number = 0;
   isPreviewModalOpen: boolean = false;
   editingQuizId: string | null = null;
   isSaving: boolean = false;
@@ -123,9 +123,39 @@ export class QuizCreateComponent implements OnInit {
   }
 
   prevStep() { this.currentStep = 1; }
-  addQuestion() { this.questions.push(this.createEmptyQuestion()); }
-  removeQuestion(index: number) { if (this.questions.length > 1) this.questions.splice(index, 1); }
-  setCorrectAnswer(questionIndex: number, optionIndex: number) { this.questions[questionIndex].correctIndex = optionIndex; }
+  
+  addQuestion() { 
+    this.questions.push(this.createEmptyQuestion()); 
+    this.activeQuestionIndex = this.questions.length - 1;
+    this.cdr.detectChanges();
+  }
+
+  selectQuestion(index: number) {
+    this.activeQuestionIndex = index;
+    this.cdr.detectChanges();
+  }
+
+  deleteQuestion(index: number) {
+    if (this.questions.length > 1) {
+      this.questions.splice(index, 1);
+      if (this.activeQuestionIndex >= this.questions.length) {
+        this.activeQuestionIndex = this.questions.length - 1;
+      }
+    } else {
+      this.questions = [this.createEmptyQuestion()];
+      this.activeQuestionIndex = 0;
+    }
+    this.cdr.detectChanges();
+  }
+
+  removeQuestion(index: number) { 
+    this.deleteQuestion(index); 
+  }
+
+  setCorrectAnswer(questionIndex: number, optionIndex: number) { 
+    this.questions[questionIndex].correctIndex = optionIndex; 
+    this.cdr.detectChanges();
+  }
 
   onQuestionFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;

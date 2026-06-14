@@ -1,85 +1,84 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
+<header class="content-header">
+  <div class="top-breadcrumb" style="margin-left: 0;">
+    <a routerLink="/dashboard">Cá nhân</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Thiết lập tài khoản</span>
+  </div>
+</header>
 
-  <main class="main-content">
-    <header class="content-header">
-      <div class="top-breadcrumb" style="margin-left: 0;">
-        <span>Cá nhân</span> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Thiết lập tài khoản</span>
-      </div>
-    </header>
+<div class="dashboard-scroll-body">
+  <section class="welcome-section">
+    <h1>Cài đặt tài khoản</h1>
+    <p>Cập nhật thông tin tài khoản và xem tiến độ tích lũy điểm kinh nghiệm.</p>
+  </section>
 
-    <div class="dashboard-scroll-body">
-      <div class="settings-header">
-        <h2>Cài đặt tài khoản</h2>
-        <p>Cập nhật thông tin cá nhân và xem tiến trình tích lũy danh hiệu của bạn</p>
-      </div>
-
-      <div class="settings-tabs">
-        <button type="button" class="tab-btn active">Hồ sơ</button>
-        <button type="button" class="tab-btn">Bảo mật</button>
-        <button type="button" class="tab-btn">Thông báo</button>
-        <button type="button" class="tab-btn">Giao diện</button>
-        <button type="button" class="tab-btn">Riêng tư</button>
-      </div>
-
-      <div class="settings-card">
-        <div class="card-header">
-          <h3>Hồ sơ cá nhân</h3>
-          <p>Thông tin này sẽ hiển thị trên bảng xếp hạng Tech Leads và diễn đàn đóng góp bài học HUIT</p>
+  <div class="settings-layout">
+    <!-- CỘT TRÁI: THẺ HỒ SƠ & TABS THIẾT LẬP -->
+    <div class="settings-sidebar">
+      <div class="profile-summary-card">
+        <div class="avatar-circle-wrapper" (click)="fileInput.click()">
+          <img [src]="avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar">
+        </div>
+        <h4>{{ firstName && lastName ? lastName + ' ' + firstName : firstName }}</h4>
+        <span class="user-email">{{ email }}</span>
+        
+        <div class="user-xp-badge">
+          <i class="bi bi-award-fill"></i>
+          <strong>{{ xpPoints }} XP tích lũy</strong>
         </div>
 
-        <div class="profile-layout">
-          <!-- CỘT AVATAR + THÀNH TÍCH XP HỌC VIÊN -->
-          <div class="avatar-column">
-            <div class="avatar-circle-wrapper">
-              <img [src]="avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar">
-            </div>
-            
-            <!-- VÙNG HIỂN THỊ ĐIỂM SỐ ĐỘNG CHO USER -->
-            <div class="user-xp-badge" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); padding: 8px 16px; border-radius: 20px; text-align: center; margin-top: 4px;">
-              <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Tích lũy:</span>
-              <strong style="color: #c084fc; font-size: 0.95rem; margin-left: 4px;">{{ xpPoints }} XP</strong>
-            </div>
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+        <button type="button" class="btn-action-avatar" (click)="fileInput.click()" [disabled]="isUploadingAvatar">
+          <i class="bi bi-cloud-arrow-up"></i> Đổi ảnh đại diện
+        </button>
+      </div>
 
-            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
-            <button type="button" class="btn-action-avatar" (click)="fileInput.click()" [disabled]="isUploadingAvatar">
-              <i class="bi bi-cloud-arrow-up"></i> Đổi ảnh đại diện
-            </button>
-          </div>
-
-          <!-- CỘT FORM NHẬP LIỆU -->
-          <form (ngSubmit)="saveChanges()" #settingsForm="ngForm" class="form-column">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Tên của bạn</label>
-                <input type="text" name="firstName" [(ngModel)]="firstName" required class="admin-input-field">
-              </div>
-
-              <div class="form-group">
-                <label>Họ và tên đệm</label>
-                <input type="text" name="lastName" [(ngModel)]="lastName" required class="admin-input-field">
-              </div>
-
-              <div class="form-group">
-                <label>Địa chỉ Email liên hệ</label>
-                <input type="email" name="email" [(ngModel)]="email" disabled class="disabled-input">
-              </div>
-
-              <div class="form-group">
-                <label>Phân lớp thành viên</label>
-                <input type="text" name="role" [(ngModel)]="role" disabled class="disabled-input">
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn-submit-save" [disabled]="isSaving || isUploadingAvatar || !settingsForm.form.valid">
-                <i class="bi bi-cloud-arrow-up-fill" style="margin-right: 4px;"></i>
-                {{ isSaving ? 'ĐANG LƯU HỒ SƠ...' : 'CẬP NHẬT HỒ SƠ' }}
-              </button>
-            </div>
-          </form>
-        </div>
+      <div class="settings-menu-card">
+        <button type="button" class="settings-tab-btn active"><i class="bi bi-person-circle"></i> Hồ sơ</button>
+        <button type="button" class="settings-tab-btn"><i class="bi bi-shield-lock"></i> Bảo mật</button>
+        <button type="button" class="settings-tab-btn"><i class="bi bi-bell"></i> Thông báo</button>
+        <button type="button" class="settings-tab-btn"><i class="bi bi-palette"></i> Giao diện</button>
+        <button type="button" class="settings-tab-btn"><i class="bi bi-shield-shaded"></i> Riêng tư</button>
       </div>
     </div>
-  </main>
+
+    <!-- CỘT PHẢI: NỘI DUNG THIẾT LẬP -->
+    <div class="settings-content">
+      <div class="settings-main-card">
+        <div class="card-header">
+          <h3>Thông tin hồ sơ cá nhân</h3>
+          <p>Thông tin này sẽ hiển thị trên bảng xếp hạng và diễn đàn thảo luận của cộng đồng HUIT.</p>
+        </div>
+
+        <form (ngSubmit)="saveChanges()" #settingsForm="ngForm" class="form-column">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tên của bạn</label>
+              <input type="text" name="firstName" [(ngModel)]="firstName" required class="admin-input-field">
+            </div>
+
+            <div class="form-group">
+              <label>Họ và tên đệm</label>
+              <input type="text" name="lastName" [(ngModel)]="lastName" required class="admin-input-field">
+            </div>
+
+            <div class="form-group">
+              <label>Địa chỉ Email liên hệ</label>
+              <input type="email" name="email" [(ngModel)]="email" disabled class="disabled-input">
+            </div>
+
+            <div class="form-group">
+              <label>Loại tài khoản</label>
+              <input type="text" name="role" [(ngModel)]="role" disabled class="disabled-input">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-submit-save" [disabled]="isSaving || isUploadingAvatar || !settingsForm.form.valid">
+              <i class="bi bi-check-circle-fill"></i>
+              {{ isSaving ? 'ĐANG LƯU HỒ SƠ...' : 'CẬP NHẬT HỒ SƠ' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>

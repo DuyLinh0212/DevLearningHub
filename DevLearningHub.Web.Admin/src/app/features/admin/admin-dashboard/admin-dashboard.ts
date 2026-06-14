@@ -126,25 +126,9 @@ private loadBackendData() {
     }
   });
 
-    this.http.get<any>('/api/admin/moderation-logs').subscribe({
-      next: (res) => {
-        const rawLogs = res?.data || res || [];
-        if (Array.isArray(rawLogs)) {
-          this.systemLogs = rawLogs.map((log: any) => ({
-            id: log.id,
-            timestamp: log.createdAt ? new Date(log.createdAt).toTimeString().split(' ')[0] : '00:00:00',
-            subsystem: log.targetType || 'System',
-            level: log.action === 'LOCK' ? 'WARNING' : 'INFO',
-            message: log.reason || log.action || 'Sự kiện cấu hình'
-          }));
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.systemLogs = [];
-        this.cdr.detectChanges();
-      }
-    });
+    // TODO: Tạo endpoint GET /api/admin/moderation-logs ở backend để hiển thị logs kiểm duyệt
+    this.systemLogs = [];
+    this.cdr.detectChanges();
   }
 
   updateUserRole(userId: any, currentRole: string) {
@@ -163,7 +147,8 @@ private loadBackendData() {
       },
       error: (err) => {
         console.error('API Error details:', err);
-        alert('Không thể cập nhật quyền do xung đột phân quyền hệ thống!');
+        const msg = err?.error?.message || 'Không thể cập nhật quyền do xung đột phân quyền hệ thống!';
+        alert(msg);
       }
     });
   }
@@ -183,7 +168,8 @@ private loadBackendData() {
       },
       error: (err) => {
         console.error(err);
-        alert('Thao tác thất bại! Tài khoản Admin của cậu đang tự khóa chính mình hoặc sai định dạng GUID.');
+        const msg = err?.error?.message || 'Thao tác thất bại!';
+        alert(msg);
       }
     });
   }

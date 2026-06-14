@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-question-import',
@@ -61,6 +62,44 @@ export class QuestionImportComponent implements OnInit {
     event.target.value = '';
   }
 
+  private readonly contentAliases = ['nội dung câu hỏi', 'nội dung', 'câu hỏi', 'content', 'text', 'question'];
+  private readonly topicAliases = ['topicid', 'topic id', 'topic_id', 'topic', 'chủ đề', 'mã chủ đề', 'mã topic'];
+  private readonly levelAliases = ['level', 'cấp độ', 'mức độ', 'khó dễ', 'difficulty'];
+  private readonly explanationAliases = ['giải thích', 'giải thích chi tiết', 'explanation', 'explain'];
+  private readonly optionAAliases = ['a', 'đáp án a', 'option a', 'lựa chọn a', 'optiona'];
+  private readonly optionBAliases = ['b', 'đáp án b', 'option b', 'lựa chọn b', 'optionb'];
+  private readonly optionCAliases = ['c', 'đáp án c', 'option c', 'lựa chọn c', 'optionc'];
+  private readonly optionDAliases = ['d', 'đáp án d', 'option d', 'lựa chọn d', 'optiond'];
+  private readonly correctAliases = ['đáp án đúng', 'đáp án', 'correct', 'correctanswer', 'correct answer', 'correct index', 'correctindex'];
+  private readonly pointsAliases = ['points', 'điểm', 'điểm số', 'score'];
+
+  private getValueByAliases(row: any, aliases: string[]): any {
+    if (!row || typeof row !== 'object') return undefined;
+    const keys = Object.keys(row);
+    for (const alias of aliases) {
+      const cleanAlias = alias.trim().toLowerCase().normalize('NFC');
+      const foundKey = keys.find(k => k.trim().toLowerCase().normalize('NFC') === cleanAlias);
+      if (foundKey !== undefined) {
+        return row[foundKey];
+      }
+    }
+    return undefined;
+  }
+
+  private getCorrectAnswerIndex(correctVal: any): number {
+    const ans = String(correctVal || '').trim().toUpperCase();
+    if (ans === 'A') return 0;
+    if (ans === 'B') return 1;
+    if (ans === 'C') return 2;
+    if (ans === 'D') return 3;
+    if (ans === '0') return 0;
+    if (ans === '1') return 0;
+    if (ans === '2') return 1;
+    if (ans === '3') return 2;
+    if (ans === '4') return 3;
+    return -1;
+  }
+
   private handleFileProcessing(file: File) {
     this.fileSelected = true;
     this.fileName = file.name;
@@ -71,21 +110,21 @@ export class QuestionImportComponent implements OnInit {
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Tệp JSON không được vượt quá 5MB.');
+      alert('Tệp tải lên không được vượt quá 5MB.');
       this.clearFile();
       return;
     }
 
-    if (fileExtension !== 'json') {
-      alert('Trình nạp hiện chỉ hỗ trợ tệp JSON.');
+    if (fileExtension !== 'json' && fileExtension !== 'xlsx' && fileExtension !== 'xls') {
+      alert('Trình nạp hiện chỉ hỗ trợ tệp JSON hoặc Excel (.xlsx, .xls).');
       this.clearFile();
       return;
     }
 
-    if (fileExtension === 'json') {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        try {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        if (fileExtension === 'json') {
           const rawData = JSON.parse(e.target.result);
           const dataArray = Array.isArray(rawData)
             ? rawData
@@ -98,60 +137,154 @@ export class QuestionImportComponent implements OnInit {
           if (dataArray.length === 0) {
             throw new Error('Question list is empty.');
           }
-          
-          this.parsedQuestions = dataArray.map((q: any, index: number) => {
-            const text = q.text ?? q.Text ?? q.content ?? q.Content ?? '';
-            const topic = q.topic ?? q.Topic ?? '';
-            const topicId = q.topicId ?? q.TopicId ?? null;
-            const rawOptions = Array.isArray(q.options ?? q.Options) ? q.options ?? q.Options : [];
-            const options = rawOptions.map((option: any) =>
-              typeof option === 'string' ? option : option?.content ?? option?.Content ?? ''
-            );
-            const optionCorrectIndex = rawOptions.findIndex((option: any) =>
-              typeof option === 'object' && Boolean(option?.isCorrect ?? option?.IsCorrect)
-            );
-            const rawCorrectIndex = q.correctIndex ?? q.CorrectIndex;
-            const correctIndex = Number.isInteger(rawCorrectIndex) ? Number(rawCorrectIndex) : optionCorrectIndex;
-            const hasText = typeof text === 'string' && !!text.trim();
-            const hasTopic = (typeof topic === 'string' && !!topic.trim()) || !!topicId;
-            const hasOptions = options.length >= 2 && options.every((option: string) => !!option.trim());
-            const validIndex = correctIndex >= 0 && correctIndex < options.length;
-            const isValid = hasText && hasTopic && hasOptions && validIndex;
-
-            let errorMsg = '';
-            if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
-            else if (!hasTopic) errorMsg = 'Chưa phân loại chủ đề bài học.';
-            else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
-            else if (!validIndex) errorMsg = 'Chỉ số đáp án đúng (CorrectIndex) không nằm trong phạm vi lựa chọn.';
-
-            return {
-              rowNum: index + 1,
-              text: text || 'Nội dung trống',
-              topic: topic || 'Chưa phân loại',
-              topicId,
-              level: q.level ?? q.Level ?? 'Trung bình',
-              points: q.points ?? q.Points ?? 10,
-              optionsCount: options.length,
-              options,
-              correctIndex,
-              explanation: q.explanation ?? q.Explanation ?? '',
-              isValid: isValid,
-              errorMsg: errorMsg
-            };
-          });
-          this.calculateSummary();
-          this.cdr.detectChanges();
-        } catch (err) {
-          alert('Tệp tin Định dạng JSON không hợp lệ hoặc bị lỗi cấu trúc đóng ngoặc!');
-          this.clearFile();
+          this.processJsonData(dataArray);
+        } else {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(worksheet);
+          this.processExcelData(json);
         }
-      };
-      reader.onerror = () => {
-        alert('Unable to read the selected JSON file.');
+      } catch (err) {
+        alert('Tệp tin định dạng không hợp lệ hoặc bị lỗi cấu trúc: ' + err);
         this.clearFile();
-      };
+      }
+    };
+
+    reader.onerror = () => {
+      alert('Không thể đọc tệp đã chọn.');
+      this.clearFile();
+    };
+
+    if (fileExtension === 'json') {
       reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
     }
+  }
+
+  private processJsonData(dataArray: any[]) {
+    this.parsedQuestions = dataArray.map((q: any, index: number) => {
+      const text = q.text ?? q.Text ?? q.content ?? q.Content ?? '';
+      const topic = q.topic ?? q.Topic ?? '';
+      const topicId = q.topicId ?? q.TopicId ?? null;
+      const rawOptions = Array.isArray(q.options ?? q.Options) ? q.options ?? q.Options : [];
+      const options = rawOptions.map((option: any) =>
+        typeof option === 'string' ? option : option?.content ?? option?.Content ?? ''
+      );
+      const optionCorrectIndex = rawOptions.findIndex((option: any) =>
+        typeof option === 'object' && Boolean(option?.isCorrect ?? option?.IsCorrect)
+      );
+      const rawCorrectIndex = q.correctIndex ?? q.CorrectIndex;
+      const correctIndex = Number.isInteger(rawCorrectIndex) ? Number(rawCorrectIndex) : optionCorrectIndex;
+
+      return this.validateAndMapUser(
+        {
+          text,
+          topic,
+          topicId,
+          level: q.level ?? q.Level ?? 'Trung bình',
+          points: q.points ?? q.Points ?? 10,
+          options,
+          correctIndex,
+          explanation: q.explanation ?? q.Explanation ?? ''
+        },
+        index
+      );
+    });
+    this.calculateSummary();
+    this.cdr.detectChanges();
+  }
+
+  private processExcelData(json: any[]) {
+    this.parsedQuestions = json.map((row, idx) => {
+      const content = this.getValueByAliases(row, this.contentAliases);
+      const topicId = this.getValueByAliases(row, this.topicAliases);
+      const level = this.getValueByAliases(row, this.levelAliases);
+      const explanation = this.getValueByAliases(row, this.explanationAliases);
+      const correctVal = this.getValueByAliases(row, this.correctAliases);
+      const pointsVal = this.getValueByAliases(row, this.pointsAliases);
+
+      const optionA = this.getValueByAliases(row, this.optionAAliases);
+      const optionB = this.getValueByAliases(row, this.optionBAliases);
+      const optionC = this.getValueByAliases(row, this.optionCAliases);
+      const optionD = this.getValueByAliases(row, this.optionDAliases);
+
+      const correctIndex = this.getCorrectAnswerIndex(correctVal);
+
+      const rawOptions = [optionA, optionB, optionC, optionD];
+      const options = rawOptions
+        .map(opt => opt !== undefined && opt !== null ? String(opt).trim() : '')
+        .filter(opt => opt !== '');
+
+      const points = pointsVal !== undefined && pointsVal !== null && !isNaN(Number(pointsVal))
+        ? Number(pointsVal)
+        : 10;
+
+      let mappedLevel = 'Trung bình';
+      const rawLevel = String(level || '').trim().toLowerCase();
+      if (rawLevel === 'easy' || rawLevel === 'beginner' || rawLevel === 'dễ') {
+        mappedLevel = 'Dễ';
+      } else if (rawLevel === 'medium' || rawLevel === 'intermediate' || rawLevel === 'trung bình' || rawLevel === 'tb') {
+        mappedLevel = 'Trung bình';
+      } else if (rawLevel === 'hard' || rawLevel === 'advanced' || rawLevel === 'khó') {
+        mappedLevel = 'Khó';
+      }
+
+      return this.validateAndMapUser(
+        {
+          text: content ? String(content).trim() : '',
+          topic: topicId ? String(topicId).trim() : '',
+          topicId: topicId ? String(topicId).trim() : null,
+          level: mappedLevel,
+          points,
+          options,
+          correctIndex,
+          explanation: explanation ? String(explanation).trim() : ''
+        },
+        idx
+      );
+    });
+    this.calculateSummary();
+    this.cdr.detectChanges();
+  }
+
+  private validateAndMapUser(q: any, index: number) {
+    const text = q.text || '';
+    const topic = q.topic || '';
+    const topicId = q.topicId || null;
+    const options = q.options || [];
+    const correctIndex = q.correctIndex;
+    const level = q.level || 'Trung bình';
+    const points = q.points ?? 10;
+    const explanation = q.explanation || '';
+
+    const hasText = typeof text === 'string' && !!text.trim();
+    const hasTopic = (typeof topic === 'string' && !!topic.trim()) || !!topicId;
+    const hasOptions = options.length >= 2 && options.every((option: string) => !!option.trim());
+    const validIndex = correctIndex >= 0 && correctIndex < options.length;
+    const isValid = hasText && hasTopic && hasOptions && validIndex;
+
+    let errorMsg = '';
+    if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
+    else if (!hasTopic) errorMsg = 'Chưa phân loại chủ đề bài học.';
+    else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
+    else if (!validIndex) errorMsg = 'Chỉ số đáp án đúng (CorrectIndex) không nằm trong phạm vi lựa chọn.';
+
+    return {
+      rowNum: index + 1,
+      text: text || 'Nội dung trống',
+      topic: topic || 'Chưa phân loại',
+      topicId,
+      level,
+      points,
+      optionsCount: options.length,
+      options,
+      correctIndex,
+      explanation,
+      isValid,
+      errorMsg
+    };
   }
 
   private calculateSummary() {

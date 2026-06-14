@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
@@ -26,6 +26,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   questionLimit: number = 0;
 
   totalQuestions: number = 0;
+  originalTotalQuestions: number = 0; // Tổng câu gốc của bộ đề (không bị limit bởi thi thử)
   questions: any[] = [];
   currentQuestionIndex = 0;
   
@@ -37,7 +38,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   bookmarkedQuestions: boolean[] = [];
 
   userFullName: string = 'Học viên';
-  userAvatar: string = 'assets/avatars/default.png';
+  userAvatar: string = 'assets/images/default-avatar.svg';
 
   timeLeft = signal<number>(900);
   timerInterval: any;
@@ -71,7 +72,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
         const u = res?.data || res;
         if (u) {
           this.userFullName = u.fullName || u.username || 'Học viên';
-          this.userAvatar = u.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (u.username || 'user');
+          this.userAvatar = u.avatarUrl || 'assets/images/default-avatar.svg';
         }
         this.initializeQuizSession();
       },
@@ -126,6 +127,8 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
         }));
 
         this.totalQuestions = this.questions.length;
+        // Lưu tổng câu gốc từ session (trước khi bị slice bởi limit thi thử)
+        this.originalTotalQuestions = (target.questions?.length || this.totalQuestions);
         this.selectedAnswers = new Array(this.totalQuestions).fill(null);
         this.bookmarkedQuestions = new Array(this.totalQuestions).fill(false);
         
@@ -214,6 +217,11 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.quizService.submitQuizSession(this.sessionId, submitPayload).subscribe({
       next: () => {
         sessionStorage.removeItem(`dlh_quiz_end_time_${this.sessionId}`);
+        // Cập nhật số lượt làm bài vào localStorage để dashboard và quiz-bank có thể hiển đúng
+        this.quizService.incrementAttempts(this.quizId);
+        // Lưu tiến độ thực: số câu đã trả lời / tổng câu gốc của bộ đề
+        const answered = this.selectedAnswers.filter(a => a !== null).length;
+        this.quizService.saveQuizProgress(this.quizId, answered, this.originalTotalQuestions);
         this.isConfirmModalOpen = false;
         this.router.navigate(['/quiz-result', this.sessionId]);
       },
@@ -233,6 +241,24 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   selectQuestion(index: number) { this.currentQuestionIndex = index; }
   prevQuestion() { if (this.currentQuestionIndex > 0) this.currentQuestionIndex--; }
   nextQuestion() { if (this.currentQuestionIndex < this.questions.length - 1) this.currentQuestionIndex++; }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeyboardNav(event: KeyboardEvent) {
+    // Không bắt phím khi modal đang mở, hoặc user đang nhập vào ô input/textarea
+    if (this.isConfirmModalOpen || this.isExitModalOpen) return;
+    const tag = (event.target as HTMLElement)?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.prevQuestion();
+      this.cdr.detectChanges();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.nextQuestion();
+      this.cdr.detectChanges();
+    }
+  }
   
   ngOnDestroy() { 
     if (this.timerInterval) clearInterval(this.timerInterval); 

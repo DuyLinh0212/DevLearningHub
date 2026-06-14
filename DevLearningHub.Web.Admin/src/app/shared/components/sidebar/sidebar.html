@@ -1,9 +1,9 @@
 <aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
   <div class="sidebar-brand">
-    <div class="brand-info">
-      <img src="assets/images/logo.svg" alt="Logo Dev-Learning Hub" class="brand-logo-img">
+    <a routerLink="/landing" class="brand-info" style="text-decoration: none; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+      <img src="assets/images/logo.png" alt="Logo Dev-Learning Hub" class="brand-logo-img">
       <h2>Dev-Learning Hub</h2>
-    </div>
+    </a>
     <button class="btn-sidebar-close-mobile" (click)="toggleMobileSidebar()">
       <i class="bi bi-x-lg"></i>
     </button>
@@ -26,13 +26,25 @@
     <a routerLink="/admin/topics" routerLinkActive="active" class="menu-item">
       <i class="bi bi-tags-fill"></i> Quản lý Chủ đề
     </a>
-    
+
+    <div class="menu-heading">CỘNG ĐỒNG</div>
+    <a routerLink="/admin/tags" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-tag-fill"></i> Quản lý Tag
+    </a>
+    <a routerLink="/admin/posts" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-newspaper"></i> Quản lý Bài viết
+    </a>
+
     <div class="menu-heading">HẠ TẦNG KỸ THUẬT</div>
     <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-cpu-fill"></i> Sandbox Engine</a>
     <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-terminal-fill"></i> Logs hệ thống</a>
 
     <div class="menu-heading">HỆ THỐNG</div>
     <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
+    <a (click)="themeService.toggleTheme()" class="menu-item theme-toggle-btn" style="cursor: pointer;">
+      <i class="bi" [class.bi-moon-stars-fill]="!themeService.isDarkMode()" [class.bi-sun-fill]="themeService.isDarkMode()"></i>
+      <span>{{ themeService.isDarkMode() ? 'Giao diện sáng' : 'Giao diện tối' }}</span>
+    </a>
   </nav>
   
   <div class="sidebar-footer">

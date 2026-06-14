@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -13,6 +14,7 @@ import { CommonModule } from '@angular/common';
 export class SidebarComponent implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  public themeService = inject(ThemeService);
   
   // Trạng thái bật tắt Menu trượt trên thiết bị Mobile
   isMobileOpen: boolean = false;

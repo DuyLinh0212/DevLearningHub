@@ -23,7 +23,7 @@ export class QuizResultComponent implements OnInit {
   
   // Thông tin User
   userName: string = 'Học viên';
-  userAvatar: string = 'assets/avatars/default.png';
+  userAvatar: string = 'assets/images/default-avatar.svg';
 
   isDataReady = false; // Flag chống chớp màn hình
 
@@ -52,8 +52,8 @@ export class QuizResultComponent implements OnInit {
     this.http.get<any>('/api/users/me').subscribe({
       next: (res) => {
         const u = res?.data || res;
-        this.userName = u.fullName || u.Username || 'Học viên';
-        this.userAvatar = u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.username || 'user'}`;
+        this.userName = u.fullName || u.username || u.Username || 'Học viên';
+        this.userAvatar = u.avatarUrl || 'assets/images/default-avatar.svg';
         this.loadResult(); // Gọi tiếp kết quả sau khi có User
       },
       error: () => this.loadResult()
@@ -74,6 +74,18 @@ export class QuizResultComponent implements OnInit {
         this.summary.wrongCount = totalQ > 0 ? (totalQ - this.summary.correctCount) : 0;
         this.summary.statusText = this.summary.percentage >= 70 ? 'Hoàn thành xuất sắc' : 'Cần cố gắng hơn';
         this.summary.xpGained = this.summary.correctCount * 50;
+
+        // Lưu XP tích lũy từ mock quiz vào localStorage, dùng guard chống tăng lặp khi F5
+        if (typeof window !== 'undefined' && this.sessionId) {
+          const xpCreditedKey = `dlh_xp_credited_${this.sessionId}`;
+          if (!sessionStorage.getItem(xpCreditedKey)) {
+            // Đã vô hiệu hóa lưu localStorage theo yêu cầu của user
+            sessionStorage.setItem(xpCreditedKey, 'true');
+            // Phát sự kiện để sidebar cập nhật điểm lập tức
+            window.dispatchEvent(new CustomEvent('profile-updated'));
+          }
+        }
+
         const secs = data.timeTakenSeconds ?? data.TimeLimitSeconds ?? 0;
         this.summary.timeDuration = `${Math.floor(secs / 60)} phút ${secs % 60} giây`;
 

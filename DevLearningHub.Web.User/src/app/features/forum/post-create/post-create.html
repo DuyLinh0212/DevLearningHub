@@ -1,0 +1,78 @@
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/forum">Cộng đồng</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>{{ isEditMode ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới' }}</span>
+  </div>
+</header>
+
+<div class="dashboard-scroll-body">
+  <div class="form-container-card">
+    <h2>{{ isEditMode ? 'Chỉnh sửa bài đăng thảo luận' : 'Đăng câu hỏi / chia sẻ thảo luận' }}</h2>
+    <p class="form-subtitle">Chia sẻ câu hỏi ôn tập, tài liệu học hoặc thảo luận các bài tập lập trình cùng sinh viên HUIT.</p>
+
+    <form (ngSubmit)="submitForm()" #postForm="ngForm" class="post-form">
+      <!-- TIÊU ĐỀ -->
+      <div class="form-group">
+        <label for="title">Tiêu đề bài viết <span class="text-danger">*</span></label>
+        <input type="text" id="title" name="title" [(ngModel)]="title" required maxlength="300" placeholder="Tiêu đề ngắn gọn, rõ ràng (Ví dụ: Lỗi vòng lặp vô hạn trong bài C++ Quản lý sinh viên)" class="form-input">
+        <small class="form-help">Tiêu đề phải tóm tắt được nội dung câu hỏi/thảo luận của bạn.</small>
+      </div>
+
+      <!-- ẢNH ĐẠI DIỆN MINH HỌA -->
+      <div class="form-group">
+        <label for="imageUrl">Đường dẫn ảnh minh họa (Tùy chọn)</label>
+        <input type="url" id="imageUrl" name="imageUrl" [(ngModel)]="imageUrl" placeholder="Nhập liên kết hình ảnh minh họa (ví dụ: png, jpg...)" class="form-input">
+        <small class="form-help">Đường dẫn ảnh trực tiếp trực tuyến (nếu có sơ đồ hoặc screenshot lỗi).</small>
+      </div>
+
+      <!-- TABS SOẠN THẢO VÀ XEM TRƯỚC -->
+      <div class="form-group">
+        <div class="textarea-header-tabs">
+          <label>Nội dung chi tiết <span class="text-danger">*</span></label>
+          <div class="tabs-btn-group">
+            <button type="button" class="tab-toggle-btn" [class.active]="activeTab === 'edit'" (click)="activeTab = 'edit'">
+              <i class="bi bi-code-slash"></i> Soạn thảo
+            </button>
+            <button type="button" class="tab-toggle-btn" [class.active]="activeTab === 'preview'" (click)="activeTab = 'preview'">
+              <i class="bi bi-eye"></i> Xem trước
+            </button>
+          </div>
+        </div>
+
+        @if (activeTab === 'preview') {
+          <div class="preview-output-box" [innerHTML]="renderMarkdown(bodyMarkdown || '*Không có nội dung để xem trước. Hãy soạn thảo ở tab bên cạnh!*')"></div>
+        } @else {
+          <textarea id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" required rows="12" placeholder="Mô tả chi tiết câu hỏi, đính kèm code hỗ trợ định dạng Markdown...\n\nSử dụng `code` cho mã ngắn và ``` csharp\n // code ở đây\n ``` cho khối code." class="form-textarea"></textarea>
+        }
+        <small class="form-help">Hỗ trợ Markdown để định dạng văn bản và tô sáng cú pháp code block.</small>
+      </div>
+
+      <!-- LỰA CHỌN TAGS -->
+      <div class="form-group">
+        <label>Gán thẻ phân loại (Chọn ít nhất 1) <span class="text-danger">*</span></label>
+        <p class="form-help" style="margin-top: 0; margin-bottom: 12px;">Giúp các thành viên khác dễ dàng lọc thấy bài đăng của bạn theo chủ đề.</p>
+        
+        @if (tagsLoading) {
+          <div class="tags-loading-indicator">Đang tải thẻ phân loại...</div>
+        } @else {
+          <div class="tags-check-grid">
+            @for (tag of tags; track tag.id) {
+              <label class="tag-checkbox-pill" [class.checked]="isTagSelected(tag.id)" [style.border-color]="tag.colorHex" [style.color]="isTagSelected(tag.id) ? '#ffffff' : tag.colorHex" [style.background-color]="isTagSelected(tag.id) ? tag.colorHex : 'transparent'">
+                <input type="checkbox" [checked]="isTagSelected(tag.id)" (change)="toggleTagSelection(tag.id)" class="hidden-checkbox">
+                #{{ tag.name }}
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- HÀNH ĐỘNG HỦY / ĐĂNG BÀI -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancel()">Hủy bỏ</button>
+        <button type="submit" class="btn-submit" [disabled]="!postForm.form.valid || selectedTagIds.length === 0 || isSaving">
+          <i class="bi bi-cloud-arrow-up-fill"></i>
+          {{ isSaving ? 'ĐANG LƯU BÀI...' : (isEditMode ? 'LƯU THAY ĐỔI' : 'ĐĂNG BÀI VIẾT') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

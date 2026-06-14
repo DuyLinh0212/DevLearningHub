@@ -1,0 +1,307 @@
+@import '../../dashboard/dashboard.css';
+
+.form-container-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--padding-lg, 24px);
+  max-width: 900px;
+  margin: 0 auto 32px auto;
+}
+
+.form-container-card h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 6px 0;
+}
+
+.form-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+}
+
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.form-input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+.form-textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  padding: 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-textarea:focus {
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+.form-help {
+  color: var(--text-muted-dark);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+/* --- TAB EDITOR / PREVIEW --- */
+.textarea-header-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tabs-btn-group {
+  display: flex;
+  background: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.tab-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.tab-toggle-btn:hover {
+  color: var(--text-main);
+}
+
+.tab-toggle-btn.active {
+  background: var(--bg-card);
+  color: #c084fc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.preview-output-box {
+  min-height: 270px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  color: var(--text-main);
+  font-size: 0.98rem;
+  line-height: 1.6;
+  overflow-y: auto;
+}
+
+/* --- TAGS CHECKBOX PILLS --- */
+.tags-check-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-checkbox-pill {
+  border: 1px solid;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.tag-checkbox-pill:hover {
+  transform: translateY(-1px);
+}
+
+.tag-checkbox-pill.checked {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-weight: 800;
+}
+
+.hidden-checkbox {
+  display: none;
+}
+
+.tags-loading-indicator {
+  color: var(--text-muted-dark);
+  font-size: 0.85rem;
+}
+
+/* --- FORM ACTIONS --- */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--bg-card-border);
+  padding-top: 24px;
+  margin-top: 12px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--input-border);
+  color: var(--text-muted);
+  padding: 10px 20px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cancel:hover {
+  border-color: var(--text-muted-dark);
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.btn-submit {
+  background: #a855f7;
+  border: none;
+  color: white;
+  padding: 10px 22px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+  transition: all 0.15s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #c084fc;
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* --- MARKDOWN STYLES (PREVIEW) --- */
+.code-block-wrapper {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--bg-card-border, #27272a);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.code-block-wrapper .code-badge {
+  position: absolute;
+  top: 0;
+  right: 12px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-bottom-left-radius: 6px;
+  text-transform: uppercase;
+  z-index: 10;
+  letter-spacing: 0.5px;
+}
+
+.markdown-code-block {
+  background: #0d0d10 !important;
+  border: none;
+  border-radius: 0;
+  padding: 28px 16px 14px 16px;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
+  color: #e4e4e7;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.markdown-inline-code {
+  background: var(--bg-nested, #27272a);
+  border: 1px solid var(--border-nested, #3f3f46);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #f43f5e;
+}
+
+.markdown-link {
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.markdown-link:hover {
+  text-decoration: underline;
+  color: #c084fc;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 576px) {
+  .form-container-card {
+    padding: 20px 16px;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .btn-submit,
+  .btn-cancel {
+    width: 100%;
+    justify-content: center;
+  }
+}

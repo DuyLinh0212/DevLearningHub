@@ -1,148 +1,72 @@
-:host {
-  font-family: 'Inter', sans-serif;
+@import '../dashboard/dashboard.css';
+
+/* --- LAYOUT GRID --- */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.dashboard-container {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-  background-color: var(--bg-main);
-  color: var(--text-main);
-}
-
-.main-content {
-  flex: 1;
+.settings-sidebar {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  height: 100vh;
-  overflow: hidden;
+  gap: 20px;
 }
 
-.dashboard-scroll-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem 3rem;
-}
-
-.content-header {
-  padding: 1.25rem 3rem;
-  border-bottom: 1px solid var(--bg-card-border);
-  background-color: var(--bg-sidebar);
-}
-
-.top-breadcrumb {
-  font-size: 0.85rem;
-  color: var(--text-muted-dark);
-  font-weight: 500;
-}
-
-.settings-header {
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.settings-header h2 {
-  font-size: 1.85rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0 0 0.5rem 0;
-}
-
-.settings-header p {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-/* ⚡ BỘ PHÒNG THỦ CHỐNG TRÀN TABS TRÊN MOBILE */
-.settings-tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2.5rem;
-  border-bottom: 1px solid var(--input-border);
-  padding-bottom: 0.75rem;
-  overflow-x: auto; /* Tạo ray trượt ngang cảm ứng khi xem trên điện thoại */
-  overflow-y: hidden;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  flex: 0 0 auto; /* Ngăn chặn trình duyệt bóp nghẹt chữ trong nút */
-}
-
-.tab-btn:hover {
-  color: var(--text-main);
-  background-color: var(--bg-nested);
-}
-
-.tab-btn.active {
-  background-color: var(--input-border);
-  color: var(--text-main);
-  border: 1px solid var(--border-nested);
-}
-
-.settings-card {
-  background-color: var(--bg-card);
-  border-radius: 12px;
-  padding: 2.5rem;
+/* --- PROFILE SUMMARY CARD --- */
+.profile-summary-card {
+  background: var(--bg-card);
   border: 1px solid var(--bg-card-border);
-  max-width: 1000px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-}
-
-.card-header {
-  text-align: left;
-  margin-bottom: 2.5rem;
-}
-
-.card-header h3 {
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: var(--text-main);
-  margin: 0 0 0.35rem 0;
-}
-
-.card-header p {
-  color: var(--text-muted-dark);
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-.profile-layout {
-  display: flex;
-  gap: 4rem;
-}
-
-.avatar-column {
+  border-radius: var(--radius-lg, 12px);
+  padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  flex-shrink: 0;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
 }
 
 .avatar-circle-wrapper {
-  width: 140px;
-  height: 140px;
+  position: relative;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
-  background-color: var(--input-bg);
-  border: 2px dashed var(--input-border);
+  overflow: hidden;
+  border: 2px solid rgba(168, 85, 247, 0.45);
+  background: #18181b;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.avatar-circle-wrapper:hover {
+  transform: scale(1.03);
+  border-color: #a855f7;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
+}
+
+.avatar-circle-wrapper::after {
+  content: '\F22A';
+  font-family: 'bootstrap-icons';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  font-size: 1.35rem;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.avatar-circle-wrapper:hover::after {
+  opacity: 1;
 }
 
 .profile-avatar {
@@ -151,120 +75,240 @@
   object-fit: cover;
 }
 
-.btn-action-avatar {
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
+.profile-summary-card h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--text-main);
-  padding: 0.6rem 1.25rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin: 0 0 4px 0;
 }
 
-.form-column {
-  flex-grow: 1;
+.profile-summary-card .user-email {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+.user-xp-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: #c084fc;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.user-xp-badge i {
+  font-size: 0.95rem;
+}
+
+.btn-action-avatar {
+  width: 100%;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-action-avatar:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: var(--text-main);
+}
+
+.btn-action-avatar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- SETTINGS MENU CARD --- */
+.settings-menu-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 4px;
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.settings-tab-btn:hover {
+  background: var(--bg-nested);
+  color: var(--text-main);
+}
+
+.settings-tab-btn.active {
+  background: rgba(168, 85, 247, 0.08);
+  border-color: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.settings-tab-btn i {
+  font-size: 1.05rem;
+}
+
+/* --- MAIN CARD --- */
+.settings-main-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--padding-lg, 24px);
+  box-shadow: var(--shadow-soft);
+}
+
+.card-header {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--bg-card-border);
+  padding-bottom: 16px;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--text-main);
+}
+
+.card-header p {
+  color: var(--text-muted-dark);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* --- FORM COMPONENTS --- */
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.75rem;
+  gap: 20px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  text-align: left;
+  gap: 8px;
 }
 
 .form-group label {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text-muted);
-  font-weight: 500;
 }
 
-.form-group input {
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  box-sizing: border-box;
+.admin-input-field {
   width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
 }
 
-.form-group input:focus {
-  outline: none;
-  border-color: #a855f7;
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
+.admin-input-field:focus {
+  border-color: rgba(168, 85, 247, 0.45);
 }
 
 .disabled-input {
-  background-color: var(--bg-main) !important;
-  color: var(--text-muted-dark) !important;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--input-border);
+  color: var(--text-muted-dark);
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.9rem;
   cursor: not-allowed;
-  border-color: var(--input-bg) !important;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
+  border-top: 1px solid var(--bg-card-border);
+  padding-top: 20px;
+  margin-top: 8px;
 }
 
 .btn-submit-save {
-  background-color: #a855f7;
-  color: #ffffff;
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 2.25rem;
-  font-size: 0.95rem;
-  font-weight: 600;
+  color: white;
+  padding: 10px 24px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-submit-save:hover:not(:disabled) {
+  filter: brightness(1.15);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-submit-save:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
   box-shadow: none;
 }
 
-.settings-footer {
-  text-align: center;
-  color: var(--text-muted-dark);
-  font-size: 0.9rem;
+/* --- RESPONSIVE --- */
+@media (max-width: 992px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
 }
 
-/* ==========================================================================
-   ⚡ PHÂN HỆ MOBILE RESPONSIVE CHO TRANG CÀI ĐẶT
-   ========================================================================== */
-@media (max-width: 768px) {
-  .dashboard-scroll-body {
-    padding: 1.5rem 1rem;
-  }
-  .settings-card {
-    padding: 1.5rem;
-  }
-  .profile-layout {
-    flex-direction: column; /* Đảo cột Avatar lên trên và Form xuống dưới */
-    align-items: center;
-    gap: 2rem;
-  }
+@media (max-width: 576px) {
   .form-grid {
-    grid-template-columns: 1fr; /* Duỗi phẳng lưới input thành 1 hàng dọc duy nhất */
-    gap: 1.25rem;
-  }
-  .btn-submit-save {
-    width: 100%;
-    justify-content: center;
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }

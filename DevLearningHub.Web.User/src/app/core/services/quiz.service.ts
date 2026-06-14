@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+const MOCK_QUIZ_SETS: any[] = [];
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,12 +21,37 @@ export class QuizService {
     }).pipe(
       map((res) => {
         const target = res?.data || res || [];
-        return (Array.isArray(target) ? target : []).map((quiz: any) => this.mapQuizSet(quiz));
+        const rawList = Array.isArray(target) ? target : [];
+        const mergedList = [...rawList];
+        
+        MOCK_QUIZ_SETS.forEach(mockSet => {
+          if (!mergedList.some(q => (q.id || q.Id) === mockSet.id)) {
+            mergedList.push({
+              id: mockSet.id,
+              title: mockSet.title,
+              description: mockSet.description,
+              isPublic: mockSet.isPublic,
+              questionCount: mockSet.questionCount,
+              timeLimitSeconds: mockSet.timeLimitSeconds,
+              level: mockSet.level,
+              createdBy: mockSet.createdBy
+            });
+          }
+        });
+        
+        return mergedList.map((quiz: any) => this.mapQuizSet(quiz));
       })
     );
   }
 
   getQuiz(id: string): Observable<any> {
+    const mock = MOCK_QUIZ_SETS.find(q => q.id === id);
+    if (mock) {
+      return new Observable(observer => {
+        observer.next(this.mapQuizSetDetail(mock));
+        observer.complete();
+      });
+    }
     return this.http.get<any>(`${this.apiUrl}/quiz-sets/${id}`).pipe(
       map((res) => this.mapQuizSetDetail(res?.data || res))
     );
@@ -101,15 +128,95 @@ toggleQuizStatus(quiz: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/questions/import`, questionsData).pipe(map((res) => res?.data || res));
   }
 
-startQuizSession(quizSetId: string): Observable<any> {
-  return this.http.post(`${this.apiUrl}/quiz-sessions`, { quizSetId: quizSetId });
-}
+  startQuizSession(quizSetId: string): Observable<any> {
+    const mock = MOCK_QUIZ_SETS.find((q: any) => q.id === quizSetId);
+    if (mock) {
+      return new Observable(observer => {
+        observer.next({
+          sessionId: `session-mock-${quizSetId}-${Date.now()}`,
+          title: mock.title,
+          timeLimitSeconds: mock.timeLimitSeconds,
+          questions: mock.questions.map((q: any) => ({
+            questionId: q.questionId,
+            content: q.content,
+            level: q.level,
+            points: 10,
+            options: q.options.map((o: any) => ({
+              id: o.id,
+              content: o.content
+            }))
+          }))
+        });
+        observer.complete();
+      });
+    }
+    return this.http.post(`${this.apiUrl}/quiz-sessions`, { quizSetId: quizSetId });
+  }
 
   submitQuizSession(sessionId: string, answersPayload: any[]): Observable<any> {
+    if (sessionId && sessionId.startsWith('session-mock-')) {
+      return new Observable(observer => {
+        const quizId = MOCK_QUIZ_SETS.find((q: any) => sessionId.includes(q.id))?.id || '';
+        const mock = MOCK_QUIZ_SETS.find((q: any) => q.id === quizId);
+        
+        if (mock) {
+          let score = 0;
+          const answers = mock.questions.map((q: any) => {
+            const userAnswer = answersPayload.find((a: any) => a.questionId === q.questionId);
+            const userSelectedOptionId = userAnswer ? userAnswer.selectedOptionId : null;
+            
+            const correctOpt = q.options.find((o: any) => o.isCorrect);
+            const correctOptionId = correctOpt ? correctOpt.id : '';
+            
+            const isCorrect = userSelectedOptionId === correctOptionId;
+            if (isCorrect) score++;
+            
+            return {
+              questionId: q.questionId,
+              isCorrect: isCorrect,
+              selectedOptionId: userSelectedOptionId,
+              correctOptionId: correctOptionId,
+              explanation: q.explanation
+            };
+          });
+          
+          const resultData = {
+            sessionId: sessionId,
+            score: score,
+            totalQuestions: mock.questions.length,
+            accuracy: Math.round((score / mock.questions.length) * 100),
+            timeTakenSeconds: 45,
+            answers: answers
+          };
+          
+          sessionStorage.setItem(`mock_session_result_${sessionId}`, JSON.stringify(resultData));
+        }
+        observer.next({ success: true });
+        observer.complete();
+      });
+    }
     return this.http.post(`${this.apiUrl}/quiz-sessions/${sessionId}/submit`, { answers: answersPayload });
   }
 
   getQuizSessionResult(sessionId: string): Observable<any> {
+    if (sessionId && sessionId.startsWith('session-mock-')) {
+      return new Observable(observer => {
+        const stored = sessionStorage.getItem(`mock_session_result_${sessionId}`);
+        if (stored) {
+          observer.next(JSON.parse(stored));
+        } else {
+          observer.next({
+            sessionId: sessionId,
+            score: 0,
+            totalQuestions: 0,
+            accuracy: 0,
+            timeTakenSeconds: 0,
+            answers: []
+          });
+        }
+        observer.complete();
+      });
+    }
     return this.http.get(`${this.apiUrl}/quiz-sessions/${sessionId}/result`);
   }
 
@@ -117,6 +224,18 @@ startQuizSession(quizSetId: string): Observable<any> {
     const id = quiz.id || quiz.Id || '';
     const isPub = quiz.isPublic ?? quiz.IsPublic ?? true;
     const qCount = quiz.questionCount ?? quiz.QuestionCount ?? (quiz.questions?.length || quiz.Questions?.length || 0);
+    
+    const localAttempts = this.getAttempts(id);
+    let finalAttempts: number;
+
+    if (id.toString().startsWith('mock-')) {
+      // Mock quiz: dùng localStorage vì không có BE thật (số hardcode bỏ qua)
+      finalAttempts = localAttempts;
+    } else {
+      // Quiz thật: ưu tiên BE, fallback localStorage
+      const beAttempts = quiz.attemptsCount ?? quiz.AttemptsCount ?? null;
+      finalAttempts = (beAttempts !== null && beAttempts > 0) ? beAttempts : localAttempts;
+    }
     
     return {
       id,
@@ -130,10 +249,11 @@ startQuizSession(quizSetId: string): Observable<any> {
       questionsCount: qCount,
       statusClass: isPub ? 'public' : 'draft',
       status: isPub ? 'Đã phát hành' : 'Bản nháp',
-      attempts: this.getAttempts(id),
+      attempts: finalAttempts,
       questionIds: quiz.questionIds || []
     };
   }
+
 
   private mapQuizSetDetail(quiz: any): any {
     const base = this.mapQuizSet(quiz);
@@ -203,53 +323,38 @@ startQuizSession(quizSetId: string): Observable<any> {
   }
 
   getAttempts(id: string): number {
-    if (typeof window === 'undefined') return 0;
-    const stored = localStorage.getItem(`quiz_attempts_${id}`);
-    return stored ? parseInt(stored, 10) : 0;
+    return 0; // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
   }
 
   incrementAttempts(id: string): void {
-    if (typeof window === 'undefined') return;
-    const current = this.getAttempts(id);
-    localStorage.setItem(`quiz_attempts_${id}`, (current + 1).toString());
+    // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
   }
 
   getUserXP(): number {
-    if (typeof window === 'undefined') return 0;
-    const stored = localStorage.getItem('user_accumulated_xp');
-    return stored ? parseInt(stored, 10) : 0;
+    return 0; // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
   }
 
   addUserXP(xp: number): void {
-    if (typeof window === 'undefined') return;
-    const current = this.getUserXP();
-    localStorage.setItem('user_accumulated_xp', (current + xp).toString());
+    // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
+  }
+
+  saveQuizProgress(quizId: string, answeredCount: number, originalTotalCount: number): void {
+    // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
+  }
+
+  getQuizProgress(quizId: string): number {
+    return 0; // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
+  }
+
+  saveLocalTopicProgress(quizId: string, quizTitle: string, correctCount: number, totalQuestions: number): void {
+    // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
+  }
+
+  getLocalTopicProgress(): any[] {
+    return []; // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
   }
 
   getStreak(): number {
-    if (typeof window === 'undefined') return 1;
-    const todayStr = new Date().toDateString();
-    const lastActive = localStorage.getItem('user_last_active_date');
-    const currentStreak = localStorage.getItem('user_streak_count');
-    let streak = currentStreak ? parseInt(currentStreak, 10) : 1;
-    if (!lastActive) {
-      localStorage.setItem('user_last_active_date', todayStr);
-      localStorage.setItem('user_streak_count', streak.toString());
-      return streak;
-    }
-    if (lastActive !== todayStr) {
-      const lastDate = new Date(lastActive);
-      const todayDate = new Date(todayStr);
-      const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
-        streak += 1;
-      } else if (diffDays > 1) {
-        streak = 1;
-      }
-      localStorage.setItem('user_last_active_date', todayStr);
-      localStorage.setItem('user_streak_count', streak.toString());
-    }
-    return streak;
+    return 1; // Vô hiệu hóa localStorage nghiệp vụ theo yêu cầu của user
   }
 }

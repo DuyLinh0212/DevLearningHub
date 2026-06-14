@@ -28,14 +28,21 @@
 }
 
 .brand-logo-img {
-  width: 32px;
-  height: 32px;
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  filter: drop-shadow(0px 2px 8px rgba(168, 85, 247, 0.25));
 }
 
 .sidebar-brand h2 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: white;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.35rem;
+  font-weight: normal;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #f43f5e, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin: 0;
 }
 

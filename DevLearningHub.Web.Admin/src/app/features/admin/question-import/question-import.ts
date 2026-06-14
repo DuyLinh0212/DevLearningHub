@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import * as XLSX from 'xlsx';
@@ -18,6 +19,7 @@ export class QuestionImportComponent implements OnInit {
   private quizService = inject(QuizService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private http = inject(HttpClient);
 
   isDragging: boolean = false;
   fileSelected: boolean = false;
@@ -29,8 +31,35 @@ export class QuestionImportComponent implements OnInit {
   importSummary = { total: 0, valid: 0, invalid: 0 };
   parsedQuestions: any[] = [];
 
+  // Map topicId -> topic name for display
+  topicsMap: Record<string, string> = {};
+
   ngOnInit() {
     this.backLink = this.router.url.startsWith('/admin') ? '/admin/quiz' : '/quiz-bank';
+    this.loadTopics();
+  }
+
+  private loadTopics() {
+    this.http.get<any>('/api/topics').subscribe({
+      next: (res) => {
+        const topics: any[] = res?.data || res || [];
+        if (Array.isArray(topics)) {
+          this.topicsMap = {};
+          topics.forEach((t: any) => {
+            if (t.id) this.topicsMap[t.id.toLowerCase()] = t.name || t.id;
+          });
+        }
+        // Re-resolve topic names if file already parsed
+        if (this.parsedQuestions.length > 0) {
+          this.parsedQuestions = this.parsedQuestions.map(q => ({
+            ...q,
+            topicName: this.topicsMap[q.topicId?.toLowerCase()] || q.topicId || '---'
+          }));
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => { /* Silently fail — topics map stays empty */ }
+    });
   }
 
   onDragOver(event: DragEvent) {
@@ -97,38 +126,92 @@ handleFileProcessing(file: File) {
     this.calculateSummary();
   }
 
-private processExcelData(json: any[]) {
-  this.parsedQuestions = json.map((row, idx) => {
-    const cleanRow: any = {};
-    Object.keys(row).forEach(key => {
-      cleanRow[key.trim().toLowerCase()] = row[key];
-    });
+  private readonly contentAliases = ['nội dung câu hỏi', 'nội dung', 'câu hỏi', 'content', 'text', 'question'];
+  private readonly topicAliases = ['topicid', 'topic id', 'topic_id', 'topic', 'chủ đề', 'mã chủ đề', 'mã topic'];
+  private readonly levelAliases = ['level', 'cấp độ', 'mức độ', 'khó dễ', 'difficulty'];
+  private readonly explanationAliases = ['giải thích', 'giải thích chi tiết', 'explanation', 'explain'];
+  private readonly optionAAliases = ['a', 'đáp án a', 'option a', 'lựa chọn a', 'optiona'];
+  private readonly optionBAliases = ['b', 'đáp án b', 'option b', 'lựa chọn b', 'optionb'];
+  private readonly optionCAliases = ['c', 'đáp án c', 'option c', 'lựa chọn c', 'optionc'];
+  private readonly optionDAliases = ['d', 'đáp án d', 'option d', 'lựa chọn d', 'optiond'];
+  private readonly correctAliases = ['đáp án đúng', 'đáp án', 'correct', 'correctanswer', 'correct answer', 'correct index', 'correctindex'];
 
-    const q = {
-      content: cleanRow['nội dung'] || cleanRow['nội dung câu hỏi'],
-      topicId: cleanRow['topicid'] || cleanRow['topic id'],
-      level: cleanRow['level'] || 'beginner',
-      explanation: cleanRow['giải thích'] || '',
-      options: [
-        { content: cleanRow['a'], isCorrect: String(cleanRow['đáp án đúng'] || '').toUpperCase() === 'A' },
-        { content: cleanRow['b'], isCorrect: String(cleanRow['đáp án đúng'] || '').toUpperCase() === 'B' },
-        { content: cleanRow['c'], isCorrect: String(cleanRow['đáp án đúng'] || '').toUpperCase() === 'C' },
-        { content: cleanRow['d'], isCorrect: String(cleanRow['đáp án đúng'] || '').toUpperCase() === 'D' }
-      ]
-    };
-    
-    console.log(`Dòng ${idx + 1} sau khi map:`, q); 
-    
-    return this.validateAndMap(q, idx);
-  });
-  this.calculateSummary();
-}
+  private getValueByAliases(row: any, aliases: string[]): any {
+    if (!row || typeof row !== 'object') return undefined;
+    const keys = Object.keys(row);
+    for (const alias of aliases) {
+      const cleanAlias = alias.trim().toLowerCase().normalize('NFC');
+      const foundKey = keys.find(k => k.trim().toLowerCase().normalize('NFC') === cleanAlias);
+      if (foundKey !== undefined) {
+        return row[foundKey];
+      }
+    }
+    return undefined;
+  }
+
+  private getCorrectAnswerIndex(correctVal: any): number {
+    const ans = String(correctVal || '').trim().toUpperCase();
+    if (ans === 'A') return 0;
+    if (ans === 'B') return 1;
+    if (ans === 'C') return 2;
+    if (ans === 'D') return 3;
+    if (ans === '0') return 0;
+    if (ans === '1') return 0;
+    if (ans === '2') return 1;
+    if (ans === '3') return 2;
+    if (ans === '4') return 3;
+    return -1;
+  }
+
+  private processExcelData(json: any[]) {
+    this.parsedQuestions = json.map((row, idx) => {
+      const content = this.getValueByAliases(row, this.contentAliases);
+      const topicId = this.getValueByAliases(row, this.topicAliases);
+      const level = this.getValueByAliases(row, this.levelAliases);
+      const explanation = this.getValueByAliases(row, this.explanationAliases);
+      const correctVal = this.getValueByAliases(row, this.correctAliases);
+
+      const optionA = this.getValueByAliases(row, this.optionAAliases);
+      const optionB = this.getValueByAliases(row, this.optionBAliases);
+      const optionC = this.getValueByAliases(row, this.optionCAliases);
+      const optionD = this.getValueByAliases(row, this.optionDAliases);
+
+      const correctIndex = this.getCorrectAnswerIndex(correctVal);
+
+      const rawOptions = [
+        { content: optionA, isCorrect: correctIndex === 0 },
+        { content: optionB, isCorrect: correctIndex === 1 },
+        { content: optionC, isCorrect: correctIndex === 2 },
+        { content: optionD, isCorrect: correctIndex === 3 }
+      ];
+
+      const options = rawOptions
+        .filter(opt => opt.content !== undefined && opt.content !== null && String(opt.content).trim() !== '')
+        .map(opt => ({
+          content: String(opt.content).trim(),
+          isCorrect: opt.isCorrect
+        }));
+
+      const q = {
+        content: content ? String(content).trim() : '',
+        topicId: topicId ? String(topicId).trim() : '',
+        level: level ? String(level).trim().toLowerCase() : 'beginner',
+        explanation: explanation ? String(explanation).trim() : '',
+        options: options
+      };
+
+      console.log(`Dòng ${idx + 1} sau khi map:`, q);
+
+      return this.validateAndMap(q, idx);
+    });
+    this.calculateSummary();
+  }
 
 private validateAndMap(q: any, index: number) {
     const options = q.options || [];
-    
+
     const textContent = q.content || q.text || '';
-    const topicIdentifier = q.topicId || '';
+    const topicIdentifier = (q.topicId || '').trim();
 
     const hasText = typeof textContent === 'string' && !!textContent.trim();
     const hasTopic = !!topicIdentifier;
@@ -141,10 +224,14 @@ private validateAndMap(q: any, index: number) {
     else if (!hasTopic) errorMsg = 'Mã TopicId định danh đang bị bỏ trống.';
     else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
 
+    // Resolve human-readable topic name from loaded topics map
+    const topicName = this.topicsMap[topicIdentifier.toLowerCase()] || topicIdentifier || '---';
+
     return {
       rowNum: index + 1,
-      text: textContent,      
-      topic: topicIdentifier, 
+      text: textContent,
+      topic: topicIdentifier,
+      topicName: topicName,
       topicId: topicIdentifier,
       level: q.level || 'beginner',
       explanation: q.explanation || '',

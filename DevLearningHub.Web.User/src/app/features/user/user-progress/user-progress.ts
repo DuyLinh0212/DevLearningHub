@@ -1,20 +1,32 @@
-import { Component, OnInit, inject, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ElementRef, ViewChild, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProgressService } from '../../../core/services/progress.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { ThemeService } from '../../../core/services/theme.service';
 import { Chart } from 'chart.js/auto';
 import type { TooltipItem } from 'chart.js';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-user-progress',
   standalone: true,
-  imports: [CommonModule, SidebarComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './user-progress.html',
   styleUrl: './user-progress.css'
 })
 export class UserProgressComponent implements OnInit {
   private progressService = inject(ProgressService);
   private cdr = inject(ChangeDetectorRef);
+  public themeService = inject(ThemeService);
+
+  constructor() {
+    effect(() => {
+      // Re-render chart dynamically when theme state changes
+      const isDark = this.themeService.isDarkMode();
+      if (this.progressData.length > 0) {
+        setTimeout(() => this.initRadarChart(), 50);
+      }
+    });
+  }
 
   // Khai báo canvas động nhận diện sau khi view ổn định
   @ViewChild('radarCanvas', { static: false }) radarCanvas!: ElementRef;
@@ -38,7 +50,7 @@ export class UserProgressComponent implements OnInit {
         const rawArray = Array.isArray(actualData) ? actualData : [];
 
         // Map dữ liệu chuẩn hóa thuộc tính chính xác từ Swagger của Nam
-        this.progressData = rawArray.map((item: any) => {
+        const apiData = rawArray.map((item: any) => {
           const rawAcc = item.accuracy ?? 0;
           // Quy đổi tỷ lệ từ số thập phân (0.85 -> 85%) hoặc số nguyên
           const computedAccuracy = Math.round(rawAcc <= 1 ? rawAcc * 100 : rawAcc);
@@ -55,6 +67,18 @@ export class UserProgressComponent implements OnInit {
           };
         });
 
+        // Merge dữ liệu local (mock quiz) vào danh sách nếu chưa có trong API (đã ẩn do user cấm localStorage)
+        const localData: any[] = [];
+
+        const merged = [...apiData];
+        localData.forEach((local: any) => {
+          const exists = merged.some(api => api.topicId === local.topicId);
+          if (!exists) {
+            merged.push(local);
+          }
+        });
+
+        this.progressData = merged;
         this.calculateOverallStats();
         this.cdr.detectChanges();
 
@@ -65,9 +89,15 @@ export class UserProgressComponent implements OnInit {
       },
       error: (err) => {
         console.error('Không thể tải tiến độ học tập từ hệ thống:', err);
-        this.progressData = [];
+        // Khi API lỗi, fallback hoàn toàn sang localStorage (đã ẩn do user cấm localStorage)
+        const localData: any[] = [];
+        this.progressData = localData;
         this.calculateOverallStats();
         this.cdr.detectChanges();
+        // Vẫn thử render chart nếu có dữ liệu local
+        if (localData.length > 0) {
+          setTimeout(() => this.initRadarChart(), 60);
+        }
       }
     });
   }
@@ -106,6 +136,7 @@ export class UserProgressComponent implements OnInit {
     }
 
     try {
+      const isDark = this.themeService.isDarkMode();
       this.chart = new Chart(this.radarCanvas.nativeElement, {
         type: 'radar',
         data: {
@@ -113,7 +144,7 @@ export class UserProgressComponent implements OnInit {
           datasets: [{
             label: 'Mức độ thông thạo (%)',
             data: accuracyScores,
-            backgroundColor: 'rgba(168, 85, 247, 0.12)',
+            backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : 'rgba(109, 40, 217, 0.08)',
             borderColor: '#a855f7',
             borderWidth: 2,
             pointBackgroundColor: '#a855f7',
@@ -128,15 +159,16 @@ export class UserProgressComponent implements OnInit {
           maintainAspectRatio: false,
           scales: {
             r: {
-              angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-              grid: { color: 'rgba(255, 255, 255, 0.08)' },
+              angleLines: { color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)' },
+              grid: { color: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
               pointLabels: {
-                color: '#e2e8f0',
-                font: { size: 11, family: 'Inter', weight: 'bold' }
+                color: isDark ? '#e2e8f0' : '#0f172a',
+                font: { size: 11, family: 'Inter', weight: 'bold' },
+                padding: 16
               },
               ticks: {
                 backdropColor: 'transparent',
-                color: '#94a3b8',
+                color: isDark ? '#94a3b8' : '#475569',
                 stepSize: 20,
                 showLabelBackdrop: false
               },

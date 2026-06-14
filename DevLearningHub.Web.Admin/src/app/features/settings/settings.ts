@@ -2,12 +2,13 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SidebarComponent],
   templateUrl: './settings.html',
   styleUrl: './settings.css'
 })
@@ -18,38 +19,39 @@ export class SettingsComponent implements OnInit {
   firstName: string = '';
   lastName: string = '';
   email: string = '';
-  role: string = 'Học viên'; // Mặc định vì API /me của Nam không trả về cột role công khai
+  role: string = 'Quản trị viên';
   avatarUrl: string = '';
+  xpPoints: number = 0;
   isSaving: boolean = false;
+  isUploadingAvatar: boolean = false;
 
   ngOnInit() {
     this.loadUserProfile();
   }
 
-loadUserProfile() {
-  console.log('=== SETTINGS ADMIN: BẮT ĐẦU TẢI HỒ SƠ VÀ GIẢI MÃ TOKEN PHÒNG THỦ ===');
-  
-  this.http.get<any>('/api/users/me').subscribe({
-    next: (res) => {
-      const user = res?.data || res;
-      if (user) {
+  loadUserProfile() {
+    console.log('=== SETTINGS ADMIN: BẮT ĐẦU TẢI HỒ SƠ VÀ GIẢI MÃ TOKEN PHÒNG THỦ ===');
+    this.http.get<any>('/api/users/me').subscribe({
+      next: (res) => {
+        const user = res?.data || res;
+        if (!user) return;
+
         this.email = user.email || '';
         this.avatarUrl = user.avatarUrl || 'assets/images/default-avatar.svg';
-        
+        this.xpPoints = user.xpPoints || 0;
+        this.loadUserStats(user.id);
+
         const rawRoles = user.roles || [];
         let isAdmin = rawRoles.some((r: string) => r.toLowerCase() === 'admin') || user.role?.toLowerCase() === 'admin';
-        
+
         if (!isAdmin) {
           try {
             const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
             if (token) {
               const payloadPart = token.split('.')[1];
               const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
-              
-              console.log('=== ĐÃ ĐỌC NGƯỢC PAYLOAD TOKEN THÀNH CÔNG ===', decodedPayload);
-              
               const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-              
+
               if (Array.isArray(roleClaim)) {
                 isAdmin = roleClaim.map((r: string) => r.toLowerCase()).includes('admin');
               } else if (roleClaim) {
@@ -57,37 +59,52 @@ loadUserProfile() {
               }
             }
           } catch (tokenError) {
-            console.error('Lỗi giải mã accessToken dưới localStorage:', tokenError);
+            console.error('Không thể đọc role từ token:', tokenError);
           }
         }
 
-        this.role = (isAdmin || !user.roles) ? 'Quản trị viên' : 'Học viên';
-        
+        this.role = isAdmin ? 'Quản trị viên' : 'Học viên';
+
         if (user.fullName) {
           const fullName = user.fullName.trim();
           const nameParts = fullName.split(' ');
           this.firstName = nameParts.pop() || '';
           this.lastName = nameParts.join(' ');
+        } else {
+          this.firstName = user.username || '';
+          this.lastName = '';
         }
-        
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Không thể tải hồ sơ người dùng:', err);
+        this.role = 'Quản trị viên';
         this.cdr.detectChanges();
       }
-    },
-    error: (err) => {
-      console.error('Không thể lấy thông tin cá nhân Admin từ API:', err);
-      this.role = 'Quản trị viên';
-      this.cdr.detectChanges();
-    }
-  });
-}
+    });
+  }
+
+  private loadUserStats(userId: string) {
+    if (!userId) return;
+
+    this.http.get<any>(`/api/users/${userId}/stats`).subscribe({
+      next: (res) => {
+        const stats = res?.data || res;
+        this.xpPoints = stats?.totalXP ?? this.xpPoints;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   saveChanges() {
     if (this.isSaving) return;
     this.isSaving = true;
 
     const combinedFullName = `${this.lastName.trim()} ${this.firstName.trim()}`.trim();
-
-    // PAYLOAD ĐÓNG GÓI CHUẨN ĐÉT THEO SCHEMA PUT /API/USERS/ME (CHỈ CÓ FULLNAME & AVATARURL)
     const updatePayload = {
       fullName: combinedFullName,
       avatarUrl: this.avatarUrl
@@ -98,31 +115,55 @@ loadUserProfile() {
     this.http.put<any>('/api/users/me', updatePayload).subscribe({
       next: () => {
         this.isSaving = false;
-        alert('Cập nhật hồ sơ cá nhân thành công!');
+        alert('Cập nhật hồ sơ thành công!');
+        window.dispatchEvent(new Event('profile-updated'));
         this.loadUserProfile();
       },
       error: (err) => {
         this.isSaving = false;
-        alert(`Lưu cấu hình thất bại! (Mã lỗi hệ thống: ${err.status})`);
-        console.error(err);
+        alert(`Lưu thất bại! (Mã lỗi: ${err.status})`);
       }
     });
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Dung lượng ảnh đại diện không được vượt quá 2MB!');
-        return;
-      }
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.isUploadingAvatar) return;
 
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.avatarUrl = e.target.result;
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn đúng file ảnh!');
+      input.value = '';
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Dung lượng ảnh không được vượt quá 5MB!');
+      input.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    this.isUploadingAvatar = true;
+
+    this.http.post<any>('/api/users/me/avatar', formData).subscribe({
+      next: (res) => {
+        const user = res?.data || res;
+        this.avatarUrl = user?.avatarUrl || '';
+        this.isUploadingAvatar = false;
+        input.value = '';
+        window.dispatchEvent(new Event('profile-updated'));
+        alert('Cập nhật ảnh đại diện thành công!');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        const message = err?.error?.message || `Upload ảnh thất bại! (Mã lỗi: ${err.status})`;
+        alert(message);
+        this.isUploadingAvatar = false;
+        input.value = '';
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

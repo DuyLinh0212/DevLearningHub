@@ -27,12 +27,14 @@
 
       <section class="stats-container">
         @for (stat of adminStats; track stat.title) {
-        <div class="stat-card">
-          <div class="stat-info">
+        <div class="stat-card {{ stat.color }}">
+          <div class="stat-card-header">
             <span class="stat-title">{{ stat.title }}</span>
+            <div class="stat-card-icon"><i class="bi {{ stat.icon }}"></i></div>
+          </div>
+          <div class="stat-card-body">
             <span class="stat-value">{{ stat.value }}</span>
           </div>
-          <div class="stat-card-icon {{ stat.color }}"><i class="bi {{ stat.icon }}"></i></div>
         </div>
         }
       </section>
@@ -238,7 +240,7 @@
       </section>
 
       <div class="logs-filter-toolbar" style="margin-top: 20px; display: flex; justify-content: flex-end; margin-bottom: 12px;">
-        <select [(ngModel)]="selectedLogLevel" style="padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--bg-card-border); color: var(--text-main); border-radius: 6px; outline: none; font-size: 0.85rem; font-weight: 600;">
+        <select [(ngModel)]="selectedLogLevel" style="font-weight: 600;">
           <option value="ALL">Tất cả mức độ Log</option>
           <option value="INFO">Mức độ: INFO</option>
           <option value="SUCCESS">Mức độ: SUCCESS</option>

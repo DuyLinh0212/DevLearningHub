@@ -1,7 +1,9 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
+<header class="content-header">
+      <div class="top-breadcrumb">
+        <a routerLink="/quiz-bank">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Tạo Đề ôn luyện</span>
+      </div>
+    </header>
 
-  <main class="main-content">
     <div class="dashboard-scroll-body">
 
       @if (saveError) {
@@ -15,81 +17,74 @@
       <div class="create-header-row">
         <a routerLink="/quiz-bank" class="btn-back-arrow"><i class="bi bi-chevron-left"></i></a>
         <div class="header-main-text">
-          <h1>Tạo Bộ đề mới</h1>
-          <p>Nhập thông tin cơ bản, thiết lập thời gian và cấu hình quy tắc cho bộ đề</p>
+          <h1>Tạo Bộ Đề Thi Mới</h1>
+          <p>Thiết lập thông tin chung, thời gian làm bài và quy tắc cho bộ đề trắc nghiệm</p>
         </div>
         <div class="header-action-buttons">
           <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
             {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
           </button>
-          <button class="btn-purple-preview" [disabled]="!quizMeta.title.trim() || isSaving" (click)="openPreview()">Xem trước</button>
+          <button class="btn-primary-action" [disabled]="!quizMeta.title.trim() || !quizMeta.topicId" (click)="nextStep()">
+            Tiếp tục biên soạn <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
       </div>
 
       <div class="wizard-grid-layout">
         <div class="creation-form-card">
-          <h3>Thông tin bộ đề</h3>
-          <p class="card-section-desc">Các thông tin hiển thị chính của bộ đề trắc nghiệm</p>
-
+          <h3>Thông tin cơ bản</h3>
+          
           <div class="input-field-group">
-            <label>Tiêu đề</label>
-            <input type="text" [(ngModel)]="quizMeta.title" placeholder="Ví dụ: Tổng quan Kiến trúc Web API với .NET 9">
+            <label>Tiêu đề bộ đề <span class="text-danger">*</span></label>
+            <input type="text" placeholder="Ví dụ: Đề kiểm tra lập trình C# cơ bản" [(ngModel)]="quizMeta.title">
           </div>
 
           <div class="input-field-group">
-            <label>Mô tả</label>
-            <textarea [(ngModel)]="quizMeta.desc" placeholder="Nhập tóm tắt nội dung đánh giá năng lực của bộ đề thi này..."></textarea>
+            <label>Mô tả ngắn</label>
+            <textarea placeholder="Mô tả mục tiêu học tập, đối tượng hướng tới..." rows="3" [(ngModel)]="quizMeta.desc"></textarea>
           </div>
 
           <div class="input-field-row">
             <div class="input-field-group">
-              <label>Chủ đề</label>
+              <label>Chủ đề công nghệ <span class="text-danger">*</span></label>
               <select [(ngModel)]="quizMeta.topicId">
-                @if (topics.length === 0) {
-                <option value="">Chưa có chủ đề khả dụng</option>
-                }
-                @for (topic of topics; track topic.id) {
-                <option [value]="topic.id">{{ topic.name }}</option>
+                <option value="" disabled>-- Chọn chủ đề --</option>
+                @for (t of topics; track t.id) {
+                  <option [value]="t.id">{{ t.name }}</option>
                 }
               </select>
             </div>
-              <div class="input-field-group">
-                <label>Mức độ</label>
-                <select [(ngModel)]="quizMeta.level">
-                  <option value="beginner">Dễ</option>
-                  <option value="medium">Trung bình</option>
-                  <option value="hard">Khó</option>
-                </select>
-              </div>
+
+            <div class="input-field-group">
+              <label>Mức độ khó <span class="text-danger">*</span></label>
+              <select [(ngModel)]="quizMeta.level">
+                <option value="Beginner">Dễ (Beginner)</option>
+                <option value="Intermediate">Trung bình (Intermediate)</option>
+                <option value="Advanced">Khó (Advanced)</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div class="creation-form-card">
-          <h3>Cấu hình bộ đề</h3>
-          <p class="card-section-desc">Thiết lập cơ chế kiểm tra và cách thức hoạt động của phiên làm bài</p>
+          <h3>Quy tắc làm bài</h3>
 
           <div class="input-field-group">
-            <label>Thời gian làm bài</label>
-            <div class="suffix-input-wrapper">
-              <i class="bi bi-clock prefix-icon-inside"></i>
-              <input type="number" [(ngModel)]="quizMeta.duration">
-              <span class="suffix-unit-text">phút</span>
-            </div>
+            <label>Thời gian làm bài (Phút) <span class="text-danger">*</span></label>
+            <input type="number" [(ngModel)]="quizMeta.duration" min="5" max="180">
+            <small class="form-help-info">Thời gian làm bài thi thử (từ 5 đến 180 phút)</small>
           </div>
 
           <div class="input-field-group">
-            <label>Tỷ lệ làm đúng để đạt (%)</label>
-            <div class="suffix-input-wrapper">
-              <i class="bi bi-check-circle prefix-icon-inside"></i>
-              <input type="number" [(ngModel)]="quizMeta.passRate">
-              <span class="suffix-unit-text">%</span>
-            </div>
+            <label>Tỷ lệ điểm đạt (%) <span class="text-danger">*</span></label>
+            <input type="number" [(ngModel)]="quizMeta.passRate" min="10" max="100">
+            <small class="form-help-info">Tỷ lệ câu trả lời đúng tối thiểu để hoàn thành đề (Mặc định: 70%)</small>
           </div>
 
           <div class="setting-toggle-row">
             <div class="toggle-text-left">
-              <h4>Trộn ngẫu nhiên câu hỏi</h4>
-              <p>Tự động xáo trộn thứ tự các câu hỏi trong bộ đề khi sinh viên bấm làm bài</p>
+              <h4>Trộn thứ tự câu hỏi</h4>
+              <p>Xáo trộn thứ tự câu hỏi mỗi khi học viên bắt đầu lượt ôn tập mới</p>
             </div>
             <label class="switch-control">
               <input type="checkbox" [(ngModel)]="quizMeta.shuffle">
@@ -98,107 +93,97 @@
           </div>
         </div>
       </div>
+      }
 
-      <div class="create-action-footer">
-        <button class="btn-footer-back" routerLink="/quiz-bank">Quay lại</button>
-        <button class="btn-footer-next" [disabled]="!quizMeta.title.trim() || isSaving" (click)="nextStep()">Tiếp theo <i class="bi bi-chevron-right"></i></button>
-      </div>
-      } @else {
+      @if (currentStep === 2) {
       <div class="create-header-row">
         <button class="btn-back-arrow" (click)="prevStep()"><i class="bi bi-chevron-left"></i></button>
         <div class="header-main-text">
-          <h1>Tạo Bộ đề mới</h1>
-          <p>Thêm câu hỏi, thiết lập đáp án và cấu hình bộ đề</p>
+          <h1>Soạn Thảo Câu Hỏi</h1>
+          <p>Thêm mới, nhập nội dung câu hỏi và thiết lập đáp án chính xác cho bộ đề: <strong class="text-purple">{{ quizMeta.title }}</strong></p>
         </div>
         <div class="header-action-buttons">
-          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
+          <button class="btn-secondary-action spacing-right-btn" [disabled]="isSaving" (click)="saveDraft()">
             {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
           </button>
-          <button class="btn-purple-preview" [disabled]="isSaving" (click)="openPreview()">Xem trước</button>
+          <button class="btn-primary-action" [disabled]="questions.length === 0 || isSaving" (click)="openPreview()">
+            Xem trước & Hoàn tất <i class="bi bi-check-lg"></i>
+          </button>
         </div>
       </div>
 
-      <div class="questions-builder-container">
-        <div class="builder-card-main">
-          <div class="builder-title-row">
-            <div>
-              <h3>Biên soạn Câu hỏi</h3>
-              <p class="card-section-desc">Nhập thủ công hoặc import JSON để thêm câu hỏi vào bộ đề</p>
+      <div class="question-composer-wrapper">
+        <!-- Cột trái: Danh sách nhanh các câu hỏi -->
+        <div class="composer-sidebar">
+          <div class="composer-sidebar-card">
+            <div class="sidebar-header-line">
+              <h4>Câu hỏi ({{ questions.length }})</h4>
+              <button class="btn-small-add" (click)="addQuestion()"><i class="bi bi-plus"></i></button>
             </div>
-              <label class="btn-import-questions">
-                <i class="bi bi-cloud-arrow-up"></i> Import Excel / JSON
-                <input type="file" accept=".json,application/json,.xlsx,.xls" (change)="onQuestionFileSelected($event)">
-              </label>
-          </div>
-
-          @if (importFeedback) {
-          <div class="quiz-form-message success">
-            <i class="bi bi-check-circle"></i>
-            <span>{{ importFeedback }}</span>
-          </div>
-          }
-          @if (importError) {
-          <div class="quiz-form-message error">
-            <i class="bi bi-exclamation-circle"></i>
-            <span>{{ importError }}</span>
-          </div>
-          }
-
-          @for (q of questions; track qIdx; let qIdx = $index) {
-          <div class="question-item-block">
-            <div class="question-block-top">
-              <span class="lbl-q-title">Câu hỏi {{ qIdx + 1 }}</span>
-
-              <div class="q-meta-inputs-right">
-                <div class="inline-points-input">
-                  <span>Điểm số:</span>
-                  <input type="number" [(ngModel)]="q.points">
-                </div>
-
-                <select class="select-q-type" [(ngModel)]="q.type">
-                  <option value="single">Trắc nghiệm (Một đáp án)</option>
-                </select>
-
-                <button class="btn-delete-q" (click)="removeQuestion(qIdx)" [disabled]="questions.length === 1">
-                  <i class="bi bi-trash3"></i>
-                </button>
+            
+            <div class="sidebar-questions-list">
+              @for (q of questions; track $index; let idx = $index) {
+              <div class="sidebar-q-item" [class.active]="activeQuestionIndex === idx" (click)="selectQuestion(idx)">
+                <span class="q-number">Câu {{ idx + 1 }}</span>
+                <span class="q-preview-text">{{ q.text || '(Chưa nhập nội dung)' }}</span>
+                <button class="btn-q-delete" (click)="deleteQuestion(idx); $event.stopPropagation()"><i class="bi bi-trash"></i></button>
               </div>
+              }
+              
+              @if (questions.length === 0) {
+              <p class="empty-list-info">Chưa có câu hỏi nào. Nhấn nút thêm để bắt đầu biên soạn.</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột phải: Khung biên soạn câu hỏi đang chọn -->
+        <div class="composer-main-form">
+          @if (activeQuestionIndex !== null && questions[activeQuestionIndex]) {
+          <div class="form-container-card">
+            <div class="composer-form-header">
+              <h3>Biên soạn Câu số {{ activeQuestionIndex + 1 }}</h3>
+              <span class="points-badge-setup">
+                Điểm số: <input type="number" [(ngModel)]="questions[activeQuestionIndex].points" style="width: 50px; background: transparent; border: none; color: white; font-weight: 700; text-align: center;">
+              </span>
             </div>
 
-            <div class="input-field-group row-text-area-margin">
-              <label>Nội dung câu hỏi</label>
-              <textarea [(ngModel)]="q.text" placeholder="Nhập nội dung câu hỏi trắc nghiệm..."></textarea>
+            <div class="form-group-item">
+              <label>Nội dung câu hỏi <span class="text-danger">*</span></label>
+              <textarea placeholder="Nhập câu hỏi trắc nghiệm của bạn ở đây..." rows="3" [(ngModel)]="questions[activeQuestionIndex].text"></textarea>
             </div>
 
-          <div class="options-list-wrapper">
-            <label class="lbl-options-heading">Các phương án trả lời</label>
-            @for (opt of q.options; track $index; let oIdx = $index) {
-            <div class="option-row-item" [class.is-selected-correct]="q.correctIndex === oIdx">
-              <div class="radio-custom-click" (click)="setCorrectAnswer(qIdx, oIdx)">
-                <div class="radio-outer-dot">
-                  @if (q.correctIndex === oIdx) {
-                    <div class="radio-inner-core"></div>
-                  }
-                </div>
+            <div class="form-options-setup-list">
+              <label>Danh sách đáp án lựa chọn <span class="text-danger">*</span></label>
+              <p class="options-guideline-info">Nhập nội dung 4 đáp án và tích chọn đáp án đúng nhất ở cột bên trái.</p>
+
+              @for (opt of questions[activeQuestionIndex].options; track $index; let oIdx = $index) {
+              <div class="composer-option-row" [class.is-correct-row]="questions[activeQuestionIndex].correctIndex === oIdx">
+                <label class="correct-radio-label">
+                  <input type="radio" 
+                         [name]="'correct-opt-' + activeQuestionIndex"
+                         [value]="oIdx"
+                         [checked]="questions[activeQuestionIndex].correctIndex === oIdx"
+                         (change)="setCorrectAnswer(activeQuestionIndex, oIdx)">
+                  <span class="radio-custom-dot"></span>
+                </label>
+                <span class="option-letter-prefix">{{ oIdx === 0 ? 'A' : oIdx === 1 ? 'B' : oIdx === 2 ? 'C' : 'D' }}</span>
+                <input type="text" placeholder="Nhập nội dung đáp án..." [(ngModel)]="questions[activeQuestionIndex].options[oIdx]">
               </div>
-              
-              <span class="prefix-option-letter">{{ ['A', 'B', 'C', 'D'][oIdx] }}.</span>
-              
-              <input type="text" 
-                    [(ngModel)]="q.options[oIdx]" 
-                    placeholder="Nhập nội dung phương án..." 
-                    style="width: 100%; flex: 1; min-width: 0;"> 
+              }
             </div>
-            }
+
+            <div class="form-group-item" style="margin-top: 16px;">
+              <label>Giải thích đáp án</label>
+              <textarea placeholder="Nhập lời giải chi tiết (hiển thị cho học viên sau khi nộp bài)..." rows="2" [(ngModel)]="questions[activeQuestionIndex].explanation"></textarea>
+            </div>
           </div>
-          <div class="input-field-group" style="margin-top: 16px;">
-            <label style="display: flex; align-items: center; gap: 6px;">
-              <i class="bi bi-lightbulb-fill" style="color: #eab308;"></i> Giải thích đáp án (Lời giải chi tiết)
-            </label>
-            <textarea [(ngModel)]="q.explanation" 
-                      placeholder="Nhập kiến thức bổ trợ, lý do chọn đáp án đúng hoặc tài liệu tham khảo cho học viên (Sẽ hiển thị sau khi nộp bài)..."
-                      style="height: 80px; font-size: 0.82rem;"></textarea>
-          </div>
+          } @else {
+          <div class="composer-empty-fallback-card">
+            <i class="bi bi-pencil-square"></i>
+            <h4>Bắt đầu biên soạn câu hỏi</h4>
+            <p>Chọn một câu hỏi từ danh sách bên trái hoặc nhấn nút dưới đây để tạo câu hỏi mới cho bộ đề.</p>
+            <button class="btn-primary-action" (click)="addQuestion()"><i class="bi bi-plus-lg"></i> Thêm câu hỏi đầu tiên</button>
           </div>
           }
 
@@ -215,7 +200,6 @@
       }
 
     </div>
-  </main>
 
   @if (isPreviewModalOpen) {
   <div class="modal-overlay">
@@ -273,4 +257,3 @@
     </div>
   </div>
   }
-</div>

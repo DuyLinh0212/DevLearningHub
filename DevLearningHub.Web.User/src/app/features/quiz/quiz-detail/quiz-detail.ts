@@ -1,14 +1,13 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-quiz-detail',
   standalone: true,
-  imports: [RouterLink, SidebarComponent, FormsModule, CommonModule],
+  imports: [RouterLink, FormsModule, CommonModule],
   templateUrl: './quiz-detail.html',
   styleUrl: './quiz-detail.css'
 })

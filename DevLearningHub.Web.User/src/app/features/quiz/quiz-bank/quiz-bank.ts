@@ -1,14 +1,13 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-quiz-bank',
   standalone: true,
-  imports: [RouterLink, SidebarComponent, CommonModule],
+  imports: [RouterLink, CommonModule],
   templateUrl: './quiz-bank.html',
   styleUrl: './quiz-bank.css'
 })
@@ -22,6 +21,7 @@ export class QuizBankComponent implements OnInit {
   searchText: string = '';
   selectedStatus: string = 'all';
   currentUserId: string = '';
+  activeQuizMenuId: string | null = null;
 
   ngOnInit() {
     this.loadCurrentUser();
@@ -35,6 +35,28 @@ export class QuizBankComponent implements OnInit {
       }
       this.cdr.detectChanges();
     });
+  }
+
+  toggleQuizMenu(quizId: string, event: Event) {
+    event.stopPropagation();
+    this.activeQuizMenuId = this.activeQuizMenuId === quizId ? null : quizId;
+    this.cdr.detectChanges();
+  }
+
+  shareQuiz(quizId: string, event: Event) {
+    event.stopPropagation();
+    const shareUrl = `${window.location.origin}/quiz/${quizId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('Đã sao chép liên kết bộ đề ôn tập!');
+    }).catch(err => {
+      console.error('Không thể sao chép liên kết:', err);
+    });
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.activeQuizMenuId = null;
+    this.cdr.detectChanges();
   }
 
   loadCurrentUser() {
@@ -58,41 +80,30 @@ loadQuizzes() {
   
   const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
 
-  this.http.get<any>('/api/quiz-sets', {
-    params: hasToken ? { includePrivate: true } : {}
-  }).subscribe({
-    next: (res: any) => {
-      // 1. In hẳn dữ liệu gốc của Nam trả về xem có gì bên trong
-      console.log('👉 [DEBUG DỮ LIỆU GỐC TỪ BACKEND]:', res);
+  this.quizService.getAllQuizzes(hasToken).subscribe({
+    next: (res: any[]) => {
+      console.log('👉 [DEBUG DỮ LIỆU TỪ SERVICE]:', res);
       
-      const rawSets = res?.data || res || [];
-      const dataArray = Array.isArray(rawSets) ? rawSets : [];
-      
-      this.quizzes = dataArray.map((quiz: any) => {
-        // Log chi tiết từng bộ đề xem trường số câu hỏi là bao nhiêu
-        console.log(`🔍 Quét thấy bộ đề: ${quiz.title} | questionCount gốc từ API =`, quiz.questionCount);
-
+      this.quizzes = res.map((quiz: any) => {
         return {
-          id: quiz.id || quiz.Id,
-          createdBy: quiz.createdBy || quiz.CreatedBy || '',
-          title: quiz.title || 'Bộ đề chưa đặt tên',
-          desc: quiz.description || 'Chưa có mô tả.',
-          questions: quiz.questionCount ?? quiz.QuestionCount ?? 0, 
-          duration: quiz.timeLimitSeconds ? Math.floor(quiz.timeLimitSeconds / 60) : 15,
+          id: quiz.id,
+          createdBy: quiz.createdBy,
+          title: quiz.title,
+          desc: quiz.desc || 'Chưa có mô tả.',
+          questions: quiz.questionsCount || 0, 
+          duration: quiz.duration || 15,
           attempts: quiz.attempts || 0,
-          statusClass: quiz.isPublic ? 'public' : 'draft',
-          status: quiz.isPublic ? 'Đã phát hành' : 'Bản nháp',
+          statusClass: quiz.statusClass,
+          status: quiz.status,
           updated: 'Mới cập nhật'
         };
       });
       
-      // XÓA BỎ BỘ LỌC ĐIỀU KIỆN (Để đề 0 câu hay đề ẩn cũng phải hiện lên màn hình để check)
       console.log('🎯 [MẢNG CUỐI CÙNG SAU KHI MAP]:', this.quizzes);
       this.cdr.detectChanges();
     },
     error: (err) => {
-      // Nếu dính lỗi 403 hoặc 401, dòng này sẽ in ra thủ phạm ngay
-      console.error('❌ [DEBUG LỖI API]: Học viên gọi API bị Server từ chối!', err);
+      console.error('❌ [DEBUG LỖI API]:', err);
       this.quizzes = [];
       this.cdr.detectChanges();
     }
@@ -131,6 +142,22 @@ loadQuizzes() {
   changeFilter(status: string) {
     this.selectedStatus = status;
     this.cdr.detectChanges();
+  }
+
+  deleteQuiz(quizId: string, event: Event) {
+    event.stopPropagation();
+    if (confirm('Bạn có chắc chắn muốn xóa bộ đề ôn luyện này không?')) {
+      this.quizService.deleteQuizSet(quizId).subscribe({
+        next: () => {
+          alert('Đã xóa bộ đề thành công!');
+          this.loadQuizzes();
+        },
+        error: (err: any) => {
+          alert('Không thể xóa bộ đề. Có thể bộ đề đã có lượt tham gia hoặc bạn không có quyền.');
+          console.error(err);
+        }
+      });
+    }
   }
 
   compareIds(id1: any, id2: any): boolean {

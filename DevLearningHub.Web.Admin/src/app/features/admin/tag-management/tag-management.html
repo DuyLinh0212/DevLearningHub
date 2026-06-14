@@ -1,0 +1,130 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterTags()" placeholder="Tìm kiếm tag theo tên hoặc slug...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openTagModal()">
+          <i class="bi bi-tag-fill"></i> Tạo tag mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Lý Tag Diễn Đàn</h1>
+        <p>Chuẩn hóa hệ thống nhãn phân loại nội dung cộng đồng. Mỗi tag có tên, slug định danh và màu nhận diện riêng.</p>
+        @if (!isLoading) {
+          <p class="tag-total-stat">{{ tags.length }} tag đang hoạt động trong hệ thống</p>
+        }
+      </section>
+
+      @if (isLoading) {
+        <div class="empty-state-box-tag">
+          <i class="bi bi-arrow-repeat"></i>
+          <h3>Đang tải dữ liệu...</h3>
+        </div>
+      } @else if (filteredTags.length === 0) {
+        <div class="empty-state-box-tag">
+          <i class="bi bi-tag"></i>
+          <h3>Không tìm thấy tag nào</h3>
+          @if (searchText) {
+            <p>Không có tag nào khớp với từ khóa "<strong>{{ searchText }}</strong>". Hãy thử tìm kiếm khác.</p>
+          } @else {
+            <p>Hệ thống chưa có tag nào. Hãy bấm nút <strong>Tạo tag mới</strong> để bắt đầu!</p>
+          }
+        </div>
+      } @else {
+        <div class="tag-table-wrap">
+          <table class="tag-table">
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th>Slug định danh</th>
+                <th>Màu sắc</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tag of filteredTags; track tag.id) {
+                <tr>
+                  <td>
+                    <span class="tag-pill" [style.background]="tag.colorHex || '#6366f1'">
+                      <span class="tag-color-dot"></span>
+                      {{ tag.name }}
+                    </span>
+                  </td>
+                  <td><span class="tag-slug">{{ tag.slug }}</span></td>
+                  <td>
+                    <div class="color-swatch-cell">
+                      <span class="color-swatch" [style.background]="tag.colorHex || '#6366f1'"></span>
+                      <span class="color-hex-text">{{ tag.colorHex || '#6366f1' }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="table-tag-actions">
+                      <button (click)="openTagModal(tag)" class="btn-tbl-icon-edit" title="Chỉnh sửa tag">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button (click)="deleteTag(tag.id)" class="btn-tbl-icon-delete" title="Xóa tag">
+                        <i class="bi bi-trash3-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  @if (isTagModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3>
+        <i class="bi bi-tag-fill" style="color: #a855f7; margin-right: 8px;"></i>
+        {{ isEditing ? 'Cập nhật tag' : 'Tạo tag mới' }}
+      </h3>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Tên tag</label>
+          <input type="text" [(ngModel)]="tagForm.name" placeholder="Ví dụ: JavaScript, C#, Machine Learning, Docker...">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Màu nhận diện</label>
+          <div class="color-input-wrap">
+            <input type="color" [(ngModel)]="tagForm.colorHex">
+            <input type="text" [(ngModel)]="tagForm.colorHex" placeholder="#6366f1" maxlength="7">
+          </div>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Xem trước</label>
+          <div class="tag-preview-row">
+            <span class="tag-preview-label">Tag sẽ hiển thị:</span>
+            <span class="tag-pill" [style.background]="tagForm.colorHex || '#6366f1'">
+              <span class="tag-color-dot"></span>
+              {{ tagForm.name || 'Tên tag' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeTagModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveTag()">
+          {{ isEditing ? 'Cập nhật tag' : 'Tạo tag' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

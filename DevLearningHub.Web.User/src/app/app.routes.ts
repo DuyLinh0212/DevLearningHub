@@ -12,19 +12,30 @@ import { LandingComponent } from './features/landing/landing';
 import { RoadmapViewComponent } from './features/roadmap/roadmap-view/roadmap-view';
 import { UserProgressComponent } from './features/user/user-progress/user-progress';
 import { SettingsComponent } from './features/settings/settings';
+import { UserLayoutComponent } from './layouts/user-layout/user-layout';
 
 export const routes: Routes = [
+  { path: '', redirectTo: 'landing', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'quiz-bank', component: QuizBankComponent },
-  { path: 'quiz-create', component: QuizCreateComponent },
-  { path: 'quiz/:id', component: QuizDetailComponent, canActivate: [quizAccessGuard] },
+  { path: 'landing', component: LandingComponent },
   { path: 'quiz-play/:id', component: QuizPlayComponent, canActivate: [quizAccessGuard] },
   { path: 'quiz-result/:id', component: QuizResultComponent },
-  { path: 'landing', component: LandingComponent },
-  { path: 'roadmap', component: RoadmapViewComponent },
-  { path: 'dashboard/progress', component: UserProgressComponent },
-  { path: 'settings', component: SettingsComponent },
-  { path: '', redirectTo: 'landing', pathMatch: 'full' }
+  {
+    path: '',
+    component: UserLayoutComponent,
+    children: [
+      { path: 'dashboard', component: DashboardComponent },
+      { path: 'quiz-bank', component: QuizBankComponent },
+      { path: 'quiz-create', component: QuizCreateComponent },
+      { path: 'quiz/:id', component: QuizDetailComponent, canActivate: [quizAccessGuard] },
+      { path: 'roadmap', component: RoadmapViewComponent },
+      { path: 'dashboard/progress', component: UserProgressComponent },
+      { path: 'settings', component: SettingsComponent },
+      { path: 'forum', loadComponent: () => import('./features/forum/forum').then(m => m.ForumComponent) },
+      { path: 'forum/post/:id', loadComponent: () => import('./features/forum/post-detail/post-detail').then(m => m.PostDetailComponent) },
+      { path: 'forum/create', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) },
+      { path: 'forum/edit/:id', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) }
+    ]
+  }
 ];

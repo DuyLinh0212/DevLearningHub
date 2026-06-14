@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
 import { QuizService } from '../../core/services/quiz.service';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
@@ -8,7 +7,7 @@ import { forkJoin, of } from 'rxjs';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, SidebarComponent],
+  imports: [RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -63,7 +62,7 @@ export class DashboardComponent implements OnInit {
             this.leaderboard = rawLeaderboard.map((u: any, idx: number) => ({
               rank: u.rank ?? (idx + 1),
               name: u.fullName || u.username || 'Học viên',
-              avatar: u.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (u.username || idx),
+              avatar: u.avatarUrl || 'assets/images/default-avatar.svg',
               xp: u.xp ?? u.xpPoints ?? 0
             }));
 
@@ -111,10 +110,23 @@ export class DashboardComponent implements OnInit {
     });
     this.totalRealAttempts = sumAttempts;
 
+    // Cộng gộp số mock quiz đã làm & XP tích lũy trong localStorage
+    let completedMockQuizzes = 0;
+    if (Array.isArray(this.quizzesData)) {
+      this.quizzesData.forEach(q => {
+        if (q.id && q.id.toString().startsWith('mock-') && (q.attempts > 0)) {
+          completedMockQuizzes++;
+        }
+      });
+    }
+    const localXp = this.quizService.getUserXP();
+    const displayXp = this.userXpPoints + localXp;
+    const displayCompleted = this.totalQuizTaken + completedMockQuizzes;
+
     // 🎯 ĐỒNG BỘ 4 CHIẾC HỘP THẦN THÁNH THEO ĐÚNG ĐỐI TƯỢNG TRẢ VỀ CỦA API STATS
     this.stats = [
-      { title: 'Quiz đã hoàn thành', value: `${this.totalQuizTaken}`, icon: 'bi-book', color: 'purple' },
-      { title: 'Điểm kinh nghiệm', value: `${this.userXpPoints} XP`, icon: 'bi-gem', color: 'green' },
+      { title: 'Quiz đã hoàn thành', value: `${displayCompleted}`, icon: 'bi-book', color: 'purple' },
+      { title: 'Điểm kinh nghiệm', value: `${displayXp} XP`, icon: 'bi-gem', color: 'green' },
       { title: 'Điểm số trung bình', value: `${this.averageScore.toFixed(1)}đ`, icon: 'bi-check-circle-fill', color: 'blue' },
       { title: 'Thứ hạng hệ thống', value: this.userRank > 0 ? `Hạng ${this.userRank}` : 'Chưa xếp hạng', icon: 'bi-trophy-fill', color: 'orange' }
     ];
@@ -128,18 +140,24 @@ export class DashboardComponent implements OnInit {
         time: hasAttempted ? 'Hôm nay' : 'Mới cập nhật',
         views: realAttempts,
         btnText: hasAttempted ? 'Tiếp tục' : 'Làm ngay',
-        btnClass: hasAttempted ? 'purple' : 'dark'
+        btnClass: hasAttempted ? 'purple' : 'dark',
+        questions: q.questionCount || q.questionsCount || 0,
+        duration: q.duration || 15
       };
     });
 
     this.activities = this.quizzesData.map(q => {
       const realAttempts = q.attempts ?? q.attemptsCount ?? 0;
+      // Đọc tiến độ thực từ localStorage (số câu đã trả lời / tổng câu gốc)
+      const savedProgress = this.quizService.getQuizProgress(q.id);
+      // Nếu đã làm bài nhưng chưa có tiến độ cụ thể → dùng 100% (đã hoàn thành toàn bộ)
+      const displayProgress = realAttempts > 0 && savedProgress === 0 ? 100 : savedProgress;
       return {
         id: q.id,
         title: q.title,
         questions: q.questionCount || q.questionsCount || 0,
         attempts: realAttempts,
-        progress: realAttempts > 0 ? 100 : 0
+        progress: displayProgress
       };
     });
 

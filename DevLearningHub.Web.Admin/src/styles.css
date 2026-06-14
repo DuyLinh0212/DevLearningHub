@@ -1,3 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --bg-main: #09090b;
   --bg-sidebar: #121214;
@@ -15,6 +21,14 @@
   --btn-white-text: #000000;
   --footer-bg: #020204;
   --footer-border: #1f1f23;
+  
+  /* Quy chuẩn bo góc và đệm mới */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --padding-lg: 24px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.12);
 }
 
 html.light-theme {
@@ -34,6 +48,14 @@ html.light-theme {
   --btn-white-text: #ffffff;
   --footer-bg: #f3f4f6;
   --footer-border: #e5e7eb;
+  
+  /* Quy chuẩn bo góc và đệm light-theme */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --padding-lg: 24px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.08);
 }
 
 body {
@@ -57,4 +79,355 @@ body {
 .spin-animation {
   display: inline-block;
   animation: spin 1s linear infinite;
+}
+
+/* Core Layout System */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+app-sidebar {
+  flex-shrink: 0;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.content-header {
+  flex-shrink: 0;
+  height: 70px;
+}
+
+.dashboard-scroll-body {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  height: calc(100vh - 70px);
+  box-sizing: border-box;
+}
+
+.dashboard-scroll-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-scroll-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* Breadcrumb System */
+.top-breadcrumb {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.top-breadcrumb a {
+  text-decoration: none;
+  color: var(--text-muted-dark);
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.top-breadcrumb a:hover {
+  color: var(--text-main);
+}
+
+.top-breadcrumb span:last-child {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* Premium Dropdown Select Styles */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--bg-nested) !important;
+  border: 1px solid var(--border-nested) !important;
+  color: var(--text-main) !important;
+  border-radius: 8px !important;
+  padding: 8px 36px 8px 14px !important;
+  font-size: 0.85rem;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a855f7' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+select:focus {
+  border-color: rgba(168, 85, 247, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08) !important;
+}
+
+select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  padding: 10px;
+}
+
+/* ==========================================================================
+   🧩 LEETCODE-STYLE EXPLORE GRID & CARD COMPONENTS FOR ADMIN
+   ========================================================================== */
+.quiz-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.quiz-card-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 250px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+}
+
+.quiz-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #a855f7, #6366f1);
+  border-radius: 12px 12px 0 0;
+  opacity: 0.6;
+  transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+.quiz-card-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: var(--shadow-hover-purple);
+}
+
+.quiz-card-item:hover::before {
+  opacity: 1;
+  height: 4px;
+}
+
+.quiz-card-item.card-disabled {
+  opacity: 0.75;
+}
+
+/* Header line of card */
+.card-header-line {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.status-badge.public {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.status-badge.draft {
+  background-color: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+}
+
+/* Content area */
+.card-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.2s ease;
+}
+
+.quiz-card-item:hover .card-title {
+  color: #c084fc;
+}
+
+.card-description {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Meta rows */
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-muted-dark);
+  font-size: 0.75rem;
+  margin-bottom: 16px;
+  border-top: 1px solid var(--border-nested);
+  padding-top: 12px;
+}
+
+.card-meta-row span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-meta-row i {
+  color: var(--text-muted-dark);
+}
+
+/* Actions Row */
+.card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-card-action {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-card-action.btn-primary {
+  background: linear-gradient(135deg, #a855f7, #6d28d9);
+  color: white;
+  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.15);
+}
+
+.btn-card-action.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 14px rgba(168, 85, 247, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-card-action.btn-edit {
+  background-color: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  color: var(--text-main);
+}
+
+.btn-card-action.btn-edit:hover {
+  background-color: var(--bg-card-border);
+}
+
+.btn-more-options {
+  background: transparent;
+  border: none;
+  color: var(--text-muted-dark);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-more-options:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+/* Dropdown cho nút 3 chấm bộ đề */
+.quiz-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-card, #121214);
+  border: 1px solid var(--bg-card-border, #1f1f23);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  min-width: 160px;
+  padding: 6px 0;
+  margin-top: 4px;
+}
+
+.quiz-options-dropdown .dropdown-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main, #ffffff);
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.quiz-options-dropdown .dropdown-item:hover {
+  background: var(--bg-nested, rgba(255, 255, 255, 0.035));
+  color: #c084fc;
+}
+
+.quiz-options-dropdown .dropdown-item i {
+  font-size: 0.95rem;
 }

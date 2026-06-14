@@ -1,0 +1,168 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm kiếm bài viết theo tiêu đề hoặc tên tác giả...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act" style="background: rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);" (click)="toggleShowHidden()">
+          <i class="bi" [class.bi-eye-slash-fill]="!showHidden" [class.bi-eye-fill]="showHidden"></i>
+          {{ showHidden ? 'Ẩn bài đã hide' : 'Xem bài đã hide' }}
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Lý Bài Viết Diễn Đàn</h1>
+        <p>Kiểm duyệt nội dung cộng đồng — ẩn/hiện bài vi phạm, theo dõi thống kê tương tác và xóa nội dung không phù hợp.</p>
+      </section>
+
+      <div class="post-filter-bar">
+        <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="visible">Đang hiển thị</option>
+          <option value="hidden">Đã bị ẩn</option>
+        </select>
+        <select [(ngModel)]="sortBy" (change)="applyFilters()">
+          <option value="newest">Mới nhất trước</option>
+          <option value="oldest">Cũ nhất trước</option>
+          <option value="most_views">Lượt xem cao nhất</option>
+          <option value="most_votes">Lượt vote cao nhất</option>
+        </select>
+        <span class="post-count-info">{{ filteredPosts.length }} / {{ posts.length }} bài viết</span>
+      </div>
+
+      @if (isLoading) {
+        <div class="empty-state-post">
+          <i class="bi bi-arrow-repeat"></i>
+          <h3>Đang tải dữ liệu...</h3>
+        </div>
+      } @else if (filteredPosts.length === 0) {
+        <div class="empty-state-post">
+          <i class="bi bi-newspaper"></i>
+          <h3>Không có bài viết nào</h3>
+          <p>Không tìm thấy bài viết phù hợp với bộ lọc hiện tại.</p>
+        </div>
+      } @else {
+        <div class="post-table-wrap">
+          <table class="post-table">
+            <thead>
+              <tr>
+                <th>Tiêu đề &amp; Tác giả</th>
+                <th>Tags</th>
+                <th>Thống kê</th>
+                <th>Trạng thái</th>
+                <th>Ngày đăng</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (post of pagedPosts; track post.id) {
+                <tr [class.post-hidden-row]="post.isHidden">
+                  <td class="post-title-cell">
+                    <div class="post-title-text" [title]="post.title">{{ post.title }}</div>
+                    <div class="post-author-line">
+                      @if (post.author?.avatarUrl) {
+                        <img [src]="post.author.avatarUrl" [alt]="post.author.username">
+                      } @else {
+                        <i class="bi bi-person-circle" style="font-size:1rem;"></i>
+                      }
+                      <span>{{ post.author?.fullName || post.author?.username }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="post-tags-wrap">
+                      @for (tag of (post.tags || []).slice(0, 3); track tag.id) {
+                        <span class="mini-tag-pill" [style.background]="tag.colorHex || '#6366f1'">{{ tag.name }}</span>
+                      }
+                      @if ((post.tags || []).length > 3) {
+                        <span class="mini-tag-pill" style="background:#6b7280">+{{ post.tags.length - 3 }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="post-stats">
+                      <span><i class="bi bi-eye"></i> {{ post.viewCount || 0 }}</span>
+                      <span><i class="bi bi-hand-thumbs-up"></i> {{ post.upvotes || 0 }}</span>
+                      <span><i class="bi bi-chat-dots"></i> {{ post.commentCount || 0 }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
+                      <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
+                      {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
+                    </span>
+                  </td>
+                  <td class="date-cell">
+                    <div>{{ formatDate(post.createdAt) }}</div>
+                  </td>
+                  <td>
+                    <div class="post-table-actions">
+                      @if (!post.isHidden) {
+                        <button class="btn-hide" (click)="openModerateModal(post, true)" title="Ẩn bài viết này">
+                          <i class="bi bi-eye-slash"></i>
+                        </button>
+                      } @else {
+                        <button class="btn-unhide" (click)="moderatePost(post.id, false, '')" title="Hiện lại bài viết">
+                          <i class="bi bi-eye"></i>
+                        </button>
+                      }
+                      <button class="btn-tbl-icon-delete" (click)="deletePost(post.id)" title="Xóa vĩnh viễn">
+                        <i class="bi bi-trash3-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (totalPages > 1) {
+            <div class="pagination-row">
+              <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              @for (p of pageNumbers; track p) {
+                <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+              }
+              <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Moderate (Hide) Modal -->
+  @if (isModerateModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3><i class="bi bi-eye-slash" style="color:#f59e0b;margin-right:8px;"></i>Ẩn bài viết</h3>
+
+      <div class="post-preview-box" style="margin-top:16px;">
+        <strong>{{ moderatingPost?.title }}</strong>
+        <span>Tác giả: {{ moderatingPost?.author?.username }}</span>
+      </div>
+
+      <div class="input-field-group">
+        <label>Lý do ẩn (không bắt buộc)</label>
+        <textarea class="reason-textarea" [(ngModel)]="moderateReason" placeholder="Ví dụ: Vi phạm quy tắc cộng đồng, nội dung spam..."></textarea>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top:20px;">
+        <button class="btn-modal-cancel" (click)="closeModerateModal()">Hủy</button>
+        <button class="btn-modal-confirm" style="background:linear-gradient(135deg,#f59e0b,#d97706);" (click)="confirmModerate()">
+          Xác nhận ẩn bài
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

@@ -2,12 +2,11 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RoadmapService } from '../../../core/services/roadmap.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-roadmap-view',
   standalone: true,
-  imports: [CommonModule, RouterLink, SidebarComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './roadmap-view.html',
   styleUrl: './roadmap-view.css'
 })
@@ -66,8 +65,8 @@ export class RoadmapViewComponent implements OnInit {
         stepNum: index + 1,
         id: item.topicId,
         name: item.name || 'Chủ đề kiến thức',
-        desc: `Hệ thống hóa lý thuyết cốt lõi, sơ đồ tư duy và tham gia luyện tập bộ đề trắc nghiệm lập trình chuyên sâu liên quan đến ${item.name || 'chủ đề này'}.`,
-        icon: 'bi-journal-code', // Đồng bộ icon lập trình công nghệ chuyên sâu
+        desc: `Hệ thống hóa kiến thức trọng tâm và ôn luyện bộ đề trắc nghiệm chuyên sâu về ${item.name || 'chủ đề này'}.`,
+        icon: 'bi-journal-code',
         status: calculatedStatus
       };
     });

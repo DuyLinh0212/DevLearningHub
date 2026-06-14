@@ -1,3 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --bg-main: #09090b;
   --bg-sidebar: #121214;
@@ -15,6 +21,14 @@
   --btn-white-text: #000000;
   --footer-bg: #020204;
   --footer-border: #1f1f23;
+  
+  /* Quy chuẩn bo góc và đệm mới */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --padding-lg: 24px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.12);
 }
 
 html.light-theme {
@@ -34,6 +48,14 @@ html.light-theme {
   --btn-white-text: #ffffff;
   --footer-bg: #f3f4f6;
   --footer-border: #e5e7eb;
+  
+  /* Quy chuẩn bo góc và đệm light-theme */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --padding-lg: 24px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.08);
 }
 
 body {
@@ -57,4 +79,81 @@ body {
 .spin-animation {
   display: inline-block;
   animation: spin 1s linear infinite;
+}
+
+/* Core Layout System */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+app-sidebar {
+  flex-shrink: 0;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.content-header {
+  flex-shrink: 0;
+  height: 70px;
+}
+
+.dashboard-scroll-body {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  height: calc(100vh - 70px);
+  box-sizing: border-box;
+}
+
+.dashboard-scroll-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-scroll-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* Breadcrumb System */
+.top-breadcrumb {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.top-breadcrumb a {
+  text-decoration: none;
+  color: var(--text-muted-dark);
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.top-breadcrumb a:hover {
+  color: var(--text-main);
+}
+
+.top-breadcrumb span:last-child {
+  color: var(--text-main);
+  font-weight: 600;
 }

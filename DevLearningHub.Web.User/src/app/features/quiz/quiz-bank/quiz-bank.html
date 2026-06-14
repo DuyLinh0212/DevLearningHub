@@ -1,99 +1,145 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
-
-  <main class="main-content">
-
     <header class="content-header">
-      <div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" placeholder="Tìm kiếm bộ đề..." [value]="searchText" (input)="onSearchChange($event)">
+      <div class="top-breadcrumb">
+        <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Bài tập Trắc nghiệm</span>
       </div>
-      <div class="top-nav-buttons">
-        <button class="btn-nav-tab">Bài tập Lập trình</button>
-        <button class="btn-nav-tab active">Bài tập Trắc nghiệm</button>
-        <button class="btn-nav-tab">Đóng góp của tôi</button>
-        <button class="btn-create-new" routerLink="/quiz-create"><span class="plus-icon">+</span> Tạo mới</button>
-      </div>
+      <button class="btn-create" routerLink="/quiz-create">
+        <i class="bi bi-plus-circle-fill"></i> Tạo đề thi mới
+      </button>
     </header>
 
     <div class="dashboard-scroll-body">
 
       <section class="welcome-section">
-        <h1>Hệ Thống Trắc Nghiệm Công Nghệ</h1>
-        <p>Thử thách tư duy, củng cố kiến thức chuyên ngành và chuẩn bị hành trang phỏng vấn thông qua các bộ đề thực chiến</p>
+        <h1 style="font-family: 'Anton', sans-serif; letter-spacing: 0.8px; text-transform: uppercase; font-size: 1.9rem;">Thư Viện Đề Thi & Ôn Luyện Lập Trình</h1>
+        <p>Củng cố kiến thức chuyên ngành, luyện tư duy lập trình và sẵn sàng cho các kỳ thi hay phỏng vấn xin việc.</p>
       </section>
 
-      <section class="quiz-library-card">
-        <div class="library-header">
-          <h2>Thư viện Đề thi & Luyện tập</h2>
-          <p>Tìm kiếm và tham gia thử thách các bộ đề trắc nghiệm lập trình được đóng góp bởi cộng đồng DevLearningHub</p>
-        </div>
-
-        <div class="library-toolbar">
-          <div class="toolbar-pills">
-            <span class="pill" [class.active]="selectedStatus === 'all'" (click)="changeFilter('all')">Tất cả bộ đề</span>
-            <span class="pill" [class.active]="selectedStatus === 'public'" (click)="changeFilter('public')">Đã phát hành</span>
-            <span class="pill" [class.active]="selectedStatus === 'draft'" (click)="changeFilter('draft')">Bản nháp</span>
-          </div>
-          <div class="toolbar-actions">
-            <div class="search-box library-search">
-              <i class="bi bi-search"></i>
-              <input type="text" placeholder="Tìm kiếm bộ đề học tập..." [value]="searchText" (input)="onSearchChange($event)">
-            </div>
-          </div>
-        </div>
-
-        <div class="quiz-rows-list">
-          @for (quiz of filteredQuizzes; track quiz.id) {
-          <div class="quiz-list-row" [class.row-disabled]="quiz.statusClass !== 'public'">
-            <div class="row-icon-box">
-              <i class="bi bi-collection"></i>
+      <div class="quiz-layout">
+        <!-- CỘT TRÁI: DANH SÁCH BỘ ĐỀ -->
+        <div class="quiz-main-column">
+          <section class="quiz-library-card">
+            <div class="library-header">
+              <h2>Thư viện Đề thi & Ôn luyện</h2>
+              <p>Khám phá các bộ đề trắc nghiệm lập trình chất lượng được đóng góp bởi cộng đồng.</p>
             </div>
 
-            <div class="row-content">
-              <div class="row-title-line">
-                <h3>{{ quiz.title }}</h3>
-                <span class="status-badge" [class.public]="quiz.statusClass === 'public'" [class.draft]="quiz.statusClass !== 'public'">
-                  {{ quiz.status }}
-                </span>
+            <div class="library-toolbar">
+              <div class="toolbar-pills">
+                <span class="pill" [class.active]="selectedStatus === 'all'" (click)="changeFilter('all')">Tất cả bộ đề</span>
+                <span class="pill" [class.active]="selectedStatus === 'public'" (click)="changeFilter('public')">Đã phát hành</span>
+                <span class="pill" [class.active]="selectedStatus === 'draft'" (click)="changeFilter('draft')">Bản nháp</span>
               </div>
-              <p class="row-description">{{ quiz.desc }}</p>
-              <div class="row-meta-tags">
-                <span><i class="bi bi-journal-text"></i> {{ quiz.questions }} câu hỏi</span>
-                <span><i class="bi bi-clock"></i> {{ quiz.duration }} phút</span>
-                <span><i class="bi bi-people"></i> {{ quiz.attempts }} lượt làm</span>
-                <span class="updated-time">{{ quiz.updated }}</span>
+              <div class="toolbar-actions">
+                <div class="search-box library-search">
+                  <i class="bi bi-search"></i>
+                  <input type="text" placeholder="Tìm kiếm bộ đề học tập..." [value]="searchText" (input)="onSearchChange($event)">
+                </div>
               </div>
             </div>
 
-            <div class="row-actions-right">
-              @if (compareIds(quiz.createdBy, currentUserId)) {
-                <button class="btn-view-quiz" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }" style="background-color: var(--border-nested); color: var(--text-main);">Sửa</button>
+            <div class="quiz-grid-list">
+              @for (quiz of filteredQuizzes; track quiz.id) {
+              <div class="quiz-card-item" [class.card-disabled]="quiz.statusClass !== 'public'">
+                <div class="card-header-line">
+                  <span class="status-badge" [class.public]="quiz.statusClass === 'public'" [class.draft]="quiz.statusClass !== 'public'">
+                    {{ quiz.status }}
+                  </span>
+                  
+                  <div class="btn-more-options-wrapper" style="position: relative; display: inline-block; margin-left: auto;">
+                    <button class="btn-more-options" (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"><i class="bi bi-three-dots-vertical"></i></button>
+                    @if (activeQuizMenuId === quiz.id) {
+                      <div class="quiz-options-dropdown" (click)="$event.stopPropagation()">
+                        <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
+                          <i class="bi bi-eye"></i> Xem chi tiết
+                        </button>
+                        <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
+                          <i class="bi bi-send"></i> Chia sẻ bộ đề
+                        </button>
+                        @if (compareIds(quiz.createdBy, currentUserId)) {
+                          <button class="dropdown-item danger" style="color: #ef4444;" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
+                            <i class="bi bi-trash3"></i> Xóa bộ đề
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="card-content-area" [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : null" style="cursor: pointer;">
+                  <h3 class="card-title">{{ quiz.title }}</h3>
+                  <p class="card-description">{{ quiz.desc }}</p>
+                </div>
+
+                <div class="card-meta-row">
+                  <span><i class="bi bi-journal-text"></i> {{ quiz.questions }} câu</span>
+                  <span><i class="bi bi-clock"></i> {{ quiz.duration }} phút</span>
+                  <!-- Ẩn số lượt làm do BE chưa hỗ trợ API trả về attempts của từng quiz set -->
+                  @if (false) {
+                  <span><i class="bi bi-people"></i> {{ quiz.attempts }} lượt làm</span>
+                  }
+                </div>
+
+                <div class="card-actions-row">
+                  @if (compareIds(quiz.createdBy, currentUserId)) {
+                    <button class="btn-card-action btn-edit" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">Sửa</button>
+                  }
+                  @if (quiz.statusClass === 'public') {
+                    <button class="btn-card-action btn-primary" [routerLink]="['/quiz', quiz.id]">Luyện tập</button>
+                  } @else if (quiz.statusClass === 'draft') {
+                    <button class="btn-card-action btn-draft"
+                            [routerLink]="['/quiz-create']"
+                            [queryParams]="{ id: quiz.id }">
+                      Làm tiếp
+                    </button>
+                  } @else {
+                    <button class="btn-card-action btn-locked" disabled><i class="bi bi-lock-fill"></i> Khóa</button>
+                  }
+                </div>
+              </div>
+              } @empty {
+              <div class="empty-results-box" style="text-align: center; padding: 40px; color: #71717a; font-size: 0.9rem; grid-column: 1 / -1;">
+                <i class="bi bi-folder-x" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                Không tìm thấy bộ đề trắc nghiệm nào phù hợp từ khóa.
+              </div>
               }
-              @if (quiz.statusClass === 'public') {
-                <button class="btn-view-quiz" [routerLink]="['/quiz', quiz.id]">Xem đề</button>
-              } @else if (quiz.statusClass === 'draft') {
-                <button class="btn-view-quiz"
-                        [routerLink]="['/quiz-create']"
-                        [queryParams]="{ id: quiz.id }"
-                        style="background-color: #eab308; color: #121214; border: none;">
-                  Làm tiếp
-                </button>
-              } @else {
-                <button class="btn-view-quiz btn-row-locked" disabled><i class="bi bi-lock-fill"></i> Khóa</button>
-              }
-              <button class="btn-more-options"><i class="bi bi-three-dots-vertical"></i></button>
+            </div>
+          </section>
+        </div>
+
+        <!-- CỘT PHẢI: SIDEBAR WIDGETS -->
+        <div class="quiz-sidebar-column">
+          <!-- Widget Tiến trình cá nhân -->
+          <div class="quiz-sidebar-card">
+            <h3>Tiến trình ôn luyện</h3>
+            <p class="sidebar-card-desc">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
+            <div class="quiz-stats-widget">
+              <div class="quiz-stat-row">
+                <span>Bộ đề khả dụng:</span>
+                <strong>{{ filteredQuizzes.length }} đề</strong>
+              </div>
+              <div class="quiz-stat-row">
+                <span>Học viên hiện tại:</span>
+                <strong style="color: #a855f7;">Học viên HUIT</strong>
+              </div>
+              <div class="quiz-stat-row">
+                <span>Trạng thái ôn thi:</span>
+                <strong style="color: #22c55e;">Sẵn sàng</strong>
+              </div>
             </div>
           </div>
-          } @empty {
-          <div class="empty-results-box" style="text-align: center; padding: 40px; color: #71717a; font-size: 0.9rem;">
-            <i class="bi bi-folder-x" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
-            Không tìm thấy bộ đề trắc nghiệm nào phù hợp từ khóa.
+
+          <!-- Widget Quy chế luyện tập -->
+          <div class="quiz-sidebar-card rules-card">
+            <h3>Lưu ý khi làm bài thi</h3>
+            <p class="sidebar-card-desc">Một số quy tắc để bài thi đạt kết quả tốt nhất</p>
+            <ul class="rules-list">
+              <li><i class="bi bi-check2-circle text-purple"></i> Mỗi bộ đề thi đều có giới hạn thời gian cụ thể.</li>
+              <li><i class="bi bi-check2-circle text-purple"></i> Hệ thống sẽ tự động nộp bài khi hết giờ.</li>
+              <li><i class="bi bi-check2-circle text-purple"></i> Hãy tập trung làm bài và hạn chế chuyển tab để tránh bị lỗi hệ thống.</li>
+              <li><i class="bi bi-check2-circle text-purple"></i> Hoàn thành bài thi đạt kết quả tốt để tích lũy thêm điểm kinh nghiệm (XP).</li>
+            </ul>
           </div>
-          }
         </div>
-      </section>
+      </div>
 
     </div>
-  </main>
-</div>

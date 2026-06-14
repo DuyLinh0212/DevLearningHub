@@ -46,6 +46,7 @@
               <th>Câu hỏi</th>
               <th>Chủ đề</th>
               <th>Cấp độ</th>
+              <th style="text-align: center;">Đáp án</th>
               <th style="text-align: center;">Trạng thái</th>
             </tr>
           </thead>
@@ -56,9 +57,21 @@
               <td>
                 <div class="text-truncate-2" style="max-width: 300px;">{{ row.text }}</div>
               </td>
-              <td>{{ row.topic || '---' }}</td>
-              <td>{{ row.level }}</td>
               <td>
+                <span [title]="'ID: ' + row.topicId">{{ row.topicName || row.topic || '---' }}</span>
+              </td>
+              <td>
+                <span class="level-badge"
+                  [class.level-easy]="row.level === 'beginner'"
+                  [class.level-medium]="row.level === 'intermediate'"
+                  [class.level-hard]="row.level === 'advanced'">
+                  {{ row.level === 'beginner' ? 'Dễ' : row.level === 'intermediate' ? 'TB' : row.level === 'advanced' ? 'Khó' : row.level }}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span class="options-count-badge">{{ row.options?.length || 0 }} đáp án</span>
+              </td>
+              <td style="text-align: center;">
                 <span class="row-status-badge" [class.success]="row.isValid" [class.danger]="!row.isValid">
                   {{ row.isValid ? 'Sẵn sàng' : 'Lỗi: ' + row.errorMsg }}
                 </span>

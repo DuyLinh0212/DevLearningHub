@@ -1,84 +1,84 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Lộ trình học tập</span>
+  </div>
+</header>
 
-  <main class="main-content">
-    <div class="dashboard-scroll-body" style="padding-top: 20px;">
-      
-      <section class="welcome-section">
-        <h1>Bản Đồ Lộ Trình Công Nghệ Gợi Ý</h1>
-        <p>Theo dõi định hướng chặng đường học tập vĩ mô, bám sát các bước rèn luyện kỹ năng cốt lõi đề xuất bởi chuyên gia.</p>
-      </section>
+<div class="dashboard-scroll-body">
+  
+  <section class="welcome-section">
+    <h1>Lộ trình học tập đề xuất</h1>
+    <p>Theo dõi lộ trình học tập, từng bước rèn luyện kỹ năng lập trình cốt lõi được định hướng bởi giảng viên.</p>
+  </section>
 
-      <div class="roadmap-layout-grid" style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+  <div class="roadmap-layout-grid">
+    
+    <div class="roadmap-sidebar-panel">
+        <h4>Chọn định hướng lộ trình</h4>
         
-        <div class="roadmap-sidebar-panel" style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
-            <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Chọn định hướng lộ trình</h4>
-            
-            @for (rm of roadmaps; track rm.id) {
-            <div class="roadmap-selector-card" [class.is-active]="activeRoadmap?.id === rm.id" (click)="selectRoadmap(rm)" style="padding: 16px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 0 0 6px 0;">{{ rm.title }}</h3>
-                    <span style="font-size: 0.75rem; background: var(--bg-nested); padding: 3px 8px; border-radius: 4px; color: var(--text-muted); font-weight: 500;">{{ rm.level }}</span>
-            </div>
-            } @empty {
-            <div class="empty-state-placeholder" style="padding: 24px; text-align: center; background: var(--bg-card); border: 1px dashed var(--input-border); border-radius: 10px; color: var(--text-muted-dark);">
-                <i class="bi bi-bezier2" style="font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
-                    <p style="font-size: 0.85rem; margin: 0;">Chưa có lộ trình nào được khởi tạo.</p>
-                        <button class="btn-admin-act blue" style="margin-top: 12px; font-size: 0.75rem; padding: 4px 10px;" (click)="loadUserRoadmaps()">
-                            <i class="bi bi-arrow-clockwise"></i> Thử lại
-                        </button>
-            </div>
-            }
+        @for (rm of roadmaps; track rm.id) {
+        <div class="roadmap-selector-card" [class.is-active]="activeRoadmap?.id === rm.id" (click)="selectRoadmap(rm)">
+            <h3>{{ rm.title }}</h3>
+            <span class="roadmap-selector-badge">{{ rm.level }}</span>
+        </div>
+        } @empty {
+        <div class="empty-state-placeholder">
+            <i class="bi bi-bezier2 empty-placeholder-icon"></i>
+            <p>Chưa có lộ trình nào được khởi tạo.</p>
+            <button class="btn-admin-act blue-outline" (click)="loadUserRoadmaps()">
+                <i class="bi bi-arrow-clockwise"></i> Thử lại
+            </button>
+        </div>
+        }
+    </div>
+
+    @if (activeRoadmap) {
+      <div class="roadmap-tree-main">
+        <div class="active-roadmap-intro">
+          <h2>{{ activeRoadmap.title }}</h2>
+          <p>{{ activeRoadmap.description }}</p>
         </div>
 
-        @if (activeRoadmap) {
-          <div class="roadmap-tree-main" style="flex: 1; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 24px;">
-            <div class="active-roadmap-intro" style="border-bottom: 1px solid var(--bg-card-border); padding-bottom: 16px; margin-bottom: 24px;">
-              <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 0 0 8px 0;">{{ activeRoadmap.title }}</h2>
-              <p style="font-size: 0.85rem; color: var(--text-muted-dark); margin: 0; line-height: 1.5;">{{ activeRoadmap.description }}</p>
-            </div>
+        <div class="tree-timeline-track">
+          <div class="vertical-timeline-line"></div>
 
-            <div class="tree-timeline-track" style="display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 20px;">
-              <div class="vertical-timeline-line" style="position: absolute; left: 35px; top: 15px; bottom: 15px; width: 2px; background: var(--input-border); z-index: 1;"></div>
+          @for (node of roadmapNodes; track node.stepNum) {
+            <div class="timeline-node-row">
+              <div class="node-status-circle" [attr.data-status]="node.status">
+                @if (node.status === 'completed') {
+                  <i class="bi bi-check-lg"></i>
+                } @else {
+                  <span [class.text-active]="node.status === 'current'">{{ node.stepNum }}</span>
+                }
+              </div>
 
-              @for (node of roadmapNodes; track node.stepNum) {
-                <div class="timeline-node-row" style="display: flex; gap: 24px; position: relative; z-index: 2; padding-bottom: 32px; align-items: flex-start;">
-                  <div class="node-status-circle" [attr.data-status]="node.status" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--input-border); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; transition: all 0.3s;">
-                    @if (node.status === 'completed') {
-                      <i class="bi bi-check-lg" style="color: #22c55e;"></i>
-                    } @else {
-                      <span [style.color]="node.status === 'current' ? '#a855f7' : 'var(--text-muted)'">{{ node.stepNum }}</span>
-                    }
-                  </div>
-
-                  <div class="node-content-box" style="flex: 1; background: var(--bg-nested); border: 1px solid var(--border-nested); border-radius: 10px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-                    <div style="flex: 1;">
-                      <h4 style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="bi {{ node.icon }}" style="color: #a855f7;"></i> {{ node.name }}
-                      </h4>
-                      <p style="font-size: 0.8rem; color: var(--text-muted-dark); margin: 0; line-height: 1.5;">{{ node.desc }}</p>
-                    </div>
-                    <div>
-                      @if (node.status === 'completed') {
-                        <button class="btn-admin-act blue" style="padding: 6px 12px; font-size: 0.75rem;" routerLink="/quiz-bank"><i class="bi bi-arrow-clockwise"></i> Ôn tập lại</button>
-                      } @else if (node.status === 'current') {
-                        <button class="btn-admin-act purple" style="padding: 6px 12px; font-size: 0.75rem;" routerLink="/quiz-bank"><i class="bi bi-play-fill"></i> Học chặng này</button>
-                      } @else {
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: rgba(0,0,0,0.04); border-radius: 6px;"><i class="bi bi-lock-fill"></i> Khóa</span>
-                      }
-                    </div>
-                  </div>
+              <div class="node-content-box">
+                <div class="node-info-text">
+                  <h4>
+                    <i class="bi {{ node.icon }} node-step-icon"></i> {{ node.name }}
+                  </h4>
+                  <p>{{ node.desc }}</p>
                 </div>
-              }
+                <div class="node-action-btn-wrapper">
+                  @if (node.status === 'completed') {
+                    <button class="btn-admin-act blue-outline" routerLink="/quiz-bank"><i class="bi bi-arrow-clockwise"></i> Ôn tập lại</button>
+                  } @else if (node.status === 'current') {
+                    <button class="btn-admin-act purple-gradient" routerLink="/quiz-bank"><i class="bi bi-play-fill"></i> Học chặng này</button>
+                  } @else {
+                    <span class="node-locked-badge"><i class="bi bi-lock-fill"></i> Khóa</span>
+                  }
+                </div>
+              </div>
             </div>
-          </div>
-        } @else {
-          <div class="roadmap-tree-main" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-card); border: 1px dashed var(--input-border); border-radius: 12px; padding: 40px; color: var(--text-muted-dark);">
-            <i class="bi bi-bezier2" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;"></i>
-            <h3 style="font-weight: 600;">Chưa chọn lộ trình</h3>
-            <p style="font-size: 0.9rem;">Hãy chọn một lộ trình từ danh sách bên trái để xem chi tiết các chặng học.</p>
-          </div>
-        }
+          }
+        </div>
       </div>
-    </div>
-  </main>
+    } @else {
+      <div class="roadmap-empty-panel">
+        <i class="bi bi-bezier2 empty-placeholder-icon"></i>
+        <h3>Chưa chọn lộ trình</h3>
+        <p>Hãy chọn một lộ trình từ danh sách bên trái để xem chi tiết các chặng học.</p>
+      </div>
+    }
+  </div>
 </div>
