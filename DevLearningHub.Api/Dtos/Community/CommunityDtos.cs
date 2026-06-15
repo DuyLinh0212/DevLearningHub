@@ -170,6 +170,19 @@ public class UpdateCommentRequest
     public string BodyMarkdown { get; set; } = string.Empty;
 }
 
+// Realtime payload broadcast when a comment (and its reply subtree) is deleted.
+public class CommentDeletedEvent
+{
+    public Guid PostId { get; set; }
+
+    // The comment the user explicitly deleted.
+    public Guid CommentId { get; set; }
+
+    // Every comment id removed, including nested replies, so clients can
+    // prune their local tree in one pass.
+    public List<Guid> DeletedIds { get; set; } = new();
+}
+
 // Voting payloads and results.
 public class VoteRequest
 {

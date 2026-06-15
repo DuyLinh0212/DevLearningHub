@@ -4,5 +4,12 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "warn"
+  },
+  "/hubs": {
+    "target": "https://10w62wl2-7073.asse.devtunnels.ms",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true,
+    "logLevel": "warn"
   }
 }

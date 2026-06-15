@@ -3,8 +3,10 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Community;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.Community;
@@ -15,10 +17,12 @@ namespace DevLearningHub.Api.Controllers.Community;
 public class CommentsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
 
-    public CommentsController(DevLearningHubContext db)
+    public CommentsController(DevLearningHubContext db, IHubContext<CommentHub, ICommentHubClient> commentHub)
     {
         _db = db;
+        _commentHub = commentHub;
     }
 
     [HttpPut("{id:guid}")]
@@ -55,7 +59,12 @@ public class CommentsController : ControllerBase
         comment.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
-        return Ok(ApiResponse<CommentResponse>.Ok(MapComment(comment, comment.Author)));
+        var response = MapComment(comment, comment.Author);
+
+        // Push the edited body to everyone viewing this post.
+        await _commentHub.Clients.Group(CommentHub.PostGroup(comment.PostId)).CommentUpdated(response);
+
+        return Ok(ApiResponse<CommentResponse>.Ok(response));
     }
 
     [HttpDelete("{id:guid}")]
@@ -102,6 +111,14 @@ public class CommentsController : ControllerBase
 
         _db.Comments.RemoveRange(toDelete);
         await _db.SaveChangesAsync();
+
+        // Tell viewers which comments (root + nested replies) to prune.
+        await _commentHub.Clients.Group(CommentHub.PostGroup(comment.PostId)).CommentDeleted(new CommentDeletedEvent
+        {
+            PostId = comment.PostId,
+            CommentId = comment.Id,
+            DeletedIds = deleteIds
+        });
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true, count = deleteIds.Count }));
     }
