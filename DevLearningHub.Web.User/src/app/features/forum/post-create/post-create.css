@@ -337,8 +337,10 @@
   border-style: solid;
   height: auto;
   min-height: unset;
-  background-color: #0f0f13;
-  display: block;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0;
 }
 
@@ -371,17 +373,22 @@
 .upload-img-container {
   position: relative;
   width: 100%;
-  display: block;
-  border-radius: var(--radius-md, 8px);
-  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
 }
 
 .upload-preview-img {
-  width: 100%;
+  max-width: 100%;
   height: auto;
-  display: block;
+  max-height: 500px;
   object-fit: contain;
-  position: relative;
+  border-radius: 8px;
+  border: 1px solid var(--bg-card-border);
+  background-color: var(--bg-nested, #18181b);
+  padding: 6px;
+  display: block;
 }
 
 .upload-overlay {

@@ -87,7 +87,7 @@
               </div>
 
               <!-- Body: Title, Excerpt & Image preview if any -->
-              <div class="post-card-body" [class.has-thumb]="post.imageUrl">
+              <div class="post-card-body">
                 <div class="post-card-text">
                   <h3 class="post-title">
                     {{ post.title }}
@@ -95,13 +95,15 @@
                       <span class="moderated-badge">Bị ẩn</span>
                     }
                   </h3>
+                  
+                  @if (post.imageUrl) {
+                    <div class="post-image-container">
+                      <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+                    </div>
+                  }
+
                   <p class="post-excerpt">{{ getExcerpt(post.bodyMarkdown) }}</p>
                 </div>
-                @if (post.imageUrl) {
-                  <div class="post-thumb">
-                    <img [src]="post.imageUrl" alt="Post thumbnail">
-                  </div>
-                }
               </div>
 
               <!-- Tags list -->
