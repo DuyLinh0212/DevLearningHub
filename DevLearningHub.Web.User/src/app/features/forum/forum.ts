@@ -29,7 +29,6 @@ export class ForumComponent implements OnInit {
   totalPages: number = 0;
   searchText: string = '';
   selectedTag: string = '';
-  filterDate: string = 'all';
   filteredPosts: any[] = [];
   
   loading: boolean = false;
@@ -104,30 +103,7 @@ export class ForumComponent implements OnInit {
   }
 
   applyFilters() {
-    let result = [...this.posts];
-
-    // Filter by Date
-    if (this.filterDate !== 'all') {
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const oneWeekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-      const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
-
-      result = result.filter(p => {
-        if (!p.createdAt) return false;
-        const postTime = new Date(p.createdAt).getTime();
-        if (this.filterDate === 'today') {
-          return postTime >= todayStart;
-        } else if (this.filterDate === 'week') {
-          return postTime >= oneWeekAgo;
-        } else if (this.filterDate === 'month') {
-          return postTime >= oneMonthAgo;
-        }
-        return true;
-      });
-    }
-
-    this.filteredPosts = result;
+    this.filteredPosts = [...this.posts];
     this.cdr.detectChanges();
   }
 
