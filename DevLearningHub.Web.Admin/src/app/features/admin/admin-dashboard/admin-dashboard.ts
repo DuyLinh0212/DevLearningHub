@@ -97,81 +97,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-private loadBackendData() {
-  if (!this.checkAdminRole()) return;
+  private loadBackendData() {
+    if (!this.checkAdminRole()) return;
 
-  this.http.get<any>('/api/admin/users').subscribe({
-    next: (res: any) => {
-      console.log('=== DỮ LIỆU USER TỪ API ADMIN ===', res);
-      
-      const responseData = res?.data;
-      const items = responseData?.items || [];
+    this.http.get<any>('/api/admin/users?pageSize=1').subscribe({
+      next: (res: any) => {
+        const responseData = res?.data;
+        this.statsData.users = responseData?.totalCount || 0;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi lấy stats User:', err);
+      }
+    });
 
-      this.usersList = items.map((u: any) => ({
-        id: u.id,
-        fullName: u.fullName || 'Chưa cập nhật',
-        username: u.username || 'N/A',
-        email: u.email || 'N/A',
-        role: u.roles && u.roles.length > 0 ? u.roles[0] : 'User',
-        isActive: u.isActive ?? true
-      }));
-      
-      this.statsData.users = responseData?.totalCount || this.usersList.length;
-      this.cdr.detectChanges();
-    },
-    error: (err) => {
-      console.error('Lỗi lấy danh sách User:', err);
-      this.usersList = [];
-      this.cdr.detectChanges();
-    }
-  });
-
-    // TODO: Tạo endpoint GET /api/admin/moderation-logs ở backend để hiển thị logs kiểm duyệt
     this.systemLogs = [];
     this.cdr.detectChanges();
-  }
-
-  updateUserRole(userId: any, currentRole: string) {
-    const nextRole = currentRole.toLowerCase() === 'admin' ? 'User' : 'Admin';
-    const payload = { Role: nextRole };
-
-    this.http.put(`/api/admin/users/${userId}/role`, payload).subscribe({
-      next: () => {
-        const user = this.usersList.find(u => u.id === userId);
-        if (user) {
-          user.role = nextRole;
-          user.roles = [nextRole];
-        }
-        alert('Cập nhật quyền hạn thành viên thành công!');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('API Error details:', err);
-        const msg = err?.error?.message || 'Không thể cập nhật quyền do xung đột phân quyền hệ thống!';
-        alert(msg);
-      }
-    });
-  }
-
-  toggleUserActiveStatus(userId: any) {
-    const user = this.usersList.find(u => u.id === userId);
-    if (!user) return;
-
-    const actionEndpoint = user.isActive ? 'lock' : 'unlock';
-    const bodyPayload = user.isActive ? { reason: 'Locked by Admin' } : null;
-
-    this.http.patch(`/api/admin/users/${userId}/${actionEndpoint}`, bodyPayload).subscribe({
-      next: () => {
-        user.isActive = !user.isActive;
-        alert('Cập nhật trạng thái hoạt động thành công!');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error(err);
-        const msg = err?.error?.message || 'Thao tác thất bại!';
-        alert(msg);
-      }
-    });
   }
 
   switchTab(tabName: string) {

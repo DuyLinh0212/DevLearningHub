@@ -11,7 +11,6 @@
       </div>
       <div class="top-nav-buttons">
         <button class="btn-nav-tab" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">Bảng điều phối</button>
-        <button class="btn-nav-tab" [class.active]="activeTab === 'users'" (click)="switchTab('users')">Quản lý thành viên</button>
         <button class="btn-nav-tab" [class.active]="activeTab === 'sandbox'" (click)="switchTab('sandbox')">Cấu hình Sandbox OJ</button>
         <button class="btn-nav-tab" [class.active]="activeTab === 'logs'" (click)="switchTab('logs')">Logs hệ thống</button>
       </div>
@@ -109,67 +108,6 @@
       </div>
       }
 
-      @if (activeTab === 'users') {
-      <section class="welcome-section">
-        <h1>Quản Lý & Phân Quyền Thành Viên</h1>
-        <p>Tra cứu danh sách tài khoản, thực hiện cấp quyền Admin/User quản trị hệ thống hoặc đóng băng tài khoản vi phạm.</p>
-      </section>
-
-      <div class="quiz-library-card" style="margin-top: 24px; padding: 0; overflow: hidden; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--bg-card-border);">
-        <div class="admin-table-scroll-wrapper" style="overflow-x: auto;">
-        <table class="admin-management-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-          <thead>
-            <tr style="background-color: var(--bg-nested); color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--bg-card-border);">
-              <th style="padding: 14px 16px; font-weight: 600;">Họ và tên</th>
-              <th style="padding: 14px 16px; font-weight: 600;">Tên tài khoản</th>
-              <th style="padding: 14px 16px; font-weight: 600;">Email thành viên</th>
-              <th style="padding: 14px 16px; font-weight: 600; text-align: center; width: 140px;">Quyền hạn (Role)</th>
-              <th style="padding: 14px 16px; font-weight: 600; text-align: center; width: 120px;">Trạng thái</th>
-              <th style="padding: 14px 16px; font-weight: 600; text-align: center; width: 220px;">Thao tác điều phối</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (user of usersList; track user.id) {
-            <tr style="border-bottom: 1px solid var(--bg-card-border); transition: opacity 0.2s;" [style.opacity]="user.isActive ? '1' : '0.4'">
-              <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);">{{ user.fullName }}</td>
-              <td style="padding: 12px 16px; font-family: monospace; color: var(--text-muted);">{{ user.username }}</td>
-              <td style="padding: 12px 16px;">{{ user.email }}</td>
-              <td style="padding: 12px 16px; text-align: center;">
-                <span [style.color]="user.role === 'Admin' ? '#a855f7' : '#3b82f6'"
-                      [style.background-color]="user.role === 'Admin' ? 'rgba(168,85,247,0.1)' : 'rgba(59,130,246,0.1)'"
-                      style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-block;">
-                  {{ user.role }}
-                </span>
-              </td>
-              <td style="padding: 12px 16px; text-align: center;">
-                <span class="status-badge" [class.public]="user.isActive" [class.draft]="!user.isActive">
-                  {{ user.isActive ? 'Hoạt động' : 'Đã khóa' }}
-                </span>
-              </td>
-              <td style="padding: 12px 16px; text-align: center;">
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                  <button class="btn-action purple" style="font-size: 0.75rem; padding: 6px 12px;" (click)="updateUserRole(user.id, user.role)">
-                    <i class="bi bi-person-badge-fill"></i> Đổi quyền
-                  </button>
-                  <button class="btn-action dark" style="font-size: 0.75rem; padding: 6px 12px;" [style.color]="user.isActive ? '#ef4444' : '#22c55e'" (click)="toggleUserActiveStatus(user.id)">
-                    <i class="bi" [class.bi-lock-fill]="user.isActive" [class.bi-unlock-fill]="!user.isActive"></i>
-                    {{ user.isActive ? 'Khóa' : 'Kích hoạt' }}
-                  </button>
-                </div>
-              </td>
-            </tr>
-            } @empty {
-            <tr>
-              <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted-dark);">
-                Không tìm thấy tài khoản thành viên nào trên hệ thống.
-              </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-        </div>
-      </div>
-      }
 
       @if (activeTab === 'sandbox') {
       <section class="welcome-section">

@@ -41,6 +41,12 @@ export class PostManagementComponent implements OnInit {
   moderatingPost: any = null;
   moderateReason = '';
 
+  // Post Detail Modal & Comments
+  isDetailModalOpen = false;
+  selectedPostDetail: any = null;
+  postComments: any[] = [];
+  newCommentText = '';
+
   ngOnInit() {
     this.loadAllPosts();
     this.loadAllTags();
@@ -224,6 +230,108 @@ export class PostManagementComponent implements OnInit {
     });
   }
 
+  // --- POST DETAIL MODAL ---
+  openDetailModal(post: any) {
+    this.selectedPostDetail = null;
+    this.postComments = [];
+    this.newCommentText = '';
+    this.isDetailModalOpen = true;
+    this.cdr.detectChanges();
+
+    // Load post detail
+    this.http.get<any>(`/api/posts/${post.id}`).subscribe({
+      next: (res) => {
+        this.selectedPostDetail = res?.data || res;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải chi tiết bài viết:', err);
+      }
+    });
+
+    // Load comments (including hidden ones via admin access)
+    this.loadPostComments(post.id);
+  }
+
+  loadPostComments(postId: string) {
+    this.http.get<any>(`/api/posts/${postId}/comments`).subscribe({
+      next: (res) => {
+        this.postComments = res?.data || res || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải bình luận:', err);
+        this.postComments = [];
+      }
+    });
+  }
+
+  closeDetailModal() {
+    this.isDetailModalOpen = false;
+    this.selectedPostDetail = null;
+    this.postComments = [];
+    this.cdr.detectChanges();
+  }
+
+  moderateComment(commentId: string, hide: boolean) {
+    const reason = hide ? (prompt('Lý do ẩn bình luận (tùy chọn):') ?? '') : '';
+    this.http.post<any>(`/api/comments/${commentId}/moderate`, { hidden: hide, reason }).subscribe({
+      next: () => {
+        if (this.selectedPostDetail) this.loadPostComments(this.selectedPostDetail.id);
+        alert(hide ? 'Đã ẩn bình luận!' : 'Đã hiển thị lại bình luận!');
+      },
+      error: (err) => {
+        console.error('Lỗi kiểm duyệt bình luận:', err);
+        alert('Không thể thực hiện thao tác!');
+      }
+    });
+  }
+
+  deleteComment(commentId: string) {
+    if (!confirm('Xóa bình luận này vĩnh viễn?')) return;
+    this.http.delete<any>(`/api/comments/${commentId}`).subscribe({
+      next: () => {
+        if (this.selectedPostDetail) this.loadPostComments(this.selectedPostDetail.id);
+        alert('Đã xóa bình luận!');
+      },
+      error: (err) => {
+        console.error('Lỗi xóa bình luận:', err);
+        alert('Không thể xóa bình luận!');
+      }
+    });
+  }
+
+  submitAdminComment() {
+    if (!this.newCommentText.trim() || !this.selectedPostDetail) return;
+    const payload = { bodyMarkdown: this.newCommentText.trim() };
+    this.http.post<any>(`/api/posts/${this.selectedPostDetail.id}/comments`, payload).subscribe({
+      next: () => {
+        this.newCommentText = '';
+        this.loadPostComments(this.selectedPostDetail.id);
+      },
+      error: (err) => {
+        console.error('Lỗi gửi bình luận:', err);
+        alert('Không thể gửi bình luận!');
+      }
+    });
+  }
+
+  formatRelativeTime(dateString: string): string {
+    if (!dateString) return '';
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (seconds < 60) return 'Vừa xong';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} phút trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} ngày trước`;
+    return `${Math.floor(days / 30)} tháng trước`;
+  }
+
+  // --- POST DELETE ---
   deletePost(postId: string) {
     if (!confirm('⚠️ Xóa bài viết này là vĩnh viễn, không thể khôi phục. Bạn chắc chắn muốn xóa?')) return;
     this.http.delete<any>(`/api/posts/${postId}`).subscribe({

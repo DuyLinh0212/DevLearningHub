@@ -1,0 +1,235 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tên đăng nhập, email, họ tên...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openCreateModal()">
+          <i class="bi bi-person-plus-fill"></i> Tạo tài khoản mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Lý Thành Viên Hệ Thống</h1>
+        <p>Tra cứu thông tin tài khoản, cấp quyền Admin/Moderator/User, khóa hoặc kích hoạt tài khoản.</p>
+      </section>
+
+      <div class="post-filter-bar">
+        <select [(ngModel)]="filterRole" (change)="onFilterChange()">
+          <option value="all">Tất cả quyền hạn</option>
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="user">User</option>
+        </select>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="locked">Bị khóa</option>
+        </select>
+        <span class="post-count-info">{{ users.length }} / {{ totalCount }} thành viên</span>
+      </div>
+
+      @if (isLoading) {
+        <div class="empty-state-user">
+          <i class="bi bi-arrow-repeat"></i>
+          <h3>Đang tải dữ liệu...</h3>
+        </div>
+      } @else if (users.length === 0) {
+        <div class="empty-state-user">
+          <i class="bi bi-people"></i>
+          <h3>Không tìm thấy thành viên nào</h3>
+          <p>Không có dữ liệu phù hợp với điều kiện lọc hiện tại.</p>
+        </div>
+      } @else {
+        <div class="post-table-wrap">
+          <table class="post-table">
+            <thead>
+              <tr>
+                <th>Thành viên</th>
+                <th>Tên tài khoản / Email</th>
+                <th>Điểm số XP</th>
+                <th>Quyền hạn (Role)</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of users; track user.id) {
+                <tr [class.user-locked-row]="user.isLocked">
+                  <td class="user-cell">
+                    <div class="user-avatar-wrap">
+                      @if (user.avatarUrl) {
+                        <img [src]="user.avatarUrl" [alt]="user.username" class="user-table-avatar">
+                      } @else {
+                        <i class="bi bi-person-circle default-avatar-icon"></i>
+                      }
+                    </div>
+                    <div class="user-name-info">
+                      <span class="user-fullname">{{ user.fullName }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="username-txt">{{ user.username }}</div>
+                    <div class="email-txt">{{ user.email }}</div>
+                  </td>
+                  <td class="xp-cell">
+                    <span class="xp-badge"><i class="bi bi-lightning-charge-fill"></i> {{ user.xpPoints }} XP</span>
+                  </td>
+                  <td>
+                    <span class="role-badge" 
+                          [class.role-admin]="user.role === 'Admin'" 
+                          [class.role-moderator]="user.role === 'Moderator'"
+                          [class.role-user]="user.role === 'User'">
+                      {{ user.role }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class.visible]="!user.isLocked" [class.hidden]="user.isLocked">
+                      <i class="bi" [class.bi-check-circle-fill]="!user.isLocked" [class.bi-lock-fill]="user.isLocked"></i>
+                      {{ user.isLocked ? 'Bị khóa' : 'Hoạt động' }}
+                    </span>
+                  </td>
+                  <td class="date-cell">
+                    <div>{{ formatDate(user.createdAt) }}</div>
+                  </td>
+                  <td>
+                    <div class="user-table-actions">
+                      <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
+                        <i class="bi bi-person-badge-fill"></i>
+                      </button>
+                      <button class="btn-lock" 
+                              [class.btn-unlock-act]="user.isLocked" 
+                              (click)="toggleLock(user)" 
+                              [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
+                        <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (totalPages > 1) {
+            <div class="pagination-row">
+              <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              @for (p of pageNumbers; track p) {
+                <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+              }
+              <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Create User Modal -->
+  @if (isCreateModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal">
+      <h3><i class="bi bi-person-plus-fill" style="color:var(--color-purple);margin-right:8px;"></i>Tạo tài khoản mới</h3>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Tên đăng nhập (Username)</label>
+          <input type="text" [(ngModel)]="createForm.username" placeholder="Ví dụ: linhhuit, ngoc_admin">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 12px;">
+          <label>Email tài khoản</label>
+          <input type="email" [(ngModel)]="createForm.email" placeholder="Ví dụ: linhhuit@gmail.com">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 12px;">
+          <label>Họ và tên</label>
+          <input type="text" [(ngModel)]="createForm.fullName" placeholder="Ví dụ: Nguyễn Văn A">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 12px;">
+          <label>Mật khẩu ban đầu</label>
+          <input type="password" [(ngModel)]="createForm.password" placeholder="Nhập mật khẩu ít nhất 6 ký tự">
+        </div>
+
+        <div class="input-field-group" style="margin-top: 12px;">
+          <label>Vai trò / Quyền hạn ban đầu</label>
+          <select [(ngModel)]="createForm.role" class="admin-select-field">
+            <option value="User">User (Học viên)</option>
+            <option value="Moderator">Moderator (Kiểm duyệt viên)</option>
+            <option value="Admin">Admin (Quản trị viên)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeCreateModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm purple" (click)="saveNewUser()">Tạo tài khoản</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Change Role Modal -->
+  @if (isRoleModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3><i class="bi bi-person-badge-fill" style="color:var(--color-blue);margin-right:8px;"></i>Cấp quyền tài khoản</h3>
+      <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
+        Đang thay đổi quyền hạn cho tài khoản: <strong>{{ selectedUser?.username }}</strong>
+      </p>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Chọn vai trò</label>
+          <select [(ngModel)]="roleForm.role" class="admin-select-field">
+            <option value="User">User (Học viên)</option>
+            <option value="Moderator">Moderator (Kiểm duyệt viên)</option>
+            <option value="Admin">Admin (Quản trị viên)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeRoleModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" (click)="saveRole()">Cập nhật</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Lock User Modal -->
+  @if (isLockModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box">
+      <h3><i class="bi bi-lock-fill" style="color:#ef4444;margin-right:8px;"></i>Khóa tài khoản</h3>
+      <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
+        Khóa tài khoản <strong>{{ selectedUser?.username }}</strong> sẽ chặn đăng nhập của tài khoản này ngay lập tức.
+      </p>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px;">
+        <div class="input-field-group">
+          <label>Lý do khóa tài khoản</label>
+          <textarea class="reason-textarea" [(ngModel)]="lockForm.reason" placeholder="Ví dụ: Spam bình luận, gian lận làm đề thi, hành vi không chuẩn mực..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeLockModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm" style="background:linear-gradient(135deg, #ef4444, #dc2626);" (click)="confirmLock()">Xác nhận khóa</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

@@ -72,7 +72,8 @@
       <div class="post-detail-body">
         @if (post.imageUrl) {
           <div class="post-image-container">
-            <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+            <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable"
+                 (click)="openImageZoom(post.imageUrl)" title="Nhấn để phóng to">
           </div>
         }
 
@@ -167,7 +168,9 @@
         <div class="comment-header">
           <div class="comment-author-info">
             <span class="comment-author-name">{{ comment.author.fullName || comment.author.username }}</span>
-            @if (comment.author.id === post?.authorId) {
+            @if (isAdminOrMod(comment.author.username)) {
+              <span class="admin-comment-badge"><i class="bi bi-shield-fill"></i> Quản trị viên</span>
+            } @else if (comment.author.id === post?.authorId) {
               <span class="author-badge">Chủ bài viết</span>
             }
             <span class="comment-date">• &nbsp;{{ formatRelativeTime(comment.createdAt) }}</span>
@@ -265,4 +268,14 @@
   }
 </ng-template>
 
-
+<!-- Image Zoom Lightbox -->
+@if (zoomedImageUrl) {
+  <div class="image-lightbox-overlay" (click)="closeImageZoom()">
+    <div class="image-lightbox-container" (click)="$event.stopPropagation()">
+      <button class="lightbox-close-btn" (click)="closeImageZoom()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image">
+    </div>
+  </div>
+}

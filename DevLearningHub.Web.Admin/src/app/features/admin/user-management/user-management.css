@@ -1,0 +1,201 @@
+@import '../../dashboard/dashboard.css';
+@import '../admin-dashboard/admin-dashboard.css';
+@import '../quiz-management/quiz-management.css';
+@import '../topic-management/topic-management.css';
+@import '../post-management/post-management.css';
+
+/* User cell flex layout */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.user-avatar-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-nested);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-nested);
+  flex-shrink: 0;
+}
+
+.user-table-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar-icon {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.user-name-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-fullname {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.88rem;
+}
+
+.username-txt {
+  font-weight: 500;
+  color: var(--text-main);
+  font-family: monospace;
+  font-size: 0.82rem;
+}
+
+.email-txt {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.xp-cell {
+  vertical-align: middle;
+}
+
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #f59e0b;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.xp-badge i {
+  font-size: 0.7rem;
+}
+
+/* Role badges */
+.role-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.role-admin {
+  color: #c084fc;
+  background-color: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.role-badge.role-moderator {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.role-badge.role-user {
+  color: #9ca3af;
+  background-color: rgba(156, 163, 175, 0.1);
+  border: 1px solid rgba(156, 163, 175, 0.15);
+}
+
+/* User status row modifications */
+.user-locked-row {
+  opacity: 0.6;
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.user-locked-row td {
+  border-bottom-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Action buttons specifically for User Management */
+.user-table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-role, .btn-lock {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-nested);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-role:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.btn-lock:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.btn-lock.btn-unlock-act {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.2);
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.btn-lock.btn-unlock-act:hover {
+  color: #16a34a;
+  border-color: #16a34a;
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+/* Dropdown select customization for modals */
+.admin-select-field {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.admin-select-field:focus {
+  border-color: var(--color-purple);
+}
+
+.empty-state-user {
+  text-align: center;
+  padding: 56px;
+  background: var(--bg-card);
+  border: 2px dashed var(--input-border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  margin-top: 24px;
+}
+
+.empty-state-user i {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.4;
+  color: var(--text-muted);
+}

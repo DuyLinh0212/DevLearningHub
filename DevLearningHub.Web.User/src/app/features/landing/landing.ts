@@ -35,10 +35,27 @@ export class LandingComponent implements OnInit, OnDestroy {
     this.stopAutoplay();
   }
 
+  isTokenValid(token: string | null): boolean {
+    if (!token || token === 'undefined' || token === 'null' || token.trim() === '') return false;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      const payloadPart = parts[1];
+      const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      const exp = decodedPayload.exp;
+      if (exp && Date.now() >= exp * 1000) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   checkLoginStatus() {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-      if (token) {
+      if (this.isTokenValid(token)) {
         this.isLoggedIn = true;
         this.quizService.getCurrentUser().subscribe({
           next: (res: any) => {
@@ -48,9 +65,16 @@ export class LandingComponent implements OnInit, OnDestroy {
           error: () => {
             this.isLoggedIn = false;
             this.currentUser = null;
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('token');
             this.cdr.detectChanges();
           }
         });
+      } else {
+        this.isLoggedIn = false;
+        this.currentUser = null;
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('token');
       }
     }
   }

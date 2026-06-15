@@ -36,7 +36,10 @@ export class PostDetailComponent implements OnInit {
   editingCommentId: string | null = null;
   
   isBookmarked: boolean = false;
+  zoomedImageUrl: string | null = null;
 
+  // Known admin/moderator usernames — FE-only, used for highlighting
+  private readonly adminUsernames = ['ngoc123', 'admin'];
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -440,6 +443,26 @@ export class PostDetailComponent implements OnInit {
     });
 
     return `<p>${escaped}</p>`;
+  }
+
+  // --- IMAGE ZOOM LIGHTBOX ---
+  openImageZoom(url: string) {
+    this.zoomedImageUrl = url;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageZoom() {
+    this.zoomedImageUrl = null;
+    document.body.style.overflow = '';
+  }
+
+  // --- ADMIN / MOD HIGHLIGHT ---
+  isAdminOrMod(username: string): boolean {
+    if (!username) return false;
+    // Check against known admin usernames or if current user has Admin/Moderator role
+    if (this.adminUsernames.includes(username.toLowerCase())) return true;
+    if (username.toLowerCase() === (this.currentUserId ? '' : '')) return false;
+    return this.currentUserRoles.some(r => r === 'Admin' || r === 'Moderator');
   }
 
 }
