@@ -3,6 +3,7 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Community;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -276,6 +277,59 @@ public class PostsController : ControllerBase
         var myVote = await CommunityVotes.GetMyVoteAsync(_db, userId, CommunityVotes.PostTarget, post.Id);
 
         return Ok(ApiResponse<PostDetailResponse>.Ok(MapPostDetail(post, post.Author, commentCount, myVote)));
+    }
+
+    [HttpPost("{id:guid}/image")]
+    [Consumes("multipart/form-data")]
+    [Authorize]
+    // Upload a cover image for a post and save it to Cloudinary.
+    public async Task<ActionResult<ApiResponse<PostDetailResponse>>> UploadPostImage(
+        Guid id,
+        IFormFile? file,
+        [FromServices] CloudinaryService cloudinaryService)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<PostDetailResponse>.Fail("Unauthorized."));
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<PostDetailResponse>.Fail("Please choose an image file."));
+        }
+
+        var post = await _db.Posts
+            .Include(p => p.Author)
+            .Include(p => p.Tags)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (post == null)
+        {
+            return NotFound(ApiResponse<PostDetailResponse>.Fail("Post not found."));
+        }
+
+        if (post.AuthorId != userId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Forbidden."));
+        }
+
+        try
+        {
+            var uploadResult = await cloudinaryService.UploadPostImageAsync(id, file);
+            post.ImageUrl = uploadResult.Url;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<PostDetailResponse>.Fail(ex.Message));
+        }
+
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        var commentCount = await _db.Comments.CountAsync(c => c.PostId == post.Id && !c.IsHidden);
+        var myVote = await CommunityVotes.GetMyVoteAsync(_db, userId, CommunityVotes.PostTarget, post.Id);
+
+        return Ok(ApiResponse<PostDetailResponse>.Ok(MapPostDetail(post, post.Author, commentCount, myVote), "Post image updated."));
     }
 
     [HttpDelete("{id:guid}")]

@@ -84,7 +84,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadAvatar(
-        [FromForm] IFormFile? file,
+        IFormFile? file,
         [FromServices] CloudinaryService cloudinaryService)
     {
         if (!User.TryGetUserId(out var userId))
