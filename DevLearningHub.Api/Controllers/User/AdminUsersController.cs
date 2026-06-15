@@ -131,9 +131,9 @@ public class AdminUsersController : ControllerBase
         }
 
         user.IsLocked = true;
-        user.LockedAt = DateTime.UtcNow;
+        user.LockedAt = DateTime.Now;
         user.LockedReason = string.IsNullOrWhiteSpace(request?.Reason) ? "Locked by admin." : request.Reason.Trim();
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
 
@@ -157,7 +157,7 @@ public class AdminUsersController : ControllerBase
         user.IsLocked = false;
         user.LockedAt = null;
         user.LockedReason = null;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
 
@@ -203,7 +203,7 @@ public class AdminUsersController : ControllerBase
         {
             UserId = id,
             RoleId = role.Id,
-            AssignedAt = DateTime.UtcNow,
+            AssignedAt = DateTime.Now,
             AssignedBy = adminId == Guid.Empty ? null : adminId
         });
 

@@ -190,7 +190,7 @@ public class PostsController : ControllerBase
             return BadRequest(ApiResponse<PostDetailResponse>.Fail("One or more tags do not exist."));
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var post = new Post
         {
             Id = Guid.NewGuid(),
@@ -254,7 +254,7 @@ public class PostsController : ControllerBase
         post.Title = title;
         post.BodyMarkdown = body;
         post.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
-        post.UpdatedAt = DateTime.UtcNow;
+        post.UpdatedAt = DateTime.Now;
 
         if (request.TagIds != null)
         {
@@ -323,7 +323,7 @@ public class PostsController : ControllerBase
             return BadRequest(ApiResponse<PostDetailResponse>.Fail(ex.Message));
         }
 
-        post.UpdatedAt = DateTime.UtcNow;
+        post.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         var commentCount = await _db.Comments.CountAsync(c => c.PostId == post.Id && !c.IsHidden);
@@ -483,7 +483,7 @@ public class PostsController : ControllerBase
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var comment = new Comment
         {
             Id = Guid.NewGuid(),
@@ -539,7 +539,7 @@ public class PostsController : ControllerBase
         }
 
         post.IsHidden = request.Hidden;
-        post.UpdatedAt = DateTime.UtcNow;
+        post.UpdatedAt = DateTime.Now;
 
         _db.ModerationLogs.Add(new ModerationLog
         {
@@ -549,7 +549,7 @@ public class PostsController : ControllerBase
             TargetId = post.Id,
             Action = request.Hidden ? "hide" : "unhide",
             Reason = request.Reason?.Trim(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         });
 
         await _db.SaveChangesAsync();

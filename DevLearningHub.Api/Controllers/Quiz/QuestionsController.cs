@@ -89,7 +89,7 @@ public class QuestionsController : ControllerBase
             Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim(),
             Explanation = request.Explanation?.Trim(),
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         var options = request.Options.Select((option, index) => new QuestionOption
@@ -258,7 +258,7 @@ public class QuestionsController : ControllerBase
                 Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim(),
                 Explanation = request.Explanation?.Trim(),
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
             var options = parsedOptions.Select((option, index) => new QuestionOption

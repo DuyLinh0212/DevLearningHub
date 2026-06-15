@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             return Conflict(ApiResponse<AuthResponse>.Fail("Username or email already exists."));
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -135,7 +135,7 @@ public class AuthController : ControllerBase
             .Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash && rt.RevokedAt == null);
 
-        if (storedToken == null || storedToken.ExpiresAt <= DateTime.UtcNow)
+        if (storedToken == null || storedToken.ExpiresAt <= DateTime.Now)
         {
             return Unauthorized(ApiResponse<AuthResponse>.Fail("Refresh token is invalid or expired."));
         }
@@ -145,7 +145,7 @@ public class AuthController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<AuthResponse>.Fail("Account is inactive or locked."));
         }
 
-        storedToken.RevokedAt = DateTime.UtcNow;
+        storedToken.RevokedAt = DateTime.Now;
 
         var response = await BuildAuthResponseAsync(storedToken.User);
         await WriteAuditAsync(storedToken.UserId, "auth.refresh", "user", storedToken.UserId, null);
@@ -171,7 +171,7 @@ public class AuthController : ControllerBase
             return Ok(ApiResponse<object>.Ok(new { revoked = false }, "Token already revoked."));
         }
 
-        storedToken.RevokedAt = DateTime.UtcNow;
+        storedToken.RevokedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         await WriteAuditAsync(storedToken.UserId, "auth.logout", "user", storedToken.UserId, null);
@@ -240,7 +240,7 @@ public class AuthController : ControllerBase
             .Select(ur => ur.Role.Name)
             .ToListAsync();
 
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes);
+        var expiresAt = DateTime.Now.AddMinutes(_jwtOptions.AccessTokenMinutes);
         var accessToken = _tokenService.CreateAccessToken(user, roles, expiresAt);
 
         var refreshTokenValue = _tokenService.CreateRefreshToken();
@@ -249,8 +249,8 @@ public class AuthController : ControllerBase
             Id = Guid.NewGuid(),
             UserId = user.Id,
             TokenHash = _tokenService.HashRefreshToken(refreshTokenValue),
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays),
-            CreatedAt = DateTime.UtcNow
+            ExpiresAt = DateTime.Now.AddDays(_jwtOptions.RefreshTokenDays),
+            CreatedAt = DateTime.Now
         };
 
         _db.RefreshTokens.Add(refreshToken);
@@ -285,7 +285,7 @@ public class AuthController : ControllerBase
             TargetId = targetId,
             Detail = detail,
             IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         _db.AuditLogs.Add(audit);

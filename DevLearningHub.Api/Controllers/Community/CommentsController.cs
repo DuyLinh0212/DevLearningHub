@@ -52,7 +52,7 @@ public class CommentsController : ControllerBase
         }
 
         comment.BodyMarkdown = body;
-        comment.UpdatedAt = DateTime.UtcNow;
+        comment.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<CommentResponse>.Ok(MapComment(comment, comment.Author)));
@@ -187,7 +187,7 @@ public class CommentsController : ControllerBase
             post.AcceptedCommentId = null;
         }
 
-        post.UpdatedAt = DateTime.UtcNow;
+        post.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<object>.Ok(new { commentId = comment.Id, isAccepted = accepted }));
@@ -210,7 +210,7 @@ public class CommentsController : ControllerBase
         }
 
         comment.IsHidden = request.Hidden;
-        comment.UpdatedAt = DateTime.UtcNow;
+        comment.UpdatedAt = DateTime.Now;
 
         // A hidden comment cannot remain the accepted answer.
         if (request.Hidden && comment.IsAccepted)
@@ -231,7 +231,7 @@ public class CommentsController : ControllerBase
             TargetId = comment.Id,
             Action = request.Hidden ? "hide" : "unhide",
             Reason = request.Reason?.Trim(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         });
 
         await _db.SaveChangesAsync();

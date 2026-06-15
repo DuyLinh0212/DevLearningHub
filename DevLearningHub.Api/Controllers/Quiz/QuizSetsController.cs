@@ -170,7 +170,7 @@ public class QuizSetsController : ControllerBase
             IsPublic = request.IsPublic,
             TopicId = resolvedTopicId,
             Level = request.Level?.Trim(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         _db.QuizSets.Add(quizSet);
@@ -599,7 +599,7 @@ public class QuizSetsController : ControllerBase
             Level = string.IsNullOrWhiteSpace(request.Level) ? "beginner" : request.Level.Trim(),
             Explanation = request.Explanation?.Trim(),
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
     }
 

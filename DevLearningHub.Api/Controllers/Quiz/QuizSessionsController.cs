@@ -63,7 +63,7 @@ public class QuizSessionsController : ControllerBase
             QuizSetId = quizSet.Id,
             Status = "in_progress",
             TotalQuestions = (short)quizQuestions.Count,
-            StartedAt = DateTime.UtcNow
+            StartedAt = DateTime.Now
         };
 
         _db.QuizSessions.Add(session);
@@ -181,10 +181,10 @@ public class QuizSessionsController : ControllerBase
         session.Score = (short)score;
         session.TotalQuestions = (short)questionMap.Count;
         session.Status = "completed";
-        session.EndedAt = DateTime.UtcNow;
+        session.EndedAt = DateTime.Now;
         session.TimeTakenSeconds = request.TimeTakenSeconds ?? (int?)(session.EndedAt.Value - session.StartedAt).TotalSeconds;
         user.XpPoints += CalculateXp(score);
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         _db.QuizAnswers.AddRange(results);
         await UpdateProgressAsync(userId, session.QuizSet.TopicId, score, session.TotalQuestions);
@@ -288,7 +288,7 @@ public class QuizSessionsController : ControllerBase
         progress.TotalQuestions += totalQuestions;
         progress.CorrectAnswers += score;
         progress.BestScore = progress.BestScore.HasValue ? Math.Max(progress.BestScore.Value, score) : score;
-        progress.LastPracticedAt = DateTime.UtcNow;
+        progress.LastPracticedAt = DateTime.Now;
     }
 
     private static int CalculateXp(int correctAnswers)

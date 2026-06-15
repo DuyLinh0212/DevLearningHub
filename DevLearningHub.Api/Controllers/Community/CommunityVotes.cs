@@ -40,7 +40,7 @@ internal static class CommunityVotes
                 TargetType = targetType,
                 TargetId = targetId,
                 VoteType = voteType,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
             myVote = voteType;
         }
