@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +31,12 @@ export class PostCreateComponent implements OnInit {
   postId: string = '';
   
   activeTab: 'edit' | 'preview' = 'edit';
+
+  // Dropdown & File upload states
+  isTagDropdownOpen: boolean = false;
+  selectedFile: File | null = null;
+  localFileUrl: string = '';
+  isUploadingImage: boolean = false;
 
   ngOnInit() {
     // Kiểm tra token trước khi cho phép vào trang tạo/sửa
@@ -88,6 +94,31 @@ export class PostCreateComponent implements OnInit {
     });
   }
 
+  toggleTagDropdown(event: Event) {
+    event.stopPropagation();
+    this.isTagDropdownOpen = !this.isTagDropdownOpen;
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click')
+  closeTagDropdown() {
+    this.isTagDropdownOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  getTagById(tagId: string): any {
+    return this.tags.find(t => t.id === tagId);
+  }
+
+  removeTagSelection(tagId: string, event: Event) {
+    event.stopPropagation();
+    const idx = this.selectedTagIds.indexOf(tagId);
+    if (idx > -1) {
+      this.selectedTagIds.splice(idx, 1);
+    }
+    this.cdr.detectChanges();
+  }
+
   toggleTagSelection(tagId: string) {
     const idx = this.selectedTagIds.indexOf(tagId);
     if (idx > -1) {
@@ -100,6 +131,33 @@ export class PostCreateComponent implements OnInit {
 
   isTagSelected(tagId: string): boolean {
     return this.selectedTagIds.includes(tagId);
+  }
+
+  onFileSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn tệp tin hình ảnh!');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước ảnh không được vượt quá 5MB!');
+      return;
+    }
+
+    this.selectedFile = file;
+    this.localFileUrl = URL.createObjectURL(file);
+    this.cdr.detectChanges();
+  }
+
+  clearImage(event: Event) {
+    event.stopPropagation();
+    this.selectedFile = null;
+    this.localFileUrl = '';
+    this.imageUrl = '';
+    this.cdr.detectChanges();
   }
 
   submitForm() {
@@ -121,9 +179,29 @@ export class PostCreateComponent implements OnInit {
     if (this.isEditMode) {
       this.forumService.updatePost(this.postId, payload).subscribe({
         next: (res) => {
-          this.isSaving = false;
-          alert('Cập nhật bài đăng thành công!');
-          this.router.navigate(['/forum/post', this.postId]);
+          if (this.selectedFile) {
+            this.isUploadingImage = true;
+            this.cdr.detectChanges();
+            this.forumService.uploadPostImage(this.postId, this.selectedFile).subscribe({
+              next: () => {
+                this.isUploadingImage = false;
+                this.isSaving = false;
+                alert('Cập nhật bài đăng thành công!');
+                this.router.navigate(['/forum/post', this.postId]);
+              },
+              error: (err) => {
+                console.error('Lỗi tải ảnh lên Cloudinary:', err);
+                alert('Cập nhật bài đăng thành công nhưng không thể tải ảnh lên.');
+                this.isUploadingImage = false;
+                this.isSaving = false;
+                this.router.navigate(['/forum/post', this.postId]);
+              }
+            });
+          } else {
+            this.isSaving = false;
+            alert('Cập nhật bài đăng thành công!');
+            this.router.navigate(['/forum/post', this.postId]);
+          }
         },
         error: (err) => {
           console.error('Lỗi cập nhật bài đăng:', err);
@@ -135,12 +213,35 @@ export class PostCreateComponent implements OnInit {
     } else {
       this.forumService.createPost(payload).subscribe({
         next: (res) => {
-          this.isSaving = false;
-          alert('Đăng bài thảo luận thành công!');
-          if (res && res.id) {
-            this.router.navigate(['/forum/post', res.id]);
+          const createdPost = res?.data || res;
+          const createdId = createdPost?.id;
+          if (createdId && this.selectedFile) {
+            this.isUploadingImage = true;
+            this.cdr.detectChanges();
+            this.forumService.uploadPostImage(createdId, this.selectedFile).subscribe({
+              next: () => {
+                this.isUploadingImage = false;
+                this.isSaving = false;
+                alert('Đăng bài thảo luận thành công!');
+                this.router.navigate(['/forum/post', createdId]);
+              },
+              error: (err) => {
+                console.error('Lỗi tải ảnh lên Cloudinary:', err);
+                alert('Đăng bài thảo luận thành công nhưng không thể tải ảnh lên.');
+                this.isUploadingImage = false;
+                this.isSaving = false;
+                this.router.navigate(['/forum/post', createdId]);
+              }
+            });
           } else {
-            this.router.navigate(['/forum']);
+            this.isSaving = false;
+            alert('Đăng bài thảo luận thành công!');
+            const targetId = createdId || res?.id;
+            if (targetId) {
+              this.router.navigate(['/forum/post', targetId]);
+            } else {
+              this.router.navigate(['/forum']);
+            }
           }
         },
         error: (err) => {

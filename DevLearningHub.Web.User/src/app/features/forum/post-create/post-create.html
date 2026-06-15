@@ -19,9 +19,32 @@
 
       <!-- ẢNH ĐẠI DIỆN MINH HỌA -->
       <div class="form-group">
-        <label for="imageUrl">Đường dẫn ảnh minh họa (Tùy chọn)</label>
-        <input type="url" id="imageUrl" name="imageUrl" [(ngModel)]="imageUrl" placeholder="Nhập liên kết hình ảnh minh họa (ví dụ: png, jpg...)" class="form-input">
-        <small class="form-help">Đường dẫn ảnh trực tiếp trực tuyến (nếu có sơ đồ hoặc screenshot lỗi).</small>
+        <label>Ảnh minh họa bài viết (Tùy chọn)</label>
+        <div class="image-upload-wrapper">
+          <div class="image-upload-zone" [class.has-image]="imageUrl || localFileUrl" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+            @if (imageUrl || localFileUrl) {
+              <img [src]="localFileUrl || imageUrl" alt="Preview Image" class="upload-preview-img">
+              <div class="upload-overlay">
+                <i class="bi bi-camera-fill"></i>
+                <span>Thay đổi ảnh</span>
+              </div>
+              <button type="button" class="btn-remove-image" (click)="clearImage($event)" title="Xóa ảnh"><i class="bi bi-x-lg"></i></button>
+            } @else {
+              <div class="upload-placeholder">
+                <i class="bi bi-image"></i>
+                <span>Chọn ảnh minh họa từ thiết bị</span>
+                <span class="upload-sub-text">Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 5MB)</span>
+              </div>
+            }
+          </div>
+          @if (isUploadingImage) {
+            <div class="upload-progress-spinner" style="margin-top: 10px; display: flex; align-items: center; gap: 8px; color: #a855f7; font-size: 0.85rem;">
+              <i class="bi bi-arrow-repeat spin-animation"></i>
+              <span>Đang tải ảnh lên Cloudinary...</span>
+            </div>
+          }
+        </div>
       </div>
 
       <!-- TABS SOẠN THẢO VÀ XEM TRƯỚC -->
@@ -46,7 +69,7 @@
         <small class="form-help">Hỗ trợ Markdown để định dạng văn bản và tô sáng cú pháp code block.</small>
       </div>
 
-      <!-- LỰA CHỌN TAGS -->
+      <!-- LỰA CHỌN TAGS (DROPDOWN / COMBOBOX) -->
       <div class="form-group">
         <label>Gán thẻ phân loại (Chọn ít nhất 1) <span class="text-danger">*</span></label>
         <p class="form-help" style="margin-top: 0; margin-bottom: 12px;">Giúp các thành viên khác dễ dàng lọc thấy bài đăng của bạn theo chủ đề.</p>
@@ -54,12 +77,38 @@
         @if (tagsLoading) {
           <div class="tags-loading-indicator">Đang tải thẻ phân loại...</div>
         } @else {
-          <div class="tags-check-grid">
-            @for (tag of tags; track tag.id) {
-              <label class="tag-checkbox-pill" [class.checked]="isTagSelected(tag.id)" [style.border-color]="tag.colorHex" [style.color]="isTagSelected(tag.id) ? '#ffffff' : tag.colorHex" [style.background-color]="isTagSelected(tag.id) ? tag.colorHex : 'transparent'">
-                <input type="checkbox" [checked]="isTagSelected(tag.id)" (change)="toggleTagSelection(tag.id)" class="hidden-checkbox">
-                #{{ tag.name }}
-              </label>
+          <div class="tag-combobox-wrapper" (click)="toggleTagDropdown($event)">
+            <div class="tag-combobox-input-area">
+              @for (tagId of selectedTagIds; track tagId) {
+                @if (getTagById(tagId); as selectedTag) {
+                  <span class="tag-selected-pill" [style.background-color]="selectedTag.colorHex || '#a855f7'">
+                    #{{ selectedTag.name }}
+                    <i class="bi bi-x" (click)="removeTagSelection(tagId, $event)" title="Gỡ bỏ"></i>
+                  </span>
+                }
+              }
+              @if (selectedTagIds.length === 0) {
+                <span class="tag-combobox-placeholder">Chọn các nhãn liên quan từ danh sách...</span>
+              }
+            </div>
+            <div class="tag-combobox-arrow">
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            
+            @if (isTagDropdownOpen) {
+              <div class="tag-combobox-dropdown" (click)="$event.stopPropagation()">
+                @for (tag of tags; track tag.id) {
+                  <div class="tag-dropdown-item" 
+                       [class.selected]="isTagSelected(tag.id)" 
+                       (click)="toggleTagSelection(tag.id)">
+                    <span class="tag-dot" [style.background-color]="tag.colorHex"></span>
+                    <span class="tag-name">#{{ tag.name }}</span>
+                    @if (isTagSelected(tag.id)) {
+                      <i class="bi bi-check check-icon"></i>
+                    }
+                  </div>
+                }
+              </div>
             }
           </div>
         }

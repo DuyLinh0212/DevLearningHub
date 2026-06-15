@@ -57,6 +57,14 @@ export class ForumService {
     );
   }
 
+  uploadPostImage(id: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.postsUrl}/${id}/image`, formData).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
   votePost(id: string, voteType: 'up' | 'down'): Observable<any> {
     return this.http.post<any>(`${this.postsUrl}/${id}/vote`, { voteType }).pipe(
       map(res => res?.data || res)
