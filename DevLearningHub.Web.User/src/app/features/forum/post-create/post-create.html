@@ -49,26 +49,11 @@
         </div>
       </div>
 
-      <!-- TABS SOẠN THẢO VÀ XEM TRƯỚC -->
+      <!-- NỘI DUNG CHI TIẾT -->
       <div class="form-group">
-        <div class="textarea-header-tabs">
-          <label>Nội dung chi tiết <span class="text-danger">*</span></label>
-          <div class="tabs-btn-group">
-            <button type="button" class="tab-toggle-btn" [class.active]="activeTab === 'edit'" (click)="activeTab = 'edit'">
-              <i class="bi bi-code-slash"></i> Soạn thảo
-            </button>
-            <button type="button" class="tab-toggle-btn" [class.active]="activeTab === 'preview'" (click)="activeTab = 'preview'">
-              <i class="bi bi-eye"></i> Xem trước
-            </button>
-          </div>
-        </div>
-
-        @if (activeTab === 'preview') {
-          <div class="preview-output-box" [innerHTML]="renderMarkdown(bodyMarkdown || '*Không có nội dung để xem trước. Hãy soạn thảo ở tab bên cạnh!*')"></div>
-        } @else {
-          <textarea id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" required rows="12" placeholder="Mô tả chi tiết câu hỏi, đính kèm code hỗ trợ định dạng Markdown...\n\nSử dụng `code` cho mã ngắn và ``` csharp\n // code ở đây\n ``` cho khối code." class="form-textarea"></textarea>
-        }
-        <small class="form-help">Hỗ trợ Markdown để định dạng văn bản và tô sáng cú pháp code block.</small>
+        <label for="bodyMarkdown">Nội dung chi tiết <span class="text-danger">*</span></label>
+        <textarea id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" required rows="14" placeholder="Mô tả chi tiết câu hỏi, đính kèm code hỗ trợ định dạng Markdown...\n\nSử dụng `code` cho mã ngắn và ``` csharp\n // code ở đây\n ``` cho khối code." class="form-textarea"></textarea>
+        <small class="form-help">Hỗ trợ định dạng Markdown để viết văn bản và khối code.</small>
       </div>
 
       <!-- LỰA CHỌN TAGS (DROPDOWN / COMBOBOX) -->

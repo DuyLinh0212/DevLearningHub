@@ -30,7 +30,6 @@ export class PostCreateComponent implements OnInit {
   isEditMode: boolean = false;
   postId: string = '';
   
-  activeTab: 'edit' | 'preview' = 'edit';
 
   // Dropdown & File upload states
   isTagDropdownOpen: boolean = false;
