@@ -24,12 +24,14 @@
           <div class="image-upload-zone" [class.has-image]="imageUrl || localFileUrl" (click)="fileInput.click()">
             <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
             @if (imageUrl || localFileUrl) {
-              <img [src]="localFileUrl || imageUrl" alt="Preview Image" class="upload-preview-img">
-              <div class="upload-overlay">
-                <i class="bi bi-camera-fill"></i>
-                <span>Thay đổi ảnh</span>
+              <div class="upload-img-container">
+                <img [src]="localFileUrl || imageUrl" alt="Preview Image" class="upload-preview-img">
+                <div class="upload-overlay">
+                  <i class="bi bi-camera-fill"></i>
+                  <span>Thay đổi ảnh</span>
+                </div>
+                <button type="button" class="btn-remove-image" (click)="clearImage($event)" title="Xóa ảnh"><i class="bi bi-x-lg"></i></button>
               </div>
-              <button type="button" class="btn-remove-image" (click)="clearImage($event)" title="Xóa ảnh"><i class="bi bi-x-lg"></i></button>
             } @else {
               <div class="upload-placeholder">
                 <i class="bi bi-image"></i>

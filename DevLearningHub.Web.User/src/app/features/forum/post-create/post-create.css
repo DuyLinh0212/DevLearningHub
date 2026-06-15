@@ -335,8 +335,11 @@
 
 .image-upload-zone.has-image {
   border-style: solid;
-  height: 320px;
+  height: auto;
+  min-height: unset;
   background-color: #0f0f13;
+  display: block;
+  padding: 0;
 }
 
 .upload-placeholder {
@@ -364,13 +367,21 @@
   color: var(--text-muted-dark);
 }
 
+/* Container wraps image so overlay + remove btn position relative to actual image height */
+.upload-img-container {
+  position: relative;
+  width: 100%;
+  display: block;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
 .upload-preview-img {
   width: 100%;
-  height: 100%;
+  height: auto;
+  display: block;
   object-fit: contain;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
 }
 
 .upload-overlay {
@@ -379,7 +390,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -388,9 +399,10 @@
   opacity: 0;
   transition: opacity 0.2s ease;
   color: white;
+  border-radius: var(--radius-md, 8px);
 }
 
-.image-upload-zone:hover .upload-overlay {
+.image-upload-zone.has-image:hover .upload-overlay {
   opacity: 1;
 }
 
