@@ -87,18 +87,19 @@
               </div>
 
               <!-- Body: Title, Excerpt & Image preview if any -->
-              <div class="post-card-body">
-                <h3 class="post-title">
-                  {{ post.title }}
-                  @if (post.isHidden) {
-                    <span class="moderated-badge">Bị ẩn</span>
-                  }
-                </h3>
-                <p class="post-excerpt">{{ getExcerpt(post.bodyMarkdown) }}</p>
-                
+              <div class="post-card-body" [class.has-thumb]="post.imageUrl">
+                <div class="post-card-text">
+                  <h3 class="post-title">
+                    {{ post.title }}
+                    @if (post.isHidden) {
+                      <span class="moderated-badge">Bị ẩn</span>
+                    }
+                  </h3>
+                  <p class="post-excerpt">{{ getExcerpt(post.bodyMarkdown) }}</p>
+                </div>
                 @if (post.imageUrl) {
-                  <div class="post-image-preview">
-                    <img [src]="post.imageUrl" alt="Post Image">
+                  <div class="post-thumb">
+                    <img [src]="post.imageUrl" alt="Post thumbnail">
                   </div>
                 }
               </div>

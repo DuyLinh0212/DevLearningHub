@@ -269,19 +269,39 @@
   text-overflow: ellipsis;
 }
 
-.post-image-preview {
-  margin-top: 6px;
-  border-radius: var(--radius-md, 8px);
+/* post-card-body: khi có ảnh thì flex row (text trái, thumb phải) */
+.post-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.post-card-body.has-thumb {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.post-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Thumbnail nhỏ bên phải giống LeetCode/Medium */
+.post-thumb {
+  flex-shrink: 0;
+  width: 130px;
+  height: 88px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--bg-card-border);
   background: #0f0f13;
 }
 
-.post-image-preview img {
+.post-thumb img {
   width: 100%;
-  height: auto;
-  max-height: 280px;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
