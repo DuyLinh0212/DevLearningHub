@@ -37,6 +37,10 @@ export class PostDetailComponent implements OnInit {
   
   isBookmarked: boolean = false;
 
+  // Lightbox state
+  isLightboxOpen: boolean = false;
+  lightboxImageUrl: string = '';
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.postId = params['id'] || '';
@@ -439,5 +443,17 @@ export class PostDetailComponent implements OnInit {
     });
 
     return `<p>${escaped}</p>`;
+  }
+
+  openLightbox(url: string) {
+    this.lightboxImageUrl = url;
+    this.isLightboxOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeLightbox() {
+    this.isLightboxOpen = false;
+    this.lightboxImageUrl = '';
+    this.cdr.detectChanges();
   }
 }

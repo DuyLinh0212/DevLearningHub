@@ -71,8 +71,11 @@
       <!-- Body: Markdown Content & Image -->
       <div class="post-detail-body">
         @if (post.imageUrl) {
-          <div class="post-image-container">
-            <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+          <div class="post-image-container" (click)="openLightbox(post.imageUrl)">
+            <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image" style="cursor: pointer;">
+            <div class="image-zoom-overlay">
+              <i class="bi bi-zoom-in"></i> Click để phóng to
+            </div>
           </div>
         }
 
@@ -258,3 +261,16 @@
     </div>
   }
 </ng-template>
+
+<!-- LIGHTBOX MODAL VIEWER -->
+@if (isLightboxOpen) {
+  <div class="lightbox-overlay" (click)="closeLightbox()">
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <img [src]="lightboxImageUrl" alt="Full size preview" class="lightbox-img">
+      <button class="lightbox-close-btn" (click)="closeLightbox()" title="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+}
+
