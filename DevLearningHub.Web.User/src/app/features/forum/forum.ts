@@ -76,6 +76,8 @@ export class ForumComponent implements OnInit {
               if (detail) {
                 post.bodyMarkdown = detail.bodyMarkdown;
                 post.imageUrl = detail.imageUrl;
+                // Lấy trạng thái vote của user hiện tại để giữ màu tim
+                post.myVote = detail.myVote || null;
                 this.applyFilters();
                 this.cdr.detectChanges();
               }
