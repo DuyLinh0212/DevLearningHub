@@ -24,8 +24,11 @@ export class PostManagementComponent implements OnInit {
   // Filters
   searchText = '';
   filterStatus = 'all';
+  filterTag = 'all';
+  filterDate = 'all';
   sortBy = 'newest';
   showHidden = false;
+  allTags: any[] = [];
 
   // Pagination
   currentPage = 1;
@@ -40,6 +43,19 @@ export class PostManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadAllPosts();
+    this.loadAllTags();
+  }
+
+  loadAllTags() {
+    this.http.get<any>('/api/tags').subscribe({
+      next: (res) => {
+        const data = res?.data || res || [];
+        this.allTags = Array.isArray(data) ? data : [];
+      },
+      error: (err) => {
+        console.error('Lỗi tải tags:', err);
+      }
+    });
   }
 
   loadAllPosts() {
@@ -76,14 +92,43 @@ export class PostManagementComponent implements OnInit {
   applyFilters() {
     let result = [...this.posts];
 
-    // Search filter
+    // Search filter (matches title, author, or tag name)
     const q = this.searchText.trim().toLowerCase();
     if (q) {
       result = result.filter(p =>
         (p.title || '').toLowerCase().includes(q) ||
         (p.author?.username || '').toLowerCase().includes(q) ||
-        (p.author?.fullName || '').toLowerCase().includes(q)
+        (p.author?.fullName || '').toLowerCase().includes(q) ||
+        (p.tags || []).some((t: any) => (t.name || '').toLowerCase().includes(q))
       );
+    }
+
+    // Tag dropdown filter
+    if (this.filterTag !== 'all') {
+      result = result.filter(p =>
+        (p.tags || []).some((t: any) => t.id === this.filterTag)
+      );
+    }
+
+    // Date range filter
+    if (this.filterDate !== 'all') {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const oneWeekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+
+      result = result.filter(p => {
+        if (!p.createdAt) return false;
+        const postTime = new Date(p.createdAt).getTime();
+        if (this.filterDate === 'today') {
+          return postTime >= todayStart;
+        } else if (this.filterDate === 'week') {
+          return postTime >= oneWeekAgo;
+        } else if (this.filterDate === 'month') {
+          return postTime >= oneMonthAgo;
+        }
+        return true;
+      });
     }
 
     // Status filter

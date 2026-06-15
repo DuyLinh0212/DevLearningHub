@@ -5,7 +5,7 @@
     <header class="content-header">
       <div class="top-search">
         <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm kiếm bài viết theo tiêu đề hoặc tên tác giả...">
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tiêu đề, tác giả, nhãn (tags)...">
       </div>
       <div class="admin-header-actions">
         <button class="btn-admin-act" style="background: rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);" (click)="toggleShowHidden()">
@@ -26,6 +26,18 @@
           <option value="all">Tất cả trạng thái</option>
           <option value="visible">Đang hiển thị</option>
           <option value="hidden">Đã bị ẩn</option>
+        </select>
+        <select [(ngModel)]="filterTag" (change)="applyFilters()">
+          <option value="all">Tất cả nhãn</option>
+          @for (tag of allTags; track tag.id) {
+            <option [value]="tag.id">{{ tag.name }}</option>
+          }
+        </select>
+        <select [(ngModel)]="filterDate" (change)="applyFilters()">
+          <option value="all">Tất cả thời gian</option>
+          <option value="today">Hôm nay</option>
+          <option value="week">Tuần này</option>
+          <option value="month">Tháng này</option>
         </select>
         <select [(ngModel)]="sortBy" (change)="applyFilters()">
           <option value="newest">Mới nhất trước</option>

@@ -120,7 +120,8 @@
 }
 
 .top-search {
-  width: 300px;
+  width: 450px;
+  max-width: 100%;
 }
 
 .btn-create {

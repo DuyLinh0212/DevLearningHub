@@ -19,7 +19,7 @@
       <div class="filter-bar">
         <div class="search-box">
           <i class="bi bi-search"></i>
-          <input type="text" placeholder="Tìm kiếm bài viết..." [value]="searchText" (input)="onSearchInput($event)" (keyup.enter)="triggerSearch()">
+          <input type="text" placeholder="Tìm kiếm bài viết theo tiêu đề, tác giả, nhãn..." [value]="searchText" (input)="onSearchInput($event)" (keyup.enter)="triggerSearch()">
         </div>
         
         <div class="sort-selector">
@@ -32,6 +32,14 @@
               Tag: {{ selectedTag }} <i class="bi bi-x-lg" (click)="filterByTag(''); $event.stopPropagation()"></i>
             </button>
           }
+
+          <span style="margin-left: 12px; margin-right: 6px;">Thời gian:</span>
+          <select class="forum-filter-select" [(ngModel)]="filterDate" (change)="applyFilters()">
+            <option value="all">Tất cả thời gian</option>
+            <option value="today">Hôm nay</option>
+            <option value="week">Tuần này</option>
+            <option value="month">Tháng này</option>
+          </select>
         </div>
       </div>
 
@@ -42,7 +50,7 @@
           </div>
           <p>Đang tải bài viết...</p>
         </div>
-      } @else if (posts.length === 0) {
+      } @else if (filteredPosts.length === 0) {
         <div class="empty-state-card">
           <i class="bi bi-chat-right-text-fill"></i>
           <h3>Không tìm thấy bài viết nào</h3>
@@ -50,7 +58,7 @@
         </div>
       } @else {
         <div class="posts-list">
-          @for (post of posts; track post.id) {
+          @for (post of filteredPosts; track post.id) {
             <div class="social-post-card" (click)="viewPostDetail(post.id)">
               <!-- Header: Author info & tag/more -->
               <div class="post-card-header">

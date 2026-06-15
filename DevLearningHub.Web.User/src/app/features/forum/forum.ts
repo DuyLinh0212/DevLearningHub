@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../core/services/forum.service';
 
 @Component({
   selector: 'app-forum',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './forum.html',
   styleUrl: './forum.css'
 })
@@ -28,6 +29,8 @@ export class ForumComponent implements OnInit {
   totalPages: number = 0;
   searchText: string = '';
   selectedTag: string = '';
+  filterDate: string = 'all';
+  filteredPosts: any[] = [];
   
   loading: boolean = false;
   tagsLoading: boolean = false;
@@ -74,6 +77,7 @@ export class ForumComponent implements OnInit {
               if (detail) {
                 post.bodyMarkdown = detail.bodyMarkdown;
                 post.imageUrl = detail.imageUrl;
+                this.applyFilters();
                 this.cdr.detectChanges();
               }
             }
@@ -84,17 +88,47 @@ export class ForumComponent implements OnInit {
         this.totalPages = pagedData.totalPages || 0;
         this.page = pagedData.page || 1;
         this.loading = false;
+        this.applyFilters();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi tải bài đăng:', err);
         this.posts = [];
+        this.filteredPosts = [];
         this.totalCount = 0;
         this.totalPages = 0;
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  applyFilters() {
+    let result = [...this.posts];
+
+    // Filter by Date
+    if (this.filterDate !== 'all') {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const oneWeekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+
+      result = result.filter(p => {
+        if (!p.createdAt) return false;
+        const postTime = new Date(p.createdAt).getTime();
+        if (this.filterDate === 'today') {
+          return postTime >= todayStart;
+        } else if (this.filterDate === 'week') {
+          return postTime >= oneWeekAgo;
+        } else if (this.filterDate === 'month') {
+          return postTime >= oneMonthAgo;
+        }
+        return true;
+      });
+    }
+
+    this.filteredPosts = result;
+    this.cdr.detectChanges();
   }
 
   loadTags() {

@@ -98,6 +98,24 @@
   color: #ef4444;
 }
 
+.forum-filter-select {
+  background: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.forum-filter-select:hover, .forum-filter-select:focus {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: var(--text-main);
+}
+
 /* --- POST CARDS --- */
 .posts-list {
   display: flex;
