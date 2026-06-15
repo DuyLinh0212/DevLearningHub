@@ -240,3 +240,72 @@
   background: rgba(239, 68, 68, 0.1) !important;
   color: #ef4444 !important;
 }
+
+/* ==========================================================================
+   ⚡ FIX LỖI DÍNH CHỮ VÀ VỠ BỐ CỤC KHỐI THỐNG KÊ (STATS CONTAINER)
+   ========================================================================== */
+
+/* Ép các hộp thống kê dàn hàng ngang và có khoảng cách thở */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Biến card thành trục Flex để đẩy text sang trái, icon sang phải */
+.stat-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-card, #1e1e24);
+  border: 1px solid var(--bg-card-border, #2d2d38);
+  border-radius: 12px;
+  padding: 18px 20px;
+  min-height: 96px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Ép tiêu đề và con số nảy dòng dọc xuống dưới, không cho dính inline hàng ngang */
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Định hình chữ nhạt chuẩn UX */
+.stat-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #9ca3af);
+}
+
+/* Phóng to con số dữ liệu động */
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-main, #ffffff);
+}
+
+/* 🎨 ĐỊNH HÌNH LẠI KHỐI ICON BÊN PHẢI (CHỐNG RỚT DÒNG) */
+.stat-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0; /* Khóa cứng không cho bóp nghẹt icon khi thu nhỏ màn hình */
+}
+
+/* Bộ màu sắc phản quang công nghệ Dark Mode */
+.stat-card-icon.blue { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.stat-card-icon.green { color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+.stat-card-icon.red { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
