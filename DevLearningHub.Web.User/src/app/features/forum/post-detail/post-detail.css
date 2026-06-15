@@ -168,29 +168,30 @@
 
 .post-image-container {
   width: 100%;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--bg-card-border);
-  background: #0f0f13;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   cursor: pointer;
+  margin-bottom: 8px;
 }
 
 .post-detail-image {
   max-width: 100%;
-  width: auto;
   height: auto;
   max-height: 500px;
   object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--bg-card-border);
+  background-color: var(--bg-nested, #18181b);
+  padding: 6px;
   display: block;
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .post-image-container:hover .post-detail-image {
-  transform: scale(1.02);
+  transform: scale(1.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .image-zoom-overlay {
