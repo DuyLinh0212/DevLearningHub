@@ -224,9 +224,15 @@
           <!-- Accepted best answer button/badge -->
           <div class="comment-accept-wrapper">
             @if (comment.isAccepted) {
-              <span class="accepted-badge-pill" title="Câu trả lời hay nhất được chủ bài viết chấp nhận">
-                <i class="bi bi-check-circle-fill"></i> Câu trả lời hay nhất
-              </span>
+              @if (isPostAuthor()) {
+                <button class="btn-accepted-active" (click)="acceptComment(comment.id)" title="Hủy chấp nhận câu trả lời này">
+                  <i class="bi bi-check-circle-fill"></i> Câu trả lời hay nhất
+                </button>
+              } @else {
+                <span class="accepted-badge-pill" title="Câu trả lời hay nhất được chủ bài viết chấp nhận">
+                  <i class="bi bi-check-circle-fill"></i> Câu trả lời hay nhất
+                </span>
+              }
             } @else if (isPostAuthor()) {
               <button class="btn-accept-pill" (click)="acceptComment(comment.id)" title="Chấp nhận câu trả lời này">
                 <i class="bi bi-check-circle"></i> Chấp nhận tốt nhất
