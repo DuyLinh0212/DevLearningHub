@@ -19,7 +19,7 @@
       <div class="filter-bar">
         <div class="search-box">
           <i class="bi bi-search"></i>
-          <input type="text" placeholder="Tìm kiếm bài viết theo tiêu đề, tác giả, nhãn..." [value]="searchText" (input)="onSearchInput($event)" (keyup.enter)="triggerSearch()">
+          <input type="text" placeholder="Tìm kiếm theo tiêu đề hoặc nội dung bài viết... (Enter để tìm)" [value]="searchText" (input)="onSearchInput($event)" (keyup.enter)="triggerSearch()">
         </div>
         
         <div class="sort-selector">
