@@ -42,7 +42,9 @@ public class PostsController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
 
-        var query = _db.Posts.AsNoTracking().Where(p => !p.IsHidden);
+        // Moderators and admins can see hidden posts in the list; everyone else only sees visible ones.
+        var includeHidden = IsModerator();
+        var query = _db.Posts.AsNoTracking().Where(p => includeHidden || !p.IsHidden);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -419,9 +421,11 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<List<CommentResponse>>.Fail("Post not found."));
         }
 
+        // Moderators and admins can see hidden comments; everyone else only sees visible ones.
+        var includeHidden = IsModerator();
         var comments = await _db.Comments
             .AsNoTracking()
-            .Where(c => c.PostId == id && !c.IsHidden)
+            .Where(c => c.PostId == id && (includeHidden || !c.IsHidden))
             .OrderBy(c => c.CreatedAt)
             .Select(c => new CommentResponse
             {
