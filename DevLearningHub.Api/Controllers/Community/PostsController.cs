@@ -3,9 +3,11 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Community;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.Community;
@@ -19,10 +21,12 @@ public class PostsController : ControllerBase
     private const int MaxPageSize = 100;
 
     private readonly DevLearningHubContext _db;
+    private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
 
-    public PostsController(DevLearningHubContext db)
+    public PostsController(DevLearningHubContext db, IHubContext<CommentHub, ICommentHubClient> commentHub)
     {
         _db = db;
+        _commentHub = commentHub;
     }
 
     [HttpGet]
@@ -518,6 +522,9 @@ public class PostsController : ControllerBase
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt
         };
+
+        // Notify everyone viewing this post that a new comment/reply arrived.
+        await _commentHub.Clients.Group(CommentHub.PostGroup(comment.PostId)).CommentCreated(response);
 
         return Ok(ApiResponse<CommentResponse>.Ok(response));
     }

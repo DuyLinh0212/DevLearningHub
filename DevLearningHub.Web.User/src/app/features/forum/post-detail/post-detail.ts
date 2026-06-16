@@ -1,9 +1,11 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { ForumService } from '../../../core/services/forum.service';
+import { CommentRealtimeService, CommentDeletedEvent } from '../../../core/services/comment-realtime.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -12,12 +14,15 @@ import { ForumService } from '../../../core/services/forum.service';
   templateUrl: './post-detail.html',
   styleUrl: './post-detail.css'
 })
-export class PostDetailComponent implements OnInit {
+export class PostDetailComponent implements OnInit, OnDestroy {
   private forumService = inject(ForumService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
+  private realtime = inject(CommentRealtimeService);
+
+  private subscriptions = new Subscription();
 
   postId: string = '';
   post: any = null;
@@ -42,12 +47,131 @@ export class PostDetailComponent implements OnInit {
   private readonly adminUsernames = ['ngoc123', 'admin'];
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.postId = params['id'] || '';
-      if (this.postId) {
-        this.loadCurrentUser();
+    // Subscribe once to realtime comment events; handlers filter by postId.
+    this.subscriptions.add(
+      this.realtime.commentCreated$.subscribe(comment => this.onCommentCreated(comment))
+    );
+    this.subscriptions.add(
+      this.realtime.commentUpdated$.subscribe(comment => this.onCommentUpdated(comment))
+    );
+    this.subscriptions.add(
+      this.realtime.commentDeleted$.subscribe(payload => this.onCommentDeleted(payload))
+    );
+
+    this.subscriptions.add(
+      this.route.params.subscribe(params => {
+        this.postId = params['id'] || '';
+        if (this.postId) {
+          this.loadCurrentUser();
+          // Join the SignalR group so this post receives live comment updates.
+          this.realtime.joinPost(this.postId);
+        }
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
+    this.realtime.leaveCurrentPost();
+  }
+
+  // --- REALTIME COMMENT HANDLERS ---
+  // These keep the nested comment tree in sync with what other users do,
+  // without a full reload. All handlers are idempotent so the acting user
+  // (who also receives their own broadcast) never gets duplicates.
+  private onCommentCreated(comment: any) {
+    if (!comment || comment.postId !== this.postId) return;
+
+    const existing = this.findCommentById(this.comments, comment.id);
+    if (existing) {
+      // Already in the tree (e.g. our own optimistic reload): just refresh fields.
+      this.applyCommentFields(existing, comment);
+    } else {
+      const node = { ...comment, replies: comment.replies || [] };
+      if (comment.parentId) {
+        const parent = this.findCommentById(this.comments, comment.parentId);
+        if (parent) {
+          parent.replies = parent.replies || [];
+          parent.replies.push(node);
+        } else {
+          // Parent not visible locally; drop it at root rather than lose it.
+          this.comments.push(node);
+        }
+      } else {
+        this.comments.push(node);
       }
-    });
+    }
+
+    this.refreshCommentCount();
+    this.cdr.detectChanges();
+  }
+
+  private onCommentUpdated(comment: any) {
+    if (!comment || comment.postId !== this.postId) return;
+
+    const existing = this.findCommentById(this.comments, comment.id);
+    if (existing) {
+      this.applyCommentFields(existing, comment);
+      this.cdr.detectChanges();
+    }
+  }
+
+  private onCommentDeleted(payload: CommentDeletedEvent) {
+    if (!payload || payload.postId !== this.postId) return;
+
+    const ids = new Set(payload.deletedIds || []);
+    this.comments = this.removeCommentsByIds(this.comments, ids);
+
+    // A deleted comment can no longer be the accepted answer.
+    if (this.post && this.post.acceptedCommentId && ids.has(this.post.acceptedCommentId)) {
+      this.post.acceptedCommentId = null;
+    }
+
+    this.refreshCommentCount();
+    this.cdr.detectChanges();
+  }
+
+  // Copy server-owned fields onto an existing node, preserving the local
+  // reply list and the client-only myVote flag.
+  private applyCommentFields(target: any, source: any) {
+    target.bodyMarkdown = source.bodyMarkdown;
+    target.upvotes = source.upvotes;
+    target.downvotes = source.downvotes;
+    target.isAccepted = source.isAccepted;
+    target.isHidden = source.isHidden;
+    target.updatedAt = source.updatedAt;
+    target.author = source.author ?? target.author;
+  }
+
+  private findCommentById(nodes: any[], id: string): any | null {
+    for (const node of nodes || []) {
+      if (node.id === id) return node;
+      const found = this.findCommentById(node.replies || [], id);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  private removeCommentsByIds(nodes: any[], ids: Set<string>): any[] {
+    return (nodes || [])
+      .filter(node => !ids.has(node.id))
+      .map(node => ({
+        ...node,
+        replies: this.removeCommentsByIds(node.replies || [], ids)
+      }));
+  }
+
+  private countComments(nodes: any[]): number {
+    return (nodes || []).reduce(
+      (total, node) => total + 1 + this.countComments(node.replies || []),
+      0
+    );
+  }
+
+  private refreshCommentCount() {
+    if (this.post) {
+      this.post.commentCount = this.countComments(this.comments);
+    }
   }
 
   loadCurrentUser() {

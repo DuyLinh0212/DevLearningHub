@@ -1,6 +1,8 @@
 ﻿using System.Text;
+using System.Text.Json;
 using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Entities;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +17,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DevLearningHubContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// SignalR powers realtime forum comments (create/edit/delete).
+// Force camelCase payloads so the Angular client receives the same shape
+// as the existing REST responses.
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
@@ -100,6 +111,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<CommentHub>("/hubs/comments");
 
 app.Run();
 public partial class Program { }
