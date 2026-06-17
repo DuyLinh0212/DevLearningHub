@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-settings',
@@ -15,6 +16,7 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
 export class SettingsComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   firstName: string = '';
   lastName: string = '';

@@ -1,4 +1,4 @@
-<header class="content-header">
+﻿<header class="content-header">
   <div class="top-breadcrumb">
     <a routerLink="/forum">Cộng đồng</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Diễn đàn thảo luận</span>
   </div>
@@ -55,9 +55,14 @@
             <div class="social-post-card" (click)="viewPostDetail(post.id)">
               <!-- Header: Author info & tag/more -->
               <div class="post-card-header">
-                <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar">
+                <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'"
+                     alt="Avatar"
+                     class="author-avatar"
+                     style="cursor: pointer;"
+                     (click)="goToProfile(post.author.id, $event)"
+                     (error)="onAvatarError($event)">
                 <div class="author-meta-text">
-                  <span class="author-name">{{ post.author.fullName || post.author.username }}</span>
+                  <span class="author-name" style="cursor: pointer;" (click)="goToProfile(post.author.id, $event)">{{ post.author.fullName || post.author.username }}</span>
                   <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
                 </div>
                 <div class="post-more-btn" (click)="togglePostMenu(post.id, $event); $event.stopPropagation()">

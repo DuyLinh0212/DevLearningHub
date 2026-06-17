@@ -140,3 +140,89 @@
     height: 36px;
   }
 }
+
+/* ==========================================================================
+   📱 TOPIC MANAGEMENT RESPONSIVE - BREAKPOINTS 768px & 480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Sidebar ẩn, main-content full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Content header -> column */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    padding: 16px 12px !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .admin-header-actions {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  /* Grid về 2 cột */
+  .topic-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  /* Modal responsive */
+  .admin-large-modal {
+    width: calc(100% - 24px) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 18px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header {
+    padding: 10px 8px !important;
+  }
+
+  /* Topic grid -> 1 col */
+  .topic-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .topic-card {
+    padding: 14px !important;
+  }
+
+  /* Modal full-width */
+  .admin-large-modal {
+    width: calc(100% - 16px) !important;
+    padding: 14px !important;
+  }
+
+  .input-field-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal-actions-row {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-confirm {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+  }
+
+  .empty-state-box-topic {
+    padding: 32px 16px !important;
+  }
+}

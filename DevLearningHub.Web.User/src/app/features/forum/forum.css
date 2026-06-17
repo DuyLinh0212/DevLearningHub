@@ -1,6 +1,5 @@
 @import '../dashboard/dashboard.css';
-
-
+@import '../../shared/styles/forum-shared.css';
 
 .forum-layout {
   display: grid;
@@ -123,60 +122,6 @@
   gap: 16px;
 }
 
-/* --- PREMIUM SOCIAL POST CARD --- */
-.social-post-card {
-  background: var(--bg-card);
-  border: 1px solid var(--bg-card-border);
-  border-radius: var(--radius-lg, 12px);
-  cursor: pointer;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  padding: var(--padding-lg, 24px);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.social-post-card:hover {
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: var(--shadow-hover-purple);
-}
-
-/* Header */
-.post-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-}
-
-.post-card-header .author-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1.5px solid rgba(168, 85, 247, 0.4);
-}
-
-.post-card-header .author-meta-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.post-card-header .author-name {
-  color: var(--text-main);
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.post-card-header .post-date {
-  color: var(--text-muted-dark);
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
 .post-more-btn {
   margin-left: auto;
   color: var(--text-muted-dark);
@@ -236,188 +181,9 @@
   font-size: 0.95rem;
 }
 
-/* Body */
-.post-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.post-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0;
-  line-height: 1.4;
-  word-wrap: break-word;
-  transition: color 0.2s ease;
-}
-
-.social-post-card:hover .post-title {
-  color: #c084fc;
-}
-
-.post-excerpt {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* post-card-body */
-.post-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.post-card-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.post-image-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 8px;
-  margin-bottom: 12px;
-}
-
-.post-detail-image {
-  max-width: 100%;
-  height: auto;
-  max-height: 400px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 1px solid var(--bg-card-border);
-  background-color: var(--bg-nested, #18181b);
-  padding: 6px;
-  display: block;
-}
-
-/* Tags */
-.post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.post-tag-badge {
-  background: rgba(168, 85, 247, 0.05);
-  border: 1px solid rgba(168, 85, 247, 0.15);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.post-tag-badge:hover {
-  background: rgba(168, 85, 247, 0.15);
-  transform: scale(1.05);
-}
-
-/* Metrics */
-.post-card-metrics {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--text-muted-dark);
-  padding: 0 4px;
-}
-
-.post-card-metrics .likes-count {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
-
-.post-divider {
-  height: 1px;
-  background-color: var(--bg-card-border);
-}
-
-/* Actions Bar */
-.post-card-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.action-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 8px 4px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
-}
-
-.action-btn.active {
-  color: #a855f7;
-}
-
-.action-btn.active i {
-  color: #ef4444; /* Heart icon becomes red when liked */
-}
-
-.post-metrics {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: var(--text-muted-dark);
-}
-
-.post-metrics span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.post-metrics span.has-comments {
-  color: #818cf8;
-}
-
 /* --- SIDEBAR CARD --- */
 .sidebar-card {
-  background: var(--bg-card);
-  border: 1px solid var(--bg-card-border);
-  border-radius: var(--radius-lg, 12px);
-  padding: var(--padding-lg, 24px);
   margin-bottom: 24px;
-}
-
-.sidebar-card h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-  color: var(--text-main);
-}
-
-.sidebar-card-desc {
-  color: var(--text-muted-dark);
-  font-size: 0.78rem;
-  margin: 0 0 16px 0;
 }
 
 .sidebar-tags-list {
@@ -625,26 +391,63 @@
   }
 }
 
-@media (max-width: 576px) {
-  .post-card {
-    grid-template-columns: 48px 1fr;
+/* ==========================================================================
+   📱 FORUM RESPONSIVE BỔ SUNG - @768px & @480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Filter bar compact */
+  .filter-bar {
+    padding: 16px;
+    gap: 12px;
   }
-  .post-vote-cell {
-    padding: 12px 4px;
+
+  .sort-selector {
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .vote-arrow-btn {
-    font-size: 1.25rem;
+
+  .post-title {
+    font-size: 1rem;
   }
-  .post-content-cell {
-    padding: 12px 14px;
+
+  /* Post tags */
+  .post-tags {
+    gap: 6px;
   }
-  .post-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+
+  .post-tag-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
   }
-  .post-metrics {
-    width: 100%;
-    justify-content: flex-end;
+
+  /* Sidebar cards on mobile: collapse */
+  .sidebar-card {
+    padding: 16px;
+  }
+
+  /* Pagination */
+  .pagination-container {
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .page-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-bar {
+    padding: 12px;
+  }
+
+  .post-title {
+    font-size: 0.95rem;
+  }
+
+  .post-excerpt {
+    font-size: 0.85rem;
   }
 }

@@ -228,3 +228,63 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none !important;
 }
+
+/* ==========================================================================
+   📱 LOGIN RESPONSIVE - BREAKPOINTS 768px & 480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Ẩn left panel (illustration) trên mobile */
+  .left-panel {
+    display: none !important;
+  }
+
+  /* Right panel chiếm toàn màn hình */
+  .right-panel {
+    width: 100% !important;
+    padding: 40px 32px !important;
+    min-height: 100vh;
+    box-shadow: none;
+  }
+
+  .form-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .right-panel {
+    padding: 32px 20px !important;
+  }
+
+  .form-container h2 {
+    font-size: 1.5rem !important;
+  }
+
+  .subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  .social-login {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .social-login button {
+    width: 100% !important;
+  }
+
+  .btn-submit {
+    padding: 12px !important;
+  }
+
+  .form-group input {
+    font-size: 0.9rem !important;
+  }
+}

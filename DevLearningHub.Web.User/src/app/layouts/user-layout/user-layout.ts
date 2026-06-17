@@ -1,6 +1,7 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-user-layout',
@@ -10,11 +11,9 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
   styleUrl: './user-layout.css'
 })
 export class UserLayoutComponent {
-  @ViewChild('sidebar') sidebar!: SidebarComponent;
+  public mobileMenu = inject(MobileMenuService);
 
   toggleSidebar() {
-    if (this.sidebar) {
-      this.sidebar.toggleMobileSidebar();
-    }
+    this.mobileMenu.toggle();
   }
 }

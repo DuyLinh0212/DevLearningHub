@@ -231,3 +231,141 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none !important;
 }
+
+/* ==========================================================================
+   📱 REGISTER RESPONSIVE - @768px & @480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Ẩn panel trái trên mobile */
+  .left-panel {
+    display: none;
+  }
+
+  /* Right panel chiếm toàn bộ màn hình */
+  .right-panel {
+    width: 100%;
+    padding: 40px 32px;
+    box-shadow: none;
+    min-height: 100vh;
+  }
+
+  .form-container {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .form-container h2 {
+    font-size: 1.5rem;
+  }
+
+  /* form-row: vẫn flex nhưng có thể wrap */
+  .form-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .social-login {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .right-panel {
+    padding: 32px 20px;
+  }
+
+  .form-container h2 {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+
+  /* form-row thành 1 cột dọc */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flex-1 {
+    width: 100%;
+  }
+
+  .form-group input {
+    padding: 11px 12px 11px 40px;
+    font-size: 0.9rem;
+  }
+
+  .social-login {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .social-login button {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .btn-submit {
+    padding: 12px;
+    font-size: 0.88rem;
+  }
+
+  .footer-text {
+    font-size: 0.82rem;
+  }
+}
+
+/* ==========================================================================
+   📱 RESPONSIVE — Register Mobile
+   ========================================================================== */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    display: none;
+  }
+
+  .right-panel {
+    flex: 1;
+    width: 100%;
+    padding: 32px 20px;
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+
+  .form-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .right-panel {
+    padding: 20px 14px;
+  }
+
+  .form-card {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+}

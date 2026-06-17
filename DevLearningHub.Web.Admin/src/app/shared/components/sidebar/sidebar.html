@@ -9,6 +9,14 @@
     </button>
   </div>
 
+  <a routerLink="/settings" class="sidebar-profile">
+    <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="sidebar-profile-avatar">
+    <div class="sidebar-profile-info">
+      <strong>{{ profile.displayName }}</strong>
+      <span>{{ profile.email || 'Quản trị viên' }}</span>
+    </div>
+  </a>
+
   <nav class="sidebar-menu">
     <div class="menu-heading">ĐIỀU PHỐI</div>
     <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">

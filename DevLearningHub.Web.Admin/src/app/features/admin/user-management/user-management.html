@@ -3,6 +3,10 @@
   <main class="main-content">
 
     <header class="content-header">
+      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
       <div class="top-search">
         <i class="bi bi-search"></i>
         <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tên đăng nhập, email, họ tên...">
@@ -65,11 +69,10 @@
                 <tr [class.user-locked-row]="user.isLocked">
                   <td class="user-cell">
                     <div class="user-avatar-wrap">
-                      @if (user.avatarUrl) {
-                        <img [src]="user.avatarUrl" [alt]="user.username" class="user-table-avatar">
-                      } @else {
-                        <i class="bi bi-person-circle default-avatar-icon"></i>
-                      }
+                      <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'"
+                           [alt]="user.username"
+                           class="user-table-avatar"
+                           (error)="onAvatarError($event)">
                     </div>
                     <div class="user-name-info">
                       <span class="user-fullname">{{ user.fullName }}</span>

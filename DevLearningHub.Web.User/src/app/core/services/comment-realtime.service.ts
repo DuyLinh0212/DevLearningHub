@@ -30,7 +30,7 @@ export class CommentRealtimeService {
       return;
     }
 
-    await this.ensureConnected();
+    try { await this.ensureConnected(); } catch { return; }
 
     if (this.currentPostId && this.currentPostId !== postId) {
       await this.safeInvoke('LeavePost', this.currentPostId);
@@ -53,11 +53,11 @@ export class CommentRealtimeService {
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl('/hubs/comments')
         .withAutomaticReconnect()
-        .configureLogging(signalR.LogLevel.Warning)
+        .configureLogging(signalR.LogLevel.None)
         .build();
 
-      this.connection.on('CommentCreated', (comment) => this.commentCreated$.next(comment));
-      this.connection.on('CommentUpdated', (comment) => this.commentUpdated$.next(comment));
+      this.connection.on('CommentCreated', (comment: any) => this.commentCreated$.next(comment));
+      this.connection.on('CommentUpdated', (comment: any) => this.commentUpdated$.next(comment));
       this.connection.on('CommentDeleted', (payload: CommentDeletedEvent) =>
         this.commentDeleted$.next(payload)
       );
@@ -76,7 +76,7 @@ export class CommentRealtimeService {
 
     // Coalesce concurrent start attempts into a single promise.
     if (!this.starting) {
-      this.starting = this.connection.start().finally(() => {
+      this.starting = this.connection.start().catch((err) => { console.warn('[SignalR] Could not connect, realtime disabled:', err?.message ?? err); }).finally(() => {
         this.starting = undefined;
       });
     }

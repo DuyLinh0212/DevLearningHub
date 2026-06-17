@@ -306,6 +306,70 @@
   }
 }
 
+/* ==========================================================================
+   📱 POST-CREATE RESPONSIVE BỔ SUNG
+   ========================================================================== */
+@media (max-width: 768px) {
+  .form-container-card {
+    padding: var(--padding-lg, 24px) 20px;
+    margin: 0 auto 24px auto;
+  }
+
+  .textarea-header-tabs {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tabs-btn-group {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tab-toggle-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .form-container-card h2 {
+    font-size: 1.25rem;
+  }
+
+  .tags-check-grid {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container-card {
+    padding: 16px 12px;
+  }
+
+  .form-container-card h2 {
+    font-size: 1.1rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+
+  .post-form {
+    gap: 18px;
+  }
+
+  .preview-output-box {
+    min-height: 200px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
+
+  .tag-checkbox-pill {
+    font-size: 0.78rem;
+    padding: 5px 10px;
+  }
+}
+
 /* --- IMAGE UPLOAD COMPONENT --- */
 .image-upload-wrapper {
   position: relative;

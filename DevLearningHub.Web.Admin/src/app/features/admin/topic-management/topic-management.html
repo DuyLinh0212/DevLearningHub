@@ -3,6 +3,10 @@
   <main class="main-content">
     
     <header class="content-header">
+      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
       <div class="top-search">
         <i class="bi bi-search"></i>
         <input type="text" [(ngModel)]="searchText" (input)="filterTopics()" placeholder="Tìm kiếm danh mục chủ đề học tập...">

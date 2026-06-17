@@ -169,6 +169,13 @@ export class ForumComponent implements OnInit {
     this.router.navigate(['/forum/post', postId]);
   }
 
+  goToProfile(userId: string, event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/user', userId], {
+      state: { returnUrl: '/forum' }
+    });
+  }
+
   vote(post: any, voteType: 'up' | 'down') {
     const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
     if (!hasToken) {
@@ -260,5 +267,10 @@ export class ForumComponent implements OnInit {
   toggleBookmark(post: any, event: Event) {
     event.stopPropagation();
     // Vô hiệu hóa lưu bookmark local do BE chưa có API
+  }
+
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) img.src = 'assets/images/default-avatar.svg';
   }
 }

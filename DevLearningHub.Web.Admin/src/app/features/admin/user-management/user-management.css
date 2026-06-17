@@ -199,3 +199,101 @@
   opacity: 0.4;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   📱 USER MANAGEMENT RESPONSIVE - BREAKPOINTS 768px & 480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Sidebar ẩn, main-content full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Content header -> column */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    padding: 16px 12px !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Admin header actions */
+  .admin-header-actions {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  /* Table scroll */
+  .admin-table-responsive-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-management-table {
+    min-width: 700px !important;
+  }
+
+  /* Modal responsive */
+  .admin-large-modal {
+    width: calc(100% - 24px) !important;
+    max-height: 90vh !important;
+    padding: 18px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header {
+    padding: 10px 8px !important;
+  }
+
+  /* User cell compact */
+  .user-avatar-wrap {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .default-avatar-icon {
+    font-size: 1.2rem !important;
+  }
+
+  .user-fullname {
+    font-size: 0.82rem !important;
+  }
+
+  .email-txt {
+    font-size: 0.72rem !important;
+  }
+
+  /* Modal full screen */
+  .admin-large-modal {
+    width: calc(100% - 16px) !important;
+    padding: 14px !important;
+  }
+
+  .input-field-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal-actions-row {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-confirm {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+  }
+
+  .empty-state-user {
+    padding: 36px 16px !important;
+  }
+}

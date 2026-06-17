@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoadmapService } from '../../../core/services/roadmap.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
@@ -16,6 +17,7 @@ export class RoadmapManagementComponent implements OnInit {
   private roadmapService = inject(RoadmapService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   roadmaps: any[] = [];
   availableTopics: any[] = [];

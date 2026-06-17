@@ -111,6 +111,21 @@ app-sidebar {
   position: relative;
 }
 
+/* Hide router-outlet tag from rendering in DOM to avoid taking up flex space */
+router-outlet {
+  display: none !important;
+}
+
+/* Make router components flex containers so that dashboard-scroll-body can use flex: 1 */
+.main-content > * {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+
 .content-header {
   flex-shrink: 0;
   height: 70px;
@@ -120,7 +135,8 @@ app-sidebar {
   flex: 1;
   overflow-y: auto !important;
   overflow-x: hidden;
-  height: calc(100vh - 70px);
+  height: auto;
+  min-height: 0;
   box-sizing: border-box;
 }
 
@@ -156,4 +172,16 @@ app-sidebar {
 .top-breadcrumb span:last-child {
   color: var(--text-main);
   font-weight: 600;
+}
+
+/* ==========================================================================
+   📱 GLOBAL MOBILE RESPONSIVE (max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Khống chế thẻ app-sidebar không chiếm không gian trên mobile */
+  app-sidebar {
+    height: 0 !important;
+    width: 0 !important;
+    display: block;
+  }
 }

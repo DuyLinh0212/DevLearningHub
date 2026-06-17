@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -16,6 +17,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   activeTab: string = 'dashboard';
   searchText: string = '';

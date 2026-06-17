@@ -1125,3 +1125,105 @@
 .stat-card-icon.blue { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
 .stat-card-icon.green { color: #22c55e; background: rgba(34, 197, 94, 0.1); }
 .stat-card-icon.red { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+/* ==========================================================================
+   📱 QUIZ MANAGEMENT RESPONSIVE - BREAKPOINT 480px (SMALL MOBILE)
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* Sidebar ẩn, main-content full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Content header cuộn ngang mượt */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    padding: 12px 8px !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Admin header actions xếp dọc */
+  .admin-header-actions {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .btn-admin-act {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+    justify-content: center !important;
+    font-size: 0.78rem !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Stats 3 col -> 1 col */
+  .stats-container {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Toolbar dọc */
+  .library-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px !important;
+  }
+
+  .inline-filter {
+    width: 100% !important;
+  }
+
+  /* Modal full-width */
+  .admin-large-modal {
+    width: calc(100% - 16px) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    margin: 8px !important;
+  }
+
+  .import-modal {
+    width: calc(100% - 16px) !important;
+    padding: 14px !important;
+    margin: 8px !important;
+  }
+
+  /* Input 2 col -> 1 col */
+  .input-field-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Modal actions dọc */
+  .modal-actions-row {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-confirm {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+  }
+
+  /* Assign modal toolbar cuộn */
+  .assign-modal-toolbar {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .assign-modal-toolbar input {
+    width: 100% !important;
+  }
+}

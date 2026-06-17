@@ -9,6 +9,7 @@ import { RoadmapManagementComponent } from './features/admin/roadmap-management/
 import { TopicManagementComponent } from './features/admin/topic-management/topic-management';
 import { TagManagementComponent } from './features/admin/tag-management/tag-management';
 import { PostManagementComponent } from './features/admin/post-management/post-management';
+import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
 import { UserManagementComponent } from './features/admin/user-management/user-management';
 import { SettingsComponent } from './features/settings/settings';
 import { adminGuard } from './core/guards/admin.guard';
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'admin/topics', component: TopicManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/tags', component: TagManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/posts', component: PostManagementComponent, canActivate: [adminGuard] },
+  { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [adminGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [adminGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [adminGuard] },
   { path: '', redirectTo: 'landing', pathMatch: 'full' }

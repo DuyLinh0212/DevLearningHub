@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { ForumService } from '../../../core/services/forum.service';
 import { CommentRealtimeService, CommentDeletedEvent } from '../../../core/services/comment-realtime.service';
+import { StaffUserService } from '../../../core/services/staff-user.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -16,6 +17,7 @@ import { CommentRealtimeService, CommentDeletedEvent } from '../../../core/servi
 })
 export class PostDetailComponent implements OnInit, OnDestroy {
   private forumService = inject(ForumService);
+  private staffUserService = inject(StaffUserService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -42,9 +44,6 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   
   isBookmarked: boolean = false;
   zoomedImageUrl: string | null = null;
-
-  // Known admin/moderator usernames — FE-only, used for highlighting
-  private readonly adminUsernames = ['ngoc123', 'admin'];
 
   ngOnInit() {
     // Subscribe once to realtime comment events; handlers filter by postId.
@@ -182,10 +181,16 @@ export class PostDetailComponent implements OnInit, OnDestroy {
           this.currentUserId = (user.id || user.Id || user.userId || user.sub || '').toString().toLowerCase();
           this.currentUserRoles = user.roles || [];
         }
-        this.loadPostDetails();
+        this.staffUserService.ensureLoaded().subscribe({
+          next: () => this.loadPostDetails(),
+          error: () => this.loadPostDetails()
+        });
       },
       error: () => {
-        this.loadPostDetails();
+        this.staffUserService.ensureLoaded().subscribe({
+          next: () => this.loadPostDetails(),
+          error: () => this.loadPostDetails()
+        });
       }
     });
   }
@@ -214,7 +219,9 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   loadComments() {
     this.forumService.getComments(this.postId).subscribe({
       next: (res) => {
-        this.comments = res || [];
+        const raw = res || [];
+        const arr = Array.isArray(raw) ? raw : [];
+        this.comments = this.staffUserService.annotateComments(arr);
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -226,6 +233,8 @@ export class PostDetailComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+
 
   // --- VOTE ACTIONS ---
   votePost(voteType: 'up' | 'down') {
@@ -400,50 +409,6 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // --- MODERATION ACTIONS ---
-  toggleModeratePost() {
-    if (!this.post) return;
-    const hide = !this.post.isHidden;
-    const reason = prompt(hide ? 'Nhập lý do ẩn bài viết:' : 'Nhập lý do hiện lại bài viết:');
-    if (reason === null) return;
-
-    this.http.post<any>(`/api/posts/${this.post.id}/moderate`, {
-      reason: reason.trim(),
-      hidden: hide
-    }).subscribe({
-      next: () => {
-        this.post.isHidden = hide;
-        alert(hide ? 'Đã ẩn bài đăng thành công.' : 'Đã hiện lại bài đăng thành công.');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Lỗi kiểm duyệt bài viết:', err);
-        alert('Không thể hoàn tất hành động kiểm duyệt.');
-      }
-    });
-  }
-
-  toggleModerateComment(comment: any) {
-    const hide = !comment.isHidden;
-    const reason = prompt(hide ? 'Nhập lý do ẩn bình luận:' : 'Nhập lý do hiện lại bình luận:');
-    if (reason === null) return;
-
-    this.http.post<any>(`/api/comments/${comment.id}/moderate`, {
-      reason: reason.trim(),
-      hidden: hide
-    }).subscribe({
-      next: () => {
-        comment.isHidden = hide;
-        alert(hide ? 'Đã ẩn bình luận thành công.' : 'Đã hiện lại bình luận thành công.');
-        this.loadComments();
-      },
-      error: (err) => {
-        console.error('Lỗi kiểm duyệt bình luận:', err);
-        alert('Không thể hoàn tất hành động kiểm duyệt.');
-      }
-    });
-  }
-
   deletePost() {
     if (!confirm('Bạn có chắc chắn muốn xóa hoàn toàn bài viết này? Hành động này không thể hoàn tác.')) return;
 
@@ -470,6 +435,15 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     return true;
   }
 
+  goToProfile(userId: string) {
+    if (userId) { 
+      const postId = this.route.snapshot.paramMap.get('id');
+      this.router.navigate(['/user', userId], {
+        state: { returnUrl: `/forum/post/${postId}` }
+      }); 
+    }
+  }
+
   isPostAuthor(): boolean {
     if (!this.post || !this.currentUserId) return false;
     const postAuthorId = (this.post.author.id || '').toString().toLowerCase();
@@ -481,7 +455,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   canDeletePost(): boolean {
-    return this.isPostAuthor() || this.isModeratorOrAdmin();
+    return this.isPostAuthor();
   }
 
   canEditComment(comment: any): boolean {
@@ -493,13 +467,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   canDeleteComment(comment: any): boolean {
     if (!comment || !this.currentUserId) return false;
     const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    return commentAuthorId === this.currentUserId || this.isModeratorOrAdmin();
-  }
-
-  isModeratorOrAdmin(): boolean {
-    return this.currentUserRoles.some(role => 
-      role.toLowerCase() === 'admin' || role.toLowerCase() === 'moderator'
-    );
+    return commentAuthorId === this.currentUserId;
   }
 
   formatRelativeTime(dateString: string): string {
@@ -580,13 +548,19 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     document.body.style.overflow = '';
   }
 
-  // --- ADMIN / MOD HIGHLIGHT ---
-  isAdminOrMod(username: string): boolean {
-    if (!username) return false;
-    // Check against known admin usernames or if current user has Admin/Moderator role
-    if (this.adminUsernames.includes(username.toLowerCase())) return true;
-    if (username.toLowerCase() === (this.currentUserId ? '' : '')) return false;
-    return this.currentUserRoles.some(r => r === 'Admin' || r === 'Moderator');
+  isPostAuthorComment(comment: any): boolean {
+    if (!comment?.author || !this.post?.author) return false;
+    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
+    const postAuthorId = (this.post.author.id || '').toString().toLowerCase();
+    return commentAuthorId === postAuthorId;
+  }
+
+  /** Fallback khi avatar load lỗi (null URL, 404, v.v.) */
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && img.src !== window.location.origin + '/assets/images/default-avatar.svg') {
+      img.src = 'assets/images/default-avatar.svg';
+    }
   }
 
 }

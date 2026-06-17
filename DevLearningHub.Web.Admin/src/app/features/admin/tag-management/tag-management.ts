@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-tag-management',
@@ -14,6 +15,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 export class TagManagementComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   tags: any[] = [];
   filteredTags: any[] = [];

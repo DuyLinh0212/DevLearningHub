@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-user-management',
@@ -14,6 +15,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 export class UserManagementComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   users: any[] = [];
   searchText = '';
@@ -312,5 +314,10 @@ export class UserManagementComponent implements OnInit {
         alert('Không thể khóa tài khoản!');
       }
     });
+  }
+
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) img.src = 'assets/images/default-avatar.svg';
   }
 }
