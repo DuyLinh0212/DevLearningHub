@@ -15,6 +15,41 @@ public class TopicResponse
     public string? Description { get; set; }
 
     public string? Icon { get; set; }
+
+    public bool IsActive { get; set; }
+}
+
+// Topic create/update payloads (admin only).
+public class CreateTopicRequest
+{
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? Slug { get; set; }
+
+    public string? Description { get; set; }
+
+    [MaxLength(100)]
+    public string? Icon { get; set; }
+}
+
+public class UpdateTopicRequest
+{
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? Slug { get; set; }
+
+    public string? Description { get; set; }
+
+    [MaxLength(100)]
+    public string? Icon { get; set; }
+
+    public bool IsActive { get; set; } = true;
 }
 
 // Question create/update payloads.
@@ -149,6 +184,9 @@ public class CreateQuizSetRequest
 
     public bool IsPublic { get; set; }
 
+    // Allow other users to copy this quiz set.
+    public bool AllowedCopy { get; set; }
+
     public Guid? TopicId { get; set; }
 
     [MaxLength(100)]
@@ -173,6 +211,9 @@ public class UpdateQuizSetRequest
 
     public bool IsPublic { get; set; }
 
+    // Allow other users to copy this quiz set.
+    public bool AllowedCopy { get; set; }
+
     public Guid? TopicId { get; set; }
 
     [MaxLength(100)]
@@ -181,6 +222,14 @@ public class UpdateQuizSetRequest
     public string? Level { get; set; }
 
     public List<QuizSetQuestionWriteRequest>? Questions { get; set; }
+}
+
+// Copy a quiz set into a new one owned by the caller.
+public class CopyQuizSetRequest
+{
+    // Optional title for the copy; defaults to "<source title> (Copy)".
+    [MaxLength(200)]
+    public string? Title { get; set; }
 }
 
 public class AssignQuestionRequest
@@ -198,6 +247,8 @@ public class QuizSetResponse
 
     public Guid CreatedBy { get; set; }
 
+    public string CreatedByFullName { get; set; } = string.Empty;
+
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
@@ -207,6 +258,8 @@ public class QuizSetResponse
     public int? TimeLimitSeconds { get; set; }
 
     public bool IsPublic { get; set; }
+
+    public bool AllowedCopy { get; set; }
 
     public Guid? TopicId { get; set; }
 
@@ -236,6 +289,8 @@ public class QuizSetDetailResponse
 
     public Guid CreatedBy { get; set; }
 
+    public string CreatedByFullName { get; set; } = string.Empty;
+
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
@@ -245,6 +300,8 @@ public class QuizSetDetailResponse
     public int? TimeLimitSeconds { get; set; }
 
     public bool IsPublic { get; set; }
+
+    public bool AllowedCopy { get; set; }
 
     public Guid? TopicId { get; set; }
 

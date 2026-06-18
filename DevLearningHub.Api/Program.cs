@@ -30,6 +30,7 @@ builder.Services.AddSignalR()
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -95,6 +96,10 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(AppRoles.Moderator, AppRoles.Admin);
     });
 });
+
+// Dynamic per-permission policies for [HasPermission("...")].
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 var app = builder.Build();
 

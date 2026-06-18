@@ -20,6 +20,7 @@ public class AuthController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IPermissionService _permissionService;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthController> _logger;
 
@@ -27,12 +28,14 @@ public class AuthController : ControllerBase
         DevLearningHubContext db,
         IPasswordHasher<User> passwordHasher,
         ITokenService tokenService,
+        IPermissionService permissionService,
         IOptions<JwtOptions> jwtOptions,
         ILogger<AuthController> logger)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _permissionService = permissionService;
         _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
@@ -240,8 +243,11 @@ public class AuthController : ControllerBase
             .Select(ur => ur.Role.Name)
             .ToListAsync();
 
+        // Effective permissions = role permissions + per-user grants - per-user denies.
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(user.Id);
+
         var expiresAt = DateTime.Now.AddMinutes(_jwtOptions.AccessTokenMinutes);
-        var accessToken = _tokenService.CreateAccessToken(user, roles, expiresAt);
+        var accessToken = _tokenService.CreateAccessToken(user, roles, permissions, expiresAt);
 
         var refreshTokenValue = _tokenService.CreateRefreshToken();
         var refreshToken = new RefreshToken
