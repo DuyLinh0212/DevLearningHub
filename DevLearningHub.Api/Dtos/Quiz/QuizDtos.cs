@@ -198,6 +198,8 @@ public class QuizSetResponse
 
     public Guid CreatedBy { get; set; }
 
+    public string CreatedByFullName { get; set; } = string.Empty;
+
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
@@ -235,6 +237,8 @@ public class QuizSetDetailResponse
     public Guid Id { get; set; }
 
     public Guid CreatedBy { get; set; }
+
+    public string CreatedByFullName { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
 

@@ -212,7 +212,11 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     console.log('=== PHÒNG THI: PAYLOAD NỘP BÀI LÊN SERVER ===', submitPayload);
 
     sessionStorage.setItem('quiz_title', this.quizTitle);
-    sessionStorage.setItem('quiz_questions', JSON.stringify(this.questions));
+    if (this.quizMode === 'exam') {
+      sessionStorage.removeItem('quiz_questions');
+    } else {
+      sessionStorage.setItem('quiz_questions', JSON.stringify(this.questions));
+    }
 
     this.quizService.submitQuizSession(this.sessionId, submitPayload).subscribe({
       next: () => {
@@ -223,7 +227,9 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
         const answered = this.selectedAnswers.filter(a => a !== null).length;
         this.quizService.saveQuizProgress(this.quizId, answered, this.originalTotalQuestions);
         this.isConfirmModalOpen = false;
-        this.router.navigate(['/quiz-result', this.sessionId]);
+        this.router.navigate(['/quiz-result', this.sessionId], {
+          queryParams: { mode: this.quizMode }
+        });
       },
       error: (err) => {
         console.error('Lỗi nộp bài trắc nghiệm:', err);

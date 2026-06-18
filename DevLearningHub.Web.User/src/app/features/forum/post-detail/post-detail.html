@@ -259,12 +259,98 @@
 
 <!-- Image Zoom Lightbox -->
 @if (zoomedImageUrl) {
-  <div class="image-lightbox-overlay" (click)="closeImageZoom()">
-    <div class="image-lightbox-container" (click)="$event.stopPropagation()">
-      <button class="lightbox-close-btn" (click)="closeImageZoom()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image">
-    </div>
+  <div class="image-viewer-overlay">
+    <button class="image-viewer-close" (click)="closeImageZoom()" title="Đóng">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <section class="image-viewer-stage">
+      <div class="image-viewer-toolbar" (click)="$event.stopPropagation()">
+        <button class="viewer-icon-btn" (click)="zoomImageOut()" [disabled]="imageZoom <= 50" title="Thu nhỏ">
+          <i class="bi bi-zoom-out"></i>
+        </button>
+        <input
+          type="range"
+          min="50"
+          max="250"
+          step="5"
+          [value]="imageZoom"
+          (input)="setImageZoom($any($event.target).value)"
+          class="viewer-zoom-slider"
+          title="Kéo để phóng to hoặc thu nhỏ">
+        <button class="viewer-icon-btn" (click)="zoomImageIn()" [disabled]="imageZoom >= 250" title="Phóng to">
+          <i class="bi bi-zoom-in"></i>
+        </button>
+        <button class="viewer-icon-btn" (click)="resetImageZoom()" title="Vừa màn hình">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+        <span class="viewer-zoom-value">{{ imageZoom }}%</span>
+      </div>
+
+      <div class="image-pan-surface" [class.is-draggable]="imageZoom > 100" [class.is-dragging]="isImageDragging">
+        <img
+          [src]="zoomedImageUrl"
+          alt="Phóng to"
+          class="viewer-main-image"
+          [style.transform]="'translate(' + imagePanX + 'px, ' + imagePanY + 'px) scale(' + imageZoom / 100 + ')'"
+          (mousedown)="startImageDrag($event)"
+          draggable="false">
+      </div>
+    </section>
+
+    <aside class="image-viewer-comments" (click)="$event.stopPropagation()">
+      <div class="viewer-post-summary">
+        <div class="viewer-author-row">
+          <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'"
+               alt="Avatar"
+               class="viewer-author-avatar"
+               (error)="onAvatarError($event)">
+          <div>
+            <h3>{{ post.author.fullName || post.author.username }}</h3>
+            <span>{{ formatRelativeTime(post.createdAt) }}</span>
+          </div>
+        </div>
+
+        <h2>{{ post.title }}</h2>
+        <div class="viewer-post-body" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
+
+        <div class="viewer-post-metrics">
+          <span><i class="bi bi-heart-fill"></i> {{ post.upvotes }}</span>
+          <span>{{ post.commentCount }} bình luận</span>
+        </div>
+
+        <div class="viewer-post-actions">
+          <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
+            <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i>
+            <span>Thích</span>
+          </button>
+          <button class="action-btn" (click)="sharePost()">
+            <i class="bi bi-send"></i>
+            <span>Chia sẻ</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="viewer-comments-list">
+        @if (comments.length === 0) {
+          <p class="no-comments-text">Chưa có bình luận nào. Hãy chia sẻ ý kiến của bạn!</p>
+        } @else {
+          @for (comment of comments; track comment.id) {
+            <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
+          }
+        }
+      </div>
+
+      <div class="viewer-comment-composer">
+        <textarea
+          placeholder="Viết bình luận..."
+          [(ngModel)]="rootCommentText"
+          rows="2"
+          class="comment-textarea"></textarea>
+        <button class="btn-submit-comment" [disabled]="!rootCommentText.trim()" (click)="addRootComment()">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </aside>
   </div>
 }

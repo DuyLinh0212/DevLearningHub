@@ -53,6 +53,7 @@ public class QuizSetsController : ControllerBase
             {
                 Id = qs.Id,
                 CreatedBy = qs.CreatedBy,
+                CreatedByFullName = qs.CreatedByNavigation.FullName ?? qs.CreatedByNavigation.Username,
                 Title = qs.Title,
                 Description = qs.Description,
                 Mode = qs.Mode,
@@ -73,6 +74,7 @@ public class QuizSetsController : ControllerBase
     public async Task<ActionResult<ApiResponse<QuizSetDetailResponse>>> GetQuizSet(Guid id)
     {
         var quizSet = await _db.QuizSets
+            .Include(qs => qs.CreatedByNavigation)
             .Include(qs => qs.QuizSetQuestions)
             .ThenInclude(qsq => qsq.Question)
             .ThenInclude(q => q.QuestionOptions)
@@ -96,6 +98,7 @@ public class QuizSetsController : ControllerBase
         {
             Id = quizSet.Id,
             CreatedBy = quizSet.CreatedBy,
+            CreatedByFullName = quizSet.CreatedByNavigation.FullName ?? quizSet.CreatedByNavigation.Username,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,
@@ -177,7 +180,7 @@ public class QuizSetsController : ControllerBase
         AddNewQuestionsToQuizSet(quizSet.Id, userId, resolvedTopicId, request.Questions);
         await _db.SaveChangesAsync();
 
-        var response = MapQuizSetResponse(quizSet, request.Questions?.Count ?? 0);
+        var response = await MapQuizSetResponseAsync(quizSet, request.Questions?.Count ?? 0);
 
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
@@ -243,7 +246,7 @@ public class QuizSetsController : ControllerBase
 
         var questionCount = request.Questions?.Count
             ?? await _db.QuizSetQuestions.CountAsync(qsq => qsq.QuizSetId == quizSet.Id);
-        var response = MapQuizSetResponse(quizSet, questionCount);
+        var response = await MapQuizSetResponseAsync(quizSet, questionCount);
 
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
@@ -615,12 +618,23 @@ public class QuizSetsController : ControllerBase
         }).ToList();
     }
 
-    private static QuizSetResponse MapQuizSetResponse(QuizSet quizSet, int questionCount)
+    private async Task<QuizSetResponse> MapQuizSetResponseAsync(QuizSet quizSet, int questionCount)
     {
+        var createdByFullName = quizSet.CreatedByNavigation?.FullName ?? quizSet.CreatedByNavigation?.Username;
+        if (string.IsNullOrWhiteSpace(createdByFullName))
+        {
+            createdByFullName = await _db.Users
+                .Where(user => user.Id == quizSet.CreatedBy)
+                .Select(user => user.FullName ?? user.Username)
+                .FirstOrDefaultAsync()
+                ?? string.Empty;
+        }
+
         return new QuizSetResponse
         {
             Id = quizSet.Id,
             CreatedBy = quizSet.CreatedBy,
+            CreatedByFullName = createdByFullName,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,

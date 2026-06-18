@@ -16,6 +16,19 @@ public class PagedResponse<T>
     public int TotalPages { get; set; }
 }
 
+public class CursorPagedResponse<T>
+{
+    public List<T> Items { get; set; } = new();
+
+    public int PageSize { get; set; }
+
+    public DateTime? NextCursor { get; set; }
+
+    public Guid? NextCursorId { get; set; }
+
+    public bool HasMore { get; set; }
+}
+
 // Tag responses and payloads.
 public class TagResponse
 {

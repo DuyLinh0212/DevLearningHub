@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,6 +44,14 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   
   isBookmarked: boolean = false;
   zoomedImageUrl: string | null = null;
+  imageZoom: number = 100;
+  imagePanX: number = 0;
+  imagePanY: number = 0;
+  isImageDragging: boolean = false;
+  private dragStartX: number = 0;
+  private dragStartY: number = 0;
+  private panStartX: number = 0;
+  private panStartY: number = 0;
 
   ngOnInit() {
     // Subscribe once to realtime comment events; handlers filter by postId.
@@ -540,12 +548,79 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   // --- IMAGE ZOOM LIGHTBOX ---
   openImageZoom(url: string) {
     this.zoomedImageUrl = url;
+    this.resetImageZoom();
     document.body.style.overflow = 'hidden';
   }
 
   closeImageZoom() {
     this.zoomedImageUrl = null;
+    this.isImageDragging = false;
     document.body.style.overflow = '';
+  }
+
+  setImageZoom(value: number | string) {
+    const nextZoom = typeof value === 'string' ? Number(value) : value;
+    if (Number.isNaN(nextZoom)) return;
+    this.imageZoom = Math.min(250, Math.max(50, nextZoom));
+
+    if (this.imageZoom <= 100) {
+      this.imagePanX = 0;
+      this.imagePanY = 0;
+    }
+  }
+
+  zoomImageIn() {
+    this.setImageZoom(this.imageZoom + 25);
+  }
+
+  zoomImageOut() {
+    this.setImageZoom(this.imageZoom - 25);
+  }
+
+  resetImageZoom() {
+    this.imageZoom = 100;
+    this.imagePanX = 0;
+    this.imagePanY = 0;
+  }
+
+  startImageDrag(event: MouseEvent) {
+    if (this.imageZoom <= 100) return;
+    event.preventDefault();
+    this.isImageDragging = true;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    this.panStartX = this.imagePanX;
+    this.panStartY = this.imagePanY;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onImageDrag(event: MouseEvent) {
+    if (!this.isImageDragging) return;
+    this.imagePanX = this.panStartX + event.clientX - this.dragStartX;
+    this.imagePanY = this.panStartY + event.clientY - this.dragStartY;
+  }
+
+  @HostListener('document:mouseup')
+  stopImageDrag() {
+    this.isImageDragging = false;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent) {
+    if (!this.zoomedImageUrl) return;
+
+    if (event.key === 'Escape') {
+      this.closeImageZoom();
+    } else if (event.key === '+' || event.key === '=') {
+      event.preventDefault();
+      this.zoomImageIn();
+    } else if (event.key === '-') {
+      event.preventDefault();
+      this.zoomImageOut();
+    } else if (event.key === '0') {
+      event.preventDefault();
+      this.resetImageZoom();
+    }
   }
 
   isPostAuthorComment(comment: any): boolean {
