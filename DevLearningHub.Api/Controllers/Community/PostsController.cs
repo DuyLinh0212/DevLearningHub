@@ -31,20 +31,18 @@ public class PostsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    // List posts with cursor pagination, optional search and tag filter.
-    public async Task<ActionResult<ApiResponse<CursorPagedResponse<PostSummaryResponse>>>> GetPosts(
-        [FromQuery] DateTime? cursor = null,
-        [FromQuery] Guid? cursorId = null,
+    // List posts with pagination, optional search and tag filter.
+    public async Task<ActionResult<ApiResponse<PagedResponse<PostSummaryResponse>>>> GetPosts(
+        [FromQuery] int page = 1,
         [FromQuery] int pageSize = DefaultPageSize,
         [FromQuery] string? search = null,
         [FromQuery] string? tag = null,
         [FromQuery] Guid? authorId = null)
     {
+        page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
 
-        // Moderators and admins can see hidden posts in the list; everyone else only sees visible ones.
-        var includeHidden = IsModerator();
-        var query = _db.Posts.AsNoTracking().Where(p => includeHidden || !p.IsHidden);
+        var query = _db.Posts.AsNoTracking().Where(p => !p.IsHidden);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -63,26 +61,12 @@ public class PostsController : ControllerBase
             query = query.Where(p => p.AuthorId == authorId.Value);
         }
 
-        if (cursor.HasValue)
-        {
-            var cursorValue = cursor.Value;
-            if (cursorId.HasValue)
-            {
-                var stableCursorId = cursorId.Value;
-                query = query.Where(p =>
-                    p.CreatedAt < cursorValue ||
-                    (p.CreatedAt == cursorValue && p.Id.CompareTo(stableCursorId) < 0));
-            }
-            else
-            {
-                query = query.Where(p => p.CreatedAt < cursorValue);
-            }
-        }
+        var totalCount = await query.CountAsync();
 
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
-            .ThenByDescending(p => p.Id)
-            .Take(pageSize + 1)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(p => new PostSummaryResponse
             {
                 Id = p.Id,
@@ -114,23 +98,16 @@ public class PostsController : ControllerBase
             })
             .ToListAsync();
 
-        var hasMore = posts.Count > pageSize;
-        if (hasMore)
-        {
-            posts.RemoveAt(posts.Count - 1);
-        }
-
-        var lastPost = posts.LastOrDefault();
-        var result = new CursorPagedResponse<PostSummaryResponse>
+        var result = new PagedResponse<PostSummaryResponse>
         {
             Items = posts,
+            TotalCount = totalCount,
+            Page = page,
             PageSize = pageSize,
-            NextCursor = hasMore ? lastPost?.CreatedAt : null,
-            NextCursorId = hasMore ? lastPost?.Id : null,
-            HasMore = hasMore
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
         };
 
-        return Ok(ApiResponse<CursorPagedResponse<PostSummaryResponse>>.Ok(result));
+        return Ok(ApiResponse<PagedResponse<PostSummaryResponse>>.Ok(result));
     }
 
     [HttpGet("{id:guid}")]
@@ -442,11 +419,9 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<List<CommentResponse>>.Fail("Post not found."));
         }
 
-        // Moderators and admins can see hidden comments; everyone else only sees visible ones.
-        var includeHidden = IsModerator();
         var comments = await _db.Comments
             .AsNoTracking()
-            .Where(c => c.PostId == id && (includeHidden || !c.IsHidden))
+            .Where(c => c.PostId == id && !c.IsHidden)
             .OrderBy(c => c.CreatedAt)
             .Select(c => new CommentResponse
             {

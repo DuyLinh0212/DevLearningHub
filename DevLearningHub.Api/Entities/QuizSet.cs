@@ -25,8 +25,6 @@ public partial class QuizSet
 
     public string? Level { get; set; }
 
-    public bool AllowedCopy { get; set; }
-
     public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual ICollection<QuizSession> QuizSessions { get; set; } = new List<QuizSession>();
