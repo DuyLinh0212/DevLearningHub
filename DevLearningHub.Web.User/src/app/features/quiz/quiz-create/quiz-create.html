@@ -13,6 +13,20 @@
       </div>
       }
 
+      @if (importFeedback) {
+      <div class="quiz-form-message success">
+        <i class="bi bi-check-circle"></i>
+        <span>{{ importFeedback }}</span>
+      </div>
+      }
+
+      @if (importError) {
+      <div class="quiz-form-message error">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span>{{ importError }}</span>
+      </div>
+      }
+
       @if (currentStep === 1) {
       <div class="create-header-row">
         <a routerLink="/quiz-bank" class="btn-back-arrow"><i class="bi bi-chevron-left"></i></a>
@@ -91,6 +105,17 @@
               <span class="switch-slider"></span>
             </label>
           </div>
+
+          <div class="setting-toggle-row">
+            <div class="toggle-text-left">
+              <h4>Cho phép sao chép bộ đề</h4>
+              <p>Tắt tùy chọn này nếu bạn không muốn người khác copy bộ đề của mình</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="quizMeta.allowedCopy">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       }
@@ -103,6 +128,9 @@
           <p>Thêm mới, nhập nội dung câu hỏi và thiết lập đáp án chính xác cho bộ đề: <strong class="text-purple">{{ quizMeta.title }}</strong></p>
         </div>
         <div class="header-action-buttons">
+          <button class="btn-secondary-action" type="button" (click)="openImportModal()">
+            <i class="bi bi-upload"></i> Import đề
+          </button>
           <button class="btn-secondary-action spacing-right-btn" [disabled]="isSaving" (click)="saveDraft()">
             {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
           </button>
@@ -200,6 +228,74 @@
       }
 
     </div>
+
+    @if (isImportModalOpen) {
+    <div class="modal-overlay import-modal-overlay" (click)="closeImportModal()">
+      <div class="modal-box import-modal-box" (click)="$event.stopPropagation()">
+        <div class="import-modal-header">
+          <div>
+            <h3>Nhập Câu Hỏi Hàng Loạt</h3>
+            <p>Thêm câu hỏi từ tệp JSON, CSV hoặc Excel để điền nhanh cho bộ đề.</p>
+          </div>
+          <button type="button" class="btn-icon-close" (click)="closeImportModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="import-guide-box">
+          <div class="import-guide-column">
+            <h4><i class="bi bi-file-earmark-spreadsheet"></i> Excel (.xlsx, .xls)</h4>
+            <ul>
+              <li><strong>Cột nội dung câu hỏi:</strong> Nội dung câu hỏi</li>
+              <li><strong>Cột topicId:</strong> Mã chủ đề</li>
+              <li><strong>Cột level:</strong> Dễ/Trung bình/Khó</li>
+              <li><strong>Cột A, B, C, D:</strong> Các đáp án</li>
+              <li><strong>Cột đáp án đúng:</strong> A/B/C/D hoặc 0/1/2/3</li>
+              <li><strong>Cột giải thích:</strong> Giải thích (tùy chọn)</li>
+            </ul>
+          </div>
+          <div class="import-guide-column">
+            <h4><i class="bi bi-filetype-json"></i> JSON</h4>
+            <ul>
+              <li>Mảng câu hỏi hoặc object có thuộc tính <strong>questions</strong></li>
+              <li><strong>content:</strong> Nội dung câu hỏi</li>
+              <li><strong>topicId:</strong> Mã chủ đề</li>
+              <li><strong>level:</strong> beginner/intermediate/advanced</li>
+              <li><strong>options:</strong> Mảng đáp án với <strong>content</strong> và <strong>isCorrect</strong></li>
+              <li><strong>explanation:</strong> Giải thích (tùy chọn)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="import-drop-zone"
+          [class.drag-active]="isImportDragActive"
+          (click)="fileInputStep2.click()"
+          (dragover)="onImportDragOver($event)"
+          (dragleave)="onImportDragLeave($event)"
+          (drop)="onImportDrop($event, fileInputStep2)"
+        >
+          <input #fileInputStep2 type="file" accept=".json,.xlsx,.xls,.csv" class="hidden-file-input" (change)="onQuestionFileSelected($event)">
+          <i class="bi bi-cloud-arrow-up"></i>
+          <h4>Chọn hoặc kéo thả tệp tại đây</h4>
+          <p>JSON hoặc Excel (5MB)</p>
+          @if (selectedImportFileName) {
+            <span class="import-file-name">{{ selectedImportFileName }}</span>
+          }
+        </div>
+
+        <div class="import-modal-footer">
+          <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('csv')">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Mẫu CSV
+          </button>
+          <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('json')">
+            <i class="bi bi-filetype-json"></i> Mẫu JSON
+          </button>
+          <button class="btn-primary-action" type="button" (click)="closeImportModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+    }
 
   @if (isPreviewModalOpen) {
   <div class="modal-overlay">

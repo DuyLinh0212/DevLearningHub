@@ -186,8 +186,11 @@
   </main>
 
   @if (isQuestionModalOpen) {
-  <div class="modal-overlay">
-    <div class="modal-box admin-large-modal">
+  <div class="modal-overlay" (click)="closeQuestionModal()">
+    <div class="modal-box admin-large-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-modal-close" (click)="closeQuestionModal()" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
       <h3>{{ isEditingQuestion ? 'Cập nhật câu hỏi #' + shortenId(editingQuestionId) : 'Tạo câu hỏi mới' }}</h3>
 
       <div class="admin-modal-form-body">
@@ -256,8 +259,11 @@
   }
 
   @if (isAssignModalOpen) {
-  <div class="modal-overlay">
-    <div class="modal-box admin-large-modal">
+  <div class="modal-overlay" (click)="closeAssignModal()">
+    <div class="modal-box admin-large-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-modal-close" (click)="closeAssignModal()" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
       <h3>Gán Câu hỏi vào bộ đề: <span style="color: #a855f7;">{{ selectedQuizSet?.title }}</span></h3>
       <p style="font-size: 0.8rem; color: var(--text-muted-dark); margin-top: -8px; margin-bottom: 16px;">
         Tích chọn các câu hỏi dưới ngân hàng để thêm vào bộ đề phòng thi này. Dữ liệu sẽ tự động đồng bộ cấu trúc.
@@ -309,8 +315,11 @@
   }
 
   @if (isQuizSetModalOpen) {
-  <div class="modal-overlay">
-    <div class="modal-box admin-large-modal">
+  <div class="modal-overlay" (click)="closeQuizSetModal()">
+    <div class="modal-box admin-large-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-modal-close" (click)="closeQuizSetModal()" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
       <h3>{{ isEditingQuizSet ? 'Cập nhật thông số bộ đề' : 'Tạo bộ đề thi mới' }}</h3>
 
       <div class="admin-modal-form-body" style="margin-top: 16px;">
@@ -366,8 +375,11 @@
   }
 
   @if (isImportModalOpen) {
-  <div class="modal-overlay">
-    <div class="modal-box admin-large-modal import-modal">
+  <div class="modal-overlay" (click)="closeImportModal()">
+    <div class="modal-box admin-large-modal import-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-modal-close" (click)="closeImportModal()" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
       <h3>Nhập Câu Hỏi Hàng Loạt</h3>
       
       <div class="import-guide-section" style="margin-top: 16px; padding: 16px; background: var(--bg-nested); border-radius: 8px; border: 1px solid var(--border-nested);">

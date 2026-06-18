@@ -95,6 +95,7 @@ loadQuizzes() {
           attempts: quiz.attempts || 0,
           statusClass: quiz.statusClass,
           status: quiz.status,
+          allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
           updated: 'Mới cập nhật'
         };
       });
@@ -163,5 +164,34 @@ loadQuizzes() {
   compareIds(id1: any, id2: any): boolean {
     if (!id1 || !id2) return false;
     return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
+  }
+
+  copyQuiz(quiz: any, event: Event) {
+    event.stopPropagation();
+
+    if (quiz.statusClass !== 'public') {
+      alert('Chỉ có thể sao chép bộ đề đã phát hành.');
+      return;
+    }
+
+    if (quiz.allowedCopy === false) {
+      alert('Người tạo đã chặn sao chép bộ đề này.');
+      return;
+    }
+
+    if (!confirm(`Bạn muốn sao chép bộ đề "${quiz.title}"?`)) {
+      return;
+    }
+
+    this.http.post<any>(`/api/quiz-sets/${quiz.id}/copy`, {}).subscribe({
+      next: () => {
+        alert('Đã sao chép bộ đề thành công!');
+        this.loadQuizzes();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Không thể sao chép bộ đề này.');
+      }
+    });
   }
 }

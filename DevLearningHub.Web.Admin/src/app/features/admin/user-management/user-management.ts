@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
@@ -54,6 +55,15 @@ export class UserManagementComponent implements OnInit {
   };
 
   rolesList = ['Admin', 'Moderator', 'User'];
+
+  // Permissions Modal
+  isPermissionsModalOpen = false;
+  isLoadingPermissions = false;
+  isSavingPermissions = false;
+  permissionCatalog: { module: string; permissions: { id: string; name: string; description?: string }[] }[] = [];
+  userPermissionsData: { roles: string[]; rolePermissions: string[]; grants: string[]; denies: string[]; effective: string[] } | null = null;
+  initialOverrides: Record<string, 'grant' | 'deny' | 'inherit'> = {};
+  localOverrides: Record<string, 'grant' | 'deny' | 'inherit'> = {};
 
   ngOnInit() {
     this.loadUsers();
@@ -319,5 +329,120 @@ export class UserManagementComponent implements OnInit {
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
+  }
+
+  // --- PERMISSIONS ---
+
+  openPermissionsModal(user: any) {
+    this.selectedUser = user;
+    this.isPermissionsModalOpen = true;
+    this.isLoadingPermissions = true;
+    this.permissionCatalog = [];
+    this.userPermissionsData = null;
+    this.initialOverrides = {};
+    this.localOverrides = {};
+    this.cdr.detectChanges();
+
+    forkJoin({
+      catalog: this.http.get<any>('/api/admin/permissions'),
+      userPerms: this.http.get<any>(`/api/admin/users/${user.id}/permissions`)
+    }).subscribe({
+      next: ({ catalog, userPerms }) => {
+        this.permissionCatalog = catalog?.data || [];
+        this.userPermissionsData = userPerms?.data || null;
+
+        if (this.userPermissionsData) {
+          for (const g of this.userPermissionsData.grants) {
+            this.initialOverrides[g] = 'grant';
+          }
+          for (const d of this.userPermissionsData.denies) {
+            this.initialOverrides[d] = 'deny';
+          }
+        }
+        this.localOverrides = { ...this.initialOverrides };
+        this.isLoadingPermissions = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải quyền hạn:', err);
+        this.isLoadingPermissions = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closePermissionsModal() {
+    this.isPermissionsModalOpen = false;
+    this.selectedUser = null;
+    this.permissionCatalog = [];
+    this.userPermissionsData = null;
+    this.initialOverrides = {};
+    this.localOverrides = {};
+    this.cdr.detectChanges();
+  }
+
+  getPermissionLocalState(permName: string): 'grant' | 'deny' | 'inherit' {
+    return this.localOverrides[permName] || 'inherit';
+  }
+
+  isPermissionFromRole(permName: string): boolean {
+    return this.userPermissionsData?.rolePermissions?.includes(permName) ?? false;
+  }
+
+  setPermissionLocalState(permName: string, state: 'grant' | 'deny' | 'inherit') {
+    if (state === 'inherit') {
+      delete this.localOverrides[permName];
+    } else {
+      this.localOverrides[permName] = state;
+    }
+    this.cdr.detectChanges();
+  }
+
+  hasPermissionChanges(): boolean {
+    const allKeys = new Set([...Object.keys(this.initialOverrides), ...Object.keys(this.localOverrides)]);
+    for (const key of allKeys) {
+      const initial = this.initialOverrides[key] || 'inherit';
+      const local = this.localOverrides[key] || 'inherit';
+      if (initial !== local) return true;
+    }
+    return false;
+  }
+
+  savePermissions() {
+    if (!this.selectedUser) return;
+
+    const changedItems: { permission: string; state: string }[] = [];
+    const allKeys = new Set([...Object.keys(this.initialOverrides), ...Object.keys(this.localOverrides)]);
+    for (const key of allKeys) {
+      const initial = this.initialOverrides[key] || 'inherit';
+      const local = this.localOverrides[key] || 'inherit';
+      if (initial !== local) {
+        changedItems.push({ permission: key, state: local });
+      }
+    }
+
+    if (changedItems.length === 0) {
+      this.closePermissionsModal();
+      return;
+    }
+
+    this.isSavingPermissions = true;
+    this.cdr.detectChanges();
+
+    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: changedItems }).subscribe({
+      next: () => {
+        this.isSavingPermissions = false;
+        alert('Cập nhật quyền hạn thành công!');
+        this.closePermissionsModal();
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.isSavingPermissions = false;
+        console.error('Lỗi lưu quyền hạn:', err);
+        const msg = err?.error?.message || 'Không thể lưu quyền hạn!';
+        alert(msg);
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

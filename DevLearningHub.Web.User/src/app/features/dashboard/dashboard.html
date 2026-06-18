@@ -63,19 +63,61 @@
     </section>
 
     <section class="leaderboard-box">
-      <h2>Bảng xếp hạng hệ thống</h2>
-      <p class="section-subtitle">Bảng vinh danh học viên có điểm kinh nghiệm (XP) cao nhất</p>
+      <div class="leaderboard-heading">
+        <div>
+          <h2>Bảng xếp hạng hệ thống</h2>
+          <p class="section-subtitle">Vinh danh học viên có điểm kinh nghiệm (XP) cao nhất trên DevLearningHub</p>
+        </div>
+        <div class="leaderboard-badge">
+          <i class="bi bi-trophy-fill"></i>
+          <span>Top XP</span>
+        </div>
+      </div>
+
+      <div class="leaderboard-hero">
+        <div class="leaderboard-hero-card crown">
+          <span class="hero-label">#1</span>
+          <strong>{{ leaderboard[0]?.name || 'Đang cập nhật' }}</strong>
+          <p>{{ leaderboard[0]?.xp || 0 }} XP</p>
+        </div>
+        <div class="leaderboard-hero-card silver">
+          <span class="hero-label">#2</span>
+          <strong>{{ leaderboard[1]?.name || 'Đang cập nhật' }}</strong>
+          <p>{{ leaderboard[1]?.xp || 0 }} XP</p>
+        </div>
+        <div class="leaderboard-hero-card bronze">
+          <span class="hero-label">#3</span>
+          <strong>{{ leaderboard[2]?.name || 'Đang cập nhật' }}</strong>
+          <p>{{ leaderboard[2]?.xp || 0 }} XP</p>
+        </div>
+      </div>
+
+      @if (userRank > 0) {
+      <div class="leaderboard-current-user">
+        <div class="current-user-copy">
+          <span class="current-user-label">Vị trí của bạn</span>
+          <strong>Hạng #{{ userRank }}</strong>
+        </div>
+        <div class="current-user-stats">
+          <span><i class="bi bi-gem"></i> {{ userXpPoints }} XP</span>
+          <span><i class="bi bi-check2-circle"></i> {{ averageScore.toFixed(1) }} điểm TB</span>
+        </div>
+      </div>
+      }
 
       <div class="leaderboard-list">
         @for (user of leaderboard; track user.rank) {
-        <div class="leader-item">
+        <div class="leader-item" [class.is-top]="user.rank <= 3">
           <span class="rank-number" [class.top-rank]="user.rank <= 3">#{{ user.rank }}</span>
-          <img [src]="user.avatar" alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-nested);">
+          <div class="leader-avatar-wrap">
+            <img [src]="user.avatar" alt="Avatar">
+            <span class="leader-avatar-ring" [class.top-ring]="user.rank <= 3"></span>
+          </div>
           <div class="user-info">
             <h4>{{ user.name }}</h4>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Thành viên DevLearningHub</p>
+            <p>Thành viên DevLearningHub</p>
           </div>
-          <span class="xp-value" style="display: flex; align-items: center; gap: 4px; font-weight: 700; color: #f59e0b;">
+          <span class="xp-value">
             <i class="bi bi-award-fill"></i> {{ user.xp }}
           </span>
         </div>

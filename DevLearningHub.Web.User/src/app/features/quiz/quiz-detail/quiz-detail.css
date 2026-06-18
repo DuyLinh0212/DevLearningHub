@@ -89,6 +89,74 @@
   box-shadow: var(--shadow-hover-purple);
 }
 
+.copy-privacy-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 2px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.08), rgba(14, 165, 233, 0.08));
+  border: 1px solid rgba(109, 40, 217, 0.18);
+}
+
+.copy-privacy-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.copy-privacy-text p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted-dark);
+  line-height: 1.4;
+}
+
+.copy-privacy-switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.copy-privacy-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.copy-privacy-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #2d2d32;
+  transition: 0.2s;
+}
+
+.copy-privacy-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transition: 0.2s;
+}
+
+.copy-privacy-switch input:checked + .copy-privacy-slider {
+  background: linear-gradient(135deg, #a855f7, #0ea5e9);
+}
+
+.copy-privacy-switch input:checked + .copy-privacy-slider::before {
+  transform: translateX(22px);
+  background: #ffffff;
+}
+
 .detail-card h3 {
   font-size: 1.15rem;
   font-weight: 700;

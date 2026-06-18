@@ -104,12 +104,15 @@
                   </td>
                   <td>
                     <div class="user-table-actions">
-                      <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
+                      <button class="btn-role" (click)="openRoleModal(user)" title="Đổi vai trò">
                         <i class="bi bi-person-badge-fill"></i>
                       </button>
-                      <button class="btn-lock" 
-                              [class.btn-unlock-act]="user.isLocked" 
-                              (click)="toggleLock(user)" 
+                      <button class="btn-perm" (click)="openPermissionsModal(user)" title="Quản lý quyền chi tiết">
+                        <i class="bi bi-shield-check"></i>
+                      </button>
+                      <button class="btn-lock"
+                              [class.btn-unlock-act]="user.isLocked"
+                              (click)="toggleLock(user)"
                               [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
                         <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
                       </button>
@@ -207,6 +210,101 @@
       <div class="modal-actions-row" style="margin-top: 24px;">
         <button class="btn-modal-cancel" (click)="closeRoleModal()">Hủy bỏ</button>
         <button class="btn-modal-confirm" (click)="saveRole()">Cập nhật</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Permissions Modal -->
+  @if (isPermissionsModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box perm-modal">
+      <div class="perm-modal-header">
+        <h3><i class="bi bi-shield-check" style="color:var(--color-purple);margin-right:8px;"></i>Quản lý quyền chi tiết</h3>
+        <div class="perm-user-meta">
+          <span class="perm-user-label">Người dùng: <strong>{{ selectedUser?.username }}</strong></span>
+          @if (userPermissionsData?.roles?.length) {
+            <span class="perm-roles-wrap">
+              @for (r of userPermissionsData!.roles; track r) {
+                <span class="role-badge"
+                      [class.role-admin]="r === 'Admin'"
+                      [class.role-moderator]="r === 'Moderator'"
+                      [class.role-user]="r === 'User'">{{ r }}</span>
+              }
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (isLoadingPermissions) {
+        <div class="perm-loading">
+          <i class="bi bi-arrow-repeat"></i> Đang tải dữ liệu quyền hạn...
+        </div>
+      } @else if (permissionCatalog.length === 0) {
+        <div class="perm-loading">Không có dữ liệu quyền hạn.</div>
+      } @else {
+        <div class="perm-legend">
+          <span class="legend-item"><i class="bi bi-shield-fill-check legend-icon role-icon"></i> Từ vai trò</span>
+          <span class="legend-item"><span class="legend-dot grant-dot"></span> Cấp thêm</span>
+          <span class="legend-item"><span class="legend-dot deny-dot"></span> Từ chối</span>
+        </div>
+
+        <div class="perm-scroll-body">
+          @for (mod of permissionCatalog; track mod.module) {
+            <div class="perm-module-section">
+              <div class="perm-module-title">{{ mod.module }}</div>
+              @for (perm of mod.permissions; track perm.name) {
+                <div class="perm-item"
+                     [class.perm-has-override]="getPermissionLocalState(perm.name) !== 'inherit'">
+                  <div class="perm-info">
+                    <div class="perm-name">
+                      {{ perm.name }}
+                      @if (isPermissionFromRole(perm.name)) {
+                        <i class="bi bi-shield-fill-check perm-role-icon" title="Quyền này được cấp từ vai trò"></i>
+                      }
+                    </div>
+                    @if (perm.description) {
+                      <div class="perm-desc">{{ perm.description }}</div>
+                    }
+                  </div>
+                  <div class="perm-state-btns">
+                    <button class="perm-btn grant"
+                            [class.active]="getPermissionLocalState(perm.name) === 'grant'"
+                            (click)="setPermissionLocalState(perm.name, 'grant')"
+                            title="Cấp quyền này">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="perm-btn inherit"
+                            [class.active]="getPermissionLocalState(perm.name) === 'inherit'"
+                            (click)="setPermissionLocalState(perm.name, 'inherit')"
+                            title="Kế thừa từ vai trò (mặc định)">
+                      <i class="bi bi-dash-lg"></i>
+                    </button>
+                    <button class="perm-btn deny"
+                            [class.active]="getPermissionLocalState(perm.name) === 'deny'"
+                            (click)="setPermissionLocalState(perm.name, 'deny')"
+                            title="Từ chối quyền này">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="modal-actions-row perm-modal-footer">
+        <button class="btn-modal-cancel" (click)="closePermissionsModal()">Đóng</button>
+        <button class="btn-modal-confirm purple"
+                (click)="savePermissions()"
+                [disabled]="isLoadingPermissions || isSavingPermissions || !hasPermissionChanges()">
+          @if (isSavingPermissions) {
+            <i class="bi bi-arrow-repeat"></i> Đang lưu...
+          } @else {
+            Lưu thay đổi
+          }
+        </button>
       </div>
     </div>
   </div>

@@ -561,6 +561,29 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
   color: var(--text-main);
   box-sizing: border-box;
+  position: relative;
+}
+
+.btn-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--bg-card-border);
+  background: var(--bg-nested);
+  color: var(--text-muted);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.btn-modal-close:hover {
+  color: var(--text-main);
+  background: var(--bg-card-border);
 }
 
 .admin-large-modal {
@@ -575,6 +598,10 @@
   max-width: 98% !important;
   max-height: 90vh !important;
   overflow-y: auto !important;
+}
+
+.import-modal h3 {
+  padding-right: 56px;
 }
 
 .import-table-wrapper {
