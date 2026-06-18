@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -29,6 +29,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   postId: string = '';
   post: any = null;
   comments: any[] = [];
+  visibleComments: any[] = [];
   
   loading: boolean = false;
   currentUserId: string = '';
@@ -44,6 +45,14 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   
   isBookmarked: boolean = false;
   zoomedImageUrl: string | null = null;
+  imageZoomLevel = 1;
+  imageTranslateX = 0;
+  imageTranslateY = 0;
+  isImageDragging = false;
+  private imageDragStartX = 0;
+  private imageDragStartY = 0;
+  private imageDragBaseX = 0;
+  private imageDragBaseY = 0;
 
   ngOnInit() {
     // Subscribe once to realtime comment events; handlers filter by postId.
@@ -72,6 +81,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
     this.realtime.leaveCurrentPost();
+    document.body.style.overflow = '';
   }
 
   // --- REALTIME COMMENT HANDLERS ---
@@ -102,6 +112,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
 
     this.refreshCommentCount();
+    this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
     this.cdr.detectChanges();
   }
 
@@ -111,6 +122,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     const existing = this.findCommentById(this.comments, comment.id);
     if (existing) {
       this.applyCommentFields(existing, comment);
+      this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
       this.cdr.detectChanges();
     }
   }
@@ -127,6 +139,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
 
     this.refreshCommentCount();
+    this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
     this.cdr.detectChanges();
   }
 
@@ -171,6 +184,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     if (this.post) {
       this.post.commentCount = this.countComments(this.comments);
     }
+  }
+  private pruneRepliesOfHiddenComments(comments: any[]): any[] {
+    return (comments || []).map(comment => ({
+      ...comment,
+      replies: comment.isHidden ? [] : this.pruneRepliesOfHiddenComments(comment.replies || [])
+    }));
   }
 
   loadCurrentUser() {
@@ -222,12 +241,14 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         const raw = res || [];
         const arr = Array.isArray(raw) ? raw : [];
         this.comments = this.staffUserService.annotateComments(arr);
+        this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi tải bình luận:', err);
         this.comments = [];
+        this.visibleComments = [];
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -537,15 +558,95 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     return `<p>${escaped}</p>`;
   }
 
+  getExcerpt(bodyMarkdown: string): string {
+    if (!bodyMarkdown) return '';
+    let text = bodyMarkdown
+      .replace(/#+\s+/g, '')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+      .trim();
+
+    if (text.length > 240) {
+      return text.substring(0, 240) + '...';
+    }
+    return text;
+  }
+
   // --- IMAGE ZOOM LIGHTBOX ---
   openImageZoom(url: string) {
     this.zoomedImageUrl = url;
+    this.resetImageTransform();
     document.body.style.overflow = 'hidden';
   }
 
   closeImageZoom() {
     this.zoomedImageUrl = null;
+    this.resetImageTransform();
     document.body.style.overflow = '';
+  }
+
+  zoomImage(delta: number, event?: Event) {
+    if (event) event.stopPropagation();
+    this.imageZoomLevel = Math.max(0.5, Math.min(3, +(this.imageZoomLevel + delta).toFixed(2)));
+    if (this.imageZoomLevel <= 1) {
+      this.imageTranslateX = 0;
+      this.imageTranslateY = 0;
+    }
+  }
+
+  resetImageZoom(event?: Event) {
+    if (event) event.stopPropagation();
+    this.resetImageTransform();
+  }
+
+  resetImageTransform() {
+    this.imageZoomLevel = 1;
+    this.imageTranslateX = 0;
+    this.imageTranslateY = 0;
+    this.isImageDragging = false;
+  }
+
+  get imageTransform(): string {
+    return `translate(${this.imageTranslateX}px, ${this.imageTranslateY}px) scale(${this.imageZoomLevel})`;
+  }
+
+  startImageDrag(event: MouseEvent | TouchEvent) {
+    if (this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = this.getDragPoint(event);
+    this.isImageDragging = true;
+    this.imageDragStartX = point.x;
+    this.imageDragStartY = point.y;
+    this.imageDragBaseX = this.imageTranslateX;
+    this.imageDragBaseY = this.imageTranslateY;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onImageDragMove(event: MouseEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:touchmove', ['$event'])
+  onImageTouchMove(event: TouchEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:mouseup')
+  @HostListener('document:touchend')
+  stopImageDrag() { this.isImageDragging = false; }
+
+  private moveImageDrag(event: MouseEvent | TouchEvent) {
+    if (!this.isImageDragging || this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    const point = this.getDragPoint(event);
+    this.imageTranslateX = this.imageDragBaseX + point.x - this.imageDragStartX;
+    this.imageTranslateY = this.imageDragBaseY + point.y - this.imageDragStartY;
+  }
+
+  private getDragPoint(event: MouseEvent | TouchEvent): { x: number; y: number } {
+    if ('touches' in event && event.touches.length > 0) return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    const mouseEvent = event as MouseEvent;
+    return { x: mouseEvent.clientX, y: mouseEvent.clientY };
   }
 
   isPostAuthorComment(comment: any): boolean {

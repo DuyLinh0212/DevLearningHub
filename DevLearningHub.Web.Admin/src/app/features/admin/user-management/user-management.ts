@@ -2,6 +2,8 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { forkJoin } from "rxjs";
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
@@ -15,6 +17,7 @@ import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 export class UserManagementComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
   public mobileMenu = inject(MobileMenuService);
 
   users: any[] = [];
@@ -52,6 +55,13 @@ export class UserManagementComponent implements OnInit {
   lockForm = {
     reason: ''
   };
+  // Permissions modal state
+  isPermissionModalOpen = false;
+  isPermissionLoading = false;
+  isPermissionSaving = false;
+  permissionModules: any[] = [];
+  userPermissions: any = null;
+  permissionStateMap: Record<string, "inherit" | "grant" | "deny"> = {};
 
   rolesList = ['Admin', 'Moderator', 'User'];
 
@@ -316,8 +326,85 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  openPermissionModal(user: any) {
+    this.selectedUser = user;
+    this.isPermissionModalOpen = true;
+    this.isPermissionLoading = true;
+    this.permissionStateMap = {};
+    this.userPermissions = null;
+    this.permissionModules = [];
+
+    forkJoin({
+      catalog: this.http.get<any>("/api/admin/permissions"),
+      userPerms: this.http.get<any>(`/api/admin/users/${user.id}/permissions`)
+    }).subscribe({
+      next: ({ catalog, userPerms }) => {
+        const catData = catalog?.data ?? catalog;
+        const permsData = userPerms?.data ?? userPerms;
+
+        this.permissionModules = Array.isArray(catData) ? catData : [];
+        this.userPermissions = permsData;
+
+        const stateMap: Record<string, "inherit" | "grant" | "deny"> = {};
+        for (const mod of this.permissionModules) {
+          for (const p of mod.permissions) {
+            stateMap[p.name] = "inherit";
+          }
+        }
+
+        if (permsData) {
+          const { grants = [], denies = [] } = permsData;
+          for (const name of grants) { stateMap[name] = "grant"; }
+          for (const name of denies) { stateMap[name] = "deny"; }
+        }
+
+        this.permissionStateMap = stateMap;
+        this.isPermissionLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error("Lỗi tải quyền chi tiết:", err);
+        alert("Không thể tải danh sách quyền.");
+        this.closePermissionModal();
+      }
+    });
+  }
+
+  closePermissionModal() {
+    this.isPermissionModalOpen = false;
+    this.permissionModules = [];
+    this.userPermissions = null;
+    this.permissionStateMap = {};
+    this.cdr.detectChanges();
+  }
+
+  savePermissions() {
+    if (!this.selectedUser) return;
+    this.isPermissionSaving = true;
+    const allItems = Object.entries(this.permissionStateMap)
+      .map(([permission, state]) => ({ permission, state }));
+
+    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: allItems }).subscribe({
+      next: () => {
+        this.isPermissionSaving = false;
+        alert("Đã cập nhật phân quyền. Quyền mới có hiệu lực sau khi user đăng nhập lại.");
+        this.closePermissionModal();
+      },
+      error: (err) => {
+        this.isPermissionSaving = false;
+        console.error("Lỗi lưu quyền:", err);
+        alert("Không thể lưu phân quyền.");
+      }
+    });
+  }
+
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
   }
+
+  viewUserProfile(userId: string) {
+    this.router.navigate(['/admin/users', userId], { queryParams: { returnUrl: this.router.url } });
+  }
 }
+

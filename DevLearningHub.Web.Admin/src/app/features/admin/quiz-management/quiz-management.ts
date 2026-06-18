@@ -270,29 +270,58 @@ loadQuizSets() {
     return index;
   }
 
-saveQuestion() {
-    const mappedOptions = this.questionForm.options.map((opt, idx) => ({
-      content: opt.trim(),
-      isCorrect: idx === this.questionForm.correctIndex,
-      orderIndex: idx
-    }));
+  saveQuestion() {
+    const content = this.questionForm.text.trim();
+    const normalizedLevel = this.normalizeLevel(this.questionForm.level);
+    const options = this.questionForm.options.map(opt => (opt || '').trim());
+
+    if (!this.questionForm.topicId) {
+      alert('Vui lòng chọn chủ đề cho câu hỏi.');
+      return;
+    }
+
+    if (!content) {
+      alert('Vui lòng nhập nội dung câu hỏi.');
+      return;
+    }
+
+    if (options.some(opt => !opt)) {
+      alert('Vui lòng nhập đầy đủ tất cả phương án trả lời.');
+      return;
+    }
+
+    if (this.questionForm.correctIndex < 0 || this.questionForm.correctIndex >= options.length) {
+      alert('Vui lòng chọn đáp án đúng hợp lệ.');
+      return;
+    }
 
     const payload = {
       topicId: this.questionForm.topicId,
-      content: this.questionForm.text.trim(),
-      level: this.questionForm.level,
-      explanation: this.questionForm.explanation,
+      content,
+      level: normalizedLevel,
+      points: this.questionForm.points,
+      explanation: this.questionForm.explanation?.trim() || '',
       isActive: true,
-      options: mappedOptions
+      options: options.map((opt, idx) => ({
+        content: opt,
+        isCorrect: idx === this.questionForm.correctIndex,
+        orderIndex: idx
+      }))
     };
 
-    const req = this.isEditingQuestion 
+    const req = this.isEditingQuestion
       ? this.http.put(`/api/questions/${this.editingQuestionId}`, payload)
       : this.http.post('/api/questions', payload);
 
-    req.subscribe(() => {
-      this.loadQuestions();
-      this.closeQuestionModal();
+    req.subscribe({
+      next: () => {
+        this.loadQuestions();
+        this.closeQuestionModal();
+      },
+      error: (err) => {
+        console.error('Lỗi lưu câu hỏi:', err, payload);
+        alert(err.error?.message || err.error?.title || 'Không lưu được câu hỏi. Kiểm tra lại dữ liệu và thử lại.');
+      }
     });
   }
 

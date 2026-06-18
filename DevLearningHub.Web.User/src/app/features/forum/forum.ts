@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { ForumService } from '../../core/services/forum.service';
   templateUrl: './forum.html',
   styleUrl: './forum.css'
 })
-export class ForumComponent implements OnInit {
+export class ForumComponent implements OnInit, OnDestroy {
   private forumService = inject(ForumService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -33,6 +33,16 @@ export class ForumComponent implements OnInit {
   
   loading: boolean = false;
   tagsLoading: boolean = false;
+  zoomedImageUrl: string | null = null;
+  selectedLightboxPost: any = null;
+  imageZoomLevel = 1;
+  imageTranslateX = 0;
+  imageTranslateY = 0;
+  isImageDragging = false;
+  private imageDragStartX = 0;
+  private imageDragStartY = 0;
+  private imageDragBaseX = 0;
+  private imageDragBaseY = 0;
 
   ngOnInit() {
     // Lắng nghe queryParams để hỗ trợ quay lại/đi tiếp bằng browser history
@@ -57,6 +67,10 @@ export class ForumComponent implements OnInit {
   onDocumentClick() {
     this.activePostMenuId = null;
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy() {
+    document.body.style.overflow = '';
   }
 
   loadPosts() {
@@ -272,5 +286,87 @@ export class ForumComponent implements OnInit {
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
+  }
+
+  openImageZoom(url: string, post?: any) {
+    this.zoomedImageUrl = url;
+    this.selectedLightboxPost = post || null;
+    this.resetImageTransform();
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageZoom() {
+    this.zoomedImageUrl = null;
+    this.selectedLightboxPost = null;
+    this.resetImageTransform();
+    document.body.style.overflow = '';
+  }
+
+  zoomImage(delta: number, event?: Event) {
+    if (event) event.stopPropagation();
+    this.imageZoomLevel = Math.max(0.5, Math.min(3, +(this.imageZoomLevel + delta).toFixed(2)));
+    if (this.imageZoomLevel <= 1) {
+      this.imageTranslateX = 0;
+      this.imageTranslateY = 0;
+    }
+  }
+
+  resetImageZoom(event?: Event) {
+    if (event) event.stopPropagation();
+    this.resetImageTransform();
+  }
+
+  resetImageTransform() {
+    this.imageZoomLevel = 1;
+    this.imageTranslateX = 0;
+    this.imageTranslateY = 0;
+    this.isImageDragging = false;
+  }
+
+  get imageTransform(): string {
+    return `translate(${this.imageTranslateX}px, ${this.imageTranslateY}px) scale(${this.imageZoomLevel})`;
+  }
+
+  startImageDrag(event: MouseEvent | TouchEvent) {
+    if (this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = this.getDragPoint(event);
+    this.isImageDragging = true;
+    this.imageDragStartX = point.x;
+    this.imageDragStartY = point.y;
+    this.imageDragBaseX = this.imageTranslateX;
+    this.imageDragBaseY = this.imageTranslateY;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onImageDragMove(event: MouseEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:touchmove', ['$event'])
+  onImageTouchMove(event: TouchEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:mouseup')
+  @HostListener('document:touchend')
+  stopImageDrag() { this.isImageDragging = false; }
+
+  private moveImageDrag(event: MouseEvent | TouchEvent) {
+    if (!this.isImageDragging || this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    const point = this.getDragPoint(event);
+    this.imageTranslateX = this.imageDragBaseX + point.x - this.imageDragStartX;
+    this.imageTranslateY = this.imageDragBaseY + point.y - this.imageDragStartY;
+  }
+
+  private getDragPoint(event: MouseEvent | TouchEvent): { x: number; y: number } {
+    if ('touches' in event && event.touches.length > 0) return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    const mouseEvent = event as MouseEvent;
+    return { x: mouseEvent.clientX, y: mouseEvent.clientY };
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.zoomedImageUrl) {
+      this.closeImageZoom();
+    }
   }
 }

@@ -96,7 +96,8 @@
                   
                   @if (post.imageUrl) {
                     <div class="post-image-container">
-                      <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+                      <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable"
+                           (click)="openImageZoom(post.imageUrl, post)" title="Nhấn để phóng to">
                     </div>
                   }
 
@@ -213,3 +214,36 @@
     </div>
   </div>
 </div>
+
+@if (zoomedImageUrl) {
+  <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">
+    <button class="lightbox-close-btn fb-close-btn" (click)="closeImageZoom()" aria-label="Đóng">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="fb-lightbox-media" (click)="$event.stopPropagation()">
+      <div class="fb-zoom-toolbar" (click)="$event.stopPropagation()">
+        <button type="button" (click)="zoomImage(-0.15, $event)" title="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
+        <input type="range" min="0.5" max="3" step="0.05" [(ngModel)]="imageZoomLevel" aria-label="Mức phóng to ảnh">
+        <button type="button" (click)="zoomImage(0.15, $event)" title="Phóng to"><i class="bi bi-zoom-in"></i></button>
+        <button type="button" (click)="resetImageZoom($event)" title="Về 100%"><i class="bi bi-arrows-fullscreen"></i></button>
+        <span>{{ imageZoomLevel * 100 | number:'1.0-0' }}%</span>
+      </div>
+      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image" [class.is-dragging]="isImageDragging" [style.transform]="imageTransform" (mousedown)="startImageDrag($event)" (touchstart)="startImageDrag($event)">
+    </div>
+
+    <aside class="fb-lightbox-side" (click)="$event.stopPropagation()">
+      <div class="fb-post-mini-header" *ngIf="selectedLightboxPost as viewerPost">
+        <img [src]="viewerPost.author?.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="fb-post-avatar" (error)="onAvatarError($event)">
+        <div class="fb-post-meta">
+          <strong>{{ viewerPost.author?.fullName || viewerPost.author?.username || 'Người dùng' }}</strong>
+          <span>{{ formatRelativeTime(viewerPost.createdAt) }}</span>
+        </div>
+      </div>
+      <div class="fb-lightbox-side-body" *ngIf="selectedLightboxPost as viewerPost">
+        <p class="fb-lightbox-post-title">{{ viewerPost.title || '' }}</p>
+        <p class="fb-lightbox-post-excerpt">{{ getExcerpt(viewerPost.bodyMarkdown) }}</p>
+      </div>
+    </aside>
+  </div>
+}

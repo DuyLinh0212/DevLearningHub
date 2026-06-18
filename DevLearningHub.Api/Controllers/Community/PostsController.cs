@@ -558,7 +558,7 @@ public class PostsController : ControllerBase
             ModeratorId = moderatorId,
             TargetType = CommunityVotes.PostTarget,
             TargetId = post.Id,
-            Action = request.Hidden ? "hide" : "unhide",
+            Action = request.Hidden ? "hide" : "restore",
             Reason = request.Reason?.Trim(),
             CreatedAt = DateTime.Now
         });

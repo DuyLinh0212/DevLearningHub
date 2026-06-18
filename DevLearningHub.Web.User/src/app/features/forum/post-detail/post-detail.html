@@ -1,4 +1,4 @@
-﻿<header class="content-header">
+<header class="content-header">
   <a class="btn-back" routerLink="/forum">
     <i class="bi bi-arrow-left"></i> Quay lại diễn đàn
   </a>
@@ -136,7 +136,7 @@
         @if (comments.length === 0) {
           <p class="no-comments-text">Chưa có bình luận nào. Hãy chia sẻ ý kiến của bạn!</p>
         } @else {
-          @for (comment of comments; track comment.id) {
+          @for (comment of visibleComments; track comment.id) {
             <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
           }
         }
@@ -259,12 +259,65 @@
 
 <!-- Image Zoom Lightbox -->
 @if (zoomedImageUrl) {
-  <div class="image-lightbox-overlay" (click)="closeImageZoom()">
-    <div class="image-lightbox-container" (click)="$event.stopPropagation()">
-      <button class="lightbox-close-btn" (click)="closeImageZoom()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image">
+  <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">
+    <button class="lightbox-close-btn fb-close-btn" (click)="closeImageZoom()" aria-label="Đóng">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="fb-lightbox-media" (click)="$event.stopPropagation()">
+      <div class="fb-zoom-toolbar" (click)="$event.stopPropagation()">
+        <button type="button" (click)="zoomImage(-0.15, $event)" title="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
+        <input type="range" min="0.5" max="3" step="0.05" [(ngModel)]="imageZoomLevel" aria-label="Mức phóng to ảnh">
+        <button type="button" (click)="zoomImage(0.15, $event)" title="Phóng to"><i class="bi bi-zoom-in"></i></button>
+        <button type="button" (click)="resetImageZoom($event)" title="Về 100%"><i class="bi bi-arrows-fullscreen"></i></button>
+        <span>{{ imageZoomLevel * 100 | number:'1.0-0' }}%</span>
+      </div>
+      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image" [class.is-dragging]="isImageDragging" [style.transform]="imageTransform" (mousedown)="startImageDrag($event)" (touchstart)="startImageDrag($event)">
     </div>
+
+    <aside class="fb-lightbox-side" (click)="$event.stopPropagation()">
+      @if (post) {
+        <div class="fb-post-mini-header">
+          <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="fb-post-avatar" (error)="onAvatarError($event)">
+          <div class="fb-post-meta">
+            <strong>{{ post.author.fullName || post.author.username }}</strong>
+            <span>Đăng {{ formatRelativeTime(post.createdAt) }}</span>
+          </div>
+        </div>
+        <div class="fb-lightbox-side-body">
+          <p class="fb-lightbox-post-title">{{ post.title }}</p>
+          <div class="fb-post-text" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
+        </div>
+        <div class="fb-post-mini-metrics">
+          <span><i class="bi bi-heart-fill text-danger"></i> {{ post.upvotes || 0 }}</span>
+          <span>{{ post.commentCount }} bình luận</span>
+        </div>
+
+        <div class="fb-post-mini-actions">
+          <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
+            <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i><span>Thích</span>
+          </button>
+          <button class="action-btn" (click)="closeImageZoom(); scrollToComments()">
+            <i class="bi bi-chat-right-text"></i><span>Bình luận</span>
+          </button>
+        </div>
+
+        <div class="fb-lightbox-comments compact-fb-comments">
+          @if (comments.length === 0) {
+            <p class="no-comments-text">Chưa có bình luận nào.</p>
+          } @else {
+            @for (comment of visibleComments; track comment.id) {
+              <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
+            }
+          }
+        </div>
+
+        <div class="fb-lightbox-comment-box">
+          <textarea placeholder="Viết bình luận..." [(ngModel)]="rootCommentText" rows="1" class="comment-textarea"></textarea>
+          <button class="btn-submit-comment" [disabled]="!rootCommentText.trim()" (click)="addRootComment()"><i class="bi bi-send-fill"></i></button>
+        </div>
+      }
+    </aside>
   </div>
 }
+

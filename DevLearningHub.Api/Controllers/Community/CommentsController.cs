@@ -246,7 +246,7 @@ public class CommentsController : ControllerBase
             ModeratorId = moderatorId,
             TargetType = CommunityVotes.CommentTarget,
             TargetId = comment.Id,
-            Action = request.Hidden ? "hide" : "unhide",
+            Action = request.Hidden ? "hide" : "restore",
             Reason = request.Reason?.Trim(),
             CreatedAt = DateTime.Now
         });

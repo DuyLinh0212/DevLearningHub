@@ -1,4 +1,4 @@
-<div class="dashboard-container">
+﻿<div class="dashboard-container">
   <app-sidebar></app-sidebar>
   <main class="main-content">
 
@@ -72,14 +72,16 @@
                       <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'"
                            [alt]="user.username"
                            class="user-table-avatar"
+                           style="cursor: pointer;"
+                           (click)="viewUserProfile(user.id)"
                            (error)="onAvatarError($event)">
                     </div>
                     <div class="user-name-info">
-                      <span class="user-fullname">{{ user.fullName }}</span>
+                      <span class="user-fullname" style="cursor: pointer;" (click)="viewUserProfile(user.id)">{{ user.fullName }}</span>
                     </div>
                   </td>
                   <td>
-                    <div class="username-txt">{{ user.username }}</div>
+                    <div class="username-txt" style="cursor: pointer;" (click)="viewUserProfile(user.id)">{{ user.username }}</div>
                     <div class="email-txt">{{ user.email }}</div>
                   </td>
                   <td class="xp-cell">
@@ -104,16 +106,19 @@
                   </td>
                   <td>
                     <div class="user-table-actions">
-                      <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
-                        <i class="bi bi-person-badge-fill"></i>
-                      </button>
-                      <button class="btn-lock" 
-                              [class.btn-unlock-act]="user.isLocked" 
-                              (click)="toggleLock(user)" 
-                              [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
-                        <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
-                      </button>
-                    </div>
+                       <button class="btn-view-profile" (click)="viewUserProfile(user.id)" title="Xem trang cá nhân">
+                         <i class="bi bi-person-lines-fill"></i>
+                       </button>
+                       <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
+                         <i class="bi bi-person-badge-fill"></i>
+                       </button>
+                       <button class="btn-lock" 
+                               [class.btn-unlock-act]="user.isLocked" 
+                               (click)="toggleLock(user)" 
+                               [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
+                         <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
+                       </button>
+                     </div>
                   </td>
                 </tr>
               }
@@ -236,3 +241,5 @@
   </div>
   }
 </div>
+
+
