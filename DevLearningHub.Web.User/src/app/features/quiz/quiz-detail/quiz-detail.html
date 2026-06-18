@@ -5,7 +5,6 @@
 </header>
 
 <div class="dashboard-scroll-body">
-
   <div class="detail-page-header">
     <a routerLink="/quiz-bank" class="btn-icon-back">
       <i class="bi bi-chevron-left"></i>
@@ -17,7 +16,6 @@
   </div>
 
   <div class="quiz-detail-layout">
-    <!-- CỘT BÊN TRÁI: THÔNG TIN CHI TIẾT & CHỌN CHẾ ĐỘ -->
     <div class="main-column">
       <div class="detail-card info-card" style="margin-bottom: 24px;">
         <h3>Thông tin bộ đề</h3>
@@ -33,6 +31,13 @@
           <div class="static-display-field text-area-mode">{{ quizDesc }}</div>
         </div>
 
+        @if (showQuizCreator) {
+          <div class="detail-form-group">
+            <label>Người tạo</label>
+            <div class="static-display-field">{{ quizCreatedBy }}</div>
+          </div>
+        }
+
         <div class="detail-form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 0;">
           <div class="detail-form-group" style="margin-bottom: 0;">
             <label>Tổng số câu hỏi</label>
@@ -46,7 +51,6 @@
       </div>
 
       <div class="quiz-paradigm-selection-zone" style="margin-top: 0;">
-        <!-- Chế độ Luyện tập -->
         <div class="paradigm-mode-card practice-card">
           <div>
             <h4 class="practice-title"><i class="bi bi-journal-code"></i> Chế độ Luyện tập</h4>
@@ -57,27 +61,27 @@
           </button>
         </div>
 
-        <!-- Chế độ Thi thử -->
         <div class="paradigm-mode-card exam-card">
           <div>
             <h4 class="exam-title"><i class="bi bi-stopwatch-fill"></i> Chế độ Thi thử</h4>
             <p class="paradigm-desc">Làm bài thi thử dưới áp lực thời gian thực tế với số câu hỏi tự chọn.</p>
-            
+
             <div class="limiter-form-group">
               <label>Số lượng câu hỏi thi thử:</label>
-              
+
               <div class="stepper-wrapper">
                 <button type="button" class="stepper-btn btn-minus" (click)="decreaseExamCount()" [disabled]="selectedExamCount <= 1">
                   <i class="bi bi-dash-lg"></i>
                 </button>
-                
-                <input type="number" 
-                      [(ngModel)]="selectedExamCount" 
-                      [max]="quizQuestionsCount" 
-                      min="1"
-                      class="stepper-input"
-                      placeholder="Nhập số câu...">
-                      
+
+                <input
+                  type="number"
+                  [(ngModel)]="selectedExamCount"
+                  [max]="quizQuestionsCount"
+                  min="1"
+                  class="stepper-input"
+                  placeholder="Nhập số câu...">
+
                 <button type="button" class="stepper-btn btn-plus" (click)="increaseExamCount()" [disabled]="selectedExamCount >= quizQuestionsCount">
                   <i class="bi bi-plus-lg"></i>
                 </button>
@@ -90,17 +94,17 @@
               }
             </div>
           </div>
-          
-          <button (click)="startQuiz('exam')" 
-                  [disabled]="isExamCountInvalid"
-                  class="btn-start-paradigm btn-exam">
+
+          <button
+            (click)="startQuiz('exam')"
+            [disabled]="isExamCountInvalid"
+            class="btn-start-paradigm btn-exam">
             <i class="bi bi-lightning-charge-fill"></i> Bắt đầu Thi thử
           </button>
         </div>
       </div>
     </div>
 
-    <!-- CỘT BÊN PHẢI: QUY TẮC PHÒNG THI (SIDEBAR) -->
     <div class="sidebar-column">
       <div class="sidebar-card rules-card">
         <h3>Quy tắc phòng thi</h3>
@@ -134,5 +138,4 @@
       </div>
     </div>
   </div>
-
 </div>

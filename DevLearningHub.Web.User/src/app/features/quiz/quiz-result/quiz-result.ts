@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http'; // Import thêm HttpClient
+import { HttpClient } from '@angular/common/http';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
 
@@ -20,12 +20,12 @@ export class QuizResultComponent implements OnInit {
 
   sessionId: string = '';
   quizTitle: string = '';
-  
-  // Thông tin User
+  resultMode: string = 'practice';
+
   userName: string = 'Học viên';
   userAvatar: string = 'assets/images/default-avatar.svg';
 
-  isDataReady = false; // Flag chống chớp màn hình
+  isDataReady = false;
 
   summary = {
     percentage: 0,
@@ -40,21 +40,24 @@ export class QuizResultComponent implements OnInit {
 
   reviewQuestions: any[] = [];
 
+  get isExamMode(): boolean {
+    return this.resultMode === 'exam';
+  }
+
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('id') || '';
+    this.resultMode = this.route.snapshot.queryParamMap.get('mode') || 'practice';
     this.quizTitle = sessionStorage.getItem('quiz_title') || 'Kết quả bài kiểm tra';
-
-    // 1. Load User Info trước
     this.loadUserInfo();
   }
 
   loadUserInfo() {
     this.http.get<any>('/api/users/me').subscribe({
       next: (res) => {
-        const u = res?.data || res;
-        this.userName = u.fullName || u.username || u.Username || 'Học viên';
-        this.userAvatar = u.avatarUrl || 'assets/images/default-avatar.svg';
-        this.loadResult(); // Gọi tiếp kết quả sau khi có User
+        const user = res?.data || res;
+        this.userName = user?.fullName || user?.username || user?.Username || 'Học viên';
+        this.userAvatar = user?.avatarUrl || 'assets/images/default-avatar.svg';
+        this.loadResult();
       },
       error: () => this.loadResult()
     });
@@ -66,22 +69,19 @@ export class QuizResultComponent implements OnInit {
         const data = res?.data || res;
         if (!data) return;
 
-        // Xử lý các thông số summary... (Giữ nguyên logic cũ)
         const accuracy = data.accuracy ?? data.Accuracy ?? 0;
         this.summary.percentage = Math.round(accuracy <= 1 ? accuracy * 100 : accuracy);
         this.summary.correctCount = data.score ?? data.Score ?? 0;
-        const totalQ = data.totalQuestions ?? data.TotalQuestions ?? 0;
-        this.summary.wrongCount = totalQ > 0 ? (totalQ - this.summary.correctCount) : 0;
+
+        const totalQuestions = data.totalQuestions ?? data.TotalQuestions ?? 0;
+        this.summary.wrongCount = totalQuestions > 0 ? (totalQuestions - this.summary.correctCount) : 0;
         this.summary.statusText = this.summary.percentage >= 70 ? 'Hoàn thành xuất sắc' : 'Cần cố gắng hơn';
         this.summary.xpGained = this.summary.correctCount * 50;
 
-        // Lưu XP tích lũy từ mock quiz vào localStorage, dùng guard chống tăng lặp khi F5
         if (typeof window !== 'undefined' && this.sessionId) {
           const xpCreditedKey = `dlh_xp_credited_${this.sessionId}`;
           if (!sessionStorage.getItem(xpCreditedKey)) {
-            // Đã vô hiệu hóa lưu localStorage theo yêu cầu của user
             sessionStorage.setItem(xpCreditedKey, 'true');
-            // Phát sự kiện để sidebar cập nhật điểm lập tức
             window.dispatchEvent(new CustomEvent('profile-updated'));
           }
         }
@@ -89,30 +89,33 @@ export class QuizResultComponent implements OnInit {
         const secs = data.timeTakenSeconds ?? data.TimeLimitSeconds ?? 0;
         this.summary.timeDuration = `${Math.floor(secs / 60)} phút ${secs % 60} giây`;
 
-        // LỌC CÂU HỎI: Chỉ lấy đúng những câu đã lưu trong session
-        const savedQuestions: any[] = JSON.parse(sessionStorage.getItem('quiz_questions') || '[]');
-        const rawAnswers = data.answers || data.Answers || [];
+        if (!this.isExamMode) {
+          const savedQuestions: any[] = JSON.parse(sessionStorage.getItem('quiz_questions') || '[]');
+          const rawAnswers = data.answers || data.Answers || [];
 
-        this.reviewQuestions = rawAnswers
-          .filter((a: any) => {
-            const targetQId = a.questionId || a.QuestionId;
-            return savedQuestions.some(sq => (sq.id || sq.Id) === targetQId);
-          })
-          .map((a: any, idx: number) => {
-            const targetQId = a.questionId || a.QuestionId;
-            const q = savedQuestions.find((sq: any) => (sq.id || sq.Id) === targetQId);
-            
-            return {
-              id: idx + 1,
-              text: q?.text || 'Câu hỏi',
-              isCorrect: a.isCorrect ?? a.IsCorrect ?? false,
-              userAnswer: (q?.options.find((o:any) => o.id === (a.selectedOptionId))?.content) || 'Không trả lời',
-              correctAnswer: (q?.options.find((o:any) => o.id === (a.correctOptionId))?.content) || '',
-              explanation: a.explanation || 'Đã đối chiếu.'
-            };
-          });
+          this.reviewQuestions = rawAnswers
+            .filter((answer: any) => {
+              const targetQuestionId = answer.questionId || answer.QuestionId;
+              return savedQuestions.some(question => (question.id || question.Id) === targetQuestionId);
+            })
+            .map((answer: any, index: number) => {
+              const targetQuestionId = answer.questionId || answer.QuestionId;
+              const question = savedQuestions.find((saved: any) => (saved.id || saved.Id) === targetQuestionId);
 
-        this.isDataReady = true; // Bật flag render
+              return {
+                id: index + 1,
+                text: question?.text || 'Câu hỏi',
+                isCorrect: answer.isCorrect ?? answer.IsCorrect ?? false,
+                userAnswer: question?.options.find((option: any) => option.id === answer.selectedOptionId)?.content || 'Không trả lời',
+                correctAnswer: question?.options.find((option: any) => option.id === answer.correctOptionId)?.content || '',
+                explanation: answer.explanation || 'Đã đối chiếu.'
+              };
+            });
+        } else {
+          this.reviewQuestions = [];
+        }
+
+        this.isDataReady = true;
         this.cdr.detectChanges();
       },
       error: () => this.router.navigate(['/quiz-bank'])

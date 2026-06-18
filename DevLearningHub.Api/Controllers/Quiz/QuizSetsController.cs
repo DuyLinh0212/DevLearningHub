@@ -53,11 +53,13 @@ public class QuizSetsController : ControllerBase
             {
                 Id = qs.Id,
                 CreatedBy = qs.CreatedBy,
+                CreatedByFullName = qs.CreatedByNavigation.FullName ?? qs.CreatedByNavigation.Username,
                 Title = qs.Title,
                 Description = qs.Description,
                 Mode = qs.Mode,
                 TimeLimitSeconds = qs.TimeLimitSeconds,
                 IsPublic = qs.IsPublic,
+                AllowedCopy = qs.AllowedCopy,
                 TopicId = qs.TopicId,
                 Level = qs.Level,
                 QuestionCount = qs.QuizSetQuestions.Count
@@ -73,6 +75,7 @@ public class QuizSetsController : ControllerBase
     public async Task<ActionResult<ApiResponse<QuizSetDetailResponse>>> GetQuizSet(Guid id)
     {
         var quizSet = await _db.QuizSets
+            .Include(qs => qs.CreatedByNavigation)
             .Include(qs => qs.QuizSetQuestions)
             .ThenInclude(qsq => qsq.Question)
             .ThenInclude(q => q.QuestionOptions)
@@ -96,11 +99,13 @@ public class QuizSetsController : ControllerBase
         {
             Id = quizSet.Id,
             CreatedBy = quizSet.CreatedBy,
+            CreatedByFullName = quizSet.CreatedByNavigation.FullName ?? quizSet.CreatedByNavigation.Username,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,
             TimeLimitSeconds = quizSet.TimeLimitSeconds,
             IsPublic = quizSet.IsPublic,
+            AllowedCopy = quizSet.AllowedCopy,
             TopicId = quizSet.TopicId,
             Level = quizSet.Level,
             Questions = quizSet.QuizSetQuestions
@@ -168,6 +173,7 @@ public class QuizSetsController : ControllerBase
             Mode = string.IsNullOrWhiteSpace(request.Mode) ? "practice" : request.Mode.Trim(),
             TimeLimitSeconds = request.TimeLimitSeconds,
             IsPublic = request.IsPublic,
+            AllowedCopy = request.AllowedCopy,
             TopicId = resolvedTopicId,
             Level = request.Level?.Trim(),
             CreatedAt = DateTime.Now
@@ -177,8 +183,114 @@ public class QuizSetsController : ControllerBase
         AddNewQuestionsToQuizSet(quizSet.Id, userId, resolvedTopicId, request.Questions);
         await _db.SaveChangesAsync();
 
-        var response = MapQuizSetResponse(quizSet, request.Questions?.Count ?? 0);
+        var response = await MapQuizSetResponseAsync(quizSet, request.Questions?.Count ?? 0);
 
+        return Ok(ApiResponse<QuizSetResponse>.Ok(response));
+    }
+
+    [HttpPost("{id:guid}/copy")]
+    [Authorize]
+    // Copy a quiz set into a new one owned by the caller. Only allowed when the source has AllowedCopy = true.
+    public async Task<ActionResult<ApiResponse<QuizSetResponse>>> CopyQuizSet(Guid id, [FromBody] CopyQuizSetRequest? request)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Unauthorized."));
+        }
+
+        if (!await IsActiveUserAsync(userId))
+        {
+            return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        var source = await _db.QuizSets
+            .Include(qs => qs.QuizSetQuestions)
+            .ThenInclude(qsq => qsq.Question)
+            .ThenInclude(q => q.QuestionOptions)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(qs => qs.Id == id);
+
+        if (source == null)
+        {
+            return NotFound(ApiResponse<QuizSetResponse>.Fail("Quiz set not found."));
+        }
+
+        var isOwner = source.CreatedBy == userId;
+        var isAdmin = User.IsInRole(AppRoles.Admin);
+
+        // Hidden quiz sets can only be copied by their owner or an admin.
+        if (!source.IsPublic && !isOwner && !isAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
+        }
+
+        // The copy gate: only owner/admin bypass it; everyone else needs AllowedCopy = true.
+        if (!source.AllowedCopy && !isOwner && !isAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("This quiz set does not allow copying."));
+        }
+
+        var now = DateTime.Now;
+        var title = string.IsNullOrWhiteSpace(request?.Title)
+            ? $"{source.Title} (Copy)"
+            : request.Title.Trim();
+
+        var copy = new QuizSet
+        {
+            Id = Guid.NewGuid(),
+            CreatedBy = userId,
+            Title = title.Length > 200 ? title[..200] : title,
+            Description = source.Description,
+            Mode = source.Mode,
+            TimeLimitSeconds = source.TimeLimitSeconds,
+            IsPublic = false,
+            AllowedCopy = false,
+            TopicId = source.TopicId,
+            Level = source.Level,
+            CreatedAt = now
+        };
+
+        _db.QuizSets.Add(copy);
+
+        // Deep-copy each question and its options so the copy is independent of the source.
+        foreach (var link in source.QuizSetQuestions.OrderBy(qsq => qsq.OrderIndex))
+        {
+            var sourceQuestion = link.Question;
+            var newQuestion = new Question
+            {
+                Id = Guid.NewGuid(),
+                TopicId = sourceQuestion.TopicId,
+                CreatedBy = userId,
+                Content = sourceQuestion.Content,
+                Level = sourceQuestion.Level,
+                Explanation = sourceQuestion.Explanation,
+                IsActive = true,
+                CreatedAt = now
+            };
+
+            _db.Questions.Add(newQuestion);
+            _db.QuestionOptions.AddRange(sourceQuestion.QuestionOptions
+                .OrderBy(option => option.OrderIndex)
+                .Select(option => new QuestionOption
+                {
+                    Id = Guid.NewGuid(),
+                    QuestionId = newQuestion.Id,
+                    Content = option.Content,
+                    IsCorrect = option.IsCorrect,
+                    OrderIndex = option.OrderIndex
+                }));
+
+            _db.QuizSetQuestions.Add(new QuizSetQuestion
+            {
+                QuizSetId = copy.Id,
+                QuestionId = newQuestion.Id,
+                OrderIndex = link.OrderIndex
+            });
+        }
+
+        await _db.SaveChangesAsync();
+
+        var response = await MapQuizSetResponseAsync(copy, source.QuizSetQuestions.Count);
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
 
@@ -231,6 +343,7 @@ public class QuizSetsController : ControllerBase
         quizSet.Mode = string.IsNullOrWhiteSpace(request.Mode) ? quizSet.Mode : request.Mode.Trim();
         quizSet.TimeLimitSeconds = request.TimeLimitSeconds;
         quizSet.IsPublic = request.IsPublic;
+        quizSet.AllowedCopy = request.AllowedCopy;
         quizSet.TopicId = resolvedTopicId;
         quizSet.Level = request.Level?.Trim();
 
@@ -243,7 +356,7 @@ public class QuizSetsController : ControllerBase
 
         var questionCount = request.Questions?.Count
             ?? await _db.QuizSetQuestions.CountAsync(qsq => qsq.QuizSetId == quizSet.Id);
-        var response = MapQuizSetResponse(quizSet, questionCount);
+        var response = await MapQuizSetResponseAsync(quizSet, questionCount);
 
         return Ok(ApiResponse<QuizSetResponse>.Ok(response));
     }
@@ -615,17 +728,29 @@ public class QuizSetsController : ControllerBase
         }).ToList();
     }
 
-    private static QuizSetResponse MapQuizSetResponse(QuizSet quizSet, int questionCount)
+    private async Task<QuizSetResponse> MapQuizSetResponseAsync(QuizSet quizSet, int questionCount)
     {
+        var createdByFullName = quizSet.CreatedByNavigation?.FullName ?? quizSet.CreatedByNavigation?.Username;
+        if (string.IsNullOrWhiteSpace(createdByFullName))
+        {
+            createdByFullName = await _db.Users
+                .Where(user => user.Id == quizSet.CreatedBy)
+                .Select(user => user.FullName ?? user.Username)
+                .FirstOrDefaultAsync()
+                ?? string.Empty;
+        }
+
         return new QuizSetResponse
         {
             Id = quizSet.Id,
             CreatedBy = quizSet.CreatedBy,
+            CreatedByFullName = createdByFullName,
             Title = quizSet.Title,
             Description = quizSet.Description,
             Mode = quizSet.Mode,
             TimeLimitSeconds = quizSet.TimeLimitSeconds,
             IsPublic = quizSet.IsPublic,
+            AllowedCopy = quizSet.AllowedCopy,
             TopicId = quizSet.TopicId,
             Level = quizSet.Level,
             QuestionCount = questionCount

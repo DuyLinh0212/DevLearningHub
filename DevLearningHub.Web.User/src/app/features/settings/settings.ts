@@ -18,7 +18,7 @@ export class SettingsComponent implements OnInit {
   firstName: string = '';
   lastName: string = '';
   email: string = '';
-  role: string = 'Học viên';
+  role: string = 'Người dùng';
   avatarUrl: string = '';
   xpPoints: number = 0;
   isSaving: boolean = false;

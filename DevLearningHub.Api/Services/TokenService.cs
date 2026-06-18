@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using DevLearningHub.Api.Entities;
+using DevLearningHub.Api.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -11,7 +12,7 @@ namespace DevLearningHub.Api.Services;
 // Token creation contract for auth flows.
 public interface ITokenService
 {
-    string CreateAccessToken(User user, IEnumerable<string> roles, DateTime expiresAt);
+    string CreateAccessToken(User user, IEnumerable<string> roles, IEnumerable<string> permissions, DateTime expiresAt);
 
     string CreateRefreshToken();
 
@@ -28,7 +29,7 @@ public class TokenService : ITokenService
         _options = options.Value;
     }
 
-    public string CreateAccessToken(User user, IEnumerable<string> roles, DateTime expiresAt)
+    public string CreateAccessToken(User user, IEnumerable<string> roles, IEnumerable<string> permissions, DateTime expiresAt)
     {
         // Build claims for JWT.
         var claims = new List<Claim>
@@ -42,6 +43,11 @@ public class TokenService : ITokenService
         foreach (var role in roles.Distinct())
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        foreach (var permission in permissions.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(ClaimsPrincipalExtensions.PermissionClaimType, permission));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));

@@ -486,6 +486,9 @@ public partial class DevLearningHubContext : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.AllowedCopy)
+                .HasDefaultValue(false)
+                .HasColumnName("allowed_copy");
             entity.Property(e => e.IsPublic)
                 .HasDefaultValue(true)
                 .HasColumnName("is_public");

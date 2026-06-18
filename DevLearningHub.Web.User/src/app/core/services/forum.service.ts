@@ -13,10 +13,15 @@ export class ForumService {
   private tagsUrl = '/api/tags';
 
   // --- POSTS ---
-  getPosts(page: number = 1, pageSize: number = 20, search?: string, tag?: string, authorId?: string): Observable<any> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
+  getPosts(
+    pageSize: number = 20,
+    search?: string,
+    tag?: string,
+    authorId?: string,
+    cursor?: string | null,
+    cursorId?: string | null
+  ): Observable<any> {
+    let params = new HttpParams().set('pageSize', pageSize.toString());
 
     if (search && search.trim()) {
       params = params.set('search', search.trim());
@@ -26,6 +31,12 @@ export class ForumService {
     }
     if (authorId) {
       params = params.set('authorId', authorId);
+    }
+    if (cursor) {
+      params = params.set('cursor', cursor);
+    }
+    if (cursorId) {
+      params = params.set('cursorId', cursorId);
     }
 
     return this.http.get<any>(this.postsUrl, { params }).pipe(
