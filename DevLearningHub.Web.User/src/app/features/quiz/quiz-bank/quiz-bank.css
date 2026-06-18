@@ -631,3 +631,93 @@
 .quiz-options-dropdown .dropdown-item i {
   font-size: 0.95rem;
 }
+
+/* ==========================================================================
+   📱 QUIZ-BANK RESPONSIVE BỔ SUNG - @768px & @480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Grid cards từ auto-fill về 2 cột */
+  .quiz-grid-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .quiz-card-item {
+    min-height: 220px;
+    padding: 16px;
+  }
+
+  /* Layout 2 cột collapse */
+  .quiz-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sidebar widgets lên đầu */
+  .quiz-sidebar-column {
+    order: -1;
+  }
+
+  /* Card meta compact */
+  .card-meta-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 1 cột trên mobile nhỏ */
+  .quiz-grid-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .quiz-card-item {
+    min-height: 200px;
+    padding: 14px;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+  }
+
+  .card-description {
+    font-size: 0.78rem;
+  }
+
+  .card-actions-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-card-action {
+    width: 100%;
+    text-align: center;
+  }
+
+  .btn-more-options {
+    align-self: flex-end;
+  }
+
+  /* Library card compact */
+  .quiz-library-card {
+    padding: 16px;
+  }
+
+  .library-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .toolbar-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  /* Sidebar card */
+  .quiz-sidebar-card {
+    padding: 16px;
+  }
+}

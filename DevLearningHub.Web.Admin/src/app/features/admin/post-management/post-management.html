@@ -3,6 +3,10 @@
   <main class="main-content">
 
     <header class="content-header">
+      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
       <div class="top-search">
         <i class="bi bi-search"></i>
         <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tiêu đề, tác giả, nhãn (tags)...">
@@ -10,7 +14,7 @@
       <div class="admin-header-actions">
         <button class="btn-admin-act" style="background: rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);" (click)="toggleShowHidden()">
           <i class="bi" [class.bi-eye-slash-fill]="!showHidden" [class.bi-eye-fill]="showHidden"></i>
-          {{ showHidden ? 'Ẩn bài đã hide' : 'Xem bài đã hide' }}
+          {{ showHidden ? 'Ẩn bài đã hide' : 'Hiện cả bài đã hide' }}
         </button>
       </div>
     </header>
@@ -22,7 +26,7 @@
       </section>
 
       <div class="post-filter-bar">
-        <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+        <select [(ngModel)]="filterStatus" (change)="onStatusFilterChange()">
           <option value="all">Tất cả trạng thái</option>
           <option value="visible">Đang hiển thị</option>
           <option value="hidden">Đã bị ẩn</option>
@@ -60,94 +64,114 @@
           <p>Không tìm thấy bài viết phù hợp với bộ lọc hiện tại.</p>
         </div>
       } @else {
-        <div class="post-table-wrap">
-          <table class="post-table">
-            <thead>
-              <tr>
-                <th>Tiêu đề &amp; Tác giả</th>
-                <th>Tags</th>
-                <th>Thống kê</th>
-                <th>Trạng thái</th>
-                <th>Ngày đăng</th>
-                <th style="text-align:right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (post of pagedPosts; track post.id) {
-                <tr [class.post-hidden-row]="post.isHidden">
-                  <td class="post-title-cell">
-                    <div class="post-title-text" [title]="post.title">{{ post.title }}</div>
-                    <div class="post-author-line">
-                      @if (post.author?.avatarUrl) {
-                        <img [src]="post.author.avatarUrl" [alt]="post.author.username">
-                      } @else {
-                        <i class="bi bi-person-circle" style="font-size:1rem;"></i>
-                      }
-                      <span>{{ post.author?.fullName || post.author?.username }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="post-tags-wrap">
-                      @for (tag of (post.tags || []).slice(0, 3); track tag.id) {
-                        <span class="mini-tag-pill" [style.background]="tag.colorHex || '#6366f1'">{{ tag.name }}</span>
-                      }
-                      @if ((post.tags || []).length > 3) {
-                        <span class="mini-tag-pill" style="background:#6b7280">+{{ post.tags.length - 3 }}</span>
-                      }
-                    </div>
-                  </td>
-                  <td>
-                    <div class="post-stats">
-                      <span><i class="bi bi-eye"></i> {{ post.viewCount || 0 }}</span>
-                      <span><i class="bi bi-hand-thumbs-up"></i> {{ post.upvotes || 0 }}</span>
-                      <span><i class="bi bi-chat-dots"></i> {{ post.commentCount || 0 }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
-                      <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
-                      {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
-                    </span>
-                  </td>
-                  <td class="date-cell">
-                    <div>{{ formatDate(post.createdAt) }}</div>
-                  </td>
-                  <td>
-                    <div class="post-table-actions">
-                      @if (!post.isHidden) {
-                        <button class="btn-hide" (click)="openModerateModal(post, true)" title="Ẩn bài viết này">
-                          <i class="bi bi-eye-slash"></i>
-                        </button>
-                      } @else {
-                        <button class="btn-unhide" (click)="moderatePost(post.id, false, '')" title="Hiện lại bài viết">
-                          <i class="bi bi-eye"></i>
-                        </button>
-                      }
-                      <button class="btn-tbl-icon-delete" (click)="deletePost(post.id)" title="Xóa vĩnh viễn">
-                        <i class="bi bi-trash3-fill"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <div class="posts-grid-container">
+          @for (post of pagedPosts; track post.id) {
+            <article class="social-post-card-admin" [class.post-hidden-card]="post.isHidden">
+              <!-- Header: Author info & meta -->
+              <div class="post-card-header">
+                <img [src]="post.author?.avatarUrl || 'assets/images/default-avatar.svg'"
+                     alt="Avatar"
+                     class="author-avatar"
+                     (click)="goToUserProfile(post.author?.id)"
+                     style="cursor: pointer;"
+                     (error)="onAvatarError($event)">
+                <div class="author-meta-text" (click)="goToUserProfile(post.author?.id)" style="cursor: pointer;">
+                  <h3 class="author-name">{{ post.author?.fullName || post.author?.username }}</h3>
+                  <span class="post-date">{{ formatDate(post.createdAt) }}</span>
+                </div>
+                <div class="post-card-status">
+                  <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
+                    <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
+                    {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
+                  </span>
+                </div>
+              </div>
 
-          @if (totalPages > 1) {
-            <div class="pagination-row">
-              <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-                <i class="bi bi-chevron-left"></i>
-              </button>
-              @for (p of pageNumbers; track p) {
-                <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
-              }
-              <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-                <i class="bi bi-chevron-right"></i>
-              </button>
-              <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
-            </div>
+              <!-- Title -->
+              <h2 class="post-card-title">{{ post.title }}</h2>
+
+              <!-- Tags list -->
+              <div class="post-card-tags">
+                @for (tag of (post.tags || []).slice(0, 4); track tag.id) {
+                  <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">
+                    #{{ tag.name }}
+                  </span>
+                }
+                @if ((post.tags || []).length > 4) {
+                  <span class="post-tag-badge" style="border-color: #6b7280; color: #6b7280">
+                    +{{ post.tags.length - 4 }}
+                  </span>
+                }
+              </div>
+
+              <!-- Divider line -->
+              <div class="post-divider"></div>
+
+              <!-- Body: Markdown Content & Image -->
+              <div class="post-card-body">
+                @if (post.imageUrl) {
+                  <div class="post-image-container">
+                    <img [src]="post.imageUrl" alt="Post Image" class="post-card-image">
+                  </div>
+                }
+
+                <div class="post-text-body">{{ post.bodyMarkdown }}</div>
+              </div>
+
+              <!-- Metrics summary row -->
+              <div class="post-card-metrics">
+                <span class="likes-count">
+                  <i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i>
+                  {{ post.upvotes || 0 }} lượt thích
+                </span>
+                <span class="comments-count">
+                  {{ post.commentCount || 0 }} bình luận &nbsp;•&nbsp; {{ post.viewCount || 0 }} lượt xem
+                </span>
+              </div>
+
+              <!-- Divider line -->
+              <div class="post-divider"></div>
+
+              <!-- Actions bar -->
+              <div class="post-card-actions">
+                <button class="action-btn" routerLink="/admin/posts/{{ post.id }}">
+                  <i class="bi bi-eye"></i>
+                  <span>Xem chi tiết</span>
+                </button>
+                @if (!post.isHidden) {
+                  <button class="action-btn action-btn-moderate" (click)="openModerateModal(post, true)">
+                    <i class="bi bi-eye-slash"></i>
+                    <span>Ẩn bài</span>
+                  </button>
+                } @else {
+                  <button class="action-btn action-btn-moderate" (click)="moderatePost(post.id, false, '')">
+                    <i class="bi bi-eye"></i>
+                    <span>Hiện bài</span>
+                  </button>
+                }
+                <button class="action-btn action-btn-delete" (click)="deletePost(post.id)">
+                  <i class="bi bi-trash3"></i>
+                  <span>Xóa</span>
+                </button>
+              </div>
+            </article>
           }
         </div>
+
+        @if (totalPages > 1) {
+          <div class="pagination-row">
+            <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            @for (p of pageNumbers; track p) {
+              <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+            }
+            <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
+          </div>
+        }
       }
     </div>
   </main>
@@ -177,4 +201,5 @@
     </div>
   </div>
   }
+
 </div>

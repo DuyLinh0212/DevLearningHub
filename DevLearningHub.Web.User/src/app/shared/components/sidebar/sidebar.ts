@@ -5,6 +5,7 @@ import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/ro
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from '../../../core/services/theme.service';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -19,10 +20,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
   private elementRef = inject(ElementRef);
+  public mobileMenu = inject(MobileMenuService);
   private routeSubscription?: Subscription;
   private profileUpdateHandler = () => this.loadUserProfile();
 
-  isMobileOpen: boolean = false;
+  get isMobileOpen(): boolean { return this.mobileMenu.isOpen(); }
   profile = {
     displayName: 'Học viên',
     email: '',
@@ -58,7 +60,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.routeSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
-      this.isMobileOpen = false;
+      this.mobileMenu.close();
       this.clearSearch();
       this.cdr.detectChanges();
     });
@@ -70,7 +72,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   toggleMobileSidebar() {
-    this.isMobileOpen = !this.isMobileOpen;
+    this.mobileMenu.toggle();
     this.cdr.detectChanges();
   }
 

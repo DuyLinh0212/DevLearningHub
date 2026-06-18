@@ -312,3 +312,79 @@
     gap: 16px;
   }
 }
+
+/* ==========================================================================
+   📱 SETTINGS RESPONSIVE - BREAKPOINT 480px (SMALL MOBILE)
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* Sidebar ẩn, main-content full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Content header */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    padding: 12px 8px !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Settings layout vẫn là 1 col (đã có ở 992px) */
+  .settings-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Profile summary compact */
+  .profile-summary-card {
+    padding: 18px !important;
+  }
+
+  .avatar-circle-wrapper {
+    width: 88px !important;
+    height: 88px !important;
+  }
+
+  /* Settings menu compact */
+  .settings-menu-card {
+    padding: 8px !important;
+  }
+
+  .settings-tab-btn {
+    padding: 8px 10px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* Settings main card compact */
+  .settings-main-card {
+    padding: 16px !important;
+  }
+
+  /* Form grid 1 col */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Form actions */
+  .form-actions {
+    justify-content: stretch !important;
+  }
+
+  .btn-submit-save {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .dashboard-scroll-body {
+    padding: 12px !important;
+  }
+}

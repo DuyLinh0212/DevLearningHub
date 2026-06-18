@@ -1,15 +1,16 @@
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-quiz-management',
   standalone: true,
-  imports: [FormsModule, RouterLink, SidebarComponent, CommonModule],
+  imports: [FormsModule, SidebarComponent, CommonModule],
   templateUrl: './quiz-management.html',
   styleUrl: './quiz-management.css'
 })
@@ -17,6 +18,7 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
 
   currentSubTab: string = 'bank';
   searchTerm: string = '';
@@ -50,6 +52,15 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   isEditingQuizSet: boolean = false;
   editingQuizSetId: any = null;
   isAssignModalOpen: boolean = false;
+  isImportModalOpen: boolean = false;
+  isDragging: boolean = false;
+  fileSelected: boolean = false;
+  fileName: string = '';
+  fileSize: string = '';
+  isImporting: boolean = false;
+  importSummary = { total: 0, valid: 0, invalid: 0 };
+  parsedQuestions: any[] = [];
+  topicsMap: Record<string, string> = {};
 
   quizSetForm = {
     title: '',
@@ -63,12 +74,21 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     questionIds: [] as any[]
   };
 
+  // Chuẩn hóa giá trị level: hỗ trợ cả tên cũ (medium/hard) lẫn tên mới từ API (intermediate/advanced)
+  private normalizeLevel(level: string): string {
+    if (!level) return 'beginner';
+    const l = level.toLowerCase().trim();
+    if (l === 'medium') return 'intermediate';
+    if (l === 'hard') return 'advanced';
+    return l;
+  }
+
   get filteredQuestions() {
     const list = this.questionsBank || [];
     return list.filter(q => {
       const matchSearch = (q.text || '').toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchTopic = this.selectedTopic === 'all' || q.topicId === this.selectedTopic;
-      const matchLevel = this.selectedLevel === 'all' || q.level === this.selectedLevel;
+      const matchLevel = this.selectedLevel === 'all' || this.normalizeLevel(q.level) === this.selectedLevel;
       return matchSearch && matchTopic && matchLevel;
     });
   }
@@ -79,7 +99,7 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
       const matchSearch = (s.title || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
                           (s.description || '').toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchTopic = this.selectedTopic === 'all' || s.topicId === this.selectedTopic;
-      const matchLevel = this.selectedLevel === 'all' || s.level === this.selectedLevel;
+      const matchLevel = this.selectedLevel === 'all' || this.normalizeLevel(s.level) === this.selectedLevel;
       return matchSearch && matchTopic && matchLevel;
     });
   }
@@ -553,5 +573,292 @@ saveQuizSet() {
     if (formatLevel === 'intermediate' || formatLevel === 'medium' || formatLevel === 'trung bình') return 'Trung bình';
     if (formatLevel === 'advanced' || formatLevel === 'hard' || formatLevel === 'khó') return 'Khó';
     return 'Dễ';
+  }
+
+  openImportModal() {
+    this.isImportModalOpen = true;
+    this.loadTopicsForImport();
+  }
+
+  closeImportModal() {
+    this.isImportModalOpen = false;
+    this.clearImportFile();
+  }
+
+  loadTopicsForImport() {
+    this.http.get<any>('/api/topics').subscribe({
+      next: (res) => {
+        const topics: any[] = res?.data || res || [];
+        if (Array.isArray(topics)) {
+          this.topicsMap = {};
+          topics.forEach((t: any) => {
+            if (t.id) this.topicsMap[t.id.toLowerCase()] = t.name || t.id;
+          });
+        }
+        if (this.parsedQuestions.length > 0) {
+          this.parsedQuestions = this.parsedQuestions.map(q => ({
+            ...q,
+            topicName: this.topicsMap[q.topicId?.toLowerCase()] || q.topicId || '---'
+          }));
+          this.cdr.detectChanges();
+        }
+      }
+    });
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave() {
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFileProcessing(files[0]);
+    }
+  }
+
+  onFileSelected(event: any) {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      this.handleFileProcessing(files[0]);
+    }
+    event.target.value = '';
+  }
+
+  handleFileProcessing(file: File) {
+    this.fileSelected = true;
+    this.fileName = file.name;
+    this.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+    // Hiện ngay drag-drop zone với tên file, trước khi đọc xong
+    this.cdr.detectChanges();
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const reader = new FileReader();
+
+    reader.onload = (e: any) => {
+      try {
+        if (fileExtension === 'json') {
+          const rawData = JSON.parse(e.target.result);
+          this.processJsonData(rawData);
+        } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          this.processExcelData(json);
+        }
+      } catch (err) {
+        alert('Lỗi định dạng tệp: ' + err);
+        this.clearImportFile();
+      }
+    };
+
+    if (fileExtension === 'json') reader.readAsText(file);
+    else reader.readAsArrayBuffer(file);
+  }
+
+  private readonly contentAliases = ['nội dung câu hỏi', 'nội dung', 'câu hỏi', 'content', 'text', 'question'];
+  private readonly topicAliases = ['topicid', 'topic id', 'topic_id', 'topic', 'chủ đề', 'mã chủ đề', 'mã topic'];
+  private readonly levelAliases = ['level', 'cấp độ', 'mức độ', 'khó dễ', 'difficulty'];
+  private readonly explanationAliases = ['giải thích', 'giải thích chi tiết', 'explanation', 'explain'];
+  private readonly optionAAliases = ['a', 'đáp án a', 'option a', 'lựa chọn a', 'optiona'];
+  private readonly optionBAliases = ['b', 'đáp án b', 'option b', 'lựa chọn b', 'optionb'];
+  private readonly optionCAliases = ['c', 'đáp án c', 'option c', 'lựa chọn c', 'optionc'];
+  private readonly optionDAliases = ['d', 'đáp án d', 'option d', 'lựa chọn d', 'optiond'];
+  private readonly correctAliases = ['đáp án đúng', 'đáp án', 'correct', 'correctanswer', 'correct answer', 'correct index', 'correctindex'];
+
+  private getValueByAliases(row: any, aliases: string[]): any {
+    if (!row || typeof row !== 'object') return undefined;
+    const keys = Object.keys(row);
+    for (const alias of aliases) {
+      const cleanAlias = alias.trim().toLowerCase().normalize('NFC');
+      const foundKey = keys.find(k => k.trim().toLowerCase().normalize('NFC') === cleanAlias);
+      if (foundKey !== undefined) {
+        return row[foundKey];
+      }
+    }
+    return undefined;
+  }
+
+  private getCorrectAnswerIndex(correctVal: any): number {
+    const ans = String(correctVal || '').trim().toUpperCase();
+    if (ans === 'A') return 0;
+    if (ans === 'B') return 1;
+    if (ans === 'C') return 2;
+    if (ans === 'D') return 3;
+    if (ans === '0') return 0;
+    if (ans === '1') return 0;
+    if (ans === '2') return 1;
+    if (ans === '3') return 2;
+    if (ans === '4') return 3;
+    return -1;
+  }
+
+  private processJsonData(data: any) {
+    const arr = Array.isArray(data) ? data : (data.questions || [data]);
+    this.parsedQuestions = arr.map((q: any, idx: number) => this.validateAndMapImport(q, idx));
+    this.calculateImportSummary();
+  }
+
+  private processExcelData(json: any[]) {
+    this.parsedQuestions = json.map((row, idx) => {
+      const content = this.getValueByAliases(row, this.contentAliases);
+      const topicId = this.getValueByAliases(row, this.topicAliases);
+      const level = this.getValueByAliases(row, this.levelAliases);
+      const explanation = this.getValueByAliases(row, this.explanationAliases);
+      const correctVal = this.getValueByAliases(row, this.correctAliases);
+
+      const optionA = this.getValueByAliases(row, this.optionAAliases);
+      const optionB = this.getValueByAliases(row, this.optionBAliases);
+      const optionC = this.getValueByAliases(row, this.optionCAliases);
+      const optionD = this.getValueByAliases(row, this.optionDAliases);
+
+      const correctIndex = this.getCorrectAnswerIndex(correctVal);
+
+      const rawOptions = [
+        { content: optionA, isCorrect: correctIndex === 0 },
+        { content: optionB, isCorrect: correctIndex === 1 },
+        { content: optionC, isCorrect: correctIndex === 2 },
+        { content: optionD, isCorrect: correctIndex === 3 }
+      ];
+
+      const options = rawOptions
+        .filter(opt => opt.content !== undefined && opt.content !== null && String(opt.content).trim() !== '')
+        .map(opt => ({
+          content: String(opt.content).trim(),
+          isCorrect: opt.isCorrect
+        }));
+
+      const q = {
+        content: content ? String(content).trim() : '',
+        topicId: topicId ? String(topicId).trim() : '',
+        level: level ? String(level).trim().toLowerCase() : 'beginner',
+        explanation: explanation ? String(explanation).trim() : '',
+        options: options
+      };
+
+      return this.validateAndMapImport(q, idx);
+    });
+    this.calculateImportSummary();
+  }
+
+  private validateAndMapImport(q: any, index: number) {
+    const options = q.options || [];
+    const textContent = q.content || q.text || '';
+    const topicIdentifier = (q.topicId || '').trim();
+
+    const hasText = typeof textContent === 'string' && !!textContent.trim();
+    const hasTopic = !!topicIdentifier;
+    const hasOptions = options.length >= 2;
+
+    const isValid = hasText && hasTopic && hasOptions;
+
+    let errorMsg = '';
+    if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
+    else if (!hasTopic) errorMsg = 'Mã TopicId định danh đang bị bỏ trống.';
+    else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
+
+    const topicName = this.topicsMap[topicIdentifier.toLowerCase()] || topicIdentifier || '---';
+
+    return {
+      rowNum: index + 1,
+      text: textContent,
+      topic: topicIdentifier,
+      topicName: topicName,
+      topicId: topicIdentifier,
+      level: q.level || 'beginner',
+      explanation: q.explanation || '',
+      optionsCount: options.length,
+      options: options,
+      isValid: isValid,
+      errorMsg: errorMsg
+    };
+  }
+
+  private calculateImportSummary() {
+    this.importSummary = {
+      total: this.parsedQuestions.length,
+      valid: this.parsedQuestions.filter(q => q.isValid).length,
+      invalid: this.parsedQuestions.filter(q => !q.isValid).length
+    };
+    this.cdr.detectChanges();
+  }
+
+  clearImportFile() {
+    this.fileSelected = false;
+    this.fileName = '';
+    this.fileSize = '';
+    this.parsedQuestions = [];
+    this.importSummary = { total: 0, valid: 0, invalid: 0 };
+    this.cdr.detectChanges();
+  }
+
+  executeImport() {
+    if (this.isImporting) return;
+
+    const payload = this.parsedQuestions
+      .filter(q => q.isValid)
+      .map(q => {
+        let mappedLevel = 'beginner';
+        const rawLevel = (q.level || '').toString().trim().toLowerCase();
+
+        if (rawLevel === 'dễ' || rawLevel === 'beginner') {
+          mappedLevel = 'beginner';
+        } else if (rawLevel === 'trung bình' || rawLevel === 'medium' || rawLevel === 'intermediate') {
+          mappedLevel = 'intermediate';
+        } else if (rawLevel === 'khó' || rawLevel === 'hard' || rawLevel === 'advanced') {
+          mappedLevel = 'advanced';
+        }
+
+        return {
+          topicId: q.topicId,
+          content: q.text,
+          level: mappedLevel,
+          explanation: q.explanation || null,
+          isActive: true,
+          options: q.options.map((opt: any, idx: number) => ({
+            content: String(opt.content || '').trim(),
+            isCorrect: !!opt.isCorrect,
+            orderIndex: idx
+          }))
+        };
+      });
+
+    if (payload.length === 0) {
+      alert('Không tìm thấy câu hỏi hợp lệ để nạp!');
+      return;
+    }
+
+    this.isImporting = true;
+
+    this.quizService.importQuestions(payload).subscribe({
+      next: () => {
+        this.isImporting = false;
+        alert(`Đã nạp thành công ${payload.length} câu hỏi vào hệ thống!`);
+        this.clearImportFile();
+        this.closeImportModal();
+        this.loadQuestions();
+      },
+      error: (err) => {
+        this.isImporting = false;
+        console.error('Lỗi chi tiết từ API Backend:', err);
+
+        if (err.error && err.error.errors) {
+          const firstErrorKey = Object.keys(err.error.errors)[0];
+          const firstErrorMsg = err.error.errors[firstErrorKey][0];
+          alert(`Nạp thất bại! Lỗi tại trường [${firstErrorKey}]: ${firstErrorMsg}`);
+        } else {
+          alert(`Lỗi nạp dữ liệu: ${err.error?.message || 'Server từ chối dữ liệu.'}`);
+        }
+      }
+    });
   }
 }

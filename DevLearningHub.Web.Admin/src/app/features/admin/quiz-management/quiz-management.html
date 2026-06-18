@@ -5,13 +5,22 @@
   <main class="main-content">
 
     <header class="content-header">
+      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
       <div class="top-search">
         <i class="bi bi-search"></i>
         <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm câu hỏi, bộ đề...">
+        @if (searchTerm.trim()) {
+          <span class="search-result-badge">
+            {{ currentSubTab === 'bank' ? filteredQuestions.length : filteredQuizSets.length }} kết quả
+          </span>
+        }
       </div>
 
       <div class="admin-header-actions">
-        <button class="btn-admin-act blue" routerLink="/admin/quiz/import">
+        <button class="btn-admin-act blue" (click)="openImportModal()">
           <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
         </button>
 
@@ -55,8 +64,8 @@
           <select class="inline-filter" [(ngModel)]="selectedLevel">
             <option value="all">Tất cả cấp độ</option>
             <option value="beginner">Dễ</option>
-            <option value="medium">Trung bình</option>
-            <option value="hard">Khó</option>
+            <option value="intermediate">Trung bình</option>
+            <option value="advanced">Khó</option>
           </select>
         </div>
       </div>
@@ -66,22 +75,24 @@
         <table class="admin-management-table">
           <thead>
             <tr>
-              <th style="width: 90px; text-align: center;">ID</th>
-              <th>Nội dung câu hỏi</th>
+              <th style="width: 80px; text-align: center;">ID</th>
+              <th style="min-width: 260px; max-width: 340px;">Nội dung câu hỏi</th>
               <th>Chủ đề</th>
               <th>Cấp độ</th>
               <th style="text-align: center;">Điểm</th>
               <th style="text-align: center;">Trạng thái</th>
-              <th style="text-align: center; width: 120px;">Thao tác</th>
+              <th style="text-align: center; width: 110px;">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             @for (q of filteredQuestions; track q.id) {
             <tr [style.opacity]="q.isActive ? '1' : '0.4'">
               <td style="text-align: center;" class="tbl-mono" [title]="q.id">#{{ shortenId(q.id) }}</td>
-              <td class="tbl-text-bold">
-                <div class="text-truncate-2">{{ q.text }}</div>
-                <span class="tbl-sub-info">Đáp án đúng: {{ getLetterPrefix(q.correctIndex) }} ({{ q.options[q.correctIndex] }})</span>
+              <td class="tbl-text-bold question-col">
+                <div class="text-truncate-1" [title]="q.text">{{ q.text }}</div>
+                <span class="tbl-sub-info tbl-sub-truncate" [title]="q.options[q.correctIndex]">
+                  Đáp án đúng: {{ getLetterPrefix(q.correctIndex) }} — {{ q.options[q.correctIndex] }}
+                </span>
               </td>
               <td><span class="admin-table-tag topic-tag">{{ getTopicName(q.topicId) }}</span></td>
               <td><span class="admin-table-tag level-tag" [attr.data-level]="q.level">{{ getLevelName(q.level) }}</span></td>
@@ -350,6 +361,162 @@
         <button class="btn-modal-cancel" (click)="closeQuizSetModal()">Hủy bỏ</button>
         <button class="btn-modal-confirm" (click)="saveQuizSet()">Lưu thông số</button>
       </div>
+    </div>
+  </div>
+  }
+
+  @if (isImportModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal import-modal">
+      <h3>Nhập Câu Hỏi Hàng Loạt</h3>
+      
+      <div class="import-guide-section" style="margin-top: 16px; padding: 16px; background: var(--bg-nested); border-radius: 8px; border: 1px solid var(--border-nested);">
+        <h4 style="margin: 0 0 12px 0; font-size: 0.9rem; color: var(--text-main);">Hướng dẫn định dạng tệp:</h4>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <strong style="color: #a855f7; font-size: 0.85rem;">📊 Excel (.xlsx, .xls)</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 0.8rem; color: var(--text-muted);">
+              <li>Cột <strong>nội dung câu hỏi</strong>: Nội dung câu hỏi</li>
+              <li>Cột <strong>topicId</strong>: Mã chủ đề</li>
+              <li>Cột <strong>level</strong>: Dễ/Trung bình/Khó</li>
+              <li>Cột <strong>A, B, C, D</strong>: Các đáp án</li>
+              <li>Cột <strong>đáp án đúng</strong>: A/B/C/D hoặc 0/1/2/3</li>
+              <li>Cột <strong>giải thích</strong>: Giải thích (tùy chọn)</li>
+            </ul>
+          </div>
+          <div>
+            <strong style="color: #22c55e; font-size: 0.85rem;">📄 JSON</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 0.8rem; color: var(--text-muted);">
+              <li>Mảng câu hỏi hoặc object có thuộc tính <strong>questions</strong></li>
+              <li><strong>content</strong>: Nội dung câu hỏi</li>
+              <li><strong>topicId</strong>: Mã chủ đề</li>
+              <li><strong>level</strong>: beginner/intermediate/advanced</li>
+              <li><strong>options</strong>: Mảng đáp án với <strong>content</strong> và <strong>isCorrect</strong></li>
+              <li><strong>explanation</strong>: Giải thích (tùy chọn)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="import-upload-grid" style="margin-top: 20px;">
+        <div class="drag-drop-zone" [class.dragging]="isDragging"
+             (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
+             (click)="importFileInput.click()">
+          <input type="file" #importFileInput (change)="onFileSelected($event)" accept=".json,.xlsx,.xls" style="display: none;">
+          @if (!fileSelected) {
+            <i class="bi bi-cloud-arrow-up-fill upload-icon"></i>
+            <h3>Chọn hoặc kéo thả tệp tại đây</h3>
+            <p class="upload-hint">JSON hoặc Excel (5MB)</p>
+          } @else {
+            <i class="bi bi-file-earmark-spreadsheet-fill file-active-icon"></i>
+            <h3 class="file-name-active">{{ fileName }}</h3>
+            <p class="file-size-tag">{{ fileSize }} &nbsp;•&nbsp; <span class="btn-remove-file" (click)="clearImportFile(); $event.stopPropagation();">Xóa</span></p>
+          }
+        </div>
+      </div>
+
+      @if (fileSelected) {
+      <section style="margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+
+        <!-- Card: Tổng số -->
+        <div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between;
+                    background:var(--bg-card); border:1px solid var(--bg-card-border);
+                    border-radius:12px; padding:20px 24px; min-height:96px; box-sizing:border-box;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted);">TỔNG SỐ</span>
+            <span style="font-size:2rem; font-weight:800; line-height:1; color:var(--text-main);">{{ importSummary.total }}</span>
+          </div>
+          <div style="width:56px; height:56px; border-radius:14px; flex-shrink:0;
+                      display:flex; align-items:center; justify-content:center;
+                      font-size:1.75rem; background:rgba(59,130,246,.12); color:#3b82f6;">
+            <i class="bi bi-list-ol"></i>
+          </div>
+        </div>
+
+        <!-- Card: Hợp lệ -->
+        <div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between;
+                    background:var(--bg-card); border:1px solid var(--bg-card-border);
+                    border-radius:12px; padding:20px 24px; min-height:96px; box-sizing:border-box;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted);">HỢP LỆ</span>
+            <span style="font-size:2rem; font-weight:800; line-height:1; color:#22c55e;">{{ importSummary.valid }}</span>
+          </div>
+          <div style="width:56px; height:56px; border-radius:14px; flex-shrink:0;
+                      display:flex; align-items:center; justify-content:center;
+                      font-size:1.75rem; background:rgba(34,197,94,.12); color:#22c55e;">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </div>
+
+        <!-- Card: Lỗi -->
+        <div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between;
+                    background:var(--bg-card); border:1px solid var(--bg-card-border);
+                    border-radius:12px; padding:20px 24px; min-height:96px; box-sizing:border-box;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted);">LỖI</span>
+            <span style="font-size:2rem; font-weight:800; line-height:1; color:#ef4444;">{{ importSummary.invalid }}</span>
+          </div>
+          <div style="width:56px; height:56px; border-radius:14px; flex-shrink:0;
+                      display:flex; align-items:center; justify-content:center;
+                      font-size:1.75rem; background:rgba(239,68,68,.12); color:#ef4444;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+        </div>
+
+      </section>
+
+      <div class="admin-table-responsive-wrapper import-table-wrapper" style="margin-top: 24px;">
+        <table class="admin-management-table">
+          <thead>
+            <tr>
+              <th style="width:60px;">Dòng</th>
+              <th style="width:280px; max-width:280px;">Câu hỏi</th>
+              <th style="min-width:140px;">Chủ đề</th>
+              <th style="width:90px;">Cấp độ</th>
+              <th style="width:100px; text-align:center;">Đáp án</th>
+              <th style="width:110px; text-align:center;">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of parsedQuestions; track row.rowNum) {
+            <tr [class.row-error]="!row.isValid">
+              <td class="tbl-mono">#{{ row.rowNum }}</td>
+              <td>
+                <div class="text-truncate-2" style="max-width: 300px;">{{ row.text }}</div>
+              </td>
+              <td>
+                <span [title]="'ID: ' + row.topicId">{{ row.topicName || row.topic || '---' }}</span>
+              </td>
+              <td>
+                <span class="level-badge"
+                  [class.level-easy]="row.level === 'beginner'"
+                  [class.level-medium]="row.level === 'intermediate'"
+                  [class.level-hard]="row.level === 'advanced'">
+                  {{ row.level === 'beginner' ? 'Dễ' : row.level === 'intermediate' ? 'TB' : row.level === 'advanced' ? 'Khó' : row.level }}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span class="options-count-badge">{{ row.options?.length || 0 }} đáp án</span>
+              </td>
+              <td style="text-align: center;">
+                <span class="row-status-badge" [class.success]="row.isValid" [class.danger]="!row.isValid">
+                  {{ row.isValid ? 'Sẵn sàng' : 'Lỗi: ' + row.errorMsg }}
+                </span>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="import-bottom-actions">
+        <button class="btn-modal-cancel" (click)="closeImportModal()">Hủy</button>
+        <button class="btn-modal-confirm" [disabled]="importSummary.valid === 0 || isImporting" (click)="executeImport()">
+          {{ isImporting ? 'Đang nạp...' : 'Tiến hành nạp (' + importSummary.valid + ' câu)' }}
+        </button>
+      </div>
+      }
     </div>
   </div>
   }

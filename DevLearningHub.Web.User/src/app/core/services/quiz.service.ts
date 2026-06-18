@@ -240,6 +240,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
     return {
       id,
       createdBy: quiz.createdBy || quiz.CreatedBy || '',
+      createdByFullName: quiz.createdByFullName || quiz.CreatedByFullName || '',
       title: quiz.title || quiz.Title || '',
       desc: quiz.description || quiz.Description || '',
       topicId: quiz.topicId || quiz.TopicId || '',

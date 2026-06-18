@@ -917,6 +917,36 @@
   }
 }
 
+/* --- NÚT HAMBURGER MỞ SIDEBAR MOBILE --- */
+.btn-hamburger {
+  display: none; /* Mặc định ẩn trên desktop */
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-right: 12px;
+}
+
+.btn-hamburger:hover {
+  background: var(--bg-nested);
+  border-color: rgba(168, 85, 247, 0.45);
+  color: #c084fc;
+}
+
+@media (max-width: 768px) {
+  .btn-hamburger {
+    display: flex; /* Hiện ra trên mobile */
+  }
+}
+
 .dashboard-container {
   overflow-x: hidden;
 }

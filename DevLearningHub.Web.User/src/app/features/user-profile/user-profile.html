@@ -1,0 +1,141 @@
+﻿<header class="content-header">
+  <div class="top-breadcrumb">
+    <button class="back-btn" (click)="goBack()" title="Quay lại">
+      <i class="bi bi-chevron-left"></i> Quay lại
+    </button>
+    <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i>
+    <span>Trang cá nhân</span>
+  </div>
+</header>
+
+<div class="dashboard-scroll-body">
+  @if (isLoading) {
+    <div class="forum-loading-state">
+      <div class="spinner-border text-primary spin-animation" role="status">
+        <i class="bi bi-arrow-repeat" style="font-size: 2rem; color: #a855f7;"></i>
+      </div>
+      <p>Đang tải trang cá nhân...</p>
+    </div>
+  } @else if (notFound) {
+    <div class="empty-state-card">
+      <i class="bi bi-person-x"></i>
+      <h3>Không tìm thấy người dùng</h3>
+      <p>Người dùng này không tồn tại hoặc đã bị xóa.</p>
+      <button class="btn-create" routerLink="/forum" style="margin-top: 16px;">Về diễn đàn</button>
+    </div>
+  } @else {
+    <!-- PROFILE CARD SECTION (Facebook/LeetCode Style) -->
+    <div class="profile-card-container">
+      <div class="profile-card">
+        <div class="profile-header-bg"></div>
+        
+        <div class="profile-content">
+          <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar" (error)="onAvatarError($event)">
+          
+          <div class="profile-info">
+            <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
+            <p class="profile-username">@{{ user.username }}</p>
+            <p class="profile-bio">{{ user.bio || 'Thành viên Dev Learning Hub' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSTS SECTION -->
+    <div class="profile-posts-section">
+      <h2 class="section-title">Bài viết gần đây</h2>
+
+    <div class="forum-layout profile-layout">
+      <div class="posts-column profile-main-column">
+        <div class="posts-list">
+          @if (posts.length === 0) {
+            <div class="empty-state-card">
+              <i class="bi bi-chat-right-text-fill"></i>
+              <h3>Chưa có bài viết nào</h3>
+              <p>Người dùng này chưa đăng bài viết nào trên diễn đàn.</p>
+            </div>
+          } @else {
+            @for (post of posts; track post.id) {
+              <div class="social-post-card" (click)="viewPost(post.id)">
+                <div class="post-card-header">
+                  <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
+                  <div class="author-meta-text">
+                    <span class="author-name">{{ user.fullName || user.username }}</span>
+                    <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
+                  </div>
+                </div>
+
+                <div class="post-card-body">
+                  <div class="post-card-text">
+                    <h3 class="post-title">{{ post.title }}</h3>
+                    @if (post.imageUrl) {
+                      <div class="post-image-container">
+                        <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+                      </div>
+                    }
+                    <p class="post-excerpt">{{ post.bodyMarkdown?.slice(0, 180) || '' }}{{ post.bodyMarkdown?.length > 180 ? '...' : '' }}</p>
+                  </div>
+                </div>
+
+                <div class="post-tags">
+                  @for (tag of post.tags; track tag.id) {
+                    <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
+                  }
+                </div>
+
+                <div class="post-card-metrics">
+                  <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i>{{ post.upvotes || 0 }} lượt thích</span>
+                  <span class="comments-count">{{ post.commentCount || 0 }} bình luận &nbsp;•&nbsp; {{ post.viewCount || 0 }} lượt xem</span>
+                </div>
+
+                <div class="post-divider"></div>
+
+                <div class="post-card-actions" (click)="$event.stopPropagation()">
+                  <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="vote(post, 'up')">
+                    <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i><span>Thích</span>
+                  </button>
+                  <button class="action-btn" (click)="viewPost(post.id)"><i class="bi bi-chat-right-text"></i><span>Bình luận</span></button>
+                  <button class="action-btn"><i class="bi bi-send"></i><span>Chia sẻ</span></button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="sidebar-column profile-side-column">
+        <div class="sidebar-card profile-identity-card">
+          <h3>Hồ sơ cá nhân</h3>
+          <div class="profile-inline-card">
+            <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-inline-avatar" (error)="onAvatarError($event)">
+            <div class="profile-inline-meta">
+              <h2>{{ user.fullName || user.username || 'Người dùng' }}</h2>
+              @if (user.username) { <span>@{{ user.username }}</span> }
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-card stats-card">
+          <h3>Thống kê</h3>
+          <div class="profile-stats-list">
+            <div class="profile-stat-item"><i class="bi bi-award-fill"></i><strong>{{ stats.totalXP }}</strong><span>XP tích lũy</span></div>
+            <div class="profile-stat-item"><i class="bi bi-trophy-fill"></i><strong>#{{ stats.rank }}</strong><span>Xếp hạng</span></div>
+            <div class="profile-stat-item"><i class="bi bi-patch-question-fill"></i><strong>{{ stats.totalQuizTaken }}</strong><span>Quiz đã làm</span></div>
+            <div class="profile-stat-item"><i class="bi bi-bar-chart-fill"></i><strong>{{ (stats.avgScore * 100) | number:'1.0-0' }}%</strong><span>Điểm trung bình</span></div>
+          </div>
+        </div>
+
+        <div class="sidebar-card rules-card">
+          <h3>Hồ sơ cá nhân</h3>
+          <ul class="rules-list">
+            <li><i class="bi bi-check2-circle text-purple"></i> Hồ sơ hiển thị bài viết gần đây của người dùng.</li>
+            <li><i class="bi bi-check2-circle text-purple"></i> Ảnh bài viết, tag và thống kê được đồng bộ từ diễn đàn.</li>
+            <li><i class="bi bi-check2-circle text-purple"></i> Giao diện bám theo cùng hệ card và spacing của forum.</li>
+            <li><i class="bi bi-check2-circle text-purple"></i> Bấm vào bài viết để mở chi tiết bài gốc.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    </div>
+  }
+</div>

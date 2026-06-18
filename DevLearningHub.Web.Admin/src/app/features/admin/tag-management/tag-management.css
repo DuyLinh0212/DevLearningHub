@@ -182,3 +182,98 @@
     min-width: 560px;
   }
 }
+
+/* ==========================================================================
+   📱 TAG MANAGEMENT RESPONSIVE - BREAKPOINTS 768px & 480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Sidebar ẩn, main-content full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Content header -> column */
+  .content-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    padding: 16px 12px !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .admin-header-actions {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  /* Tag table cuộn ngang */
+  .tag-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .tag-table {
+    min-width: 560px !important;
+  }
+
+  /* Modal responsive */
+  .admin-large-modal {
+    width: calc(100% - 24px) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 18px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header {
+    padding: 10px 8px !important;
+  }
+
+  /* Tag table */
+  .tag-table {
+    min-width: 480px !important;
+  }
+
+  /* Modal full-width */
+  .admin-large-modal {
+    width: calc(100% - 16px) !important;
+    padding: 14px !important;
+  }
+
+  .input-field-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .color-input-wrap {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .color-input-wrap input[type=text] {
+    width: 100% !important;
+  }
+
+  .modal-actions-row {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-confirm {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+  }
+
+  .empty-state-box-tag {
+    padding: 36px 16px !important;
+  }
+}

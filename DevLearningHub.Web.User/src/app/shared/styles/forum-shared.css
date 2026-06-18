@@ -1,0 +1,115 @@
+/* ==========================================================================
+   📦 FORUM SHARED COMPONENTS (Dùng chung cho cả Forum & Profile)
+   ========================================================================== */
+
+/* --- SYSTEM SIDEBAR CARD --- */
+.sidebar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--padding-lg, 24px);
+  box-shadow: var(--shadow-soft);
+}
+
+.sidebar-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--text-main);
+}
+
+.sidebar-card-desc {
+  color: var(--text-muted-dark);
+  font-size: 0.78rem;
+  margin: 0 0 16px 0;
+}
+
+/* --- PREMIUM SOCIAL POST CARD --- */
+.social-post-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  padding: var(--padding-lg, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.social-post-card:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: var(--shadow-hover-purple);
+}
+
+/* Post Card Header */
+.post-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.post-card-header .author-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(168, 85, 247, 0.4);
+}
+
+.post-card-header .author-meta-text { display: flex; flex-direction: column; gap: 2px; }
+.post-card-header .author-name { color: var(--text-main); font-weight: 700; font-size: 0.95rem; }
+.post-card-header .post-date { color: var(--text-muted-dark); font-size: 0.78rem; font-weight: 500; }
+
+/* Post Card Body */
+.post-card-body { display: flex; flex-direction: column; gap: 12px; }
+.post-card-text { flex: 1; min-width: 0; }
+.post-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1.4; word-wrap: break-word; transition: color 0.2s ease; }
+.social-post-card:hover .post-title { color: #c084fc; }
+.post-excerpt { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+
+/* Post Image Container */
+.post-image-container { width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 8px; margin-bottom: 12px; }
+.post-detail-image { max-width: 100%; height: auto; max-height: 400px; object-fit: contain; border-radius: 8px; border: 1px solid var(--bg-card-border); background-color: var(--bg-nested, #18181b); padding: 6px; display: block; }
+
+/* Post Tags & Metrics */
+.post-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.post-tag-badge { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.15); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; transition: all 0.2s ease; }
+.post-tag-badge:hover { background: rgba(168, 85, 247, 0.15); transform: scale(1.05); }
+.post-card-metrics { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted-dark); padding: 0 4px; }
+.post-card-metrics .likes-count { display: flex; align-items: center; font-weight: 600; }
+.post-divider { height: 1px; background-color: var(--bg-card-border); }
+
+/* Post Actions Bar */
+.post-card-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.action-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; padding: 8px 4px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; }
+.action-btn:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-main); }
+.action-btn.active { color: #a855f7; }
+.action-btn.active i { color: #ef4444; }
+
+/* --- COMMON RULES LIST STYLE --- */
+.rules-list { list-style: none; padding: 0; margin: 12px 0 0 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); }
+.rules-list li { display: flex; align-items: flex-start; gap: 10px; }
+.rules-list li i { font-size: 0.95rem; margin-top: 2px; flex-shrink: 0; }
+.text-purple { color: #c084fc; }
+
+/* ==========================================================================
+   📱 MOBILE RESPONSIVE TIÊU CHUẨN CARD (DÙNG CHUNG)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .social-post-card { padding: 16px; gap: 10px; }
+  .post-title { font-size: 1rem; }
+  .action-btn { font-size: 0.78rem; padding: 7px 4px; }
+  .sidebar-card { padding: 16px; }
+}
+
+@media (max-width: 480px) {
+  .social-post-card { padding: 14px; }
+  .post-title { font-size: 0.95rem; }
+  .post-excerpt { font-size: 0.85rem; }
+  .action-btn span { display: none; } /* Mobile nhỏ: Ẩn text chỉ hiện icon tim/chat */
+  .post-card-header .author-avatar { width: 36px; height: 36px; }
+}

@@ -5,11 +5,12 @@ import { DashboardComponent } from './features/dashboard/dashboard';
 import { LandingComponent } from './features/landing/landing';
 import { AdminDashboardComponent } from './features/admin/admin-dashboard/admin-dashboard';
 import { QuizManagementComponent } from './features/admin/quiz-management/quiz-management';
-import { QuestionImportComponent } from './features/admin/question-import/question-import';
 import { RoadmapManagementComponent } from './features/admin/roadmap-management/roadmap-management';
 import { TopicManagementComponent } from './features/admin/topic-management/topic-management';
 import { TagManagementComponent } from './features/admin/tag-management/tag-management';
 import { PostManagementComponent } from './features/admin/post-management/post-management';
+import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
+import { UserManagementComponent } from './features/admin/user-management/user-management';
 import { SettingsComponent } from './features/settings/settings';
 import { adminGuard } from './core/guards/admin.guard';
 
@@ -21,11 +22,12 @@ export const routes: Routes = [
   { path: 'landing', component: LandingComponent },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard]},
   { path: 'admin/quiz', component: QuizManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/quiz/import', component: QuestionImportComponent, canActivate: [adminGuard] },
   { path: 'admin/roadmap', component: RoadmapManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/topics', component: TopicManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/tags', component: TagManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/posts', component: PostManagementComponent, canActivate: [adminGuard] },
+  { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [adminGuard] },
+  { path: 'admin/users', component: UserManagementComponent, canActivate: [adminGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [adminGuard] },
   { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

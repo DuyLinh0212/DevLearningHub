@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-quiz-detail',
@@ -16,6 +17,7 @@ export class QuizDetailComponent implements OnInit {
   private router = inject(Router);
   private quizService = inject(QuizService);
   private cdr = inject(ChangeDetectorRef);
+  private http = inject(HttpClient);
 
   quizId: string = '';
   quizTitle: string = '';
@@ -25,6 +27,8 @@ export class QuizDetailComponent implements OnInit {
   quizLevel: string = 'Chưa xác định';
   quizShuffle: boolean = false;
   quizInstantResult: boolean = false;
+  currentUserId: string = '';
+  quizCreatedBy: string = '';
 
   selectedExamCount: number = 10;
 
@@ -36,53 +40,63 @@ export class QuizDetailComponent implements OnInit {
       return;
     }
 
-    console.log('=== USER_DETAIL: BẮT ĐẦU TẢI CHI TIẾT BỘ ĐỀ ===');
+    this.loadCurrentUser();
+  }
+
+  loadCurrentUser() {
+    this.http.get<any>('/api/users/me').subscribe({
+      next: (res) => {
+        const user = res?.data || res;
+        this.currentUserId = (user?.id || user?.Id || user?.userId || user?.sub || '')
+          .toString()
+          .toLowerCase();
+        this.loadQuizDetails();
+      },
+      error: () => {
+        this.currentUserId = '';
+        this.loadQuizDetails();
+      }
+    });
+  }
+
+  loadQuizDetails() {
     this.quizService.getQuiz(this.quizId).subscribe({
       next: (res: any) => {
-        // PHÒNG THỦ: Bóc tách lớp vỏ bọc data từ Swagger của Nam
         const quiz = res?.data || res;
-        
-        if (quiz) {
-          console.log('Dữ liệu thô bộ đề nhận từ Swagger:', quiz);
-          
-          this.quizTitle = quiz.title || 'Không có tiêu đề';
-          this.quizDesc = quiz.description || quiz.desc || 'Chưa có mô tả chi tiết từ giảng viên.';
-          
-          // Đọc chính xác trường không có chữ 's' từ Backend
-          this.quizQuestionsCount = quiz.questionCount ?? quiz.questionsCount ?? 0;
-          
-          // Tính toán số phút từ trường giây timeLimitSeconds
-          this.quizDuration = quiz.duration || (quiz.timeLimitSeconds ? Math.floor(quiz.timeLimitSeconds / 60) : 15); 
-          
-          this.quizShuffle = quiz.shuffle || false;
-          this.quizInstantResult = quiz.instantResult || false;
 
-          const rawLevel = (quiz.level || 'beginner').toString().toLowerCase().trim();
-          if (rawLevel === 'beginner' || rawLevel === 'easy') {
-            this.quizLevel = 'Dễ';
-          } else if (rawLevel === 'intermediate' || rawLevel === 'medium') {
-            this.quizLevel = 'Trung bình';
-          } else {
-            this.quizLevel = 'Khó';
-          }
-
-          // Cập nhật lại số câu mặc định ban đầu bằng đúng tổng số câu nếu tổng câu nhỏ hơn 10
-          if (this.quizQuestionsCount < 10 && this.quizQuestionsCount > 0) {
-            this.selectedExamCount = this.quizQuestionsCount;
-          }
-
-          console.log(`=== ĐỒNG BỘ THÀNH CÔNG === Số câu: ${this.quizQuestionsCount} | Thời gian: ${this.quizDuration} phút`);
-          this.cdr.detectChanges();
+        if (!quiz) {
+          return;
         }
+
+        this.quizTitle = quiz.title || 'Không có tiêu đề';
+        this.quizDesc = quiz.description || quiz.desc || 'Chưa có mô tả chi tiết từ giảng viên.';
+        this.quizCreatedBy = this.getQuizCreatorDisplayName(quiz);
+        this.quizQuestionsCount = quiz.questionCount ?? quiz.questionsCount ?? 0;
+        this.quizDuration = quiz.duration || (quiz.timeLimitSeconds ? Math.floor(quiz.timeLimitSeconds / 60) : 15);
+        this.quizShuffle = quiz.shuffle || false;
+        this.quizInstantResult = quiz.instantResult || false;
+
+        const rawLevel = (quiz.level || 'beginner').toString().toLowerCase().trim();
+        if (rawLevel === 'beginner' || rawLevel === 'easy') {
+          this.quizLevel = 'Dễ';
+        } else if (rawLevel === 'intermediate' || rawLevel === 'medium') {
+          this.quizLevel = 'Trung bình';
+        } else {
+          this.quizLevel = 'Khó';
+        }
+
+        if (this.quizQuestionsCount < 10 && this.quizQuestionsCount > 0) {
+          this.selectedExamCount = this.quizQuestionsCount;
+        }
+
+        this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Lỗi gọi API chi tiết bộ đề:', err);
+      error: () => {
         this.router.navigate(['/quiz-bank']);
       }
     });
   }
 
-  // ⚡ HÀM STEPPER GIẢM SỐ CÂU (BẮT BUỘC CÓ CHO FILE HTML)
   decreaseExamCount() {
     if (this.selectedExamCount > 1) {
       this.selectedExamCount--;
@@ -90,7 +104,6 @@ export class QuizDetailComponent implements OnInit {
     }
   }
 
-  // ⚡ HÀM STEPPER TĂNG SỐ CÂU (BẮT BUỘC CÓ CHO FILE HTML)
   increaseExamCount() {
     if (this.selectedExamCount < this.quizQuestionsCount) {
       this.selectedExamCount++;
@@ -101,12 +114,16 @@ export class QuizDetailComponent implements OnInit {
   startQuiz(mode: 'practice' | 'exam') {
     const limit = mode === 'exam' ? this.selectedExamCount : this.quizQuestionsCount;
     this.router.navigate(['/quiz-play', this.quizId], {
-      queryParams: { mode: mode, limit: limit }
+      queryParams: { mode, limit }
     });
   }
 
   get isExamCountInvalid(): boolean {
     return this.selectedExamCount > this.quizQuestionsCount || this.selectedExamCount < 1;
+  }
+
+  get showQuizCreator(): boolean {
+    return !!this.quizCreatedBy && !this.compareIds(this.quizCreatedBy, this.currentUserId);
   }
 
   getExamErrorMessage(): string {
@@ -117,5 +134,20 @@ export class QuizDetailComponent implements OnInit {
       return 'Số câu hỏi phải lớn hơn 0.';
     }
     return '';
+  }
+
+  private getQuizCreatorDisplayName(quiz: any): string {
+    const fullName = quiz.createdByFullName ?? quiz.CreatedByFullName ?? '';
+    if (fullName) {
+      return fullName.toString().trim();
+    }
+
+    const creator = quiz.createdBy ?? quiz.CreatedBy ?? quiz.userId ?? quiz.UserId ?? '';
+    return creator.toString().trim();
+  }
+
+  private compareIds(id1: any, id2: any): boolean {
+    if (!id1 || !id2) return false;
+    return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
   }
 }

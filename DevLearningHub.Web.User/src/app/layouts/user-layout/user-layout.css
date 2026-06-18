@@ -45,9 +45,34 @@
     overflow: hidden !important;
   }
 
+  app-sidebar {
+    height: 0 !important;
+    width: 0 !important;
+    display: block !important;
+  }
+
   .main-content {
     height: calc(100vh - 56px) !important;
     flex: 1 !important;
     min-height: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   📱 LAYOUT BỔ SUNG - @480px (Very Small Mobile)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .mobile-top-bar {
+    height: 50px;
+    padding: 0 12px;
+  }
+
+  .main-content {
+    height: calc(100vh - 50px) !important;
+  }
+
+  .dashboard-container {
+    flex-direction: column !important;
+    overflow: hidden !important;
   }
 }

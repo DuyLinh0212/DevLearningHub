@@ -357,3 +357,68 @@
     box-sizing: border-box;
   }
 }
+
+/* ==========================================================================
+   📱 ROADMAP RESPONSIVE BỔ SUNG - @480px (Very Small Mobile)
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* Intro section compact */
+  .active-roadmap-intro h2 {
+    font-size: 1.3rem;
+  }
+
+  .active-roadmap-intro p {
+    font-size: 0.8rem;
+  }
+
+  /* Timeline: thu nhỏ vòng tròn, padding */
+  .tree-timeline-track {
+    padding-left: 8px;
+  }
+
+  .vertical-timeline-line {
+    left: 22px;
+  }
+
+  .timeline-node-row {
+    gap: 14px;
+    padding-bottom: 22px;
+  }
+
+  .node-status-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+
+  .node-content-box {
+    padding: 12px;
+  }
+
+  .node-info-text h4 {
+    font-size: 0.88rem;
+  }
+
+  .node-info-text p {
+    font-size: 0.75rem;
+  }
+
+  .btn-admin-act {
+    padding: 7px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* Roadmap selector cards */
+  .roadmap-selector-card {
+    padding: 12px;
+  }
+
+  .roadmap-selector-card h3 {
+    font-size: 0.88rem;
+  }
+
+  /* Main tree panel */
+  .roadmap-tree-main {
+    padding: 16px;
+  }
+}

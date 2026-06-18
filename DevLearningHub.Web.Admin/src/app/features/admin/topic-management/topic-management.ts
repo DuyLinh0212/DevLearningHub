@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { TopicService } from '../../../core/services/topic.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-topic-management',
@@ -16,6 +17,7 @@ export class TopicManagementComponent implements OnInit {
   private topicService = inject(TopicService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
   
   topics: any[] = [];
   filteredTopics: any[] = [];

@@ -457,4 +457,66 @@
     flex-direction: column !important;
     gap: 16px !important;
   }
+
+  /* 6. Sidebar ẩn hoàn toàn, main-content chiếm full width */
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* ==========================================================================
+   📱 ADMIN DASHBOARD RESPONSIVE - BREAKPOINT 480px (SMALL MOBILE)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .content-header {
+    padding: 12px 8px !important;
+    gap: 10px !important;
+  }
+
+  .admin-config-grid {
+    max-width: 100% !important;
+  }
+
+  .creation-form-card {
+    padding: 16px !important;
+  }
+
+  .input-field-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .admin-actions-row-form {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .admin-actions-row-form button {
+    width: 100% !important;
+  }
+
+  .setting-toggle-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .admin-logs-table {
+    font-size: 0.78rem !important;
+  }
+
+  .admin-logs-table th,
+  .admin-logs-table td {
+    padding: 8px 10px !important;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
 }

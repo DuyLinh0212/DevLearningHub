@@ -2,18 +2,28 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { RouterLink, Router } from '@angular/router';
+import { Observable, forkJoin, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
+import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-post-management',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, FormsModule],
+  imports: [CommonModule, SidebarComponent, FormsModule, RouterLink],
   templateUrl: './post-management.html',
   styleUrl: './post-management.css'
 })
 export class PostManagementComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  public mobileMenu = inject(MobileMenuService);
+  private sanitizer = inject(DomSanitizer);
+  private router = inject(Router);
+
+  private readonly PAGE_SIZE = 100;
 
   // Data
   posts: any[] = [];
@@ -27,7 +37,7 @@ export class PostManagementComponent implements OnInit {
   filterTag = 'all';
   filterDate = 'all';
   sortBy = 'newest';
-  showHidden = false;
+  showHidden = true;
   allTags: any[] = [];
 
   // Pagination
@@ -60,11 +70,9 @@ export class PostManagementComponent implements OnInit {
 
   loadAllPosts() {
     this.isLoading = true;
-    // Load all posts (including hidden ones for admin by using a high page size)
-    this.http.get<any>('/api/posts?pageSize=100&page=1').subscribe({
-      next: (res) => {
-        const data = res?.data?.items || res?.data || [];
-        this.posts = Array.isArray(data) ? data : [];
+    this.fetchAllPosts().subscribe({
+      next: (allPosts) => {
+        this.posts = allPosts;
         this.applyFilters();
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -73,10 +81,39 @@ export class PostManagementComponent implements OnInit {
         console.error('Lỗi tải bài viết:', err);
         this.isLoading = false;
         this.posts = [];
-        this.filteredPosts = [];
+        this.applyFilters();
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private fetchAllPosts(): Observable<any[]> {
+    return this.http.get<any>(`/api/posts?page=1&pageSize=${this.PAGE_SIZE}`).pipe(
+      switchMap(firstRes => {
+        const data = firstRes?.data || firstRes;
+        const firstItems = this.normalizePosts(data?.items || []);
+        const totalPages = data?.totalPages || 1;
+
+        if (totalPages <= 1) {
+          return of(firstItems);
+        }
+
+        const pageRequests = Array.from({ length: totalPages - 1 }, (_, index) =>
+          this.http.get<any>(`/api/posts?page=${index + 2}&pageSize=${this.PAGE_SIZE}`)
+        );
+
+        return forkJoin(pageRequests).pipe(
+          map(responses => {
+            const restItems = responses.flatMap(res => {
+              const pageData = res?.data || res;
+              return this.normalizePosts(pageData?.items || []);
+            });
+            return [...firstItems, ...restItems];
+          })
+        );
+      }),
+      catchError(() => of([]))
+    );
   }
 
   onSearchChange() {
@@ -86,6 +123,14 @@ export class PostManagementComponent implements OnInit {
 
   toggleShowHidden() {
     this.showHidden = !this.showHidden;
+    this.filterStatus = this.showHidden ? 'all' : 'visible';
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  onStatusFilterChange() {
+    this.showHidden = this.filterStatus !== 'visible';
+    this.currentPage = 1;
     this.applyFilters();
   }
 
@@ -136,8 +181,6 @@ export class PostManagementComponent implements OnInit {
       result = result.filter(p => !p.isHidden);
     } else if (this.filterStatus === 'hidden') {
       result = result.filter(p => p.isHidden);
-    } else if (!this.showHidden) {
-      result = result.filter(p => !p.isHidden);
     }
 
     // Sort
@@ -208,13 +251,18 @@ export class PostManagementComponent implements OnInit {
   moderatePost(postId: string, hide: boolean, reason: string) {
     const payload = { hidden: hide, reason: reason || null };
     this.http.post<any>(`/api/posts/${postId}/moderate`, payload).subscribe({
-      next: (res) => {
-        // Update in local list
+      next: () => {
         const idx = this.posts.findIndex(p => p.id === postId);
         if (idx !== -1) {
           this.posts[idx].isHidden = hide;
         }
-        this.applyFilters();
+
+        if (hide) {
+          this.filterStatus = 'hidden';
+          this.showHidden = true;
+        }
+
+        this.loadAllPosts();
         alert(hide ? 'Đã ẩn bài viết!' : 'Đã hiển thị lại bài viết!');
       },
       error: (err) => {
@@ -224,6 +272,22 @@ export class PostManagementComponent implements OnInit {
     });
   }
 
+  formatRelativeTime(dateString: string): string {
+    if (!dateString) return '';
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (seconds < 60) return 'Vừa xong';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} phút trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} ngày trước`;
+    return `${Math.floor(days / 30)} tháng trước`;
+  }
+
+  // --- POST DELETE ---
   deletePost(postId: string) {
     if (!confirm('⚠️ Xóa bài viết này là vĩnh viễn, không thể khôi phục. Bạn chắc chắn muốn xóa?')) return;
     this.http.delete<any>(`/api/posts/${postId}`).subscribe({
@@ -243,5 +307,25 @@ export class PostManagementComponent implements OnInit {
     if (!dateStr) return '—';
     const d = new Date(dateStr);
     return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) img.src = 'assets/images/default-avatar.svg';
+  }
+
+  goToUserProfile(userId: string) {
+    if (userId) {
+      window.open(`/user/${userId}`, '_blank');
+    }
+  }
+
+  private normalizePosts(posts: any[]): any[] {
+    if (!Array.isArray(posts)) return [];
+    return posts.map(post => ({
+      ...post,
+      id: post.id || post.Id,
+      isHidden: Boolean(post.isHidden ?? post.IsHidden)
+    }));
   }
 }

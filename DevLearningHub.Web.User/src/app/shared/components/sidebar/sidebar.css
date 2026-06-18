@@ -280,9 +280,12 @@
    ========================================================================== */
 @media (max-width: 768px) {
   .sidebar {
+    display: flex !important;
     position: fixed !important;
     top: 0;
     left: 0;
+    width: min(320px, 86vw);
+    height: 100vh;
     z-index: 99999 !important;
     transform: translateX(-100%); /* Trượt hẳn sang bên trái màn hình ẩn đi */
     box-shadow: 20px 0 30px rgba(0, 0, 0, 0.5);
@@ -306,5 +309,32 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     z-index: 99998 !important;
+  }
+}
+
+/* ==========================================================================
+   📱 SIDEBAR BỔ SUNG - @480px (Very Small Mobile)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 280px; /* Sidebar hẹp hơn tí trên điện thoại rất nhỏ */
+  }
+
+  .sidebar-brand h2 {
+    font-size: 1.1rem;
+  }
+
+  .brand-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sidebar-profile {
+    margin: 0 8px 12px;
+    padding: 10px;
+  }
+
+  .sidebar-profile-info strong {
+    font-size: 0.85rem;
   }
 }

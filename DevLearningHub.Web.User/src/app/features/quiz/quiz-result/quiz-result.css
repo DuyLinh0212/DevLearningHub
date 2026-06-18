@@ -453,3 +453,202 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ==========================================================================
+   📱 QUIZ-RESULT RESPONSIVE - @768px & @480px
+   ========================================================================== */
+@media (max-width: 768px) {
+  .quiz-play-container {
+    padding: 16px 20px;
+  }
+
+  /* Header action buttons wrap on mobile */
+  .quiz-play-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-action-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn-secondary-action-link,
+  .btn-secondary-action {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Scorecard panel: 2 cột về 1 cột dọc */
+  .main-scorecard-panel {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .chart-section-left {
+    border-right: none;
+    border-bottom: 1px solid var(--bg-card-border);
+    padding-right: 0;
+    padding-bottom: 16px;
+  }
+
+  /* Metrics grid: 2 cột giữ nguyên */
+  .metrics-grid-right {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Review cards */
+  .review-card-head {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .row-status-badge {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .quiz-play-container {
+    padding: 12px;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .quiz-play-header h2 {
+    font-size: 0.95rem;
+  }
+
+  .btn-header-back {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Scorecard: compact */
+  .main-scorecard-panel {
+    padding: 16px;
+  }
+
+  .chart-section-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .donut-chart-box {
+    width: 80px;
+    height: 80px;
+  }
+
+  .donut-center-mask {
+    width: 58px;
+    height: 58px;
+  }
+
+  .donut-center-mask span {
+    font-size: 1rem;
+  }
+
+  .chart-info-text h3 {
+    font-size: 1.2rem;
+  }
+
+  /* Metrics: 1 cột trên mobile rất nhỏ */
+  .metrics-grid-right {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Answer review */
+  .answer-line-box {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .review-card-item {
+    padding: 16px;
+  }
+
+  /* mini badges */
+  .m-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  .btn-expand-all {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ==========================================================================
+   📱 RESPONSIVE — Quiz Result Mobile
+   ========================================================================== */
+@media (max-width: 768px) {
+  .quiz-play-container {
+    padding: 16px;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .quiz-play-header {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .result-hero-section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+
+  .result-score-circle {
+    width: 120px;
+    height: 120px;
+  }
+
+  .score-percent-text {
+    font-size: 2rem;
+  }
+
+  .result-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .result-stat-card {
+    padding: 12px;
+  }
+
+  .result-actions-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .result-actions-row button,
+  .result-actions-row a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .result-review-section {
+    padding: 0 0 24px;
+  }
+
+  .review-question-card {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .quiz-play-header h2 {
+    font-size: 0.95rem;
+  }
+}

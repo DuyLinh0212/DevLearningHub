@@ -9,6 +9,14 @@
     </button>
   </div>
 
+  <a routerLink="/settings" class="sidebar-profile">
+    <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="sidebar-profile-avatar">
+    <div class="sidebar-profile-info">
+      <strong>{{ profile.displayName }}</strong>
+      <span>{{ profile.email || 'Quản trị viên' }}</span>
+    </div>
+  </a>
+
   <nav class="sidebar-menu">
     <div class="menu-heading">ĐIỀU PHỐI</div>
     <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
@@ -16,9 +24,6 @@
     </a>
     <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
       <i class="bi bi-database-fill"></i> Quản lý Đề thi
-    </a>
-    <a routerLink="/admin/quiz/import" routerLinkActive="active" class="menu-item">
-      <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
     </a>
     <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
       <i class="bi bi-bezier2"></i> Quản lý Lộ trình
@@ -40,6 +45,9 @@
     <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-terminal-fill"></i> Logs hệ thống</a>
 
     <div class="menu-heading">HỆ THỐNG</div>
+    <a routerLink="/admin/users" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-people-fill"></i> Quản lý Người dùng
+    </a>
     <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
     <a (click)="themeService.toggleTheme()" class="menu-item theme-toggle-btn" style="cursor: pointer;">
       <i class="bi" [class.bi-moon-stars-fill]="!themeService.isDarkMode()" [class.bi-sun-fill]="themeService.isDarkMode()"></i>

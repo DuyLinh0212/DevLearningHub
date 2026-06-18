@@ -19,28 +19,25 @@ export class ForumComponent implements OnInit {
 
   posts: any[] = [];
   tags: any[] = [];
-  
+
   activePostMenuId: string | null = null;
-  
-  // State của feed
-  page: number = 1;
+
   pageSize: number = 15;
-  totalCount: number = 0;
-  totalPages: number = 0;
   searchText: string = '';
   selectedTag: string = '';
   filteredPosts: any[] = [];
-  
+  nextCursor: string | null = null;
+  nextCursorId: string | null = null;
+  hasMorePosts: boolean = false;
+
   loading: boolean = false;
   tagsLoading: boolean = false;
 
   ngOnInit() {
-    // Lắng nghe queryParams để hỗ trợ quay lại/đi tiếp bằng browser history
     this.route.queryParams.subscribe(params => {
-      this.page = params['page'] ? parseInt(params['page'], 10) : 1;
       this.selectedTag = params['tag'] || '';
       this.searchText = params['search'] || '';
-      this.loadPosts();
+      this.loadPosts(true);
       this.cdr.detectChanges();
     });
 
@@ -59,24 +56,44 @@ export class ForumComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  loadPosts() {
+  loadPosts(reset: boolean = false) {
     if (this.loading) return;
     this.loading = true;
+
+    if (reset) {
+      this.posts = [];
+      this.filteredPosts = [];
+      this.nextCursor = null;
+      this.nextCursorId = null;
+      this.hasMorePosts = false;
+    }
+
     this.cdr.detectChanges();
 
-    this.forumService.getPosts(this.page, this.pageSize, this.searchText, this.selectedTag).subscribe({
+    this.forumService.getPosts(
+      this.pageSize,
+      this.searchText,
+      this.selectedTag,
+      undefined,
+      reset ? null : this.nextCursor,
+      reset ? null : this.nextCursorId
+    ).subscribe({
       next: (res) => {
-        const pagedData = res || { items: [], totalCount: 0, page: 1, pageSize: 15, totalPages: 0 };
-        const bookmarkedIds: string[] = [];
-        this.posts = (pagedData.items || []).map((post: any) => {
+        const cursorData = res || {
+          items: [],
+          pageSize: this.pageSize,
+          nextCursor: null,
+          nextCursorId: null,
+          hasMore: false
+        };
+
+        const incomingPosts = (cursorData.items || []).map((post: any) => {
           post.isBookmarked = false;
-          // Tải chi tiết bài viết bất đồng bộ để lấy nội dung & ảnh
           this.forumService.getPost(post.id).subscribe({
             next: (detail) => {
               if (detail) {
                 post.bodyMarkdown = detail.bodyMarkdown;
                 post.imageUrl = detail.imageUrl;
-                // Lấy trạng thái vote của user hiện tại để giữ màu tim
                 post.myVote = detail.myVote || null;
                 this.applyFilters();
                 this.cdr.detectChanges();
@@ -85,9 +102,11 @@ export class ForumComponent implements OnInit {
           });
           return post;
         });
-        this.totalCount = pagedData.totalCount || 0;
-        this.totalPages = pagedData.totalPages || 0;
-        this.page = pagedData.page || 1;
+
+        this.posts = reset ? incomingPosts : [...this.posts, ...incomingPosts];
+        this.nextCursor = cursorData.nextCursor || null;
+        this.nextCursorId = cursorData.nextCursorId || null;
+        this.hasMorePosts = !!cursorData.hasMore;
         this.loading = false;
         this.applyFilters();
         this.cdr.detectChanges();
@@ -96,12 +115,18 @@ export class ForumComponent implements OnInit {
         console.error('Lỗi tải bài đăng:', err);
         this.posts = [];
         this.filteredPosts = [];
-        this.totalCount = 0;
-        this.totalPages = 0;
+        this.nextCursor = null;
+        this.nextCursorId = null;
+        this.hasMorePosts = false;
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  loadMorePosts() {
+    if (!this.hasMorePosts || this.loading) return;
+    this.loadPosts(false);
   }
 
   applyFilters() {
@@ -137,19 +162,11 @@ export class ForumComponent implements OnInit {
   }
 
   triggerSearch() {
-    this.page = 1;
     this.updateRoute();
   }
 
   filterByTag(tagSlug: string) {
     this.selectedTag = tagSlug;
-    this.page = 1;
-    this.updateRoute();
-  }
-
-  changePage(newPage: number) {
-    if (newPage < 1 || newPage > this.totalPages) return;
-    this.page = newPage;
     this.updateRoute();
   }
 
@@ -157,7 +174,6 @@ export class ForumComponent implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        page: this.page,
         tag: this.selectedTag || null,
         search: this.searchText || null
       },
@@ -167,6 +183,13 @@ export class ForumComponent implements OnInit {
 
   viewPostDetail(postId: string) {
     this.router.navigate(['/forum/post', postId]);
+  }
+
+  goToProfile(userId: string, event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/user', userId], {
+      state: { returnUrl: '/forum' }
+    });
   }
 
   vote(post: any, voteType: 'up' | 'down') {
@@ -193,22 +216,6 @@ export class ForumComponent implements OnInit {
     });
   }
 
-  getPageNumbers(): number[] {
-    const numbers: number[] = [];
-    const maxVisiblePages = 5;
-    let start = Math.max(1, this.page - 2);
-    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
-
-    if (end - start + 1 < maxVisiblePages) {
-      start = Math.max(1, end - maxVisiblePages + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      numbers.push(i);
-    }
-    return numbers;
-  }
-
   formatRelativeTime(dateString: string): string {
     if (!dateString) return '';
     const now = new Date();
@@ -216,7 +223,7 @@ export class ForumComponent implements OnInit {
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (seconds < 60) return 'Vừa xong';
-    
+
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} phút trước`;
 
@@ -233,14 +240,14 @@ export class ForumComponent implements OnInit {
   getExcerpt(bodyMarkdown: string): string {
     if (!bodyMarkdown) return '';
     let text = bodyMarkdown
-      .replace(/#+\s+/g, '') // remove headers
-      .replace(/```[\s\S]*?```/g, '') // remove code blocks
-      .replace(/`([^`]+)`/g, '$1') // remove inline code
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // remove bold
-      .replace(/\*([^*]+)\*/g, '$1') // remove italic
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // remove links
+      .replace(/#+\s+/g, '')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
       .trim();
-    
+
     if (text.length > 180) {
       return text.substring(0, 180) + '...';
     }
@@ -259,6 +266,10 @@ export class ForumComponent implements OnInit {
 
   toggleBookmark(post: any, event: Event) {
     event.stopPropagation();
-    // Vô hiệu hóa lưu bookmark local do BE chưa có API
+  }
+
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) img.src = 'assets/images/default-avatar.svg';
   }
 }

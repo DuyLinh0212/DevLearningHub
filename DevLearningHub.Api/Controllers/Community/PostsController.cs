@@ -31,15 +31,15 @@ public class PostsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    // List posts with pagination, optional search and tag filter.
-    public async Task<ActionResult<ApiResponse<PagedResponse<PostSummaryResponse>>>> GetPosts(
-        [FromQuery] int page = 1,
+    // List posts with cursor pagination, optional search and tag filter.
+    public async Task<ActionResult<ApiResponse<CursorPagedResponse<PostSummaryResponse>>>> GetPosts(
+        [FromQuery] DateTime? cursor = null,
+        [FromQuery] Guid? cursorId = null,
         [FromQuery] int pageSize = DefaultPageSize,
         [FromQuery] string? search = null,
         [FromQuery] string? tag = null,
         [FromQuery] Guid? authorId = null)
     {
-        page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
 
         // Moderators and admins can see hidden posts in the list; everyone else only sees visible ones.
@@ -63,12 +63,26 @@ public class PostsController : ControllerBase
             query = query.Where(p => p.AuthorId == authorId.Value);
         }
 
-        var totalCount = await query.CountAsync();
+        if (cursor.HasValue)
+        {
+            var cursorValue = cursor.Value;
+            if (cursorId.HasValue)
+            {
+                var stableCursorId = cursorId.Value;
+                query = query.Where(p =>
+                    p.CreatedAt < cursorValue ||
+                    (p.CreatedAt == cursorValue && p.Id.CompareTo(stableCursorId) < 0));
+            }
+            else
+            {
+                query = query.Where(p => p.CreatedAt < cursorValue);
+            }
+        }
 
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .ThenByDescending(p => p.Id)
+            .Take(pageSize + 1)
             .Select(p => new PostSummaryResponse
             {
                 Id = p.Id,
@@ -100,16 +114,23 @@ public class PostsController : ControllerBase
             })
             .ToListAsync();
 
-        var result = new PagedResponse<PostSummaryResponse>
+        var hasMore = posts.Count > pageSize;
+        if (hasMore)
+        {
+            posts.RemoveAt(posts.Count - 1);
+        }
+
+        var lastPost = posts.LastOrDefault();
+        var result = new CursorPagedResponse<PostSummaryResponse>
         {
             Items = posts,
-            TotalCount = totalCount,
-            Page = page,
             PageSize = pageSize,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            NextCursor = hasMore ? lastPost?.CreatedAt : null,
+            NextCursorId = hasMore ? lastPost?.Id : null,
+            HasMore = hasMore
         };
 
-        return Ok(ApiResponse<PagedResponse<PostSummaryResponse>>.Ok(result));
+        return Ok(ApiResponse<CursorPagedResponse<PostSummaryResponse>>.Ok(result));
     }
 
     [HttpGet("{id:guid}")]

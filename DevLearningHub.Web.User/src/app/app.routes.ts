@@ -35,7 +35,9 @@ export const routes: Routes = [
       { path: 'forum', loadComponent: () => import('./features/forum/forum').then(m => m.ForumComponent) },
       { path: 'forum/post/:id', loadComponent: () => import('./features/forum/post-detail/post-detail').then(m => m.PostDetailComponent) },
       { path: 'forum/create', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) },
-      { path: 'forum/edit/:id', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) }
+      { path: 'forum/edit/:id', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) },
+      { path: 'user/:id', loadComponent: () => import('./features/user-profile/user-profile').then(m => m.UserProfileComponent) }
     ]
-  }
+  },
+  { path: '**', redirectTo: 'landing' }
 ];
