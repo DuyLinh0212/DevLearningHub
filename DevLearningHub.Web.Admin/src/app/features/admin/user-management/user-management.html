@@ -104,11 +104,8 @@
                   </td>
                   <td>
                     <div class="user-table-actions">
-                      <button class="btn-role" (click)="openRoleModal(user)" title="Đổi vai trò">
-                        <i class="bi bi-person-badge-fill"></i>
-                      </button>
-                      <button class="btn-perm" (click)="openPermissionsModal(user)" title="Quản lý quyền chi tiết">
-                        <i class="bi bi-shield-check"></i>
+                      <button class="btn-perm" (click)="openManageModal(user)" title="Quản lý vai trò & quyền hạn">
+                        <i class="bi bi-shield-lock-fill"></i>
                       </button>
                       <button class="btn-lock"
                               [class.btn-unlock-act]="user.isLocked"
@@ -187,125 +184,90 @@
   </div>
   }
 
-  <!-- Change Role Modal -->
-  @if (isRoleModalOpen) {
+  <!-- Manage User Modal (role + permissions) -->
+  @if (isManageModalOpen) {
   <div class="modal-overlay">
-    <div class="modal-box">
-      <h3><i class="bi bi-person-badge-fill" style="color:var(--color-blue);margin-right:8px;"></i>Cấp quyền tài khoản</h3>
-      <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
-        Đang thay đổi quyền hạn cho tài khoản: <strong>{{ selectedUser?.username }}</strong>
-      </p>
-
-      <div class="admin-modal-form-body" style="margin-top: 16px;">
-        <div class="input-field-group">
-          <label>Chọn vai trò</label>
-          <select [(ngModel)]="roleForm.role" class="admin-select-field">
-            <option value="User">User (Học viên)</option>
-            <option value="Moderator">Moderator (Kiểm duyệt viên)</option>
-            <option value="Admin">Admin (Quản trị viên)</option>
-          </select>
-        </div>
+    <div class="modal-box manage-modal">
+      <div class="manage-header">
+        <h3><i class="bi bi-shield-lock-fill" style="color:var(--color-purple);margin-right:8px;"></i>Quản lý người dùng</h3>
+        <button class="manage-close" (click)="closeManageModal()" title="Đóng"><i class="bi bi-x-lg"></i></button>
       </div>
 
-      <div class="modal-actions-row" style="margin-top: 24px;">
-        <button class="btn-modal-cancel" (click)="closeRoleModal()">Hủy bỏ</button>
-        <button class="btn-modal-confirm" (click)="saveRole()">Cập nhật</button>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- Permissions Modal -->
-  @if (isPermissionsModalOpen) {
-  <div class="modal-overlay">
-    <div class="modal-box perm-modal">
-      <div class="perm-modal-header">
-        <h3><i class="bi bi-shield-check" style="color:var(--color-purple);margin-right:8px;"></i>Quản lý quyền chi tiết</h3>
-        <div class="perm-user-meta">
-          <span class="perm-user-label">Người dùng: <strong>{{ selectedUser?.username }}</strong></span>
-          @if (userPermissionsData?.roles?.length) {
-            <span class="perm-roles-wrap">
-              @for (r of userPermissionsData!.roles; track r) {
-                <span class="role-badge"
-                      [class.role-admin]="r === 'Admin'"
-                      [class.role-moderator]="r === 'Moderator'"
-                      [class.role-user]="r === 'User'">{{ r }}</span>
-              }
-            </span>
-          }
-        </div>
-      </div>
-
-      @if (isLoadingPermissions) {
-        <div class="perm-loading">
-          <i class="bi bi-arrow-repeat"></i> Đang tải dữ liệu quyền hạn...
-        </div>
-      } @else if (permissionCatalog.length === 0) {
-        <div class="perm-loading">Không có dữ liệu quyền hạn.</div>
+      @if (isLoadingManage) {
+        <div class="manage-loading"><i class="bi bi-arrow-repeat"></i> Đang tải dữ liệu...</div>
       } @else {
-        <div class="perm-legend">
-          <span class="legend-item"><i class="bi bi-shield-fill-check legend-icon role-icon"></i> Từ vai trò</span>
-          <span class="legend-item"><span class="legend-dot grant-dot"></span> Cấp thêm</span>
-          <span class="legend-item"><span class="legend-dot deny-dot"></span> Từ chối</span>
-        </div>
+        <div class="manage-body">
+          <!-- User info -->
+          <section class="manage-section">
+            <div class="manage-section-title">Thông tin User</div>
+            <div class="manage-userinfo">
+              <div class="info-row"><span class="info-label">Username</span><span class="info-value">{{ manageUser?.username }}</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-value">{{ manageUser?.email }}</span></div>
+              @if (manageUser?.fullName) {
+                <div class="info-row"><span class="info-label">Họ tên</span><span class="info-value">{{ manageUser?.fullName }}</span></div>
+              }
+            </div>
+          </section>
 
-        <div class="perm-scroll-body">
-          @for (mod of permissionCatalog; track mod.module) {
-            <div class="perm-module-section">
-              <div class="perm-module-title">{{ mod.module }}</div>
-              @for (perm of mod.permissions; track perm.name) {
-                <div class="perm-item"
-                     [class.perm-has-override]="getPermissionLocalState(perm.name) !== 'inherit'">
-                  <div class="perm-info">
-                    <div class="perm-name">
-                      {{ perm.name }}
-                      @if (isPermissionFromRole(perm.name)) {
-                        <i class="bi bi-shield-fill-check perm-role-icon" title="Quyền này được cấp từ vai trò"></i>
-                      }
-                    </div>
-                    @if (perm.description) {
-                      <div class="perm-desc">{{ perm.description }}</div>
-                    }
+          <!-- Role -->
+          <section class="manage-section">
+            <div class="manage-section-title">Role</div>
+            <div class="role-radio-list">
+              @for (r of manageRoles; track r.name) {
+                <label class="role-radio-item" [class.active]="manageSelectedRole === r.name">
+                  <input type="radio" name="manageRole" [value]="r.name" [(ngModel)]="manageSelectedRole">
+                  <span class="role-radio-name">{{ r.name }}</span>
+                  @if (r.description) {
+                    <span class="role-radio-desc">{{ r.description }}</span>
+                  }
+                </label>
+              }
+            </div>
+          </section>
+
+          <!-- Permissions -->
+          <section class="manage-section">
+            <div class="manage-section-title">Permissions</div>
+            @if (manageModules.length === 0) {
+              <div class="manage-empty">Không có quyền hạn nào.</div>
+            } @else {
+              @for (mod of manageModules; track mod.module) {
+                <div class="perm-group">
+                  <div class="perm-group-head">
+                    <span class="perm-group-name">{{ mod.module }}</span>
+                    <span class="perm-group-count">{{ countCheckedInModule(mod) }}/{{ mod.permissions.length }}</span>
                   </div>
-                  <div class="perm-state-btns">
-                    <button class="perm-btn grant"
-                            [class.active]="getPermissionLocalState(perm.name) === 'grant'"
-                            (click)="setPermissionLocalState(perm.name, 'grant')"
-                            title="Cấp quyền này">
-                      <i class="bi bi-check-lg"></i>
-                    </button>
-                    <button class="perm-btn inherit"
-                            [class.active]="getPermissionLocalState(perm.name) === 'inherit'"
-                            (click)="setPermissionLocalState(perm.name, 'inherit')"
-                            title="Kế thừa từ vai trò (mặc định)">
-                      <i class="bi bi-dash-lg"></i>
-                    </button>
-                    <button class="perm-btn deny"
-                            [class.active]="getPermissionLocalState(perm.name) === 'deny'"
-                            (click)="setPermissionLocalState(perm.name, 'deny')"
-                            title="Từ chối quyền này">
-                      <i class="bi bi-x-lg"></i>
-                    </button>
+                  <div class="perm-checkbox-grid">
+                    @for (perm of mod.permissions; track perm.name) {
+                      <label class="perm-checkbox-item" [class.checked]="manageChecked[perm.name]">
+                        <input type="checkbox" [(ngModel)]="manageChecked[perm.name]" [name]="'perm_' + perm.name">
+                        <span class="perm-checkbox-text">
+                          <span class="perm-checkbox-label">{{ perm.description || perm.name }}</span>
+                          <span class="perm-checkbox-code">{{ perm.name }}</span>
+                        </span>
+                        @if (perm.fromRole) {
+                          <i class="bi bi-shield-fill-check perm-fromrole" title="Mặc định có ở vai trò hiện tại"></i>
+                        }
+                      </label>
+                    }
                   </div>
                 </div>
               }
-            </div>
-          }
+            }
+          </section>
+        </div>
+
+        <div class="modal-actions-row manage-footer">
+          <button class="btn-modal-cancel" (click)="closeManageModal()">Hủy bỏ</button>
+          <button class="btn-modal-confirm purple" (click)="saveManage()" [disabled]="isSavingManage">
+            @if (isSavingManage) {
+              <i class="bi bi-arrow-repeat"></i> Đang lưu...
+            } @else {
+              Lưu
+            }
+          </button>
         </div>
       }
-
-      <div class="modal-actions-row perm-modal-footer">
-        <button class="btn-modal-cancel" (click)="closePermissionsModal()">Đóng</button>
-        <button class="btn-modal-confirm purple"
-                (click)="savePermissions()"
-                [disabled]="isLoadingPermissions || isSavingPermissions || !hasPermissionChanges()">
-          @if (isSavingPermissions) {
-            <i class="bi bi-arrow-repeat"></i> Đang lưu...
-          } @else {
-            Lưu thay đổi
-          }
-        </button>
-      </div>
     </div>
   </div>
   }

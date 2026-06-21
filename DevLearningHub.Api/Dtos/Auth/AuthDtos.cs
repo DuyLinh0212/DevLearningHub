@@ -68,4 +68,10 @@ public class UserProfileResponse
     public string? AvatarUrl { get; set; }
 
     public int XpPoints { get; set; }
+
+    // Active role names assigned to the user.
+    public List<string> Roles { get; set; } = new();
+
+    // Effective permission names (role permissions + grants - denies).
+    public List<string> Permissions { get; set; } = new();
 }

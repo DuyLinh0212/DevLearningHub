@@ -33,6 +33,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   currentUserId: string = '';
   currentUserRoles: string[] = [];
+  currentUserPermissions: string[] = [];
 
   // Form states
   rootCommentText: string = '';
@@ -188,6 +189,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         if (user) {
           this.currentUserId = (user.id || user.Id || user.userId || user.sub || '').toString().toLowerCase();
           this.currentUserRoles = user.roles || [];
+          this.currentUserPermissions = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
         }
         this.staffUserService.ensureLoaded().subscribe({
           next: () => this.loadPostDetails(),
@@ -452,6 +454,13 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  // True when the logged-in user holds the given permission (or full-control wildcard).
+  hasPermission(permission: string): boolean {
+    const target = (permission || '').toLowerCase();
+    return this.currentUserPermissions.includes(target)
+      || this.currentUserPermissions.includes('system.full_control');
+  }
+
   isPostAuthor(): boolean {
     if (!this.post || !this.currentUserId) return false;
     const postAuthorId = (this.post.author.id || '').toString().toLowerCase();
@@ -459,14 +468,17 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   canEditPost(): boolean {
-    return this.isPostAuthor();
+    // Author edits own; anyone with post:edit_any can edit any post.
+    return this.isPostAuthor() || this.hasPermission('post:edit_any');
   }
 
   canDeletePost(): boolean {
-    return this.isPostAuthor();
+    // Author deletes own; anyone with post:delete_any can delete any post.
+    return this.isPostAuthor() || this.hasPermission('post:delete_any');
   }
 
   canEditComment(comment: any): boolean {
+    // Comment editing stays author-only (the API allows only the author to edit).
     if (!comment || !this.currentUserId) return false;
     const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
     return commentAuthorId === this.currentUserId;
@@ -475,7 +487,8 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   canDeleteComment(comment: any): boolean {
     if (!comment || !this.currentUserId) return false;
     const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    return commentAuthorId === this.currentUserId;
+    // Author deletes own; anyone with comment:delete can delete any comment.
+    return commentAuthorId === this.currentUserId || this.hasPermission('comment:delete');
   }
 
   formatRelativeTime(dateString: string): string {

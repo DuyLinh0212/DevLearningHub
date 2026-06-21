@@ -2,9 +2,27 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
+
+interface ManageRoleOption {
+  name: string;
+  description?: string;
+  selected: boolean;
+}
+
+interface ManagePermission {
+  name: string;
+  description?: string;
+  module: string;
+  checked: boolean;
+  fromRole: boolean;
+}
+
+interface ManageModule {
+  module: string;
+  permissions: ManagePermission[];
+}
 
 @Component({
   selector: 'app-user-management',
@@ -33,7 +51,6 @@ export class UserManagementComponent implements OnInit {
 
   // Modals state
   isCreateModalOpen = false;
-  isRoleModalOpen = false;
   isLockModalOpen = false;
   selectedUser: any = null;
 
@@ -46,24 +63,21 @@ export class UserManagementComponent implements OnInit {
     role: 'User'
   };
 
-  roleForm = {
-    role: 'User'
-  };
-
   lockForm = {
     reason: ''
   };
 
   rolesList = ['Admin', 'Moderator', 'User'];
 
-  // Permissions Modal
-  isPermissionsModalOpen = false;
-  isLoadingPermissions = false;
-  isSavingPermissions = false;
-  permissionCatalog: { module: string; permissions: { id: string; name: string; description?: string }[] }[] = [];
-  userPermissionsData: { roles: string[]; rolePermissions: string[]; grants: string[]; denies: string[]; effective: string[] } | null = null;
-  initialOverrides: Record<string, 'grant' | 'deny' | 'inherit'> = {};
-  localOverrides: Record<string, 'grant' | 'deny' | 'inherit'> = {};
+  // Manage modal (role + permissions combined) — matches the admin "Quản lý User" screen.
+  isManageModalOpen = false;
+  isLoadingManage = false;
+  isSavingManage = false;
+  manageUser: any = null;
+  manageRoles: ManageRoleOption[] = [];
+  manageModules: ManageModule[] = [];
+  manageSelectedRole = 'User';
+  manageChecked: Record<string, boolean> = {};
 
   ngOnInit() {
     this.loadUsers();
@@ -82,7 +96,7 @@ export class UserManagementComponent implements OnInit {
       next: (res) => {
         const responseData = res?.data;
         const items = responseData?.items || [];
-        
+
         this.users = items.map((u: any) => ({
           id: u.id,
           username: u.username || 'N/A',
@@ -246,40 +260,6 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  // Edit Role
-  openRoleModal(user: any) {
-    this.selectedUser = user;
-    this.roleForm = {
-      role: user.role
-    };
-    this.isRoleModalOpen = true;
-    this.cdr.detectChanges();
-  }
-
-  closeRoleModal() {
-    this.isRoleModalOpen = false;
-    this.selectedUser = null;
-    this.cdr.detectChanges();
-  }
-
-  saveRole() {
-    if (!this.selectedUser) return;
-    const { role } = this.roleForm;
-
-    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/role`, { role }).subscribe({
-      next: () => {
-        alert('Cập nhật quyền hạn thành công!');
-        this.closeRoleModal();
-        this.loadUsers();
-      },
-      error: (err) => {
-        console.error('Lỗi cập nhật quyền:', err);
-        const msg = err?.error?.message || 'Không thể cập nhật quyền!';
-        alert(msg);
-      }
-    });
-  }
-
   // Lock / Unlock
   toggleLock(user: any) {
     this.selectedUser = user;
@@ -331,116 +311,95 @@ export class UserManagementComponent implements OnInit {
     if (img) img.src = 'assets/images/default-avatar.svg';
   }
 
-  // --- PERMISSIONS ---
+  // --- MANAGE USER (role + permissions in one screen) ---
 
-  openPermissionsModal(user: any) {
-    this.selectedUser = user;
-    this.isPermissionsModalOpen = true;
-    this.isLoadingPermissions = true;
-    this.permissionCatalog = [];
-    this.userPermissionsData = null;
-    this.initialOverrides = {};
-    this.localOverrides = {};
+  openManageModal(user: any) {
+    this.manageUser = { ...user };
+    this.isManageModalOpen = true;
+    this.isLoadingManage = true;
+    this.manageRoles = [];
+    this.manageModules = [];
+    this.manageChecked = {};
+    this.manageSelectedRole = user.role || 'User';
     this.cdr.detectChanges();
 
-    forkJoin({
-      catalog: this.http.get<any>('/api/admin/permissions'),
-      userPerms: this.http.get<any>(`/api/admin/users/${user.id}/permissions`)
-    }).subscribe({
-      next: ({ catalog, userPerms }) => {
-        this.permissionCatalog = catalog?.data || [];
-        this.userPermissionsData = userPerms?.data || null;
+    this.http.get<any>(`/api/admin/users/${user.id}/management`).subscribe({
+      next: (res) => {
+        const data = res?.data || {};
+        this.manageRoles = data.roles || [];
+        this.manageModules = data.permissionModules || [];
+        this.manageSelectedRole = this.manageRoles.find(r => r.selected)?.name || user.role || 'User';
 
-        if (this.userPermissionsData) {
-          for (const g of this.userPermissionsData.grants) {
-            this.initialOverrides[g] = 'grant';
-          }
-          for (const d of this.userPermissionsData.denies) {
-            this.initialOverrides[d] = 'deny';
+        this.manageChecked = {};
+        for (const mod of this.manageModules) {
+          for (const perm of mod.permissions) {
+            this.manageChecked[perm.name] = !!perm.checked;
           }
         }
-        this.localOverrides = { ...this.initialOverrides };
-        this.isLoadingPermissions = false;
+
+        this.manageUser = {
+          ...this.manageUser,
+          username: data.username ?? this.manageUser.username,
+          email: data.email ?? this.manageUser.email,
+          fullName: data.fullName ?? this.manageUser.fullName,
+          avatarUrl: data.avatarUrl ?? this.manageUser.avatarUrl
+        };
+
+        this.isLoadingManage = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi tải quyền hạn:', err);
-        this.isLoadingPermissions = false;
-        this.cdr.detectChanges();
+        console.error('Lỗi tải dữ liệu quản lý người dùng:', err);
+        this.isLoadingManage = false;
+        alert(err?.error?.message || 'Không thể tải dữ liệu quản lý người dùng!');
+        this.closeManageModal();
       }
     });
   }
 
-  closePermissionsModal() {
-    this.isPermissionsModalOpen = false;
-    this.selectedUser = null;
-    this.permissionCatalog = [];
-    this.userPermissionsData = null;
-    this.initialOverrides = {};
-    this.localOverrides = {};
+  closeManageModal() {
+    this.isManageModalOpen = false;
+    this.manageUser = null;
+    this.manageRoles = [];
+    this.manageModules = [];
+    this.manageChecked = {};
     this.cdr.detectChanges();
   }
 
-  getPermissionLocalState(permName: string): 'grant' | 'deny' | 'inherit' {
-    return this.localOverrides[permName] || 'inherit';
+  togglePermission(name: string) {
+    this.manageChecked[name] = !this.manageChecked[name];
   }
 
-  isPermissionFromRole(permName: string): boolean {
-    return this.userPermissionsData?.rolePermissions?.includes(permName) ?? false;
+  countCheckedInModule(mod: ManageModule): number {
+    return mod.permissions.filter(p => this.manageChecked[p.name]).length;
   }
 
-  setPermissionLocalState(permName: string, state: 'grant' | 'deny' | 'inherit') {
-    if (state === 'inherit') {
-      delete this.localOverrides[permName];
-    } else {
-      this.localOverrides[permName] = state;
-    }
-    this.cdr.detectChanges();
-  }
-
-  hasPermissionChanges(): boolean {
-    const allKeys = new Set([...Object.keys(this.initialOverrides), ...Object.keys(this.localOverrides)]);
-    for (const key of allKeys) {
-      const initial = this.initialOverrides[key] || 'inherit';
-      const local = this.localOverrides[key] || 'inherit';
-      if (initial !== local) return true;
-    }
-    return false;
-  }
-
-  savePermissions() {
-    if (!this.selectedUser) return;
-
-    const changedItems: { permission: string; state: string }[] = [];
-    const allKeys = new Set([...Object.keys(this.initialOverrides), ...Object.keys(this.localOverrides)]);
-    for (const key of allKeys) {
-      const initial = this.initialOverrides[key] || 'inherit';
-      const local = this.localOverrides[key] || 'inherit';
-      if (initial !== local) {
-        changedItems.push({ permission: key, state: local });
-      }
-    }
-
-    if (changedItems.length === 0) {
-      this.closePermissionsModal();
+  saveManage() {
+    if (!this.manageUser) return;
+    if (!this.manageSelectedRole) {
+      alert('Vui lòng chọn vai trò cho người dùng!');
       return;
     }
 
-    this.isSavingPermissions = true;
+    const permissions = Object.keys(this.manageChecked).filter(name => this.manageChecked[name]);
+
+    this.isSavingManage = true;
     this.cdr.detectChanges();
 
-    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: changedItems }).subscribe({
+    this.http.put<any>(`/api/admin/users/${this.manageUser.id}/management`, {
+      role: this.manageSelectedRole,
+      permissions
+    }).subscribe({
       next: () => {
-        this.isSavingPermissions = false;
-        alert('Cập nhật quyền hạn thành công!');
-        this.closePermissionsModal();
+        this.isSavingManage = false;
+        alert('Lưu vai trò và quyền hạn thành công!');
+        this.closeManageModal();
         this.loadUsers();
       },
       error: (err) => {
-        this.isSavingPermissions = false;
-        console.error('Lỗi lưu quyền hạn:', err);
-        const msg = err?.error?.message || 'Không thể lưu quyền hạn!';
-        alert(msg);
+        this.isSavingManage = false;
+        console.error('Lỗi lưu quản lý người dùng:', err);
+        alert(err?.error?.message || 'Không thể lưu vai trò và quyền hạn!');
         this.cdr.detectChanges();
       }
     });

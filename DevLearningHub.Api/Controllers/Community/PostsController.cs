@@ -245,7 +245,8 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<PostDetailResponse>.Fail("Post not found."));
         }
 
-        if (post.AuthorId != userId)
+        // Author can edit own; anyone with post:edit_any (e.g. Admin or a per-user grant) can edit any post.
+        if (post.AuthorId != userId && !User.HasPermission("post:edit_any"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Forbidden."));
         }
@@ -358,7 +359,9 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Post not found."));
         }
 
-        if (post.AuthorId != userId && !IsModerator())
+        // Author can delete own; anyone with post:delete_any (Moderator/Admin via role, or a
+        // per-user grant) can delete any post.
+        if (post.AuthorId != userId && !User.HasPermission("post:delete_any"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }

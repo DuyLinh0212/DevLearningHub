@@ -125,7 +125,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<QuestionResponse>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (question.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden."));
         }
@@ -179,7 +179,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (question.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }

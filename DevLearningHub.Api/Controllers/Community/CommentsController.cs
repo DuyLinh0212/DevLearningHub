@@ -83,7 +83,9 @@ public class CommentsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Comment not found."));
         }
 
-        if (comment.AuthorId != userId && !IsModerator())
+        // Author can delete own; anyone with the comment:delete permission (Moderator/Admin
+        // via role, or a per-user grant) can delete any comment.
+        if (comment.AuthorId != userId && !User.HasPermission("comment:delete"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }

@@ -15,10 +15,12 @@ namespace DevLearningHub.Api.Controllers.Users;
 public class UsersController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IPermissionService _permissionService;
 
-    public UsersController(DevLearningHubContext db)
+    public UsersController(DevLearningHubContext db, IPermissionService permissionService)
     {
         _db = db;
+        _permissionService = permissionService;
     }
 
     /// <summary>
@@ -35,13 +37,27 @@ public class UsersController : ControllerBase
             return Unauthorized(ApiResponse<UserProfileResponse>.Fail("Unauthorized."));
         }
 
-        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _db.Users
+            .Include(u => u.UserRoleUsers)
+            .ThenInclude(ur => ur.Role)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null)
         {
             return NotFound(ApiResponse<UserProfileResponse>.Fail("User not found."));
         }
 
-        return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user)));
+        var profile = MapProfile(user);
+        profile.Roles = user.UserRoleUsers
+            .Where(ur => ur.Role.IsActive)
+            .Select(ur => ur.Role.Name)
+            .OrderBy(name => name)
+            .ToList();
+        profile.Permissions = (await _permissionService.GetEffectivePermissionsAsync(userId))
+            .OrderBy(name => name)
+            .ToList();
+
+        return Ok(ApiResponse<UserProfileResponse>.Ok(profile));
     }
 
     /// <summary>
