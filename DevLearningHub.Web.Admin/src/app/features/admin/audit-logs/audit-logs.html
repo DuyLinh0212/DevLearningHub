@@ -1,0 +1,124 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="top-search" style="visibility:hidden;"></div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act" (click)="loadLogs()">
+          <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Nhật Ký Hệ Thống (Audit Log)</h1>
+        <p>Theo dõi hành động của người dùng: ai làm gì, khi nào, trên đối tượng nào.</p>
+      </section>
+
+      <div class="post-filter-bar">
+        <select [(ngModel)]="filterAction" (change)="onFilterChange()">
+          <option value="">Tất cả hành động</option>
+          @for (a of actions; track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+        <select [(ngModel)]="filterTargetType" (change)="onFilterChange()">
+          <option value="">Tất cả đối tượng</option>
+          <option value="user">user</option>
+          <option value="quiz_set">quiz_set</option>
+          <option value="post">post</option>
+          <option value="comment">comment</option>
+        </select>
+        <label class="audit-date-field">Từ
+          <input type="date" [(ngModel)]="filterFrom" (change)="onFilterChange()">
+        </label>
+        <label class="audit-date-field">Đến
+          <input type="date" [(ngModel)]="filterTo" (change)="onFilterChange()">
+        </label>
+        <button class="audit-reset-btn" (click)="resetFilters()" title="Xóa bộ lọc">
+          <i class="bi bi-x-circle"></i> Xóa lọc
+        </button>
+        <span class="post-count-info">{{ logs.length }} / {{ totalCount }} bản ghi</span>
+      </div>
+
+      @if (isLoading) {
+        <div class="empty-state-user">
+          <i class="bi bi-arrow-repeat"></i>
+          <h3>Đang tải nhật ký...</h3>
+        </div>
+      } @else if (loadError) {
+        <div class="empty-state-user">
+          <i class="bi bi-shield-lock"></i>
+          <h3>Không thể hiển thị</h3>
+          <p>{{ loadError }}</p>
+        </div>
+      } @else if (logs.length === 0) {
+        <div class="empty-state-user">
+          <i class="bi bi-journal-text"></i>
+          <h3>Không có bản ghi nào</h3>
+          <p>Không có nhật ký phù hợp với điều kiện lọc hiện tại.</p>
+        </div>
+      } @else {
+        <div class="post-table-wrap">
+          <table class="post-table audit-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Hành động</th>
+                <th>Người thực hiện</th>
+                <th>Đối tượng</th>
+                <th>Chi tiết</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of logs; track log.id) {
+                <tr>
+                  <td class="audit-time">{{ formatDateTime(log.createdAt) }}</td>
+                  <td>
+                    <span class="action-badge" [attr.data-group]="actionGroup(log.action)">{{ log.action }}</span>
+                  </td>
+                  <td>
+                    <div class="username-txt">{{ log.actorFullName || log.actorUsername || '—' }}</div>
+                    @if (log.actorUsername) {
+                      <div class="email-txt">{{ log.actorUsername }}</div>
+                    }
+                  </td>
+                  <td>
+                    @if (log.targetType) {
+                      <span class="target-badge">{{ log.targetType }}</span>
+                    } @else {
+                      <span class="audit-muted">—</span>
+                    }
+                  </td>
+                  <td class="audit-detail">{{ log.detail || '—' }}</td>
+                  <td class="audit-ip">{{ log.ipAddress || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (totalPages > 1) {
+            <div class="pagination-row">
+              <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              @for (p of pageNumbers; track p) {
+                <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+              }
+              <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+</div>

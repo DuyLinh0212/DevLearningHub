@@ -18,11 +18,13 @@ public class AdminUserPermissionsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissionService;
+    private readonly IAuditService _audit;
 
-    public AdminUserPermissionsController(DevLearningHubContext db, IPermissionService permissionService)
+    public AdminUserPermissionsController(DevLearningHubContext db, IPermissionService permissionService, IAuditService audit)
     {
         _db = db;
         _permissionService = permissionService;
+        _audit = audit;
     }
 
     /// <summary>
@@ -129,6 +131,7 @@ public class AdminUserPermissionsController : ControllerBase
         }
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.permission_change", "user", userId, $"changes={request.Items.Count}");
 
         return Ok(ApiResponse<UserPermissionsResponse>.Ok(await BuildResponseAsync(user)));
     }
@@ -159,6 +162,7 @@ public class AdminUserPermissionsController : ControllerBase
         {
             _db.UserPermissions.Remove(row);
             await _db.SaveChangesAsync();
+            await _audit.LogAsync("user.permission_reset", "user", userId, $"permission={permission}");
         }
 
         return Ok(ApiResponse<UserPermissionsResponse>.Ok(await BuildResponseAsync(user)));

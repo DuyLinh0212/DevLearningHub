@@ -3,6 +3,7 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ namespace DevLearningHub.Api.Controllers.Quiz;
 public class QuizSetsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IAuditService _audit;
 
-    public QuizSetsController(DevLearningHubContext db)
+    public QuizSetsController(DevLearningHubContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     [HttpGet]
@@ -393,6 +396,7 @@ public class QuizSetsController : ControllerBase
         _db.QuizSetQuestions.RemoveRange(links);
         _db.QuizSets.Remove(quizSet);
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("quiz.delete", "quiz_set", id, $"title={quizSet.Title}");
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true }));
     }

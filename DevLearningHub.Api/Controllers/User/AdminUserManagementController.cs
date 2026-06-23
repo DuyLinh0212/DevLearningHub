@@ -19,11 +19,13 @@ public class AdminUserManagementController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissionService;
+    private readonly IAuditService _audit;
 
-    public AdminUserManagementController(DevLearningHubContext db, IPermissionService permissionService)
+    public AdminUserManagementController(DevLearningHubContext db, IPermissionService permissionService, IAuditService audit)
     {
         _db = db;
         _permissionService = permissionService;
+        _audit = audit;
     }
 
     /// <summary>
@@ -177,6 +179,7 @@ public class AdminUserManagementController : ControllerBase
         }
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.management_save", "user", userId, $"role={role.Name}; permissions={desired.Count}");
 
         // Reload roles for an accurate response.
         var fresh = await _db.Users

@@ -2,6 +2,7 @@
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +15,12 @@ namespace DevLearningHub.Api.Controllers.Users;
 public class AdminUsersController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IAuditService _audit;
 
-    public AdminUsersController(DevLearningHubContext db)
+    public AdminUsersController(DevLearningHubContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     /// <summary>
@@ -139,6 +142,7 @@ public class AdminUsersController : ControllerBase
         user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.lock", "user", user.Id, $"username={user.Username}; reason={user.LockedReason}");
 
         return Ok(ApiResponse<object>.Ok(new { locked = true }, "User locked."));
     }
@@ -164,6 +168,7 @@ public class AdminUsersController : ControllerBase
         user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.unlock", "user", user.Id, $"username={user.Username}");
 
         return Ok(ApiResponse<object>.Ok(new { locked = false }, "User unlocked."));
     }
@@ -213,6 +218,7 @@ public class AdminUsersController : ControllerBase
         });
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.role_change", "user", id, $"role={role.Name}");
 
         return Ok(ApiResponse<object>.Ok(new { role = role.Name }, "Role updated."));
     }

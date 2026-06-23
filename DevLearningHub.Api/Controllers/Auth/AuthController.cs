@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IPermissionService _permissionService;
+    private readonly IAuditService _audit;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthController> _logger;
 
@@ -29,6 +30,7 @@ public class AuthController : ControllerBase
         IPasswordHasher<User> passwordHasher,
         ITokenService tokenService,
         IPermissionService permissionService,
+        IAuditService audit,
         IOptions<JwtOptions> jwtOptions,
         ILogger<AuthController> logger)
     {
@@ -36,6 +38,7 @@ public class AuthController : ControllerBase
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _permissionService = permissionService;
+        _audit = audit;
         _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
@@ -279,24 +282,10 @@ public class AuthController : ControllerBase
         };
     }
 
-    private async Task WriteAuditAsync(Guid actorId, string action, string? targetType, Guid? targetId, string? detail)
+    private Task WriteAuditAsync(Guid actorId, string action, string? targetType, Guid? targetId, string? detail)
     {
-        // Store audit log with request IP for traceability.
-        var audit = new AuditLog
-        {
-            Id = Guid.NewGuid(),
-            ActorId = actorId,
-            Action = action,
-            TargetType = targetType,
-            TargetId = targetId,
-            Detail = detail,
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            CreatedAt = DateTime.Now
-        };
-
-        _db.AuditLogs.Add(audit);
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Audit log written for {Action} by {ActorId}", action, actorId);
+        // Delegate to the shared audit service; pass the actor explicitly because during
+        // login/register the request principal is not authenticated yet.
+        return _audit.LogAsync(action, targetType, targetId, detail, actorId);
     }
 }
