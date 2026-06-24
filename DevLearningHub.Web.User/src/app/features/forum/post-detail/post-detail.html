@@ -9,6 +9,12 @@
         <i class="bi bi-pencil"></i> Sửa bài
       </button>
     }
+    @if (canHidePost()) {
+      <button class="btn-action-moderate" (click)="toggleModeratePost()">
+        <i class="bi" [class.bi-eye-slash]="!post?.isHidden" [class.bi-eye]="post?.isHidden"></i>
+        {{ post?.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
+      </button>
+    }
     @if (canDeletePost()) {
       <button class="btn-action-danger" (click)="deletePost()">
         <i class="bi bi-trash"></i> Xóa bài
@@ -169,6 +175,9 @@
               <span class="author-badge">Chủ bài viết</span>
             }
             <span class="comment-date">• &nbsp;{{ formatRelativeTime(comment.createdAt) }}</span>
+            @if (comment.isHidden) {
+              <span class="mini-hidden-badge">Đã ẩn</span>
+            }
           </div>
 
           <div class="comment-actions">
@@ -178,6 +187,12 @@
             @if (canEditComment(comment)) {
               <button class="btn-link-action" (click)="startEditComment(comment)">
                 <i class="bi bi-pencil"></i> Sửa
+              </button>
+            }
+            @if (canModerateComment()) {
+              <button class="btn-link-action text-warning" (click)="toggleModerateComment(comment)">
+                <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
+                {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
               </button>
             }
             @if (canDeleteComment(comment)) {

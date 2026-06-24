@@ -434,6 +434,25 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  toggleModeratePost() {
+    if (!this.post) return;
+    const hide = !this.post.isHidden;
+    const reason = prompt(hide ? 'Nhập lý do ẩn bài viết:' : 'Nhập lý do hiện lại bài viết:');
+    if (reason === null) return;
+
+    this.forumService.moderatePost(this.post.id, hide, reason.trim()).subscribe({
+      next: () => {
+        this.post.isHidden = hide;
+        alert(hide ? 'Đã ẩn bài đăng thành công.' : 'Đã hiện lại bài đăng thành công.');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi kiểm duyệt bài viết:', err);
+        alert('Không thể hoàn tất hành động kiểm duyệt.');
+      }
+    });
+  }
+
   // --- HELPERS / AUTH CHECKS ---
   checkLogin(): boolean {
     const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
@@ -477,6 +496,11 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     return this.isPostAuthor() || this.hasPermission('post:delete_any');
   }
 
+  canHidePost(): boolean {
+    // Anyone with post:hide can hide/unhide any post.
+    return this.hasPermission('post:hide');
+  }
+
   canEditComment(comment: any): boolean {
     // Comment editing stays author-only (the API allows only the author to edit).
     if (!comment || !this.currentUserId) return false;
@@ -489,6 +513,28 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
     // Author deletes own; anyone with comment:delete can delete any comment.
     return commentAuthorId === this.currentUserId || this.hasPermission('comment:delete');
+  }
+
+  // Moderators/Admins can hide or unhide any comment (requires comment:hide permission).
+  canModerateComment(): boolean {
+    return this.hasPermission('comment:hide');
+  }
+
+  toggleModerateComment(comment: any) {
+    const hide = !comment.isHidden;
+    const reason = prompt(hide ? 'Nhập lý do ẩn bình luận:' : 'Nhập lý do hiện lại bình luận:');
+    if (reason === null) return;
+
+    this.forumService.moderateComment(comment.id, hide, reason.trim()).subscribe({
+      next: () => {
+        comment.isHidden = hide;
+        this.loadComments();
+      },
+      error: (err) => {
+        console.error('Lỗi kiểm duyệt bình luận:', err);
+        alert('Không thể hoàn tất hành động kiểm duyệt.');
+      }
+    });
   }
 
   formatRelativeTime(dateString: string): string {

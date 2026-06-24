@@ -215,7 +215,7 @@
             <div class="role-radio-list">
               @for (r of manageRoles; track r.name) {
                 <label class="role-radio-item" [class.active]="manageSelectedRole === r.name">
-                  <input type="radio" name="manageRole" [value]="r.name" [(ngModel)]="manageSelectedRole">
+                  <input type="radio" name="manageRole" [value]="r.name" [(ngModel)]="manageSelectedRole" (ngModelChange)="onRoleChange()">
                   <span class="role-radio-name">{{ r.name }}</span>
                   @if (r.description) {
                     <span class="role-radio-desc">{{ r.description }}</span>
@@ -228,17 +228,17 @@
           <!-- Permissions -->
           <section class="manage-section">
             <div class="manage-section-title">Permissions</div>
-            @if (manageModules.length === 0) {
+            @if (visibleModules().length === 0) {
               <div class="manage-empty">Không có quyền hạn nào.</div>
             } @else {
-              @for (mod of manageModules; track mod.module) {
+              @for (mod of visibleModules(); track mod.module) {
                 <div class="perm-group">
                   <div class="perm-group-head">
                     <span class="perm-group-name">{{ mod.module }}</span>
-                    <span class="perm-group-count">{{ countCheckedInModule(mod) }}/{{ mod.permissions.length }}</span>
+                    <span class="perm-group-count">{{ countCheckedInModule(mod) }}/{{ visiblePermissions(mod).length }}</span>
                   </div>
                   <div class="perm-checkbox-grid">
-                    @for (perm of mod.permissions; track perm.name) {
+                    @for (perm of visiblePermissions(mod); track perm.name) {
                       <label class="perm-checkbox-item" [class.checked]="manageChecked[perm.name]">
                         <input type="checkbox" [(ngModel)]="manageChecked[perm.name]" [name]="'perm_' + perm.name">
                         <span class="perm-checkbox-text">

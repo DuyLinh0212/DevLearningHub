@@ -82,6 +82,13 @@ export class ForumService {
     );
   }
 
+  // Hide or unhide a post (requires post:hide permission).
+  moderatePost(id: string, hidden: boolean, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.postsUrl}/${id}/moderate`, { hidden, reason }).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
   // --- COMMENTS ---
   getComments(postId: string): Observable<any> {
     return this.http.get<any>(`${this.postsUrl}/${postId}/comments`).pipe(
@@ -115,6 +122,13 @@ export class ForumService {
 
   acceptComment(commentId: string): Observable<any> {
     return this.http.post<any>(`${this.commentsUrl}/${commentId}/accept`, {}).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  // Hide or unhide a comment (Moderator/Admin only on the API side).
+  moderateComment(commentId: string, hidden: boolean, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.commentsUrl}/${commentId}/moderate`, { hidden, reason }).pipe(
       map(res => res?.data || res)
     );
   }

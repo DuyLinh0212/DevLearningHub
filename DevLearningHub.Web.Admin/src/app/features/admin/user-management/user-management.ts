@@ -67,9 +67,9 @@ export class UserManagementComponent implements OnInit {
     reason: ''
   };
 
-  rolesList = ['Admin', 'Moderator', 'User'];
+  rolesList = ['Admin', 'Moderator', 'User']; // Show all roles
 
-  // Manage modal (role + permissions combined) — matches the admin "Quản lý User" screen.
+  // Manage modal (role + permissions combined)
   isManageModalOpen = false;
   isLoadingManage = false;
   isSavingManage = false;
@@ -78,6 +78,26 @@ export class UserManagementComponent implements OnInit {
   manageModules: ManageModule[] = [];
   manageSelectedRole = 'User';
   manageChecked: Record<string, boolean> = {};
+
+  // Permissions that are never assignable to certain roles, so they are hidden
+  // from the checkbox list (and stripped on save) when that role is selected.
+  private readonly roleHiddenPermissions: Record<string, string[]> = {
+    User: [
+      'audit:view',
+      'system.full_control',
+      'user:view_all', 'user:ban', 'user:edit_role', 'user:force_logout'
+    ]
+  };
+
+  // Permissions that are always granted to certain roles as a baseline (even if
+  // the role's default set lacks them). Admins can still uncheck them to deny.
+  private readonly roleDefaultGrants: Record<string, string[]> = {
+    User: [
+      'quiz:create', 'quiz:edit',
+      'comment:create',
+      'post:create', 'post:edit_own'
+    ]
+  };
 
   ngOnInit() {
     this.loadUsers();
@@ -295,9 +315,20 @@ export class UserManagementComponent implements OnInit {
 
     this.http.patch<any>(`/api/admin/users/${this.selectedUser.id}/lock`, { reason }).subscribe({
       next: () => {
-        alert('Khóa tài khoản thành công!');
-        this.closeLockModal();
-        this.loadUsers();
+        // Force logout: delete refresh tokens so the user is immediately logged out.
+        this.http.post(`/api/admin/users/${this.selectedUser.id}/management/logout`, {}).subscribe({
+          next: () => {
+            alert('Khóa tài khoản và đá người dùng thành công!');
+            this.closeLockModal();
+            this.loadUsers();
+          },
+          error: (err) => {
+            console.error('Lỗi logout người dùng:', err);
+            alert('Khóa tài khoản thành công, nhưng không thể đá người dùng ngay!');
+            this.closeLockModal();
+            this.loadUsers();
+          }
+        });
       },
       error: (err) => {
         console.error('Lỗi khóa tài khoản:', err);
@@ -309,6 +340,25 @@ export class UserManagementComponent implements OnInit {
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
+  }
+
+  // Called when the selected role changes (from radio buttons).
+  onRoleChange() {
+    this.applyRolePermissionPresets();
+  }
+
+  // Apply baseline grants for certain roles. Admin can still uncheck them to deny.
+  private applyRolePermissionPresets() {
+    if (this.manageSelectedRole === 'User') {
+      const defaults = this.roleDefaultGrants['User'] || [];
+      for (const mod of this.manageModules) {
+        for (const perm of mod.permissions) {
+          if (defaults.includes(perm.name)) {
+            this.manageChecked[perm.name] = true;
+          }
+        }
+      }
+    }
   }
 
   // --- MANAGE USER (role + permissions in one screen) ---
@@ -336,6 +386,9 @@ export class UserManagementComponent implements OnInit {
             this.manageChecked[perm.name] = !!perm.checked;
           }
         }
+
+        // Apply baseline grants (e.g., quiz perms for User) after loading initial checked state.
+        this.applyRolePermissionPresets();
 
         this.manageUser = {
           ...this.manageUser,
@@ -370,8 +423,24 @@ export class UserManagementComponent implements OnInit {
     this.manageChecked[name] = !this.manageChecked[name];
   }
 
+  // Whether a permission is shown for the currently selected role.
+  isPermissionVisible(perm: ManagePermission): boolean {
+    const hidden = this.roleHiddenPermissions[this.manageSelectedRole] || [];
+    return !hidden.includes(perm.name);
+  }
+
+  // Permissions of a module that are visible for the current role.
+  visiblePermissions(mod: ManageModule): ManagePermission[] {
+    return mod.permissions.filter(p => this.isPermissionVisible(p));
+  }
+
+  // Modules that still have at least one visible permission for the current role.
+  visibleModules(): ManageModule[] {
+    return this.manageModules.filter(m => this.visiblePermissions(m).length > 0);
+  }
+
   countCheckedInModule(mod: ManageModule): number {
-    return mod.permissions.filter(p => this.manageChecked[p.name]).length;
+    return this.visiblePermissions(mod).filter(p => this.manageChecked[p.name]).length;
   }
 
   saveManage() {
@@ -381,7 +450,10 @@ export class UserManagementComponent implements OnInit {
       return;
     }
 
-    const permissions = Object.keys(this.manageChecked).filter(name => this.manageChecked[name]);
+    // Never persist permissions that are hidden for the selected role.
+    const hidden = this.roleHiddenPermissions[this.manageSelectedRole] || [];
+    const permissions = Object.keys(this.manageChecked)
+      .filter(name => this.manageChecked[name] && !hidden.includes(name));
 
     this.isSavingManage = true;
     this.cdr.detectChanges();

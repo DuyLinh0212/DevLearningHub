@@ -192,6 +192,30 @@ public class AdminUserManagementController : ControllerBase
         return Ok(ApiResponse<UserManagementResponse>.Ok(response, "User role and permissions saved."));
     }
 
+    /// <summary>
+    /// Force logout a user by deleting their refresh tokens. Requires user:edit_role permission.
+    /// </summary>
+    [HttpPost("logout")]
+    /// <summary>
+    /// Force logout a user by deleting their refresh tokens. Requires user:edit_role permission.
+    /// POST /api/admin/users/{userId}/management/logout
+    /// </summary>
+    [HttpPost("logout")]
+    [HasPermission("user:edit_role")]
+    public async Task<ActionResult<ApiResponse<object>>> ForceLogout(Guid userId)
+    {
+        // Delete all refresh tokens for this user so they cannot obtain new access tokens.
+        var tokens = await _db.RefreshTokens.Where(rt => rt.UserId == userId).ToListAsync();
+        if (tokens.Any())
+        {
+            _db.RefreshTokens.RemoveRange(tokens);
+            await _db.SaveChangesAsync();
+        }
+
+        return Ok(ApiResponse<object>.Ok(new { loggedOut = true }));
+    }
+
+
     private async Task<UserManagementResponse> BuildResponseAsync(User user)
     {
         var breakdown = await _permissionService.GetBreakdownAsync(user.Id);

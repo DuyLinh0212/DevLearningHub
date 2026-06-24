@@ -4,6 +4,7 @@ using DevLearningHub.Api.Dtos.Community;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
 using DevLearningHub.Api.Hubs;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -18,11 +19,16 @@ public class CommentsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
+    private readonly IPermissionService _permissions;
 
-    public CommentsController(DevLearningHubContext db, IHubContext<CommentHub, ICommentHubClient> commentHub)
+    public CommentsController(
+        DevLearningHubContext db,
+        IHubContext<CommentHub, ICommentHubClient> commentHub,
+        IPermissionService permissions)
     {
         _db = db;
         _commentHub = commentHub;
+        _permissions = permissions;
     }
 
     [HttpPut("{id:guid}")]
@@ -85,7 +91,7 @@ public class CommentsController : ControllerBase
 
         // Author can delete own; anyone with the comment:delete permission (Moderator/Admin
         // via role, or a per-user grant) can delete any comment.
-        if (comment.AuthorId != userId && !User.HasPermission("comment:delete"))
+        if (comment.AuthorId != userId && !await _permissions.HasPermissionAsync(userId, "comment:delete"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -213,13 +219,18 @@ public class CommentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/moderate")]
-    [Authorize(Policy = AppPolicies.ModeratorOrAdmin)]
-    // Hide or unhide a comment and record a moderation log entry.
+    [Authorize]
+    // Hide or unhide a comment and record a moderation log entry. Requires the comment:hide permission.
     public async Task<ActionResult<ApiResponse<object>>> ModerateComment(Guid id, ModerateRequest request)
     {
         if (!User.TryGetUserId(out var moderatorId))
         {
             return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+        }
+
+        if (!await _permissions.HasPermissionAsync(moderatorId, "comment:hide"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
 
         var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id);
@@ -259,11 +270,6 @@ public class CommentsController : ControllerBase
     }
 
     // ----- Helpers -----
-
-    private bool IsModerator()
-    {
-        return User.IsInRole(AppRoles.Moderator) || User.IsInRole(AppRoles.Admin);
-    }
 
     // Gather a comment and all of its nested replies from a flat post comment list.
     private static List<Comment> CollectSubtree(Guid rootId, List<Comment> all)
