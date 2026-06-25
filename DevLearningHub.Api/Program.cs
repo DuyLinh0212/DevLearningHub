@@ -103,6 +103,22 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+// 1. Lấy URL mặc định từ appsettings.json vừa cấu hình ở trên
+var defaultJudgeUrl = builder.Configuration["Judge0:BaseUrl"] ?? "https://ce.judge0.com";
+
+// 2. Đăng ký Judge0UrlHolder dạng Singleton để lưu giữ URL trong RAM
+builder.Services.AddSingleton(new Judge0UrlHolder(defaultJudgeUrl));
+
+// 3. Kích hoạt HttpClient để lớp Judge0Service có thể tạo Client gọi API
+builder.Services.AddHttpClient("judge0");
+
+// 4. Đăng ký Service thực thi chấm bài
+builder.Services.AddScoped<IJudge0Service, Judge0Service>();
+// ───────────────────────────────────────────────────────────────────
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
