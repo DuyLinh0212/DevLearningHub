@@ -177,7 +177,7 @@ export class QuizDetailComponent implements OnInit {
       .trim();
   }
 
-  private compareIds(id1: any, id2: any): boolean {
+  compareIds(id1: any, id2: any): boolean {
     if (!id1 || !id2) return false;
     return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
   }

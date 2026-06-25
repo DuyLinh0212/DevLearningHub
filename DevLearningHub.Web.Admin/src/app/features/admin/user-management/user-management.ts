@@ -562,4 +562,6 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+}
 

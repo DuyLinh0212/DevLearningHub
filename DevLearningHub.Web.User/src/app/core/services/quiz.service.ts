@@ -257,8 +257,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
       status: isPub ? 'Đã phát hành' : 'Bản nháp',
       allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
       attempts: finalAttempts,
-      questionIds: quiz.questionIds || [],
-      allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? false
+      questionIds: quiz.questionIds || []
     };
   }
 
@@ -297,8 +296,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
       allowedCopy: form.allowedCopy ?? true,
       topicId: form.topicId || null,
       topic: form.topic || null,
-      level: form.level || null,
-      allowedCopy: form.allowedCopy ?? false
+      level: form.level || null
     };
   }
 

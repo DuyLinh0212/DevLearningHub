@@ -1,0 +1,147 @@
+<div class="playground-list-container">
+  <!-- Top Stat Header Banner -->
+  <header class="playground-banner">
+    <div class="banner-overlay"></div>
+    <div class="banner-content">
+      <div class="banner-text">
+        <h1>Luyện Code Trực Tuyến</h1>
+        <p>Thử thách kỹ năng lập trình với ngân hàng câu hỏi chuẩn LeetCode, biên dịch và đánh giá tự động tức thì.</p>
+      </div>
+      
+      <!-- Progress circle/card -->
+      <div class="progress-card">
+        <div class="progress-info">
+          <div class="stat-circle">
+            <span class="stat-num">{{ solvedCount }}</span>
+            <span class="stat-label">Đã Giải</span>
+          </div>
+          <div class="stat-details">
+            <h3>Tiến Độ Học Tập</h3>
+            <p>Hoàn thành: <strong>{{ solvedCount }}/{{ totalCount }}</strong> bài tập</p>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" [style.width.%]="solvedPercent"></div>
+            </div>
+            <span class="percent-label">{{ solvedPercent }}% Hoàn thành</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Search Controls -->
+  <section class="controls-row">
+    <div class="search-input-wrap">
+      <i class="bi bi-search"></i>
+      <input 
+        type="text" 
+        [(ngModel)]="searchText" 
+        (input)="applyFilters()" 
+        placeholder="Tìm bài tập theo tên hoặc từ khóa..."
+      >
+    </div>
+
+    <div class="filters-wrap">
+      <!-- Topic Filter -->
+      <div class="select-style-wrap">
+        <select [(ngModel)]="selectedTopicId" (change)="applyFilters()">
+          <option value="">Tất cả chủ đề</option>
+          @for (t of topics; track t.id) {
+            <option [value]="t.id">{{ t.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Difficulty Filter -->
+      <div class="select-style-wrap">
+        <select [(ngModel)]="selectedDifficulty" (change)="applyFilters()">
+          <option value="">Tất cả độ khó</option>
+          <option value="easy">Dễ</option>
+          <option value="medium">Trung bình</option>
+          <option value="hard">Khó</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Table Body -->
+  <section class="problems-table-card">
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="spinner-circle"></div>
+        <p>Đang tải danh sách thử thách...</p>
+      </div>
+    } @else if (filteredProblems.length === 0) {
+      <div class="empty-state">
+        <i class="bi bi-file-code"></i>
+        <h3>Không tìm thấy bài tập nào</h3>
+        <p>Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc của bạn.</p>
+        <button class="btn-clear-filters" (click)="searchText = ''; selectedDifficulty = ''; selectedTopicId = ''; applyFilters()">Xóa bộ lọc</button>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="problems-table">
+          <thead>
+            <tr>
+              <th class="col-status">Trạng thái</th>
+              <th class="col-title">Tên bài tập</th>
+              <th class="col-topic">Chủ đề</th>
+              <th class="col-diff">Độ khó</th>
+              <th class="col-cases">Test Cases</th>
+              <th class="col-action">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of filteredProblems; track p.id) {
+              <tr [class.solved-row]="isSolved(p.id)">
+                <!-- Status icon -->
+                <td class="col-status">
+                  @if (isSolved(p.id)) {
+                    <i class="bi bi-check-circle-fill text-success" title="Đã hoàn thành"></i>
+                  } @else {
+                    <i class="bi bi-circle text-muted-dark"></i>
+                  }
+                </td>
+                
+                <!-- Title -->
+                <td class="col-title">
+                  <a [routerLink]="['/code', p.id]" class="problem-link">
+                    {{ p.title }}
+                  </a>
+                  <div class="problem-tags-row">
+                    @for (t of p.tags; track t) {
+                      <span class="tag-pill">{{ t }}</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Topic -->
+                <td class="col-topic">
+                  <span class="topic-badge">{{ getTopicName(p.topicId) }}</span>
+                </td>
+
+                <!-- Difficulty -->
+                <td class="col-diff">
+                  <span class="diff-badge" [ngClass]="getDifficultyClass(p.difficulty)">
+                    {{ getDifficultyLabel(p.difficulty) }}
+                  </span>
+                </td>
+
+                <!-- TestCase count -->
+                <td class="col-cases">
+                  <span class="cases-num">{{ p.testCaseCount }}</span>
+                </td>
+
+                <!-- Action button -->
+                <td class="col-action">
+                  <a [routerLink]="['/code', p.id]" class="btn-solve">
+                    Code <i class="bi bi-chevron-right"></i>
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

@@ -1,0 +1,369 @@
+<div class="workspace-layout">
+  <!-- Top Bar -->
+  <header class="workspace-header">
+    <div class="header-left">
+      <a routerLink="/code" class="btn-back" title="Quay lại danh sách bài tập">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+      <span class="problem-path">Bài tập</span>
+      <span class="path-divider">/</span>
+      <span class="problem-title-header">{{ problem?.title || 'Đang tải...' }}</span>
+      <span class="diff-badge-header" [ngClass]="getDifficultyClass(problem?.difficulty || '')">
+        {{ getDifficultyLabel(problem?.difficulty || '') }}
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Run & Submit -->
+      <button (click)="runCode()" [disabled]="isExecuting" class="btn-action-header btn-run">
+        <i class="bi bi-play-fill"></i> Run
+      </button>
+      <button (click)="submitCode()" [disabled]="isExecuting" class="btn-action-header btn-submit-green">
+        <i class="bi bi-cloud-arrow-up-fill"></i> Submit
+      </button>
+    </div>
+  </header>
+
+  <!-- Split Workspace Panels -->
+  @if (isLoading) {
+    <div class="workspace-loading">
+      <div class="spinner-circle"></div>
+      <p>Đang tải không gian làm việc của LeetCode...</p>
+    </div>
+  } @else {
+    <div class="panels-grid">
+      <!-- Left Panel: Problem details & Submissions -->
+      <div class="panel-left">
+        <div class="panel-tabs">
+          <button 
+            [class.active]="activeLeftTab === 'description'" 
+            (click)="activeLeftTab = 'description'; showSubmissionDetail = false"
+          >
+            <i class="bi bi-file-text-fill"></i> Description
+          </button>
+          <button 
+            [class.active]="activeLeftTab === 'submissions'" 
+            (click)="activeLeftTab = 'submissions'; showSubmissionDetail = false"
+          >
+            <i class="bi bi-clock-history"></i> Submissions
+          </button>
+        </div>
+
+        <div class="panel-scroll-body">
+          <!-- Description View -->
+          @if (activeLeftTab === 'description' && !showSubmissionDetail) {
+            <div class="description-view">
+              <h2>{{ problem?.title }}</h2>
+              <div class="desc-meta-row">
+                <span class="diff-badge" [ngClass]="getDifficultyClass(problem?.difficulty || '')">
+                  {{ getDifficultyLabel(problem?.difficulty || '') }}
+                </span>
+                <span class="meta-tag"><i class="bi bi-tags-fill"></i> Tags</span>
+                <span class="meta-tag"><i class="bi bi-lightning-charge-fill"></i> Solved</span>
+              </div>
+
+              <!-- Problem description content (Markdown format) -->
+              <div class="markdown-content" [innerHTML]="problem?.description"></div>
+
+              <!-- Sample Test Cases -->
+              @if (problem?.sampleTestCases && problem!.sampleTestCases.length > 0) {
+                <div class="examples-section">
+                  @for (tc of problem!.sampleTestCases; track tc.id; let idx = $index) {
+                    <div class="example-box">
+                      <h4>Example {{ idx + 1 }}:</h4>
+                      <div class="example-code">
+                        <div class="example-line"><strong>Input:</strong> {{ tc.input }}</div>
+                        <div class="example-line"><strong>Output:</strong> {{ tc.expectedOutput }}</div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Submissions View -->
+          @if (activeLeftTab === 'submissions' && !showSubmissionDetail) {
+            <div class="submissions-view">
+              <h3>Lịch sử làm bài</h3>
+              @if (submissions.length === 0) {
+                <div class="empty-submissions">
+                  <i class="bi bi-terminal-dash"></i>
+                  <p>Bạn chưa nộp bài cho thử thách này.</p>
+                </div>
+              } @else {
+                <div class="submissions-list">
+                  @for (sub of submissions; track sub.id) {
+                    <div class="sub-item" (click)="viewSubmission(sub.id)">
+                      <div class="sub-meta">
+                        <span class="sub-verdict" [ngClass]="getVerdictClass(sub.verdict)">
+                          {{ sub.verdict }}
+                        </span>
+                        <span class="sub-lang">{{ sub.language }}</span>
+                      </div>
+                      <div class="sub-time">
+                        <span>{{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                        @if (sub.runtimeMs !== null) {
+                          <span class="sub-perf"><i class="bi bi-cpu"></i> {{ sub.runtimeMs }}ms</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Detailed Submission View (Inside left pane for LeetCode feel) -->
+          @if (showSubmissionDetail && selectedSubmission) {
+            <div class="submission-detail-pane">
+              <div class="detail-header-row">
+                <button (click)="closeSubmissionDetail()" class="btn-back-to-subs">
+                  <i class="bi bi-arrow-left"></i> Back
+                </button>
+                <h3>Chi tiết bài nộp</h3>
+              </div>
+
+              <div class="verdict-banner" [ngClass]="getVerdictClass(selectedSubmission.verdict)">
+                <div class="banner-title">{{ getVerdictLabel(selectedSubmission.verdict) }}</div>
+                <div class="banner-stats">
+                  <span>Pass: <strong>{{ selectedSubmission.passedCases }}/{{ selectedSubmission.totalCases }}</strong> cases</span>
+                  @if (selectedSubmission.runtimeMs !== null) {
+                    <span>Runtime: <strong>{{ selectedSubmission.runtimeMs }} ms</strong></span>
+                  }
+                  @if (selectedSubmission.memoryKb !== null) {
+                    <span>Memory: <strong>{{ (selectedSubmission.memoryKb / 1024) | number:'1.1-2' }} MB</strong></span>
+                  }
+                </div>
+              </div>
+
+              <!-- Compile / Runtime logs in submission detail -->
+              @if (selectedSubmission.compileOutput) {
+                <div class="detail-log-section">
+                  <h5>Compile Log:</h5>
+                  <pre class="log-box">{{ selectedSubmission.compileOutput }}</pre>
+                </div>
+              }
+              @if (selectedSubmission.stderr) {
+                <div class="detail-log-section">
+                  <h5>Stderr:</h5>
+                  <pre class="log-box text-danger">{{ selectedSubmission.stderr }}</pre>
+                </div>
+              }
+
+              <!-- Code Display -->
+              <div class="detail-code-section">
+                <div class="code-head">
+                  <span>Mã nguồn đã nộp ({{ selectedSubmission.language }}):</span>
+                  <button (click)="loadCodeFromSubmission(selectedSubmission.code, selectedSubmission.language)" class="btn-load-code">
+                    <i class="bi bi-arrow-repeat"></i> Nạp lại Code
+                  </button>
+                </div>
+                <pre class="submitted-code-box"><code>{{ selectedSubmission.code }}</code></pre>
+              </div>
+
+              <!-- Testcase Results -->
+              <div class="detail-testcases-section">
+                <h5>Kết quả Test Cases:</h5>
+                <div class="tc-grid">
+                  @for (tr of selectedSubmission.testResults; track tr.testCaseId; let idx = $index) {
+                    <div class="tc-item-box" [class.tc-failed]="tr.status !== 'Accepted'" [class.tc-passed]="tr.status === 'Accepted'">
+                      <div class="tc-item-head">
+                        <span>Case {{ idx + 1 }} {{ tr.isHidden ? '(Ẩn)' : '' }}</span>
+                        <span class="tc-item-status">{{ tr.status }}</span>
+                      </div>
+                      
+                      @if (!tr.isHidden) {
+                        <div class="tc-item-body">
+                          <div><strong>Input:</strong> <pre>{{ tr.input }}</pre></div>
+                          <div><strong>Expected:</strong> <pre>{{ tr.expectedOutput }}</pre></div>
+                          @if (tr.actualOutput) {
+                            <div><strong>Actual:</strong> <pre>{{ tr.actualOutput }}</pre></div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="tc-item-body hidden-tc-msg">
+                          <i class="bi bi-eye-slash-fill"></i> Test case ẩn - Thông tin chi tiết bị ẩn để đảm bảo công bằng.
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Panel: Editor & Output Terminal -->
+      <div class="panel-right">
+        <!-- Editor Header controls -->
+        <div class="editor-header">
+          <div class="editor-header-left">
+            <span class="lang-label"><i class="bi bi-code-slash"></i> Code</span>
+            <div class="select-lang-wrap">
+              <select [(ngModel)]="selectedLanguage" (change)="onLanguageChange()">
+                @for (lang of languages; track lang.id) {
+                  <option [ngValue]="lang">{{ lang.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="editor-header-right">
+            <!-- Font Size -->
+            <div class="select-font-wrap">
+              <select [(ngModel)]="fontSize" title="Cỡ chữ">
+                <option [ngValue]="12">12px</option>
+                <option [ngValue]="14">14px</option>
+                <option [ngValue]="16">16px</option>
+                <option [ngValue]="18">18px</option>
+                <option [ngValue]="20">20px</option>
+              </select>
+            </div>
+
+            <!-- Reset Code button -->
+            <button (click)="resetCode()" class="btn-ctrl" title="Reset Code mẫu">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Editor Area -->
+        <div class="editor-workspace">
+          <!-- Line Numbers -->
+          <div class="editor-line-numbers">
+            @for (line of lineCountArr; track line) {
+              <div class="line-num">{{ line }}</div>
+            }
+          </div>
+          
+          <!-- Textarea Workspace -->
+          <textarea 
+            class="editor-textarea"
+            [(ngModel)]="userCode"
+            (ngModelChange)="updateLineNumbers()"
+            (keydown)="onKeyDown($event)"
+            (scroll)="onScroll($event)"
+            [style.fontSize.px]="fontSize"
+            spellcheck="false"
+            placeholder="// Viết lời giải của bạn ở đây..."
+          ></textarea>
+        </div>
+
+        <!-- Bottom Console Console -->
+        <div class="console-box">
+          <div class="console-tabs">
+            <button 
+              [class.active]="activeConsoleTab === 'testcase'" 
+              (click)="activeConsoleTab = 'testcase'"
+            >
+              <i class="bi bi-keyboard-fill"></i> Testcase
+            </button>
+            <button 
+              [class.active]="activeConsoleTab === 'result'" 
+              (click)="activeConsoleTab = 'result'"
+            >
+              <i class="bi bi-terminal-fill"></i> Test Result
+            </button>
+          </div>
+
+          <div class="console-scroll-body">
+            <!-- Custom Input Box -->
+            @if (activeConsoleTab === 'testcase') {
+              <div class="console-input-view">
+                <label>Custom Stdin (Dữ liệu đầu vào chạy thử):</label>
+                <textarea 
+                  [(ngModel)]="stdinInput" 
+                  placeholder="Nhập stdin của bạn..." 
+                  spellcheck="false"
+                ></textarea>
+              </div>
+            }
+
+            <!-- Execution Result Box -->
+            @if (activeConsoleTab === 'result') {
+              <div class="console-result-view">
+                @if (isExecuting) {
+                  <div class="exec-loading">
+                    <div class="spinner-circle"></div>
+                    <p>{{ lastAction === 'run' ? 'Đang chạy thử code trên máy chủ...' : 'Đang chạy bộ test chấm điểm...' }}</p>
+                  </div>
+                } @else if (lastAction === 'run' && runResult) {
+                  <!-- RUN CODE RESULT -->
+                  <div class="result-summary">
+                    <span class="badge-verdict" [ngClass]="getVerdictClass(runResult.status)">
+                      {{ runResult.status }}
+                    </span>
+                    @if (runResult.runtimeMs !== null) {
+                      <span class="stat-item"><i class="bi bi-cpu"></i> {{ runResult.runtimeMs }}ms</span>
+                    }
+                    @if (runResult.memoryKb !== null) {
+                      <span class="stat-item"><i class="bi bi-hdd"></i> {{ runResult.memoryKb }}KB</span>
+                    }
+                  </div>
+
+                  <!-- Compile Error output -->
+                  @if (runResult.compileOutput) {
+                    <div class="log-section">
+                      <h5>Compile Output:</h5>
+                      <pre class="log-stderr">{{ runResult.compileOutput }}</pre>
+                    </div>
+                  }
+
+                  <!-- Stderr logs -->
+                  @if (runResult.stderr) {
+                    <div class="log-section">
+                      <h5>Stderr (Lỗi runtime):</h5>
+                      <pre class="log-stderr">{{ runResult.stderr }}</pre>
+                    </div>
+                  }
+
+                  <!-- Stdout output -->
+                  @if (runResult.status !== 'Compile Error') {
+                    <div class="log-section">
+                      <h5>Stdout (Kết quả đầu ra):</h5>
+                      <pre class="log-stdout">{{ runResult.stdout || '(Không có output)' }}</pre>
+                    </div>
+                  }
+                } @else if (lastAction === 'submit' && submissionResult) {
+                  <!-- SUBMIT CODE RESULT -->
+                  <div class="result-summary-submit">
+                    <div class="submission-verdict-row" [ngClass]="getVerdictClass(submissionResult.verdict)">
+                      <i class="bi" [class.bi-check-circle-fill]="submissionResult.verdict === 'Accepted'" [class.bi-x-circle-fill]="submissionResult.verdict !== 'Accepted'"></i>
+                      <span>{{ getVerdictLabel(submissionResult.verdict) }}</span>
+                    </div>
+
+                    <div class="submit-stats">
+                      <div class="stat-box">
+                        <span class="stat-val">{{ submissionResult.passedCases }}/{{ submissionResult.totalCases }}</span>
+                        <span class="stat-lbl">Testcases Passed</span>
+                      </div>
+                      @if (submissionResult.runtimeMs !== null) {
+                        <div class="stat-box">
+                          <span class="stat-val">{{ submissionResult.runtimeMs }}ms</span>
+                          <span class="stat-lbl">Execution Time</span>
+                        </div>
+                      }
+                      @if (submissionResult.memoryKb !== null) {
+                        <div class="stat-box">
+                          <span class="stat-val">{{ (submissionResult.memoryKb / 1024) | number:'1.1-2' }}MB</span>
+                          <span class="stat-lbl">Memory Used</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <div class="empty-result">
+                    <i class="bi bi-play-circle"></i>
+                    <p>Chưa chạy code. Vui lòng nhấn nút <strong>Run</strong> hoặc <strong>Submit</strong> để bắt đầu.</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
