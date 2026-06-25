@@ -191,11 +191,6 @@ public class AdminUserManagementController : ControllerBase
         var response = await BuildResponseAsync(fresh);
         return Ok(ApiResponse<UserManagementResponse>.Ok(response, "User role and permissions saved."));
     }
-
-    /// <summary>
-    /// Force logout a user by deleting their refresh tokens. Requires user:edit_role permission.
-    /// </summary>
-    [HttpPost("logout")]
     /// <summary>
     /// Force logout a user by deleting their refresh tokens. Requires user:edit_role permission.
     /// POST /api/admin/users/{userId}/management/logout
