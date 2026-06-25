@@ -44,6 +44,11 @@
                   <span class="status-badge" [class.public]="quiz.statusClass === 'public'" [class.draft]="quiz.statusClass !== 'public'">
                     {{ quiz.status }}
                   </span>
+                  @if (quiz.allowedCopy) {
+                    <span class="status-badge copyable" style="background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.2); margin-left: 6px;">
+                      <i class="bi bi-copy"></i> Sao chép OK
+                    </span>
+                  }
                   
                   <div class="btn-more-options-wrapper" style="position: relative; display: inline-block; margin-left: auto;">
                     <button class="btn-more-options" (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"><i class="bi bi-three-dots-vertical"></i></button>
@@ -52,6 +57,11 @@
                         <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
                           <i class="bi bi-eye"></i> Xem chi tiết
                         </button>
+                        @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
+                          <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null">
+                            <i class="bi bi-copy"></i> Sao chép bộ đề
+                          </button>
+                        }
                         <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
                           <i class="bi bi-send"></i> Chia sẻ bộ đề
                         </button>

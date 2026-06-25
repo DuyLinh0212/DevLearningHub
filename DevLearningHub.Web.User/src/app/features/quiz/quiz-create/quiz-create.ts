@@ -47,7 +47,8 @@ export class QuizCreateComponent implements OnInit {
     duration: 15,
     passRate: 70,
     shuffle: true,
-    instantResult: true
+    instantResult: true,
+    allowedCopy: false
   };
 
   questions: any[] = [this.createEmptyQuestion()];
@@ -89,7 +90,8 @@ export class QuizCreateComponent implements OnInit {
             duration: target.timeLimitSeconds ? Math.floor(target.timeLimitSeconds / 60) : 15,
             passRate: target.passRate || 70,
             shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
-            instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F')
+            instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
+            allowedCopy: target.allowedCopy ?? false
           };
 
           const rawQuestions = target.questions || [];
@@ -384,7 +386,8 @@ export class QuizCreateComponent implements OnInit {
       isPublic: !isDraft,
       topicId: requestedTopicId,
       topic: requestedTopicName,
-      level: mappedLevel
+      level: mappedLevel,
+      allowedCopy: this.quizMeta.allowedCopy ?? false
     };
 
     const request$ = this.editingQuizId && !this.editingQuizId.toString().startsWith('custom_')

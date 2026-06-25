@@ -92,6 +92,10 @@ toggleQuizStatus(quiz: any): Observable<any> {
     }
   }
 
+  copyQuizSet(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/quiz-sets/${id}/copy`, {});
+  }
+
   assignQuestionToSet(quizSetId: string, questionId: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/quiz-sets/${quizSetId}/questions`, { questionId });
   }
@@ -251,7 +255,8 @@ toggleQuizStatus(quiz: any): Observable<any> {
       statusClass: isPub ? 'public' : 'draft',
       status: isPub ? 'Đã phát hành' : 'Bản nháp',
       attempts: finalAttempts,
-      questionIds: quiz.questionIds || []
+      questionIds: quiz.questionIds || [],
+      allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? false
     };
   }
 
@@ -289,7 +294,8 @@ toggleQuizStatus(quiz: any): Observable<any> {
       isPublic,
       topicId: form.topicId || null,
       topic: form.topic || null,
-      level: form.level || null
+      level: form.level || null,
+      allowedCopy: form.allowedCopy ?? false
     };
   }
 

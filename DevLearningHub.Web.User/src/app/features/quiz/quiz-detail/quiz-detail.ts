@@ -29,6 +29,8 @@ export class QuizDetailComponent implements OnInit {
   quizInstantResult: boolean = false;
   currentUserId: string = '';
   quizCreatedBy: string = '';
+  quizAllowedCopy: boolean = false;
+  creatorId: string = '';
 
   selectedExamCount: number = 10;
 
@@ -71,6 +73,8 @@ export class QuizDetailComponent implements OnInit {
         this.quizTitle = quiz.title || 'Không có tiêu đề';
         this.quizDesc = quiz.description || quiz.desc || 'Chưa có mô tả chi tiết từ giảng viên.';
         this.quizCreatedBy = this.getQuizCreatorDisplayName(quiz);
+        this.creatorId = (quiz.createdBy || quiz.CreatedBy || '').toString().toLowerCase().trim();
+        this.quizAllowedCopy = quiz.allowedCopy ?? false;
         this.quizQuestionsCount = quiz.questionCount ?? quiz.questionsCount ?? 0;
         this.quizDuration = quiz.duration || (quiz.timeLimitSeconds ? Math.floor(quiz.timeLimitSeconds / 60) : 15);
         this.quizShuffle = quiz.shuffle || false;
@@ -146,7 +150,21 @@ export class QuizDetailComponent implements OnInit {
     return creator.toString().trim();
   }
 
-  private compareIds(id1: any, id2: any): boolean {
+  copyQuizSet() {
+    if (!confirm('Bạn có chắc chắn muốn sao chép bộ đề này thành bộ đề của bạn không?')) return;
+    this.quizService.copyQuizSet(this.quizId).subscribe({
+      next: (res) => {
+        alert('Sao chép bộ đề thành công! Bộ đề sao chép đang ở trạng thái Bản nháp.');
+        this.router.navigate(['/quiz-bank']);
+      },
+      error: (err) => {
+        console.error('Lỗi sao chép bộ đề:', err);
+        alert(`Không thể sao chép bộ đề: ${err.error?.message || 'Có lỗi xảy ra.'}`);
+      }
+    });
+  }
+
+  compareIds(id1: any, id2: any): boolean {
     if (!id1 || !id2) return false;
     return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
   }

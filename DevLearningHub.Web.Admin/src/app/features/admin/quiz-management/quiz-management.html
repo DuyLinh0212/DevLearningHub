@@ -168,6 +168,9 @@
             <span><i class="bi bi-bar-chart"></i> {{ getLevelName(set.level) }}</span>
             <span><i class="bi bi-clock"></i> {{ set.duration }} phút</span>
             <span><i class="bi bi-database-check"></i> {{ set.questionsCount }} câu</span>
+            @if (set.allowedCopy) {
+              <span style="color: #a855f7; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-copy"></i> Sao chép OK</span>
+            }
           </div>
 
           <div class="card-actions-row" style="display: flex; gap: 8px; width: 100%;">
@@ -354,6 +357,11 @@
             <label>Tỷ lệ điểm đạt (%)</label>
             <input type="number" [(ngModel)]="quizSetForm.passRate" min="1" max="100">
           </div>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="allowedCopy" [(ngModel)]="quizSetForm.allowedCopy" style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="allowedCopy" style="cursor: pointer; margin: 0; font-weight: 500; font-size: 0.85rem; color: var(--text-main);">Cho phép người học khác sao chép bộ đề này</label>
         </div>
       </div>
 

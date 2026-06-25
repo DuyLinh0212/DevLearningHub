@@ -102,9 +102,6 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         if (parent) {
           parent.replies = parent.replies || [];
           parent.replies.push(node);
-        } else {
-          // Parent not visible locally; drop it at root rather than lose it.
-          this.comments.push(node);
         }
       } else {
         this.comments.push(node);
@@ -239,7 +236,9 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     this.forumService.getComments(this.postId).subscribe({
       next: (res) => {
         const raw = res || [];
-        const arr = Array.isArray(raw) ? raw : [];
+        let arr = Array.isArray(raw) ? raw : [];
+        // Lọc bỏ bình luận mồ côi ở gốc nhưng có parentId (do cha bị ẩn/xóa)
+        arr = arr.filter((c: any) => !c.parentId);
         this.comments = this.staffUserService.annotateComments(arr);
         this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
         this.loading = false;

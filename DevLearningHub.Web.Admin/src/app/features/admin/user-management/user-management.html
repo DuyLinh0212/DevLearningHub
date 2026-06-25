@@ -109,6 +109,9 @@
                        <button class="btn-view-profile" (click)="viewUserProfile(user.id)" title="Xem trang cá nhân">
                          <i class="bi bi-person-lines-fill"></i>
                        </button>
+                       <button class="btn-permissions" (click)="openPermissionModal(user)" title="Phân quyền chi tiết">
+                         <i class="bi bi-shield-lock-fill"></i>
+                       </button>
                        <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
                          <i class="bi bi-person-badge-fill"></i>
                        </button>
@@ -240,6 +243,69 @@
     </div>
   </div>
   }
+  <!-- Permissions Modal -->
+  @if (isPermissionModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal permissions-modal-box">
+      <h3><i class="bi bi-shield-lock-fill" style="color:#f97316;margin-right:8px;"></i>Phân quyền chi tiết</h3>
+      <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
+        Tùy chỉnh quyền hạn cho tài khoản: <strong>{{ selectedUser?.username }}</strong>
+      </p>
+
+      @if (isPermissionLoading) {
+        <div class="permissions-loading">
+          <i class="bi bi-arrow-repeat spin-animation"></i>
+          <p>Đang tải danh sách quyền...</p>
+        </div>
+      } @else {
+        <div class="permissions-modal-body">
+          @for (module of permissionModules; track module.id || module.name) {
+            <section class="permission-module">
+              <div class="module-header">
+                <h4>{{ module.name }}</h4>
+                @if (module.description) {
+                  <p class="module-description">{{ module.description }}</p>
+                }
+              </div>
+
+              <div class="permission-list">
+                @for (perm of module.permissions; track perm.name) {
+                  <div class="permission-item">
+                    <div class="permission-meta">
+                      <strong>{{ perm.displayName || perm.name }}</strong>
+                      @if (perm.description) {
+                        <span>{{ perm.description }}</span>
+                      }
+                    </div>
+                    <select [(ngModel)]="permissionStateMap[perm.name]" class="permission-state-select" [disabled]="isPermissionSaving">
+                      <option value="inherit">Kế thừa</option>
+                      <option value="grant">Cho phép</option>
+                      <option value="deny">Từ chối</option>
+                    </select>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        </div>
+      }
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closePermissionModal()" [disabled]="isPermissionSaving">Hủy bỏ</button>
+        <button class="btn-modal-confirm orange" (click)="savePermissions()" [disabled]="isPermissionSaving">
+          @if (isPermissionSaving) {
+            <i class="bi bi-arrow-repeat spin-animation"></i> Đang lưu...
+          } @else {
+            Lưu thay đổi
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
 </div>
+
+
+
 
 

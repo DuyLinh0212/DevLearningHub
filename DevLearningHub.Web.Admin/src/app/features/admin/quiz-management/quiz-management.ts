@@ -71,7 +71,8 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     duration: 15,
     passRate: 80,
     mode: 'practice',
-    questionIds: [] as any[]
+    questionIds: [] as any[],
+    allowedCopy: false
   };
 
   // Chuẩn hóa giá trị level: hỗ trợ cả tên cũ (medium/hard) lẫn tên mới từ API (intermediate/advanced)
@@ -224,7 +225,8 @@ loadQuizSets() {
           questionsCount: s.questionCount || 0,
           statusClass: s.isPublic ? 'public' : 'draft',
           status: s.isPublic ? 'Đã phát hành' : 'Bản nháp',
-          isPublic: s.isPublic
+          isPublic: s.isPublic,
+          allowedCopy: s.allowedCopy ?? false
         }));
         this.cdr.detectChanges();
       }
@@ -394,7 +396,8 @@ toggleQuizSetStatus(set: any) {
         duration: quizSet.duration || 15,
         passRate: quizSet.passRate || 80,
         mode: quizSet.mode || 'practice',
-        questionIds: quizSet.questionIds ? [...quizSet.questionIds] : []
+        questionIds: quizSet.questionIds ? [...quizSet.questionIds] : [],
+        allowedCopy: quizSet.allowedCopy ?? false
       };
     } else {
       this.isEditingQuizSet = false;
@@ -409,7 +412,8 @@ toggleQuizSetStatus(set: any) {
         duration: 15,
         passRate: 80,
         mode: 'practice',
-        questionIds: []
+        questionIds: [],
+        allowedCopy: false
       };
     }
     this.isQuizSetModalOpen = true;
@@ -435,7 +439,8 @@ toggleQuizSetStatus(set: any) {
       duration: quizSet.duration || 15,
       passRate: quizSet.passRate || 80,
       mode: quizSet.mode || 'practice',
-      questionIds: quizSet.questionIds ? [...quizSet.questionIds] : []
+      questionIds: quizSet.questionIds ? [...quizSet.questionIds] : [],
+      allowedCopy: quizSet.allowedCopy ?? false
     };
     this.loadQuizSetQuestionIds(quizSet.id);
     this.cdr.detectChanges();
@@ -557,7 +562,8 @@ saveQuizSet() {
         timeLimitSeconds: (this.quizSetForm.duration || 15) * 60, // Gửi số giây chuẩn xuống Backend
         isPublic: this.selectedQuizSet ? (this.selectedQuizSet.isPublic ?? true) : true,
         topicId: this.quizSetForm.topicId, 
-        level: mappedLevel
+        level: mappedLevel,
+        allowedCopy: this.quizSetForm.allowedCopy ?? false
     };
 
     console.log('=== ADMIN: PAYLOAD GỬI XUỐNG API UPDATE/CREATE ===', payload);

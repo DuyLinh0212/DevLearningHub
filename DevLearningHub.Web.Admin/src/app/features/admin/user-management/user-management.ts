@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -87,6 +87,7 @@ export class UserManagementComponent implements OnInit {
           id: u.id,
           username: u.username || 'N/A',
           fullName: u.fullName || 'Chưa cập nhật',
+          avatarUrl: u.avatarUrl || '',
           email: u.email || 'N/A',
           xpPoints: u.xpPoints || 0,
           isActive: u.isActive ?? true,
@@ -103,7 +104,7 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi tải danh sách người dùng:', err);
+        console.error('Lá»—i táº£i danh sÃ¡ch ngÆ°á»i dÃ¹ng:', err);
         this.users = [];
         this.totalCount = 0;
         this.totalPages = 1;
@@ -185,7 +186,7 @@ export class UserManagementComponent implements OnInit {
   saveNewUser() {
     const { username, email, password, fullName, role } = this.createForm;
     if (!username.trim() || !email.trim() || !password.trim() || !fullName.trim()) {
-      alert('Vui lòng điền đầy đủ thông tin tài khoản!');
+      alert('Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin tÃ i khoáº£n!');
       return;
     }
 
@@ -206,7 +207,7 @@ export class UserManagementComponent implements OnInit {
           if (nestedUserId) {
             this.proceedWithRoleUpdate(nestedUserId, role);
           } else {
-            alert('Tạo tài khoản thành công nhưng không lấy được ID để phân quyền!');
+            alert('Táº¡o tÃ i khoáº£n thÃ nh cÃ´ng nhÆ°ng khÃ´ng láº¥y Ä‘Æ°á»£c ID Ä‘á»ƒ phÃ¢n quyá»n!');
             this.closeCreateModal();
             this.loadUsers();
           }
@@ -216,8 +217,8 @@ export class UserManagementComponent implements OnInit {
         this.proceedWithRoleUpdate(userId, role);
       },
       error: (err) => {
-        console.error('Lỗi tạo tài khoản:', err);
-        const msg = err?.error?.message || 'Không thể tạo tài khoản mới. Vui lòng kiểm tra lại thông tin!';
+        console.error('Lá»—i táº¡o tÃ i khoáº£n:', err);
+        const msg = err?.error?.message || 'KhÃ´ng thá»ƒ táº¡o tÃ i khoáº£n má»›i. Vui lÃ²ng kiá»ƒm tra láº¡i thÃ´ng tin!';
         alert(msg);
       }
     });
@@ -228,19 +229,19 @@ export class UserManagementComponent implements OnInit {
     if (role !== 'User') {
       this.http.put(`/api/admin/users/${userId}/role`, { role }).subscribe({
         next: () => {
-          alert(`Tạo tài khoản thành công với quyền ${role}!`);
+          alert(`Táº¡o tÃ i khoáº£n thÃ nh cÃ´ng vá»›i quyá»n ${role}!`);
           this.closeCreateModal();
           this.loadUsers();
         },
         error: (err) => {
-          console.error('Lỗi phân quyền sau đăng ký:', err);
-          alert('Đã tạo tài khoản thành công nhưng gặp lỗi phân quyền. Bạn hãy phân quyền thủ công trong danh sách!');
+          console.error('Lá»—i phÃ¢n quyá»n sau Ä‘Äƒng kÃ½:', err);
+          alert('ÄÃ£ táº¡o tÃ i khoáº£n thÃ nh cÃ´ng nhÆ°ng gáº·p lá»—i phÃ¢n quyá»n. Báº¡n hÃ£y phÃ¢n quyá»n thá»§ cÃ´ng trong danh sÃ¡ch!');
           this.closeCreateModal();
           this.loadUsers();
         }
       });
     } else {
-      alert('Tạo tài khoản học viên (User) thành công!');
+      alert('Táº¡o tÃ i khoáº£n há»c viÃªn (User) thÃ nh cÃ´ng!');
       this.closeCreateModal();
       this.loadUsers();
     }
@@ -268,13 +269,13 @@ export class UserManagementComponent implements OnInit {
 
     this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/role`, { role }).subscribe({
       next: () => {
-        alert('Cập nhật quyền hạn thành công!');
+        alert('Cáº­p nháº­t quyá»n háº¡n thÃ nh cÃ´ng!');
         this.closeRoleModal();
         this.loadUsers();
       },
       error: (err) => {
-        console.error('Lỗi cập nhật quyền:', err);
-        const msg = err?.error?.message || 'Không thể cập nhật quyền!';
+        console.error('Lá»—i cáº­p nháº­t quyá»n:', err);
+        const msg = err?.error?.message || 'KhÃ´ng thá»ƒ cáº­p nháº­t quyá»n!';
         alert(msg);
       }
     });
@@ -284,15 +285,15 @@ export class UserManagementComponent implements OnInit {
   toggleLock(user: any) {
     this.selectedUser = user;
     if (user.isLocked) {
-      if (confirm(`Bạn có chắc muốn mở khóa tài khoản ${user.username}?`)) {
+      if (confirm(`Báº¡n cÃ³ cháº¯c muá»‘n má»Ÿ khÃ³a tÃ i khoáº£n ${user.username}?`)) {
         this.http.patch<any>(`/api/admin/users/${user.id}/unlock`, {}).subscribe({
           next: () => {
-            alert('Mở khóa tài khoản thành công!');
+            alert('Má»Ÿ khÃ³a tÃ i khoáº£n thÃ nh cÃ´ng!');
             this.loadUsers();
           },
           error: (err) => {
-            console.error('Lỗi mở khóa:', err);
-            alert('Không thể mở khóa tài khoản!');
+            console.error('Lá»—i má»Ÿ khÃ³a:', err);
+            alert('KhÃ´ng thá»ƒ má»Ÿ khÃ³a tÃ i khoáº£n!');
           }
         });
       }
@@ -311,17 +312,17 @@ export class UserManagementComponent implements OnInit {
 
   confirmLock() {
     if (!this.selectedUser) return;
-    const reason = this.lockForm.reason.trim() || 'Vi phạm chính sách';
+    const reason = this.lockForm.reason.trim() || 'Vi pháº¡m chÃ­nh sÃ¡ch';
 
     this.http.patch<any>(`/api/admin/users/${this.selectedUser.id}/lock`, { reason }).subscribe({
       next: () => {
-        alert('Khóa tài khoản thành công!');
+        alert('KhÃ³a tÃ i khoáº£n thÃ nh cÃ´ng!');
         this.closeLockModal();
         this.loadUsers();
       },
       error: (err) => {
-        console.error('Lỗi khóa tài khoản:', err);
-        alert('Không thể khóa tài khoản!');
+        console.error('Lá»—i khÃ³a tÃ i khoáº£n:', err);
+        alert('KhÃ´ng thá»ƒ khÃ³a tÃ i khoáº£n!');
       }
     });
   }
@@ -363,8 +364,8 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error("Lỗi tải quyền chi tiết:", err);
-        alert("Không thể tải danh sách quyền.");
+        console.error("Lá»—i táº£i quyá»n chi tiáº¿t:", err);
+        alert("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch quyá»n.");
         this.closePermissionModal();
       }
     });
@@ -387,13 +388,13 @@ export class UserManagementComponent implements OnInit {
     this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: allItems }).subscribe({
       next: () => {
         this.isPermissionSaving = false;
-        alert("Đã cập nhật phân quyền. Quyền mới có hiệu lực sau khi user đăng nhập lại.");
+        alert("ÄÃ£ cáº­p nháº­t phÃ¢n quyá»n. Quyá»n má»›i cÃ³ hiá»‡u lá»±c sau khi user Ä‘Äƒng nháº­p láº¡i.");
         this.closePermissionModal();
       },
       error: (err) => {
         this.isPermissionSaving = false;
-        console.error("Lỗi lưu quyền:", err);
-        alert("Không thể lưu phân quyền.");
+        console.error("Lá»—i lÆ°u quyá»n:", err);
+        alert("KhÃ´ng thá»ƒ lÆ°u phÃ¢n quyá»n.");
       }
     });
   }
@@ -407,4 +408,7 @@ export class UserManagementComponent implements OnInit {
     this.router.navigate(['/admin/users', userId], { queryParams: { returnUrl: this.router.url } });
   }
 }
+
+
+
 

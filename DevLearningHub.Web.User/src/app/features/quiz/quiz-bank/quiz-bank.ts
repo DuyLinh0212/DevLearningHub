@@ -95,7 +95,8 @@ loadQuizzes() {
           attempts: quiz.attempts || 0,
           statusClass: quiz.statusClass,
           status: quiz.status,
-          updated: 'Mới cập nhật'
+          updated: 'Mới cập nhật',
+          allowedCopy: quiz.allowedCopy ?? false
         };
       });
       
@@ -142,6 +143,21 @@ loadQuizzes() {
   changeFilter(status: string) {
     this.selectedStatus = status;
     this.cdr.detectChanges();
+  }
+
+  copyQuizSet(quizId: string, event: Event) {
+    event.stopPropagation();
+    if (!confirm('Bạn có chắc chắn muốn sao chép bộ đề này thành bộ đề của bạn không?')) return;
+    this.quizService.copyQuizSet(quizId).subscribe({
+      next: (res) => {
+        alert('Sao chép bộ đề thành công! Bộ đề sao chép đang ở trạng thái Bản nháp.');
+        this.loadQuizzes();
+      },
+      error: (err) => {
+        console.error('Lỗi sao chép bộ đề:', err);
+        alert(`Không thể sao chép bộ đề: ${err.error?.message || 'Có lỗi xảy ra.'}`);
+      }
+    });
   }
 
   deleteQuiz(quizId: string, event: Event) {

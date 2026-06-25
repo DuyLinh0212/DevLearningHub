@@ -91,6 +91,17 @@
               <span class="switch-slider"></span>
             </label>
           </div>
+
+          <div class="setting-toggle-row" style="margin-top: 16px;">
+            <div class="toggle-text-left">
+              <h4>Cho phép học viên khác sao chép bộ đề</h4>
+              <p>Cho phép học viên khác nhân bản bộ đề này làm đề của họ</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="quizMeta.allowedCopy">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       }

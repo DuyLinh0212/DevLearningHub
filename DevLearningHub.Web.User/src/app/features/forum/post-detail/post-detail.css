@@ -1,4 +1,4 @@
-﻿@import '../../dashboard/dashboard.css';
+@import '../../dashboard/dashboard.css';
 
 /* --- HEADER BACK & ACTIONS --- */
 .btn-back {
@@ -460,25 +460,27 @@
 
 .comment-date {
   color: var(--text-muted-dark);
-  font-size: 0.62rem;
+  font-size: 0.78rem;
 }
 
 .comment-actions {
   display: flex;
-  gap: 5px;
+  gap: 12px;
+  align-items: center;
 }
 
 .btn-link-action {
   background: none;
   border: none;
   color: var(--text-muted-dark);
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
-  display: flex;
+  padding: 2px 4px;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  transition: color 0.15s;
 }
 
 .btn-link-action:hover {
@@ -944,7 +946,6 @@
   padding: 6px 0;
 }
 
-.fb-lightbox-comments .comment-actions,
 .fb-lightbox-comments .comment-accept-wrapper {
   display: none;
 }

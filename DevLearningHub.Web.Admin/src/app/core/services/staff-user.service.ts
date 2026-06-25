@@ -15,24 +15,39 @@ export class StaffUserService {
   private staffUsernames = new Set<string>();
   private loaded = false;
 
-  /** Load all Admin/Moderator accounts from admin users API. */
   ensureLoaded(): Observable<void> {
     if (this.loaded) {
       return of(void 0);
     }
 
-    return this.fetchAllAdminUsers().pipe(
-      tap(users => {
-        users.forEach((user: any) => {
-          const roles = this.normalizeRoles(user);
-          if (!this.hasStaffRole(roles)) return;
-
-          const id = (user.id || '').toString().toLowerCase();
-          const username = (user.username || '').toLowerCase();
-          if (id) this.staffUserIds.add(id);
-          if (username) this.staffUsernames.add(username);
+    // 1. Tải trước từ cấu hình local JSON + LocalStorage (fallback khi chưa tải xong/không có quyền)
+    return this.http.get<{ userIds?: string[]; usernames?: string[] }>('assets/config/staff-users.json').pipe(
+      catchError(() => of({ userIds: [] as string[], usernames: [] as string[] })),
+      tap((config) => {
+        (config.userIds || []).forEach(id => {
+          if (id) this.staffUserIds.add(id.toLowerCase());
         });
-        this.persistStaffCacheToStorage();
+        (config.usernames || []).forEach(username => {
+          if (username) this.staffUsernames.add(username.toLowerCase());
+        });
+        this.loadStaffCacheFromStorage();
+      }),
+      switchMap(() => this.fetchAllAdminUsers().pipe(
+        tap(users => {
+          users.forEach((user: any) => {
+            const roles = this.normalizeRoles(user);
+            if (!this.hasStaffRole(roles)) return;
+
+            const id = (user.id || '').toString().toLowerCase();
+            const username = (user.username || '').toLowerCase();
+            if (id) this.staffUserIds.add(id);
+            if (username) this.staffUsernames.add(username);
+          });
+          this.persistStaffCacheToStorage();
+        }),
+        catchError(() => of([]))
+      )),
+      tap(() => {
         this.loaded = true;
       }),
       map(() => void 0),
@@ -125,5 +140,22 @@ export class StaffUserService {
         usernames: Array.from(this.staffUsernames)
       })
     );
+  }
+
+  private loadStaffCacheFromStorage() {
+    try {
+      const raw = localStorage.getItem(STAFF_CACHE_KEY);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      (parsed.userIds || []).forEach((id: string) => {
+        if (id) this.staffUserIds.add(id.toLowerCase());
+      });
+      (parsed.usernames || []).forEach((username: string) => {
+        if (username) this.staffUsernames.add(username.toLowerCase());
+      });
+    } catch {
+      // Ignore invalid cache payload.
+    }
   }
 }

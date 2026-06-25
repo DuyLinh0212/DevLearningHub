@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -20,11 +20,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   public mobileMenu = inject(MobileMenuService);
   
-  /** Getter để template vẫn đọc được isMobileOpen như cũ */
+  /** Getter Ä‘á»ƒ template váº«n Ä‘á»c Ä‘Æ°á»£c isMobileOpen nhÆ° cÅ© */
   get isMobileOpen(): boolean { return this.mobileMenu.isOpen(); }
 
   profile = {
     displayName: 'Quản trị viên',
+    username: '',
     email: '',
     avatarUrl: ''
   };
@@ -35,7 +36,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.loadUserProfile();
     window.addEventListener('profile-updated', this.profileUpdateHandler);
 
-    // Tự động thu hồi Sidebar về vị trí ẩn khi Admin bấm chuyển trang thành công trên điện thoại
+    // Tá»± Ä‘á»™ng thu há»“i Sidebar vá» vá»‹ trÃ­ áº©n khi Admin báº¥m chuyá»ƒn trang thÃ nh cÃ´ng trÃªn Ä‘iá»‡n thoáº¡i
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -58,7 +59,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         if (!user) return;
 
         this.profile = {
-          displayName: user.fullName || user.username || 'Quản trị viên',
+          displayName: user.username || user.fullName || 'Quản trị viên',
+          username: user.username || '',
           email: user.email || '',
           avatarUrl: user.avatarUrl || ''
         };
@@ -76,7 +78,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    localStorage.clear(); // Xóa sạch token, phiên làm việc cũ và biến quyền hạn
+    localStorage.clear(); // XÃ³a sáº¡ch token, phiÃªn lÃ m viá»‡c cÅ© vÃ  biáº¿n quyá»n háº¡n
     this.router.navigate(['/login']);
   }
 }

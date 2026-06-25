@@ -1,10 +1,10 @@
-.login-wrapper {
+﻿.login-wrapper {
   display: flex;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-main);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -230,7 +230,7 @@ input::-ms-clear {
 }
 
 /* ==========================================================================
-   📱 LOGIN RESPONSIVE - BREAKPOINTS 768px & 480px
+   ðŸ“± LOGIN RESPONSIVE - BREAKPOINTS 768px & 480px
    ========================================================================== */
 @media (max-width: 768px) {
   .login-wrapper {
@@ -240,12 +240,12 @@ input::-ms-clear {
     min-height: 100vh;
   }
 
-  /* Ẩn left panel (illustration) trên mobile */
+  /* áº¨n left panel (illustration) trÃªn mobile */
   .left-panel {
     display: none !important;
   }
 
-  /* Right panel chiếm toàn màn hình */
+  /* Right panel chiáº¿m toÃ n mÃ n hÃ¬nh */
   .right-panel {
     width: 100% !important;
     padding: 40px 32px !important;

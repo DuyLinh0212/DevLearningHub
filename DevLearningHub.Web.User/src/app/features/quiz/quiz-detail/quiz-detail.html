@@ -136,6 +136,16 @@
           <i class="bi" [class.bi-check2]="quizShuffle" [class.bi-dash-circle]="!quizShuffle" [style.color]="quizShuffle ? '#22c55e' : 'var(--text-muted-dark)'" style="font-size: 1.2rem;"></i>
         </div>
       </div>
+
+      @if (quizAllowedCopy || compareIds(creatorId, currentUserId)) {
+        <div class="sidebar-card action-card" style="margin-top: 16px;">
+          <h3>Sao chép bộ đề</h3>
+          <p class="card-subtitle" style="margin-bottom: 12px;">Nhân bản bộ đề thi này thành của bạn để tùy chỉnh hoặc thêm bớt câu hỏi.</p>
+          <button (click)="copyQuizSet()" class="btn-start-paradigm btn-practice" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; color: white;">
+            <i class="bi bi-copy"></i> Sao chép bộ đề
+          </button>
+        </div>
+      }
     </div>
   </div>
 </div>

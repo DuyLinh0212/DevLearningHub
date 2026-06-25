@@ -1,9 +1,8 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { StaffUserService } from '../../../core/services/staff-user.service';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
@@ -21,22 +20,28 @@ export class AdminPostDetailComponent implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   public mobileMenu = inject(MobileMenuService);
-  private sanitizer = inject(DomSanitizer);
   private staffUserService = inject(StaffUserService);
 
   postId: string = '';
   post: any = null;
   comments: any[] = [];
-
   loading: boolean = false;
 
   // Form states
   rootCommentText: string = '';
   replyCommentText: string = '';
-
   replyingCommentId: string | null = null;
 
+  // Lightbox zoom state
   zoomedImageUrl: string | null = null;
+  imageZoomLevel = 1;
+  imageTranslateX = 0;
+  imageTranslateY = 0;
+  isImageDragging = false;
+  private imageDragStartX = 0;
+  private imageDragStartY = 0;
+  private imageDragBaseX = 0;
+  private imageDragBaseY = 0;
 
   ngOnInit() {
     this.staffUserService.ensureLoaded().subscribe(() => {
@@ -57,7 +62,9 @@ export class AdminPostDetailComponent implements OnInit {
       next: (res) => {
         this.post = res?.data || res;
         if (this.post?.isHidden) {
-          document.title = `[Đã ẩn] ${this.post.title || 'Bài viết'}`;
+          document.title = `[Đã ẩn] ${this.post.title}`;
+        } else if (this.post) {
+          document.title = this.post.title;
         }
         this.loadComments();
       },
@@ -77,7 +84,10 @@ export class AdminPostDetailComponent implements OnInit {
     this.http.get<any>(`/api/posts/${this.postId}/comments?showHidden=true`).subscribe({
       next: (res) => {
         const raw = res?.data || res || [];
-        this.comments = this.staffUserService.annotateComments(Array.isArray(raw) ? raw : []);
+        let arr = Array.isArray(raw) ? raw : [];
+        // Lọc bỏ bình luận mồ côi ở gốc nhưng có parentId
+        arr = arr.filter((c: any) => !c.parentId);
+        this.comments = this.staffUserService.annotateComments(arr);
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -90,10 +100,8 @@ export class AdminPostDetailComponent implements OnInit {
     });
   }
 
-  // --- VOTE ACTIONS ---
   votePost(voteType: 'up' | 'down') {
     if (!this.post) return;
-
     this.http.post<any>(`/api/posts/${this.post.id}/vote`, { voteType }).subscribe({
       next: (res) => {
         if (res && this.post) {
@@ -103,17 +111,13 @@ export class AdminPostDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: (err) => {
-        console.error('Lỗi bình chọn bài viết:', err);
-      }
+      error: (err) => console.error('Lỗi bình chọn bài viết:', err)
     });
   }
 
   scrollToComments() {
     const element = document.querySelector('.discussion-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
   }
 
   voteComment(comment: any, voteType: 'up' | 'down') {
@@ -126,23 +130,17 @@ export class AdminPostDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: (err) => {
-        console.error('Lỗi bình chọn bình luận:', err);
-      }
+      error: (err) => console.error('Lỗi bình chọn bình luận:', err)
     });
   }
 
-  // --- COMMENT ADD / DELETE ---
   addRootComment() {
     if (!this.rootCommentText.trim() || !this.post) return;
-
     const payload = { bodyMarkdown: this.rootCommentText.trim() };
-    this.http.post<any>(`/api/posts/${this.post.id}/comments`, payload).subscribe({
+    this.http.post<any>(`/api/posts/${this.postId}/comments`, payload).subscribe({
       next: () => {
         this.rootCommentText = '';
-        if (this.post) {
-          this.post.commentCount += 1;
-        }
+        if (this.post) this.post.commentCount += 1;
         this.loadComments();
       },
       error: (err) => {
@@ -160,19 +158,12 @@ export class AdminPostDetailComponent implements OnInit {
 
   addReplyComment(parentId: string) {
     if (!this.replyCommentText.trim() || !this.post) return;
-
-    const payload = {
-      bodyMarkdown: this.replyCommentText.trim(),
-      parentId: parentId
-    };
-
-    this.http.post<any>(`/api/posts/${this.post.id}/comments`, payload).subscribe({
+    const payload = { bodyMarkdown: this.replyCommentText.trim(), parentId: parentId };
+    this.http.post<any>(`/api/posts/${this.postId}/comments`, payload).subscribe({
       next: () => {
         this.replyingCommentId = null;
         this.replyCommentText = '';
-        if (this.post) {
-          this.post.commentCount += 1;
-        }
+        if (this.post) this.post.commentCount += 1;
         this.loadComments();
       },
       error: (err) => {
@@ -184,7 +175,6 @@ export class AdminPostDetailComponent implements OnInit {
 
   deleteComment(commentId: string) {
     if (!confirm('Bạn có chắc chắn muốn xóa bình luận này và toàn bộ bình luận con của nó không?')) return;
-
     this.http.delete<any>(`/api/comments/${commentId}`).subscribe({
       next: () => {
         alert('Đã xóa bình luận thành công.');
@@ -197,17 +187,12 @@ export class AdminPostDetailComponent implements OnInit {
     });
   }
 
-  // --- MODERATION ACTIONS ---
   toggleModeratePost() {
     if (!this.post) return;
     const hide = !this.post.isHidden;
     const reason = prompt(hide ? 'Nhập lý do ẩn bài viết:' : 'Nhập lý do hiện lại bài viết:');
     if (reason === null) return;
-
-    this.http.post<any>(`/api/posts/${this.post.id}/moderate`, {
-      reason: reason.trim(),
-      hidden: hide
-    }).subscribe({
+    this.http.post<any>(`/api/posts/${this.postId}/moderate`, { reason: reason.trim(), hidden: hide }).subscribe({
       next: () => {
         this.post.isHidden = hide;
         alert(hide ? 'Đã ẩn bài đăng thành công.' : 'Đã hiện lại bài đăng thành công.');
@@ -224,11 +209,7 @@ export class AdminPostDetailComponent implements OnInit {
     const hide = !comment.isHidden;
     const reason = prompt(hide ? 'Nhập lý do ẩn bình luận:' : 'Nhập lý do hiện lại bình luận:');
     if (reason === null) return;
-
-    this.http.post<any>(`/api/comments/${comment.id}/moderate`, {
-      reason: reason.trim(),
-      hidden: hide
-    }).subscribe({
+    this.http.post<any>(`/api/comments/${comment.id}/moderate`, { reason: reason.trim(), hidden: hide }).subscribe({
       next: () => {
         comment.isHidden = hide;
         alert(hide ? 'Đã ẩn bình luận thành công.' : 'Đã hiện lại bình luận thành công.');
@@ -243,7 +224,6 @@ export class AdminPostDetailComponent implements OnInit {
 
   deletePost() {
     if (!confirm('Bạn có chắc chắn muốn xóa hoàn toàn bài viết này? Hành động này không thể hoàn tác.')) return;
-
     this.http.delete<any>(`/api/posts/${this.postId}`).subscribe({
       next: () => {
         alert('Đã xóa bài viết thành công!');
@@ -256,39 +236,34 @@ export class AdminPostDetailComponent implements OnInit {
     });
   }
 
-  // --- HELPERS ---
-  formatRelativeTime(dateString: string): string {
-    if (!dateString) return '';
-    const now = new Date();
-    const date = new Date(dateString);
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'Vừa xong';
-
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} phút trước`;
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} giờ trước`;
-
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} ngày trước`;
-
-    const months = Math.floor(days / 30);
-    return `${months} tháng trước`;
+  isPostAuthorComment(comment: any): boolean {
+    if (!comment?.author || !this.post?.author) return false;
+    return comment.author.id?.toString().toLowerCase() === this.post.author.id?.toString().toLowerCase();
   }
 
-  renderMarkdown(markdown: string): SafeHtml {
-    if (!markdown) return '';
+  formatRelativeTime(dateString: string): string {
+    if (!dateString) return '';
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return 'Vừa xong';
+    const m = Math.floor(seconds / 60); if (m < 60) return `${m} phút trước`;
+    const h = Math.floor(m / 60); if (h < 24) return `${h} giờ trước`;
+    const d = Math.floor(h / 24); if (d < 30) return `${d} ngày trước`;
+    return `${Math.floor(d / 30)} tháng trước`;
+  }
 
+  renderMarkdown(markdown: string): string {
+    if (!markdown) return '';
+    
+    // Escape HTML tags to prevent XSS
     let escaped = markdown
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
+    // Extract code blocks first to avoid line-break formatting issues inside code blocks
     const codeBlocks: string[] = [];
     const codeBlockRegex = /```([a-zA-Z0-9+#-]+)?\s*([\s\S]*?)\s*```/g;
-
+    
     escaped = escaped.replace(codeBlockRegex, (match, lang, code) => {
       const index = codeBlocks.length;
       const cleanCode = code.trim();
@@ -297,40 +272,116 @@ export class AdminPostDetailComponent implements OnInit {
       codeBlocks.push(`<div class="code-block-wrapper">${badge}<pre class="markdown-code-block${languageClass}"><code>${cleanCode}</code></pre></div>`);
       return `___CODEBLOCK_${index}___`;
     });
-
+    
+    // 2. Inline code (`code`)
     escaped = escaped.replace(/`([^`]+)`/g, '<code class="markdown-inline-code">$1</code>');
+    
+    // 3. Bold (**text**)
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // 4. Italic (*text*)
     escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // 5. Links ([text](url))
     escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="markdown-link">$1</a>');
+
+    // 6. Double newlines to paragraph breaks, single to line breaks
     escaped = escaped.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
 
+    // Restore code blocks
     codeBlocks.forEach((html, index) => {
       escaped = escaped.replace(`___CODEBLOCK_${index}___`, html);
     });
 
-    return this.sanitizer.bypassSecurityTrustHtml(`<p>${escaped}</p>`);
-  }
-
-  // --- IMAGE ZOOM LIGHTBOX ---
-  openImageZoom(url: string) {
-    this.zoomedImageUrl = url;
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeImageZoom() {
-    this.zoomedImageUrl = null;
-    document.body.style.overflow = '';
-  }
-
-  isPostAuthorComment(comment: any): boolean {
-    if (!comment?.author || !this.post?.author) return false;
-    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    const postAuthorId = (this.post.author.id || '').toString().toLowerCase();
-    return commentAuthorId === postAuthorId;
+    return `<p>${escaped}</p>`;
   }
 
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
+  }
+
+  // Lightbox Zoom Methods
+  openImageZoom(url: string) {
+    this.zoomedImageUrl = url;
+    this.resetImageTransform();
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeImageZoom() {
+    this.zoomedImageUrl = null;
+    this.resetImageTransform();
+    document.body.style.overflow = '';
+  }
+
+  zoomImage(delta: number, event?: Event) {
+    if (event) event.stopPropagation();
+    this.imageZoomLevel = Math.max(0.5, Math.min(3, +(this.imageZoomLevel + delta).toFixed(2)));
+    if (this.imageZoomLevel <= 1) {
+      this.imageTranslateX = 0;
+      this.imageTranslateY = 0;
+    }
+  }
+
+  resetImageZoom(event?: Event) {
+    if (event) event.stopPropagation();
+    this.resetImageTransform();
+  }
+
+  resetImageTransform() {
+    this.imageZoomLevel = 1;
+    this.imageTranslateX = 0;
+    this.imageTranslateY = 0;
+    this.isImageDragging = false;
+  }
+
+  get imageTransform(): string {
+    return `translate(${this.imageTranslateX}px, ${this.imageTranslateY}px) scale(${this.imageZoomLevel})`;
+  }
+
+  startImageDrag(event: MouseEvent | TouchEvent) {
+    if (this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = this.getDragPoint(event);
+    this.isImageDragging = true;
+    this.imageDragStartX = point.x;
+    this.imageDragStartY = point.y;
+    this.imageDragBaseX = this.imageTranslateX;
+    this.imageDragBaseY = this.imageTranslateY;
+  }
+
+  stopImageDrag() {
+    this.isImageDragging = false;
+  }
+
+  private moveImageDrag(event: MouseEvent | TouchEvent) {
+    if (!this.isImageDragging || this.imageZoomLevel <= 1) return;
+    event.preventDefault();
+    const point = this.getDragPoint(event);
+    this.imageTranslateX = this.imageDragBaseX + point.x - this.imageDragStartX;
+    this.imageTranslateY = this.imageDragBaseY + point.y - this.imageDragStartY;
+  }
+
+  private getDragPoint(event: MouseEvent | TouchEvent): { x: number; y: number } {
+    if ('touches' in event && event.touches.length > 0) {
+      return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }
+    return { x: (event as MouseEvent).clientX, y: (event as MouseEvent).clientY };
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onImageDragMove(event: MouseEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:touchmove', ['$event'])
+  onImageTouchMove(event: TouchEvent) { this.moveImageDrag(event); }
+
+  @HostListener('document:mouseup')
+  @HostListener('document:touchend')
+  onImageDragEnd() { this.stopImageDrag(); }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.zoomedImageUrl) this.closeImageZoom();
   }
 }

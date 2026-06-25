@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -54,7 +54,7 @@ export class LoginComponent {
       next: (res: any) => {
         this.isLoading = false;
         const target = res?.data || res;
-        const token = target?.accessToken || target?.token || '';
+        const token = target?.accessToken || target?.token || res?.accessToken || res?.token || '';
         
         if (token) {
           localStorage.setItem('accessToken', token);
@@ -64,13 +64,18 @@ export class LoginComponent {
             const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
             
             const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-            const isAdmin = Array.isArray(roleClaim) 
-              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') 
-              : roleClaim?.toLowerCase() === 'admin';            
+            const responseRoles = target?.user?.roles || target?.user?.Roles || res?.data?.user?.roles || res?.data?.user?.Roles || [];
+            const isAdminFromToken = Array.isArray(roleClaim)
+              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin')
+              : roleClaim?.toLowerCase() === 'admin';
+            const isAdminFromBody = Array.isArray(responseRoles)
+              ? responseRoles.map((r: string) => String(r).toLowerCase()).includes('admin')
+              : String(responseRoles || '').toLowerCase() === 'admin';
+            const isAdmin = isAdminFromToken || isAdminFromBody;            
             
             if (!isAdmin) {
-              this.errorMessage = 'Bạn không có quyền truy cập cổng Quản trị!';
-              localStorage.removeItem('accessToken');
+              this.errorMessage = 'Tài khoản này không có quyền Admin. Bạn sẽ được giữ phiên đăng nhập để dùng khu vực user.';
+              this.router.navigate(['/dashboard']);
               this.cdr.detectChanges();
               return;
             }
@@ -78,19 +83,23 @@ export class LoginComponent {
             this.router.navigate(['/admin']);
             
           } catch (e) {
-            this.errorMessage = 'Lỗi xác thực quyền hạn hệ thống.';
-            localStorage.removeItem('accessToken');
+            this.errorMessage = 'Không đọc được vai trò từ token. Phiên đăng nhập vẫn được giữ lại.';
+            this.router.navigate(['/dashboard']);
             this.cdr.detectChanges();
           }
         } else {
-          this.errorMessage = 'Hệ thống không trả về Token.';
+          this.errorMessage = 'Hệ thống không trả về accessToken.';
         }
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Đăng nhập thất bại!';
+        this.errorMessage = err.error?.message || err.error?.data?.message || 'Đăng nhập thất bại!';
         this.cdr.detectChanges();
       }
     });
   }
 }
+
+
+
+
