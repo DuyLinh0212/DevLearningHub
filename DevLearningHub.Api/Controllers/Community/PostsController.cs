@@ -22,28 +22,34 @@ public class PostsController : ControllerBase
 
     private readonly DevLearningHubContext _db;
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
+    private readonly IPermissionService _permissions;
 
-    public PostsController(DevLearningHubContext db, IHubContext<CommentHub, ICommentHubClient> commentHub)
+    public PostsController(
+        DevLearningHubContext db,
+        IHubContext<CommentHub, ICommentHubClient> commentHub,
+        IPermissionService permissions)
     {
         _db = db;
         _commentHub = commentHub;
+        _permissions = permissions;
     }
 
     [HttpGet]
     [AllowAnonymous]
-    // List posts with cursor pagination, optional search and tag filter.
-    public async Task<ActionResult<ApiResponse<CursorPagedResponse<PostSummaryResponse>>>> GetPosts(
-        [FromQuery] DateTime? cursor = null,
-        [FromQuery] Guid? cursorId = null,
+    // List posts with pagination, optional search and tag filter.
+    public async Task<ActionResult<ApiResponse<PagedResponse<PostSummaryResponse>>>> GetPosts(
+        [FromQuery] int page = 1,
         [FromQuery] int pageSize = DefaultPageSize,
         [FromQuery] string? search = null,
         [FromQuery] string? tag = null,
         [FromQuery] Guid? authorId = null)
     {
+        page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
 
-        // Moderators and admins can see hidden posts in the list; everyone else only sees visible ones.
-        var includeHidden = IsModerator();
+        // Users who can hide posts (post:hide) also see hidden posts in the list; everyone else only sees visible ones.
+        var includeHidden = User.TryGetUserId(out var viewerId)
+            && await _permissions.HasPermissionAsync(viewerId, "post:hide");
         var query = _db.Posts.AsNoTracking().Where(p => includeHidden || !p.IsHidden);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -63,26 +69,12 @@ public class PostsController : ControllerBase
             query = query.Where(p => p.AuthorId == authorId.Value);
         }
 
-        if (cursor.HasValue)
-        {
-            var cursorValue = cursor.Value;
-            if (cursorId.HasValue)
-            {
-                var stableCursorId = cursorId.Value;
-                query = query.Where(p =>
-                    p.CreatedAt < cursorValue ||
-                    (p.CreatedAt == cursorValue && p.Id.CompareTo(stableCursorId) < 0));
-            }
-            else
-            {
-                query = query.Where(p => p.CreatedAt < cursorValue);
-            }
-        }
+        var totalCount = await query.CountAsync();
 
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
-            .ThenByDescending(p => p.Id)
-            .Take(pageSize + 1)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(p => new PostSummaryResponse
             {
                 Id = p.Id,
@@ -114,23 +106,16 @@ public class PostsController : ControllerBase
             })
             .ToListAsync();
 
-        var hasMore = posts.Count > pageSize;
-        if (hasMore)
-        {
-            posts.RemoveAt(posts.Count - 1);
-        }
-
-        var lastPost = posts.LastOrDefault();
-        var result = new CursorPagedResponse<PostSummaryResponse>
+        var result = new PagedResponse<PostSummaryResponse>
         {
             Items = posts,
+            TotalCount = totalCount,
+            Page = page,
             PageSize = pageSize,
-            NextCursor = hasMore ? lastPost?.CreatedAt : null,
-            NextCursorId = hasMore ? lastPost?.Id : null,
-            HasMore = hasMore
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
         };
 
-        return Ok(ApiResponse<CursorPagedResponse<PostSummaryResponse>>.Ok(result));
+        return Ok(ApiResponse<PagedResponse<PostSummaryResponse>>.Ok(result));
     }
 
     [HttpGet("{id:guid}")]
@@ -149,7 +134,8 @@ public class PostsController : ControllerBase
         }
 
         var isOwner = User.TryGetUserId(out var userId) && post.AuthorId == userId;
-        if (post.IsHidden && !isOwner && !IsModerator())
+        var canViewHidden = userId != Guid.Empty && await _permissions.HasPermissionAsync(userId, "post:hide");
+        if (post.IsHidden && !isOwner && !canViewHidden)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Post is hidden."));
         }
@@ -266,7 +252,8 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<PostDetailResponse>.Fail("Post not found."));
         }
 
-        if (post.AuthorId != userId)
+        // Author can edit own; anyone with post:edit_any (e.g. Admin or a per-user grant) can edit any post.
+        if (post.AuthorId != userId && !await _permissions.HasPermissionAsync(userId, "post:edit_any"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Forbidden."));
         }
@@ -379,7 +366,9 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Post not found."));
         }
 
-        if (post.AuthorId != userId && !IsModerator())
+        // Author can delete own; anyone with post:delete_any (Moderator/Admin via role, or a
+        // per-user grant) can delete any post.
+        if (post.AuthorId != userId && !await _permissions.HasPermissionAsync(userId, "post:delete_any"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -442,8 +431,9 @@ public class PostsController : ControllerBase
             return NotFound(ApiResponse<List<CommentResponse>>.Fail("Post not found."));
         }
 
-        // Moderators and admins can see hidden comments; everyone else only sees visible ones.
-        var includeHidden = IsModerator();
+        // Users who can hide comments (comment:hide) also see hidden comments; everyone else only sees visible ones.
+        var includeHidden = User.TryGetUserId(out var viewerId)
+            && await _permissions.HasPermissionAsync(viewerId, "comment:hide");
         var comments = await _db.Comments
             .AsNoTracking()
             .Where(c => c.PostId == id && (includeHidden || !c.IsHidden))
@@ -555,13 +545,18 @@ public class PostsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/moderate")]
-    [Authorize(Policy = AppPolicies.ModeratorOrAdmin)]
-    // Hide or unhide a post and record a moderation log entry.
+    [Authorize]
+    // Hide or unhide a post and record a moderation log entry. Requires the post:hide permission.
     public async Task<ActionResult<ApiResponse<object>>> ModeratePost(Guid id, ModerateRequest request)
     {
         if (!User.TryGetUserId(out var moderatorId))
         {
             return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+        }
+
+        if (!await _permissions.HasPermissionAsync(moderatorId, "post:hide"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
 
         var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
@@ -590,11 +585,6 @@ public class PostsController : ControllerBase
     }
 
     // ----- Helpers -----
-
-    private bool IsModerator()
-    {
-        return User.IsInRole(AppRoles.Moderator) || User.IsInRole(AppRoles.Admin);
-    }
 
     private async Task<bool> IsActiveUserAsync(Guid userId)
     {

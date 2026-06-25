@@ -319,6 +319,21 @@
   transform: translateY(-1px);
 }
 
+.btn-card-action.btn-copy {
+  background-color: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.btn-card-action.btn-copy:hover:not(:disabled) {
+  background-color: rgba(14, 165, 233, 0.2);
+}
+
+.btn-card-action.btn-copy:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .btn-card-action.btn-edit {
   background-color: var(--bg-nested);
   border: 1px solid var(--border-nested);

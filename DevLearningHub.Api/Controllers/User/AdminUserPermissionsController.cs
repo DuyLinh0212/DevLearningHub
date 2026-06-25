@@ -12,23 +12,26 @@ namespace DevLearningHub.Api.Controllers.Users;
 
 [ApiController]
 [Route("api/admin/users/{userId:guid}/permissions")]
-[Authorize(Policy = AppPolicies.AdminOnly)]
+[Authorize]
 // Grant or revoke individual permissions for a single user, on top of their roles.
 public class AdminUserPermissionsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissionService;
+    private readonly IAuditService _audit;
 
-    public AdminUserPermissionsController(DevLearningHubContext db, IPermissionService permissionService)
+    public AdminUserPermissionsController(DevLearningHubContext db, IPermissionService permissionService, IAuditService audit)
     {
         _db = db;
         _permissionService = permissionService;
+        _audit = audit;
     }
 
     /// <summary>
     /// Get a user's effective permissions plus the role/grant/deny breakdown.
     /// </summary>
     [HttpGet]
+    [HasPermission("user:view_all")]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserPermissionsResponse>>> Get(Guid userId)
@@ -51,6 +54,7 @@ public class AdminUserPermissionsController : ControllerBase
     /// Apply a batch of permission overrides. Each item state is grant, deny, or inherit.
     /// </summary>
     [HttpPut]
+    [HasPermission("user:edit_role")]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status404NotFound)]
@@ -127,6 +131,7 @@ public class AdminUserPermissionsController : ControllerBase
         }
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.permission_change", "user", userId, $"changes={request.Items.Count}");
 
         return Ok(ApiResponse<UserPermissionsResponse>.Ok(await BuildResponseAsync(user)));
     }
@@ -135,6 +140,7 @@ public class AdminUserPermissionsController : ControllerBase
     /// Remove a single permission override so the user inherits from their roles again.
     /// </summary>
     [HttpDelete("{permission}")]
+    [HasPermission("user:edit_role")]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<UserPermissionsResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserPermissionsResponse>>> RemoveOverride(Guid userId, string permission)
@@ -156,6 +162,7 @@ public class AdminUserPermissionsController : ControllerBase
         {
             _db.UserPermissions.Remove(row);
             await _db.SaveChangesAsync();
+            await _audit.LogAsync("user.permission_reset", "user", userId, $"permission={permission}");
         }
 
         return Ok(ApiResponse<UserPermissionsResponse>.Ok(await BuildResponseAsync(user)));

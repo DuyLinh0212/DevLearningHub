@@ -10,7 +10,7 @@ namespace DevLearningHub.Api.Controllers.Users;
 
 [ApiController]
 [Route("api/admin/permissions")]
-[Authorize(Policy = AppPolicies.AdminOnly)]
+[Authorize]
 // Read-only catalog of permissions available to grant.
 public class AdminPermissionsController : ControllerBase
 {
@@ -25,6 +25,7 @@ public class AdminPermissionsController : ControllerBase
     /// List all permissions grouped by module.
     /// </summary>
     [HttpGet]
+    [HasPermission("user:view_all")]
     [ProducesResponseType(typeof(ApiResponse<List<PermissionModuleResponse>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PermissionModuleResponse>>>> GetCatalog()
     {

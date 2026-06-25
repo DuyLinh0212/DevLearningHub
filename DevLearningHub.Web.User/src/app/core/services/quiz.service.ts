@@ -119,6 +119,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
   addCustomQuiz(meta: any, questionsData: any[], isDraft: boolean, existingId?: string): Observable<any> {
     const payload = {
       ...this.mapQuizSetPayload(meta, !isDraft),
+      allowedCopy: meta.allowedCopy ?? true,
       questions: questionsData.map((question) => this.mapQuestionPayload(question, meta))
     };
     if (existingId && !existingId.toString().startsWith('custom_')) {
@@ -254,6 +255,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
       questionsCount: qCount,
       statusClass: isPub ? 'public' : 'draft',
       status: isPub ? 'Đã phát hành' : 'Bản nháp',
+      allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
       attempts: finalAttempts,
       questionIds: quiz.questionIds || [],
       allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? false
@@ -292,6 +294,7 @@ toggleQuizStatus(quiz: any): Observable<any> {
       mode: form.mode || 'practice',
       timeLimitSeconds: (form.duration || 15) * 60,
       isPublic,
+      allowedCopy: form.allowedCopy ?? true,
       topicId: form.topicId || null,
       topic: form.topic || null,
       level: form.level || null,

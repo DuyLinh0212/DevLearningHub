@@ -16,6 +16,17 @@
         <textarea name="description" [(ngModel)]="quizData.description" rows="3"></textarea>
       </div>
 
+      <div class="copy-option-card">
+        <div class="copy-option-text">
+          <h4>Quyền sao chép bộ đề</h4>
+          <p>Tắt tùy chọn này nếu bạn không muốn người khác copy bộ đề của mình.</p>
+        </div>
+        <label class="copy-switch">
+          <input type="checkbox" name="allowedCopy" [(ngModel)]="quizData.allowedCopy">
+          <span class="copy-switch-slider"></span>
+        </label>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label>Số lượng câu hỏi</label>

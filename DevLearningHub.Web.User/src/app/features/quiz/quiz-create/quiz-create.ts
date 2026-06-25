@@ -20,6 +20,8 @@ export class QuizCreateComponent implements OnInit {
   private topicService = inject(TopicService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private readonly importTemplateCsv = 'assets/templates/quiz-import-template.csv';
+  private readonly importTemplateJson = 'assets/templates/quiz-import-template.json';
 
   currentStep: number = 1;
   activeQuestionIndex: number = 0;
@@ -29,6 +31,9 @@ export class QuizCreateComponent implements OnInit {
   saveError: string = '';
   importFeedback: string = '';
   importError: string = '';
+  isImportModalOpen: boolean = false;
+  isImportDragActive: boolean = false;
+  selectedImportFileName: string = '';
   topics: any[] = [];
   
   private readonly defaultTopicNames = [
@@ -48,7 +53,7 @@ export class QuizCreateComponent implements OnInit {
     passRate: 70,
     shuffle: true,
     instantResult: true,
-    allowedCopy: false
+    allowedCopy: true
   };
 
   questions: any[] = [this.createEmptyQuestion()];
@@ -91,7 +96,7 @@ export class QuizCreateComponent implements OnInit {
             passRate: target.passRate || 70,
             shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
             instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
-            allowedCopy: target.allowedCopy ?? false
+            allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true
           };
 
           const rawQuestions = target.questions || [];
@@ -163,13 +168,16 @@ export class QuizCreateComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
+    this.selectedImportFileName = '';
     this.importFeedback = '';
     this.importError = '';
     if (!file) return;
 
+    this.selectedImportFileName = file.name;
+
     const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.json') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-      this.importError = 'Hệ thống chỉ hỗ trợ định dạng tệp .json, .xlsx hoặc .xls';
+    if (!fileName.endsWith('.json') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls') && !fileName.endsWith('.csv')) {
+      this.importError = 'Hệ thống chỉ hỗ trợ định dạng tệp .json, .xlsx, .xls hoặc .csv';
       return;
     }
 
@@ -184,7 +192,9 @@ export class QuizCreateComponent implements OnInit {
         try {
           const rawData = JSON.parse(String(reader.result));
           const rows = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.questions) ? rawData.questions : [rawData]);
-          const importedQuestions = rows.map((row: any) => this.mapImportedQuestion(row)).filter((question: any) => this.isQuestionValid(question));
+          const importedQuestions = rows
+            .map((row: any) => this.mapImportedQuestion(row))
+            .filter((question: any) => this.isQuestionValid(question));
           if (importedQuestions.length === 0) {
             this.importError = 'Không tìm thấy câu hỏi hợp lệ trong tệp JSON.';
             this.cdr.detectChanges();
@@ -200,6 +210,22 @@ export class QuizCreateComponent implements OnInit {
         }
       };
       reader.readAsText(file);
+    } else if (fileName.endsWith('.csv')) {
+      reader.onload = () => {
+        try {
+          const csvText = String(reader.result || '');
+          const workbook = XLSX.read(csvText, { type: 'string' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          this.applySpreadsheetRows(rawRows, 'csv');
+        } catch {
+          this.importError = 'Tệp CSV bị lỗi cấu trúc hoặc không thể bóc tách.';
+          this.cdr.detectChanges();
+        }
+      };
+      reader.readAsText(file, 'utf-8');
     } else {
       reader.onload = (e: any) => {
         try {
@@ -207,42 +233,8 @@ export class QuizCreateComponent implements OnInit {
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          const rawRows = XLSX.utils.sheet_to_json(worksheet);
-
-          const importedQuestions = rawRows.map((row: any) => {
-            const options = [
-              String(row['Đáp án A'] || row['OptionA'] || '').trim(),
-              String(row['Đáp án B'] || row['OptionB'] || '').trim(),
-              String(row['Đáp án C'] || row['OptionC'] || '').trim(),
-              String(row['Đáp án D'] || row['OptionD'] || '').trim()
-            ];
-
-            let correctIdx = 0;
-            const ans = String(row['Đáp án đúng'] || row['CorrectAnswer'] || '').trim().toUpperCase();
-            if (ans === 'B' || ans === '1' || ans === '2') correctIdx = 1;
-            else if (ans === 'C' || ans === '2' || ans === '3') correctIdx = 2;
-            else if (ans === 'D' || ans === '3' || ans === '4') correctIdx = 3;
-
-            return {
-              points: Number(row['Điểm số'] || row['Points'] || 10),
-              type: 'single',
-              text: String(row['Nội dung câu hỏi'] || row['Content'] || row['Text'] || '').trim(),
-              options: options,
-              correctIndex: correctIdx,
-              explanation: String(row['Giải thích'] || row['Explanation'] || '').trim()
-            };
-          }).filter((q: any) => this.isQuestionValid(q));
-
-          if (importedQuestions.length === 0) {
-            this.importError = 'Không tìm thấy dữ liệu hàng câu hỏi hợp lệ trong bảng tính Excel.';
-            this.cdr.detectChanges();
-            return;
-          }
-
-          if (this.questions.length === 1 && this.isBlankQuestion(this.questions[0])) { this.questions = []; }
-          this.questions.push(...importedQuestions);
-          this.importFeedback = `Đã nạp thành công ${importedQuestions.length} câu hỏi từ bảng tính Excel.`;
-          this.cdr.detectChanges();
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+          this.applySpreadsheetRows(rawRows, 'excel');
         } catch {
           this.importError = 'Tệp Excel bị lỗi cấu trúc hoặc không thể bóc tách.';
           this.cdr.detectChanges();
@@ -250,6 +242,51 @@ export class QuizCreateComponent implements OnInit {
       };
       reader.readAsArrayBuffer(file);
     }
+  }
+
+  openImportModal() {
+    this.isImportModalOpen = true;
+    this.isImportDragActive = false;
+    this.importError = '';
+  }
+
+  closeImportModal() {
+    this.isImportModalOpen = false;
+    this.isImportDragActive = false;
+  }
+
+  onImportDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isImportDragActive = true;
+  }
+
+  onImportDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isImportDragActive = false;
+  }
+
+  onImportDrop(event: DragEvent, input: HTMLInputElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isImportDragActive = false;
+
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    input.files = dataTransfer.files;
+    this.onQuestionFileSelected({ target: input } as unknown as Event);
+  }
+
+  downloadImportTemplate(format: 'csv' | 'json') {
+    const href = format === 'csv' ? this.importTemplateCsv : this.importTemplateJson;
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = href.split('/').pop() || `quiz-import-template.${format}`;
+    link.click();
   }
 
   openPreview() {
@@ -331,6 +368,62 @@ export class QuizCreateComponent implements OnInit {
     };
   }
 
+  private applySpreadsheetRows(rawRows: any[], source: 'csv' | 'excel') {
+    const importedQuestions = rawRows
+      .map((row: any) => {
+        const options = [
+          this.readCell(row, ['Đáp án A', 'OptionA', 'A']),
+          this.readCell(row, ['Đáp án B', 'OptionB', 'B']),
+          this.readCell(row, ['Đáp án C', 'OptionC', 'C']),
+          this.readCell(row, ['Đáp án D', 'OptionD', 'D'])
+        ];
+
+        let correctIdx = 0;
+        const ans = this.readCell(row, ['Đáp án đúng', 'CorrectAnswer', 'Answer']).trim().toUpperCase();
+        if (ans === 'B' || ans === '1' || ans === '2') correctIdx = 1;
+        else if (ans === 'C' || ans === '2' || ans === '3') correctIdx = 2;
+        else if (ans === 'D' || ans === '3' || ans === '4') correctIdx = 3;
+
+        return {
+          points: Number(this.readCell(row, ['Điểm số', 'Points', 'Score']) || 10),
+          type: 'single',
+          text: this.readCell(row, ['Nội dung câu hỏi', 'Content', 'Text', 'Question']).trim(),
+          options,
+          correctIndex: correctIdx,
+          explanation: this.readCell(row, ['Giải thích', 'Explanation', 'Hint']).trim()
+        };
+      })
+      .filter((q: any) => this.isQuestionValid(q));
+
+    if (importedQuestions.length === 0) {
+      this.importError = source === 'csv'
+        ? 'Không tìm thấy dữ liệu hàng câu hỏi hợp lệ trong tệp CSV.'
+        : 'Không tìm thấy dữ liệu hàng câu hỏi hợp lệ trong bảng tính Excel.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.questions.length === 1 && this.isBlankQuestion(this.questions[0])) {
+      this.questions = [];
+    }
+
+    this.questions.push(...importedQuestions);
+    this.importFeedback = source === 'csv'
+      ? `Đã nạp thành công ${importedQuestions.length} câu hỏi từ tệp CSV.`
+      : `Đã nạp thành công ${importedQuestions.length} câu hỏi từ bảng tính Excel.`;
+    this.cdr.detectChanges();
+  }
+
+  private readCell(row: any, keys: string[]): string {
+    for (const key of keys) {
+      const value = row?.[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        return String(value).trim();
+      }
+    }
+    return '';
+  }
+
   private isBlankQuestion(question: any) {
     return !String(question?.text || '').trim() && (question?.options || []).every((option: any) => !String(option || '').trim());
   }
@@ -387,7 +480,7 @@ export class QuizCreateComponent implements OnInit {
       topicId: requestedTopicId,
       topic: requestedTopicName,
       level: mappedLevel,
-      allowedCopy: this.quizMeta.allowedCopy ?? false
+      allowedCopy: this.quizMeta.allowedCopy ?? true
     };
 
     const request$ = this.editingQuizId && !this.editingQuizId.toString().startsWith('custom_')

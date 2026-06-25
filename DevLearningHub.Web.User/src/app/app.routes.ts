@@ -31,6 +31,7 @@ export const routes: Routes = [
       { path: 'quiz/:id', component: QuizDetailComponent, canActivate: [quizAccessGuard] },
       { path: 'roadmap', component: RoadmapViewComponent },
       { path: 'dashboard/progress', component: UserProgressComponent },
+      { path: 'leaderboard', loadComponent: () => import('./features/leaderboard/leaderboard').then(m => m.LeaderboardComponent) },
       { path: 'settings', component: SettingsComponent },
       { path: 'forum', loadComponent: () => import('./features/forum/forum').then(m => m.ForumComponent) },
       { path: 'forum/post/:id', loadComponent: () => import('./features/forum/post-detail/post-detail').then(m => m.PostDetailComponent) },

@@ -3,6 +3,7 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ namespace DevLearningHub.Api.Controllers.Quiz;
 public class QuizSetsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IAuditService _audit;
 
-    public QuizSetsController(DevLearningHubContext db)
+    public QuizSetsController(DevLearningHubContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     [HttpGet]
@@ -37,7 +40,8 @@ public class QuizSetsController : ControllerBase
 
         if (includePrivate && User.TryGetUserId(out var userId))
         {
-            if (!User.IsInRole(AppRoles.Admin))
+            // Quiz managers (quiz:edit) see every set; others only public ones plus their own.
+            if (!User.HasPermission("quiz:edit"))
             {
                 query = query.Where(qs => qs.IsPublic || qs.CreatedBy == userId);
             }
@@ -88,8 +92,8 @@ public class QuizSetsController : ControllerBase
         }
 
         var isOwner = User.TryGetUserId(out var userId) && quizSet.CreatedBy == userId;
-        var isAdmin = User.IsInRole(AppRoles.Admin);
-        var canManage = isOwner || isAdmin;
+        var canManageAny = User.HasPermission("quiz:edit");
+        var canManage = isOwner || canManageAny;
         if (!quizSet.IsPublic && !canManage)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Forbidden."));
@@ -216,16 +220,16 @@ public class QuizSetsController : ControllerBase
         }
 
         var isOwner = source.CreatedBy == userId;
-        var isAdmin = User.IsInRole(AppRoles.Admin);
+        var canManageAny = User.HasPermission("quiz:edit");
 
-        // Hidden quiz sets can only be copied by their owner or an admin.
-        if (!source.IsPublic && !isOwner && !isAdmin)
+        // Hidden quiz sets can only be copied by their owner or a quiz manager (quiz:edit).
+        if (!source.IsPublic && !isOwner && !canManageAny)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
 
-        // The copy gate: only owner/admin bypass it; everyone else needs AllowedCopy = true.
-        if (!source.AllowedCopy && !isOwner && !isAdmin)
+        // The copy gate: only owner/quiz manager bypass it; everyone else needs AllowedCopy = true.
+        if (!source.AllowedCopy && !isOwner && !canManageAny)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("This quiz set does not allow copying."));
         }
@@ -315,7 +319,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<QuizSetResponse>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
@@ -377,7 +381,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -392,6 +396,7 @@ public class QuizSetsController : ControllerBase
         _db.QuizSetQuestions.RemoveRange(links);
         _db.QuizSets.Remove(quizSet);
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("quiz.delete", "quiz_set", id, $"title={quizSet.Title}");
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true }));
     }
@@ -412,7 +417,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -464,7 +469,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))
+        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -497,7 +502,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<List<QuizSetQuestionResponse>>.Fail("Quiz set not found."));
         }
 
-        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || (quizSet.CreatedBy != userId && !User.IsInRole(AppRoles.Admin))))
+        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
         }
@@ -661,7 +666,8 @@ public class QuizSetsController : ControllerBase
             .Include(question => question.QuestionOptions)
             .Where(question => requestedIds.Contains(question.Id));
 
-        if (!User.IsInRole(AppRoles.Admin))
+        // Quiz managers (quiz:edit) may reuse any existing question; others only their own.
+        if (!User.HasPermission("quiz:edit"))
         {
             existingQuestionQuery = existingQuestionQuery.Where(question => question.CreatedBy == userId);
         }

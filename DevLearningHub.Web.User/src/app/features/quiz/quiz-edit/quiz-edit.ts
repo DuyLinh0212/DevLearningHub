@@ -71,6 +71,7 @@ loadQuizDetails() {
     mode: this.quizData.mode || 'practice',
     timeLimitSeconds: (this.quizData.duration || 15) * 60,
     isPublic: this.quizData.isPublic ?? true,
+    allowedCopy: this.quizData.allowedCopy ?? true,
     topicId: this.quizData.topicId || null,
     level: this.quizData.level || 'beginner'
   };

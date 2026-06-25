@@ -48,6 +48,19 @@
             <div class="static-display-field">{{ quizLevel }}</div>
           </div>
         </div>
+
+        @if (isOwner) {
+          <div class="copy-privacy-card">
+            <div class="copy-privacy-text">
+              <h4>Quyền sao chép bộ đề</h4>
+              <p>{{ quizAllowedCopy ? 'Đang cho phép người khác sao chép bộ đề này.' : 'Bộ đề này đang bị chặn sao chép.' }}</p>
+            </div>
+            <label class="copy-privacy-switch">
+              <input #copyToggle type="checkbox" [checked]="quizAllowedCopy" (change)="updateAllowedCopy(copyToggle.checked)">
+              <span class="copy-privacy-slider"></span>
+            </label>
+          </div>
+        }
       </div>
 
       <div class="quiz-paradigm-selection-zone" style="margin-top: 0;">

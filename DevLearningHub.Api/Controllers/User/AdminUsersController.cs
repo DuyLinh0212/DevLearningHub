@@ -2,6 +2,7 @@
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,20 +11,23 @@ namespace DevLearningHub.Api.Controllers.Users;
 
 [ApiController]
 [Route("api/admin/users")]
-[Authorize(Policy = AppPolicies.AdminOnly)]
+[Authorize]
 public class AdminUsersController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IAuditService _audit;
 
-    public AdminUsersController(DevLearningHubContext db)
+    public AdminUsersController(DevLearningHubContext db, IAuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     /// <summary>
     /// List users with paging, optional search, and assigned roles.
     /// </summary>
     [HttpGet]
+    [HasPermission("user:view_all")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AdminUserResponse>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PagedResult<AdminUserResponse>>>> GetAll(
         [FromQuery] int page = 1,
@@ -69,6 +73,7 @@ public class AdminUsersController : ControllerBase
     /// Get detailed account information for one user.
     /// </summary>
     [HttpGet("{id:guid}")]
+    [HasPermission("user:view_all")]
     [ProducesResponseType(typeof(ApiResponse<AdminUserDetailResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<AdminUserDetailResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<AdminUserDetailResponse>>> GetById(Guid id)
@@ -114,6 +119,7 @@ public class AdminUsersController : ControllerBase
     /// Lock an account and prevent login.
     /// </summary>
     [HttpPatch("{id:guid}/lock")]
+    [HasPermission("user:ban")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -136,6 +142,7 @@ public class AdminUsersController : ControllerBase
         user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.lock", "user", user.Id, $"username={user.Username}; reason={user.LockedReason}");
 
         return Ok(ApiResponse<object>.Ok(new { locked = true }, "User locked."));
     }
@@ -144,6 +151,7 @@ public class AdminUsersController : ControllerBase
     /// Unlock an account and allow login again.
     /// </summary>
     [HttpPatch("{id:guid}/unlock")]
+    [HasPermission("user:ban")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Unlock(Guid id)
@@ -160,6 +168,7 @@ public class AdminUsersController : ControllerBase
         user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.unlock", "user", user.Id, $"username={user.Username}");
 
         return Ok(ApiResponse<object>.Ok(new { locked = false }, "User unlocked."));
     }
@@ -168,6 +177,7 @@ public class AdminUsersController : ControllerBase
     /// Replace the current user roles with a single active role.
     /// </summary>
     [HttpPut("{id:guid}/role")]
+    [HasPermission("user:edit_role")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -208,6 +218,7 @@ public class AdminUsersController : ControllerBase
         });
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("user.role_change", "user", id, $"role={role.Name}");
 
         return Ok(ApiResponse<object>.Ok(new { role = role.Name }, "Role updated."));
     }

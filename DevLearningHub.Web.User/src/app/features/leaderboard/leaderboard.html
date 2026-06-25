@@ -1,0 +1,96 @@
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/dashboard">Học tập</a>
+    <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i>
+    <span style="font-weight: 700; color: #c084fc;">Bảng xếp hạng</span>
+  </div>
+  @if (highlightUser?.id) {
+    <button class="btn-create" (click)="viewMyProfile()">
+      <i class="bi bi-person-circle"></i> Xem hồ sơ của tôi
+    </button>
+  }
+</header>
+
+<div class="dashboard-scroll-body leaderboard-page">
+  <section class="leaderboard-hero-banner">
+    <div class="hero-copy">
+      <span class="hero-kicker">DevLearningHub leaderboard</span>
+      <h1>Bảng xếp hạng học viên</h1>
+      <p>Chạm vào một người bất kỳ để xem hồ sơ, XP, điểm trung bình và hành trình học tập của họ.</p>
+    </div>
+    <div class="hero-metric">
+      <div class="hero-metric-number">{{ leaderboard.length }}</div>
+      <div class="hero-metric-label">người trong BXH</div>
+    </div>
+  </section>
+
+  @if (isLoading) {
+    <div class="leaderboard-state-card">
+      <i class="bi bi-arrow-repeat spin-animation"></i>
+      <p>Đang tải bảng xếp hạng...</p>
+    </div>
+  } @else if (notFound || leaderboard.length === 0) {
+    <div class="leaderboard-state-card empty">
+      <i class="bi bi-trophy"></i>
+      <h3>Chưa có dữ liệu xếp hạng</h3>
+      <p>Hệ thống chưa trả về bảng xếp hạng hoặc chưa có học viên nào được ghi nhận.</p>
+    </div>
+  } @else {
+    <section class="podium-section">
+      <div class="podium-card second" [class.clickable]="podium[1]" (click)="openUser(podium[1])">
+        <span class="podium-rank">#2</span>
+        <img [src]="podium[1]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
+        <strong>{{ podium[1]?.name || 'Đang cập nhật' }}</strong>
+        <p>{{ podium[1]?.xp || 0 }} XP</p>
+      </div>
+      <div class="podium-card first" [class.clickable]="podium[0]" (click)="openUser(podium[0])">
+        <span class="podium-rank crown">#1</span>
+        <img [src]="podium[0]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
+        <strong>{{ podium[0]?.name || 'Đang cập nhật' }}</strong>
+        <p>{{ podium[0]?.xp || 0 }} XP</p>
+      </div>
+      <div class="podium-card third" [class.clickable]="podium[2]" (click)="openUser(podium[2])">
+        <span class="podium-rank">#3</span>
+        <img [src]="podium[2]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
+        <strong>{{ podium[2]?.name || 'Đang cập nhật' }}</strong>
+        <p>{{ podium[2]?.xp || 0 }} XP</p>
+      </div>
+    </section>
+
+    <section class="leaderboard-card">
+      <div class="leaderboard-card-header">
+        <div>
+          <h2>Danh sách đầy đủ</h2>
+          <p>Nhấn vào một người để xem thông tin cá nhân chi tiết.</p>
+        </div>
+        <div class="leaderboard-card-tag">
+          <i class="bi bi-mouse"></i>
+          <span>Click để xem hồ sơ</span>
+        </div>
+      </div>
+
+      <div class="leaderboard-list">
+        @for (user of leaderboard; track user.rank) {
+          <button class="leader-row" (click)="openUser(user)" [class.self-row]="user.isSelf">
+            <span class="leader-rank" [class.top]="user.rank <= 3">#{{ user.rank }}</span>
+            <div class="leader-avatar">
+              <img [src]="user.avatar" alt="Avatar">
+            </div>
+            <div class="leader-info">
+              <strong>{{ user.name }}</strong>
+              <span>@{{ user.username || 'member' }}</span>
+            </div>
+            <div class="leader-metrics">
+              <span><i class="bi bi-gem"></i> {{ user.xp }} XP</span>
+              <span><i class="bi bi-patch-question-fill"></i> {{ user.quizTaken }} quiz</span>
+            </div>
+            @if (user.isSelf) {
+              <span class="self-badge">Bạn</span>
+            }
+            <i class="bi bi-chevron-right leader-chevron"></i>
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>

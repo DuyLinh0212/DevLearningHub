@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -6,6 +6,25 @@ import { Router } from '@angular/router';
 import { forkJoin } from "rxjs";
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
+
+interface ManageRoleOption {
+  name: string;
+  description?: string;
+  selected: boolean;
+}
+
+interface ManagePermission {
+  name: string;
+  description?: string;
+  module: string;
+  checked: boolean;
+  fromRole: boolean;
+}
+
+interface ManageModule {
+  module: string;
+  permissions: ManagePermission[];
+}
 
 @Component({
   selector: 'app-user-management',
@@ -35,7 +54,6 @@ export class UserManagementComponent implements OnInit {
 
   // Modals state
   isCreateModalOpen = false;
-  isRoleModalOpen = false;
   isLockModalOpen = false;
   selectedUser: any = null;
 
@@ -45,10 +63,6 @@ export class UserManagementComponent implements OnInit {
     email: '',
     password: '',
     fullName: '',
-    role: 'User'
-  };
-
-  roleForm = {
     role: 'User'
   };
 
@@ -63,7 +77,37 @@ export class UserManagementComponent implements OnInit {
   userPermissions: any = null;
   permissionStateMap: Record<string, "inherit" | "grant" | "deny"> = {};
 
-  rolesList = ['Admin', 'Moderator', 'User'];
+  rolesList = ['Admin', 'Moderator', 'User']; // Show all roles
+
+  // Manage modal (role + permissions combined)
+  isManageModalOpen = false;
+  isLoadingManage = false;
+  isSavingManage = false;
+  manageUser: any = null;
+  manageRoles: ManageRoleOption[] = [];
+  manageModules: ManageModule[] = [];
+  manageSelectedRole = 'User';
+  manageChecked: Record<string, boolean> = {};
+
+  // Permissions that are never assignable to certain roles, so they are hidden
+  // from the checkbox list (and stripped on save) when that role is selected.
+  private readonly roleHiddenPermissions: Record<string, string[]> = {
+    User: [
+      'audit:view',
+      'system.full_control',
+      'user:view_all', 'user:ban', 'user:edit_role', 'user:force_logout'
+    ]
+  };
+
+  // Permissions that are always granted to certain roles as a baseline (even if
+  // the role's default set lacks them). Admins can still uncheck them to deny.
+  private readonly roleDefaultGrants: Record<string, string[]> = {
+    User: [
+      'quiz:create', 'quiz:edit',
+      'comment:create',
+      'post:create', 'post:edit_own'
+    ]
+  };
 
   ngOnInit() {
     this.loadUsers();
@@ -82,7 +126,7 @@ export class UserManagementComponent implements OnInit {
       next: (res) => {
         const responseData = res?.data;
         const items = responseData?.items || [];
-        
+
         this.users = items.map((u: any) => ({
           id: u.id,
           username: u.username || 'N/A',
@@ -229,56 +273,22 @@ export class UserManagementComponent implements OnInit {
     if (role !== 'User') {
       this.http.put(`/api/admin/users/${userId}/role`, { role }).subscribe({
         next: () => {
-          alert(`Táº¡o tÃ i khoáº£n thÃ nh cÃ´ng vá»›i quyá»n ${role}!`);
+          alert(`Táº¡o tÃ i khoáº£n thÃ nh cÃ´ng vá»›i quyá» n ${role}!`);
           this.closeCreateModal();
           this.loadUsers();
         },
         error: (err) => {
-          console.error('Lá»—i phÃ¢n quyá»n sau Ä‘Äƒng kÃ½:', err);
-          alert('ÄÃ£ táº¡o tÃ i khoáº£n thÃ nh cÃ´ng nhÆ°ng gáº·p lá»—i phÃ¢n quyá»n. Báº¡n hÃ£y phÃ¢n quyá»n thá»§ cÃ´ng trong danh sÃ¡ch!');
+          console.error('Lá»—i phÃ¢n quyá» n sau Ä‘Äƒng kÃ½:', err);
+          alert('Ä Ã£ táº¡o tÃ i khoáº£n thÃ nh cÃ´ng nhÆ°ng gáº·p lá»—i phÃ¢n quyá» n. Báº¡n hÃ£y phÃ¢n quyá» n thá»§ cÃ´ng trong danh sÃ¡ch!');
           this.closeCreateModal();
           this.loadUsers();
         }
       });
     } else {
-      alert('Táº¡o tÃ i khoáº£n há»c viÃªn (User) thÃ nh cÃ´ng!');
+      alert('Táº¡o tÃ i khoáº£n há» c viÃªn (User) thÃ nh cÃ´ng!');
       this.closeCreateModal();
       this.loadUsers();
     }
-  }
-
-  // Edit Role
-  openRoleModal(user: any) {
-    this.selectedUser = user;
-    this.roleForm = {
-      role: user.role
-    };
-    this.isRoleModalOpen = true;
-    this.cdr.detectChanges();
-  }
-
-  closeRoleModal() {
-    this.isRoleModalOpen = false;
-    this.selectedUser = null;
-    this.cdr.detectChanges();
-  }
-
-  saveRole() {
-    if (!this.selectedUser) return;
-    const { role } = this.roleForm;
-
-    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/role`, { role }).subscribe({
-      next: () => {
-        alert('Cáº­p nháº­t quyá»n háº¡n thÃ nh cÃ´ng!');
-        this.closeRoleModal();
-        this.loadUsers();
-      },
-      error: (err) => {
-        console.error('Lá»—i cáº­p nháº­t quyá»n:', err);
-        const msg = err?.error?.message || 'KhÃ´ng thá»ƒ cáº­p nháº­t quyá»n!';
-        alert(msg);
-      }
-    });
   }
 
   // Lock / Unlock
@@ -316,9 +326,20 @@ export class UserManagementComponent implements OnInit {
 
     this.http.patch<any>(`/api/admin/users/${this.selectedUser.id}/lock`, { reason }).subscribe({
       next: () => {
-        alert('KhÃ³a tÃ i khoáº£n thÃ nh cÃ´ng!');
-        this.closeLockModal();
-        this.loadUsers();
+        // Force logout: delete refresh tokens so the user is immediately logged out.
+        this.http.post(`/api/admin/users/${this.selectedUser.id}/management/logout`, {}).subscribe({
+          next: () => {
+            alert('Khóa tài khoản và đá người dùng thành công!');
+            this.closeLockModal();
+            this.loadUsers();
+          },
+          error: (err) => {
+            console.error('Lỗi logout người dùng:', err);
+            alert('Khóa tài khoản thành công, nhưng không thể đá người dùng ngay!');
+            this.closeLockModal();
+            this.loadUsers();
+          }
+        });
       },
       error: (err) => {
         console.error('Lá»—i khÃ³a tÃ i khoáº£n:', err);
@@ -364,8 +385,8 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error("Lá»—i táº£i quyá»n chi tiáº¿t:", err);
-        alert("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch quyá»n.");
+        console.error("Lá»—i táº£i quyá» n chi tiáº¿t:", err);
+        alert("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch quyá» n.");
         this.closePermissionModal();
       }
     });
@@ -388,13 +409,13 @@ export class UserManagementComponent implements OnInit {
     this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: allItems }).subscribe({
       next: () => {
         this.isPermissionSaving = false;
-        alert("ÄÃ£ cáº­p nháº­t phÃ¢n quyá»n. Quyá»n má»›i cÃ³ hiá»‡u lá»±c sau khi user Ä‘Äƒng nháº­p láº¡i.");
+        alert("Ä Ã£ cáº­p nháº­t phÃ¢n quyá» n. Quyá» n má»›i cÃ³ hiá»‡u lá»±c sau khi user Ä‘Äƒng nháº­p láº¡i.");
         this.closePermissionModal();
       },
       error: (err) => {
         this.isPermissionSaving = false;
-        console.error("Lá»—i lÆ°u quyá»n:", err);
-        alert("KhÃ´ng thá»ƒ lÆ°u phÃ¢n quyá»n.");
+        console.error("Lá»—i lÆ°u quyá» n:", err);
+        alert("KhÃ´ng thá»ƒ lÆ°u phÃ¢n quyá» n.");
       }
     });
   }
@@ -407,8 +428,138 @@ export class UserManagementComponent implements OnInit {
   viewUserProfile(userId: string) {
     this.router.navigate(['/admin/users', userId], { queryParams: { returnUrl: this.router.url } });
   }
-}
 
+  // Called when the selected role changes (from radio buttons).
+  onRoleChange() {
+    this.applyRolePermissionPresets();
+  }
 
+  // Apply baseline grants for certain roles. Admin can still uncheck them to deny.
+  private applyRolePermissionPresets() {
+    if (this.manageSelectedRole === 'User') {
+      const defaults = this.roleDefaultGrants['User'] || [];
+      for (const mod of this.manageModules) {
+        for (const perm of mod.permissions) {
+          if (defaults.includes(perm.name)) {
+            this.manageChecked[perm.name] = true;
+          }
+        }
+      }
+    }
+  }
 
+  // --- MANAGE USER (role + permissions in one screen) ---
+
+  openManageModal(user: any) {
+    this.manageUser = { ...user };
+    this.isManageModalOpen = true;
+    this.isLoadingManage = true;
+    this.manageRoles = [];
+    this.manageModules = [];
+    this.manageChecked = {};
+    this.manageSelectedRole = user.role || 'User';
+    this.cdr.detectChanges();
+
+    this.http.get<any>(`/api/admin/users/${user.id}/management`).subscribe({
+      next: (res) => {
+        const data = res?.data || {};
+        this.manageRoles = data.roles || [];
+        this.manageModules = data.permissionModules || [];
+        this.manageSelectedRole = this.manageRoles.find(r => r.selected)?.name || user.role || 'User';
+
+        this.manageChecked = {};
+        for (const mod of this.manageModules) {
+          for (const perm of mod.permissions) {
+            this.manageChecked[perm.name] = !!perm.checked;
+          }
+        }
+
+        // Apply baseline grants (e.g., quiz perms for User) after loading initial checked state.
+        this.applyRolePermissionPresets();
+
+        this.manageUser = {
+          ...this.manageUser,
+          username: data.username ?? this.manageUser.username,
+          email: data.email ?? this.manageUser.email,
+          fullName: data.fullName ?? this.manageUser.fullName,
+          avatarUrl: data.avatarUrl ?? this.manageUser.avatarUrl
+        };
+
+        this.isLoadingManage = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải dữ liệu quản lý người dùng:', err);
+        this.isLoadingManage = false;
+        alert(err?.error?.message || 'Không thể tải dữ liệu quản lý người dùng!');
+        this.closeManageModal();
+      }
+    });
+  }
+
+  closeManageModal() {
+    this.isManageModalOpen = false;
+    this.manageUser = null;
+    this.manageRoles = [];
+    this.manageModules = [];
+    this.manageChecked = {};
+    this.cdr.detectChanges();
+  }
+
+  togglePermission(name: string) {
+    this.manageChecked[name] = !this.manageChecked[name];
+  }
+
+  // Whether a permission is shown for the currently selected role.
+  isPermissionVisible(perm: ManagePermission): boolean {
+    const hidden = this.roleHiddenPermissions[this.manageSelectedRole] || [];
+    return !hidden.includes(perm.name);
+  }
+
+  // Permissions of a module that are visible for the current role.
+  visiblePermissions(mod: ManageModule): ManagePermission[] {
+    return mod.permissions.filter(p => this.isPermissionVisible(p));
+  }
+
+  // Modules that still have at least one visible permission for the current role.
+  visibleModules(): ManageModule[] {
+    return this.manageModules.filter(m => this.visiblePermissions(m).length > 0);
+  }
+
+  countCheckedInModule(mod: ManageModule): number {
+    return this.visiblePermissions(mod).filter(p => this.manageChecked[p.name]).length;
+  }
+
+  saveManage() {
+    if (!this.manageUser) return;
+    if (!this.manageSelectedRole) {
+      alert('Vui lòng chọn vai trò cho người dùng!');
+      return;
+    }
+
+    // Never persist permissions that are hidden for the selected role.
+    const hidden = this.roleHiddenPermissions[this.manageSelectedRole] || [];
+    const permissions = Object.keys(this.manageChecked)
+      .filter(name => this.manageChecked[name] && !hidden.includes(name));
+
+    this.isSavingManage = true;
+    this.cdr.detectChanges();
+
+    this.http.put<any>(`/api/admin/users/${this.manageUser.id}/management`, {
+      role: this.manageSelectedRole,
+      permissions
+    }).subscribe({
+      next: () => {
+        this.isSavingManage = false;
+        alert('Lưu vai trò và quyền hạn thành công!');
+        this.closeManageModal();
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.isSavingManage = false;
+        console.error('Lỗi lưu quản lý người dùng:', err);
+        alert(err?.error?.message || 'Không thể lưu vai trò và quyền hạn!');
+        this.cdr.detectChanges();
+      }
+    });
 

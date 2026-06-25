@@ -1,4 +1,4 @@
-﻿<div class="dashboard-container">
+<div class="dashboard-container">
   <app-sidebar></app-sidebar>
   <main class="main-content">
 
@@ -105,23 +105,19 @@
                     <div>{{ formatDate(user.createdAt) }}</div>
                   </td>
                   <td>
-                    <div class="user-table-actions">
-                       <button class="btn-view-profile" (click)="viewUserProfile(user.id)" title="Xem trang cá nhân">
-                         <i class="bi bi-person-lines-fill"></i>
-                       </button>
-                       <button class="btn-permissions" (click)="openPermissionModal(user)" title="Phân quyền chi tiết">
-                         <i class="bi bi-shield-lock-fill"></i>
-                       </button>
-                       <button class="btn-role" (click)="openRoleModal(user)" title="Cấp quyền">
-                         <i class="bi bi-person-badge-fill"></i>
-                       </button>
-                       <button class="btn-lock" 
-                               [class.btn-unlock-act]="user.isLocked" 
-                               (click)="toggleLock(user)" 
-                               [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
-                         <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
-                       </button>
-                     </div>
+                      <button class="btn-view-profile" (click)="viewUserProfile(user.id)" title="Xem trang cá nhân">
+                        <i class="bi bi-person-lines-fill"></i>
+                      </button>
+                      <button class="btn-perm" (click)="openManageModal(user)" title="Quản lý vai trò & quyền hạn">
+                        <i class="bi bi-shield-lock-fill"></i>
+                      </button>
+                      <button class="btn-lock" 
+                              [class.btn-unlock-act]="user.isLocked" 
+                              (click)="toggleLock(user)" 
+                              [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
+                        <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               }
@@ -192,30 +188,90 @@
   </div>
   }
 
-  <!-- Change Role Modal -->
-  @if (isRoleModalOpen) {
+  <!-- Manage User Modal (role + permissions) -->
+  @if (isManageModalOpen) {
   <div class="modal-overlay">
-    <div class="modal-box">
-      <h3><i class="bi bi-person-badge-fill" style="color:var(--color-blue);margin-right:8px;"></i>Cấp quyền tài khoản</h3>
-      <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
-        Đang thay đổi quyền hạn cho tài khoản: <strong>{{ selectedUser?.username }}</strong>
-      </p>
+    <div class="modal-box manage-modal">
+      <div class="manage-header">
+        <h3><i class="bi bi-shield-lock-fill" style="color:var(--color-purple);margin-right:8px;"></i>Quản lý người dùng</h3>
+        <button class="manage-close" (click)="closeManageModal()" title="Đóng"><i class="bi bi-x-lg"></i></button>
+      </div>
 
-      <div class="admin-modal-form-body" style="margin-top: 16px;">
-        <div class="input-field-group">
-          <label>Chọn vai trò</label>
-          <select [(ngModel)]="roleForm.role" class="admin-select-field">
-            <option value="User">User (Học viên)</option>
-            <option value="Moderator">Moderator (Kiểm duyệt viên)</option>
-            <option value="Admin">Admin (Quản trị viên)</option>
-          </select>
+      @if (isLoadingManage) {
+        <div class="manage-loading"><i class="bi bi-arrow-repeat"></i> Đang tải dữ liệu...</div>
+      } @else {
+        <div class="manage-body">
+          <!-- User info -->
+          <section class="manage-section">
+            <div class="manage-section-title">Thông tin User</div>
+            <div class="manage-userinfo">
+              <div class="info-row"><span class="info-label">Username</span><span class="info-value">{{ manageUser?.username }}</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-value">{{ manageUser?.email }}</span></div>
+              @if (manageUser?.fullName) {
+                <div class="info-row"><span class="info-label">Họ tên</span><span class="info-value">{{ manageUser?.fullName }}</span></div>
+              }
+            </div>
+          </section>
+
+          <!-- Role -->
+          <section class="manage-section">
+            <div class="manage-section-title">Role</div>
+            <div class="role-radio-list">
+              @for (r of manageRoles; track r.name) {
+                <label class="role-radio-item" [class.active]="manageSelectedRole === r.name">
+                  <input type="radio" name="manageRole" [value]="r.name" [(ngModel)]="manageSelectedRole" (ngModelChange)="onRoleChange()">
+                  <span class="role-radio-name">{{ r.name }}</span>
+                  @if (r.description) {
+                    <span class="role-radio-desc">{{ r.description }}</span>
+                  }
+                </label>
+              }
+            </div>
+          </section>
+
+          <!-- Permissions -->
+          <section class="manage-section">
+            <div class="manage-section-title">Permissions</div>
+            @if (visibleModules().length === 0) {
+              <div class="manage-empty">Không có quyền hạn nào.</div>
+            } @else {
+              @for (mod of visibleModules(); track mod.module) {
+                <div class="perm-group">
+                  <div class="perm-group-head">
+                    <span class="perm-group-name">{{ mod.module }}</span>
+                    <span class="perm-group-count">{{ countCheckedInModule(mod) }}/{{ visiblePermissions(mod).length }}</span>
+                  </div>
+                  <div class="perm-checkbox-grid">
+                    @for (perm of visiblePermissions(mod); track perm.name) {
+                      <label class="perm-checkbox-item" [class.checked]="manageChecked[perm.name]">
+                        <input type="checkbox" [(ngModel)]="manageChecked[perm.name]" [name]="'perm_' + perm.name">
+                        <span class="perm-checkbox-text">
+                          <span class="perm-checkbox-label">{{ perm.description || perm.name }}</span>
+                          <span class="perm-checkbox-code">{{ perm.name }}</span>
+                        </span>
+                        @if (perm.fromRole) {
+                          <i class="bi bi-shield-fill-check perm-fromrole" title="Mặc định có ở vai trò hiện tại"></i>
+                        }
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </section>
         </div>
-      </div>
 
-      <div class="modal-actions-row" style="margin-top: 24px;">
-        <button class="btn-modal-cancel" (click)="closeRoleModal()">Hủy bỏ</button>
-        <button class="btn-modal-confirm" (click)="saveRole()">Cập nhật</button>
-      </div>
+        <div class="modal-actions-row manage-footer">
+          <button class="btn-modal-cancel" (click)="closeManageModal()">Hủy bỏ</button>
+          <button class="btn-modal-confirm purple" (click)="saveManage()" [disabled]="isSavingManage">
+            @if (isSavingManage) {
+              <i class="bi bi-arrow-repeat"></i> Đang lưu...
+            } @else {
+              Lưu
+            }
+          </button>
+        </div>
+      }
     </div>
   </div>
   }

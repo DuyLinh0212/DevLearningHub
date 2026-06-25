@@ -12,6 +12,7 @@ import { PostManagementComponent } from './features/admin/post-management/post-m
 import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
 import { UserManagementComponent } from './features/admin/user-management/user-management';
 import { AdminUserProfileComponent } from './features/admin/user-profile/user-profile';
+import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs';
 import { SettingsComponent } from './features/settings/settings';
 import { adminGuard } from './core/guards/admin.guard';
 
@@ -30,6 +31,7 @@ export const routes: Routes = [
   { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [adminGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [adminGuard] },
   { path: 'admin/users/:id', component: AdminUserProfileComponent, canActivate: [adminGuard] },
+  { path: 'admin/audit-logs', component: AuditLogsComponent, canActivate: [adminGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [adminGuard] },
   { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

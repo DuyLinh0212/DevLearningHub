@@ -65,6 +65,11 @@
                         <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
                           <i class="bi bi-send"></i> Chia sẻ bộ đề
                         </button>
+                        @if (quiz.statusClass === 'public' && quiz.allowedCopy !== false) {
+                          <button class="dropdown-item" (click)="copyQuiz(quiz, $event); activeQuizMenuId = null">
+                            <i class="bi bi-files"></i> Sao chép bộ đề
+                          </button>
+                        }
                         @if (compareIds(quiz.createdBy, currentUserId)) {
                           <button class="dropdown-item danger" style="color: #ef4444;" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
                             <i class="bi bi-trash3"></i> Xóa bộ đề
@@ -95,6 +100,11 @@
                   }
                   @if (quiz.statusClass === 'public') {
                     <button class="btn-card-action btn-primary" [routerLink]="['/quiz', quiz.id]">Luyện tập</button>
+                    @if (quiz.allowedCopy !== false) {
+                      <button class="btn-card-action btn-copy" (click)="copyQuiz(quiz, $event)">
+                        Sao chép
+                      </button>
+                    }
                   } @else if (quiz.statusClass === 'draft') {
                     <button class="btn-card-action btn-draft"
                             [routerLink]="['/quiz-create']"
