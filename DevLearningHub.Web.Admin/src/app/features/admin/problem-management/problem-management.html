@@ -1,0 +1,157 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterProblems()" placeholder="Tìm bài tập theo tên...">
+      </div>
+      <div class="admin-header-actions">
+        <!-- Topic Filter -->
+        <select [(ngModel)]="selectedTopicId" (change)="filterProblems()" class="admin-top-select">
+          <option value="">Tất cả chủ đề</option>
+          @for (t of topics; track t.id) {
+            <option [value]="t.id">{{ t.name }}</option>
+          }
+        </select>
+        
+        <!-- Difficulty Filter -->
+        <select [(ngModel)]="selectedDifficulty" (change)="filterProblems()" class="admin-top-select">
+          <option value="">Tất cả độ khó</option>
+          <option value="easy">Dễ</option>
+          <option value="medium">Trung bình</option>
+          <option value="hard">Khó</option>
+        </select>
+
+        <button class="btn-admin-act purple" (click)="openModal()">
+          <i class="bi bi-plus-circle-fill"></i> Tạo bài tập mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Lý Bài Tập Lập Trình (Sandbox problems)</h1>
+        <p>Thêm, sửa đổi hoặc xóa các thử thách viết code và thiết lập bộ Test Cases chấm điểm tự động cho học viên.</p>
+      </section>
+
+      @if (isLoading && problems.length === 0) {
+        <div class="empty-state-box">
+          <i class="bi bi-arrow-repeat spin-animation"></i>
+          <h3>Đang tải dữ liệu...</h3>
+        </div>
+      } @else if (filteredProblems.length === 0) {
+        <div class="empty-state-box">
+          <i class="bi bi-journal-code"></i>
+          <h3>Chưa có bài tập nào</h3>
+          <p>Không tìm thấy bài tập nào khớp với bộ lọc tìm kiếm của bạn.</p>
+        </div>
+      } @else {
+        <div class="admin-table-responsive-wrapper">
+          <table class="admin-management-table">
+            <thead>
+              <tr>
+                <th>Tên bài tập</th>
+                <th>Chủ đề</th>
+                <th>Độ khó</th>
+                <th>Số lượng Test Cases</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of filteredProblems; track p.id) {
+                <tr>
+                  <td>
+                    <strong style="color:var(--text-main);font-size:0.95rem;">{{ p.title }}</strong>
+                    <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;margin-top:2px;">ID: {{ p.id }}</div>
+                  </td>
+                  <td><span class="topic-badge">{{ getTopicName(p.topicId) }}</span></td>
+                  <td>
+                    <span class="diff-badge" [ngClass]="getDifficultyClass(p.difficulty)">
+                      {{ getDifficultyLabel(p.difficulty) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="testcases-count-badge">
+                      <i class="bi bi-check2-square"></i> {{ p.testCaseCount }} Cases
+                    </span>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <!-- Manage Test Cases -->
+                      <a [routerLink]="['/admin/problems', p.id, 'test-cases']" class="btn-tbl-icon-view" title="Quản lý Test Cases" style="margin-right: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-list-task"></i>
+                      </a>
+                      <!-- Edit -->
+                      <button (click)="openModal(p)" class="btn-tbl-icon-edit" title="Chỉnh sửa"><i class="bi bi-pencil-square"></i></button>
+                      <!-- Delete -->
+                      <button (click)="deleteProblem(p.id)" class="btn-tbl-icon-delete" title="Xóa bài tập"><i class="bi bi-trash3-fill"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Create/Edit Modal -->
+  @if (isModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box admin-large-modal" style="width: 800px; max-width: 95%;">
+      <h3><i class="bi bi-file-earmark-code-fill" style="color:var(--color-purple);margin-right:8px;"></i>{{ isEditing ? 'Cập nhật bài tập' : 'Tạo bài tập mới' }}</h3>
+
+      <div class="admin-modal-form-body" style="margin-top: 16px; max-height: 62vh; overflow-y: auto; padding-right: 8px;">
+        <div class="input-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="input-field-group">
+            <label>Tên bài tập <span class="text-danger">*</span></label>
+            <input type="text" [(ngModel)]="form.title" placeholder="Ví dụ: Tính tổng hai số, Tìm kiếm nhị phân">
+          </div>
+          
+          <div class="input-field-group">
+            <label>Chủ đề liên quan <span class="text-danger">*</span></label>
+            <select [(ngModel)]="form.topicId" class="admin-select-field">
+              @for (t of topics; track t.id) {
+                <option [value]="t.id">{{ t.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Độ khó <span class="text-danger">*</span></label>
+          <select [(ngModel)]="form.difficulty" class="admin-select-field">
+            <option value="easy">Dễ (Easy)</option>
+            <option value="medium">Trung bình (Medium)</option>
+            <option value="hard">Khó (Hard)</option>
+          </select>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Mô tả đề bài (Markdown) <span class="text-danger">*</span></label>
+          <textarea [(ngModel)]="form.description" rows="6" class="admin-textarea-field" placeholder="Nhập mô tả đề bài, ví dụ mẫu, định dạng dữ liệu đầu vào và đầu ra dưới dạng Markdown..."></textarea>
+        </div>
+
+        <div class="input-field-group" style="margin-top: 14px;">
+          <label>Khung code mẫu (Starter Code)</label>
+          <textarea [(ngModel)]="form.starterCode" rows="8" class="admin-textarea-field code-font" placeholder="Ví dụ:
+#include <iostream>
+using namespace std;
+int main() {
+    // Viết code ở đây
+    return 0;
+}"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions-row" style="margin-top: 24px;">
+        <button class="btn-modal-cancel" (click)="closeModal()">Hủy bỏ</button>
+        <button class="btn-modal-confirm purple" (click)="saveProblem()">Lưu bài tập</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

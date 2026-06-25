@@ -1,0 +1,143 @@
+@import '../../dashboard/dashboard.css';
+@import '../../admin/admin-dashboard/admin-dashboard.css';
+@import '../../admin/quiz-management/quiz-management.css';
+@import '../problem-management/problem-management.css';
+
+/* Breadcrumbs styling */
+.header-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-back-problems {
+  background: var(--bg-nested);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-back-problems:hover {
+  background: var(--bg-card-border);
+  transform: translateX(-2px);
+}
+
+.path-divider {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.current-problem-title {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+/* Code preview inside table */
+.code-preview-box {
+  background: #181818;
+  border: 1px solid #2d2d2d;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.8rem;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+  max-width: 320px;
+  scrollbar-width: thin;
+}
+
+.expected-preview {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.02);
+}
+
+.text-muted-italic {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+/* Visibility Badge */
+.visibility-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.public-tc {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.hidden-tc {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* Custom switch toggle */
+.switch-slider-tc {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #555;
+  transition: .2s;
+  border-radius: 34px;
+}
+
+.switch-slider-tc:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+
+.switch-slider-tc.checked {
+  background-color: var(--color-purple);
+}
+
+.switch-slider-tc.checked:before {
+  transform: translateX(22px);
+}
+
+.admin-input-field {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--bg-input);
+  color: var(--text-main);
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.admin-input-field:focus {
+  border-color: var(--color-purple);
+}

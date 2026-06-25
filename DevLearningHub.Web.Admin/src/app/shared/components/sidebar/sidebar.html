@@ -1,4 +1,4 @@
-﻿<aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
+<aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
   <div class="sidebar-brand">
     <a routerLink="/landing" class="brand-info" style="text-decoration: none; display: flex; align-items: center; gap: 12px; cursor: pointer;">
       <img src="assets/images/logo.png" alt="Logo Dev-Learning Hub" class="brand-logo-img">
@@ -41,7 +41,9 @@
     </a>
 
     <div class="menu-heading">HẠ TẦNG KỸ THUẬT</div>
-    <a class="menu-item" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-cpu-fill"></i> Sandbox Engine</a>
+    <a routerLink="/admin/problems" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-cpu-fill"></i> Quản lý Bài tập
+    </a>
     <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
       <i class="bi bi-terminal-fill"></i> Logs hệ thống
     </a>
