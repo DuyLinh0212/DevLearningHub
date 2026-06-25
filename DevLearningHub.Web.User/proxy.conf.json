@@ -1,12 +1,12 @@
 {
   "/api": {
-    "target": "https://10w62wl2-7073.asse.devtunnels.ms",
+    "target": "https://devlearninghub.onrender.com",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "warn"
   },
   "/hubs": {
-    "target": "https://10w62wl2-7073.asse.devtunnels.ms",
+    "target": "https://devlearninghub.onrender.com",
     "secure": false,
     "changeOrigin": true,
     "ws": true,
