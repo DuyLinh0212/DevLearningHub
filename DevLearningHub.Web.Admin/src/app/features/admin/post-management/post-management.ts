@@ -77,12 +77,13 @@ export class PostManagementComponent implements OnInit {
         this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Lỗi tải bài viết:', err);
+      error: (err: any) => {
+        console.error('Lỗi tải bài viết:', err.status, err.statusText, err.error);
         this.isLoading = false;
         this.posts = [];
         this.applyFilters();
         this.cdr.detectChanges();
+        alert(`Lỗi ${err.status || '?'}: Không thể tải danh sách bài viết.`);
       }
     });
   }
@@ -109,10 +110,17 @@ export class PostManagementComponent implements OnInit {
               return this.normalizePosts(pageData?.items || []);
             });
             return [...firstItems, ...restItems];
+          }),
+          catchError((err: any) => {
+            console.error('Lỗi fetch trang posts:', err.status, err.statusText, err.error);
+            throw err;
           })
         );
       }),
-      catchError(() => of([]))
+      catchError((err: any) => {
+        console.error('Lỗi fetchAllPosts:', err.status, err.statusText, err.error);
+        return of([]);
+      })
     );
   }
 
@@ -260,6 +268,9 @@ export class PostManagementComponent implements OnInit {
         if (hide) {
           this.filterStatus = 'hidden';
           this.showHidden = true;
+        } else {
+          this.filterStatus = 'visible';
+          this.showHidden = false;
         }
 
         this.loadAllPosts();

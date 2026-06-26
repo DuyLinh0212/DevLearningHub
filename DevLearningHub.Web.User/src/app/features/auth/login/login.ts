@@ -72,16 +72,19 @@ export class LoginComponent {
             console.log('Dữ liệu Token sau giải mã:', decodedPayload);
 
             const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-            const isAdmin = Array.isArray(roleClaim) 
-              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') 
-              : roleClaim?.toLowerCase() === 'admin';            
-            
-            if (isAdmin) {
-              console.warn('Phát hiện tài khoản Admin cố tình truy cập phân hệ Học sinh!');
-              this.errorMessage = 'Tài khoản Quản trị viên không được phép truy cập cổng Học sinh. Vui lòng dùng cổng Admin!';
+            const roles = Array.isArray(roleClaim)
+              ? roleClaim.map((r: string) => (r || '').toLowerCase())
+              : [(roleClaim || '').toLowerCase()];
+
+            const isStaff = roles.includes('admin') || roles.includes('moderator');
+
+            if (isStaff) {
+              const roleLabel = roles.includes('admin') ? 'Quản trị viên' : 'Kiểm duyệt viên';
+              console.warn(`Phát hiện tài khoản ${roleLabel} cố truy cập phân hệ Học sinh!`);
+              this.errorMessage = `Tài khoản ${roleLabel} không được phép truy cập cổng Học sinh. Vui lòng dùng cổng Quản trị!`;
               this.isLoading = false;
-              
-              localStorage.removeItem('accessToken'); 
+
+              localStorage.removeItem('accessToken');
               this.cdr.detectChanges();
               return;
             }

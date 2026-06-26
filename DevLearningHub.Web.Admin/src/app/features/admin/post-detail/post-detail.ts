@@ -6,6 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { StaffUserService } from '../../../core/services/staff-user.service';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-admin-post-detail',
@@ -21,6 +23,8 @@ export class AdminPostDetailComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   public mobileMenu = inject(MobileMenuService);
   private staffUserService = inject(StaffUserService);
+  private authService = inject(AuthService);
+  private sanitizer = inject(DomSanitizer);
 
   postId: string = '';
   post: any = null;
@@ -43,7 +47,14 @@ export class AdminPostDetailComponent implements OnInit {
   private imageDragBaseX = 0;
   private imageDragBaseY = 0;
 
+  // User roles and permissions
+  currentUserRoles: string[] = [];
+  currentUserId: string = '';
+  canModerateComments: boolean = false;
+  canModeratePosts: boolean = false;
+
   ngOnInit() {
+    this.loadCurrentUser();
     this.staffUserService.ensureLoaded().subscribe(() => {
       this.route.params.subscribe(params => {
         this.postId = params['id'] || '';
@@ -51,6 +62,25 @@ export class AdminPostDetailComponent implements OnInit {
           this.loadPostDetails();
         }
       });
+    });
+  }
+
+  loadCurrentUser() {
+    this.authService.getCurrentUser().subscribe({
+      next: (user) => {
+        this.currentUserRoles = user.roles || [];
+        this.currentUserId = user.id || '';
+        this.canModerateComments = user.permissions?.includes('comment:hide') ||
+                                    this.currentUserRoles.includes('moderator') ||
+                                    this.currentUserRoles.includes('admin');
+        this.canModeratePosts = this.currentUserRoles.includes('admin') ||
+                                this.currentUserRoles.includes('moderator') ||
+                                user.permissions?.includes('post:delete');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải thông tin user:', err);
+      }
     });
   }
 
@@ -66,7 +96,18 @@ export class AdminPostDetailComponent implements OnInit {
         } else if (this.post) {
           document.title = this.post.title;
         }
+        // Annotate post author with staff info
+        if (this.post?.author) {
+          const authorInfo = this.staffUserService.getStaffInfo(this.post.author);
+          this.post.author = {
+            ...this.post.author,
+            isStaff: authorInfo !== null,
+            isAdmin: authorInfo?.roles.includes('admin') || false
+          };
+        }
         this.loadComments();
+        this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi tải bài viết chi tiết:', err);
@@ -293,7 +334,14 @@ export class AdminPostDetailComponent implements OnInit {
       escaped = escaped.replace(`___CODEBLOCK_${index}___`, html);
     });
 
-    return `<p>${escaped}</p>`;
+    return this.sanitizer.bypassSecurityTrustHtml(`<p>${escaped}</p>`);
+  }
+
+  isPostAuthorComment(comment: any): boolean {
+    if (!comment?.author) return false;
+    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
+    const currentId = this.currentUserId?.toLowerCase();
+    return commentAuthorId === currentId;
   }
 
   onAvatarError(event: Event) {

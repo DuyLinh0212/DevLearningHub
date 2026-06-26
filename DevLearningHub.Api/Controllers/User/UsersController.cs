@@ -47,15 +47,27 @@ public class UsersController : ControllerBase
             return NotFound(ApiResponse<UserProfileResponse>.Fail("User not found."));
         }
 
-        var profile = MapProfile(user);
-        profile.Roles = user.UserRoleUsers
+        var roles = user.UserRoleUsers
             .Where(ur => ur.Role.IsActive)
             .Select(ur => ur.Role.Name)
             .OrderBy(name => name)
             .ToList();
-        profile.Permissions = (await _permissionService.GetEffectivePermissionsAsync(userId))
+
+        var permissions = (await _permissionService.GetEffectivePermissionsAsync(userId))
             .OrderBy(name => name)
             .ToList();
+
+        var profile = new UserProfileResponse
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl,
+            XpPoints = user.XpPoints,
+            Roles = roles,
+            Permissions = permissions
+        };
 
         return Ok(ApiResponse<UserProfileResponse>.Ok(profile));
     }
@@ -272,7 +284,13 @@ public class UsersController : ControllerBase
             Email = user.Email,
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
-            XpPoints = user.XpPoints
+            XpPoints = user.XpPoints,
+            Roles = user.UserRoleUsers
+                .Where(ur => ur.Role.IsActive)
+                .Select(ur => ur.Role.Name)
+                .OrderBy(name => name)
+                .ToList(),
+            Permissions = new List<string>()
         };
     }
 

@@ -1,0 +1,164 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="top-search">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm tên đăng nhập, email, họ tên...">
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-admin-act purple" (click)="openPromoteModal()">
+          <i class="bi bi-person-up"></i> Thăng cấp Moderator
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <section class="welcome-section">
+        <h1>Quản Lý Moderator</h1>
+        <p>Phân quyền chi tiết cho nhóm Kiểm duyệt viên (Moderator). Chỉ hiển thị các quyền liên quan đến kiểm duyệt bài viết và bình luận.</p>
+      </section>
+
+      <div class="post-filter-bar">
+        <span class="post-count-info">{{ moderators.length }} Moderator</span>
+      </div>
+
+      @if (isLoading) {
+        <div class="empty-state-user">
+          <i class="bi bi-arrow-repeat"></i>
+          <h3>Đang tải dữ liệu...</h3>
+        </div>
+      } @else if (moderators.length === 0) {
+        <div class="empty-state-user">
+          <i class="bi bi-shield-x"></i>
+          <h3>Chưa có Moderator nào</h3>
+          <p>Nhấn "Thăng cấp Moderator" để thêm người dùng vào nhóm Kiểm duyệt viên.</p>
+        </div>
+      } @else {
+        <div class="post-table-wrap">
+          <table class="post-table">
+            <thead>
+              <tr>
+                <th>Thành viên</th>
+                <th>Tên tài khoản / Email</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mod of moderators; track mod.id) {
+                <tr [class.user-locked-row]="mod.isLocked">
+                  <td class="user-cell">
+                    <div class="user-avatar-wrap">
+                      <img [src]="mod.avatarUrl || 'assets/images/default-avatar.svg'"
+                           [alt]="mod.username"
+                           class="user-table-avatar"
+                           (error)="onAvatarError($event)">
+                    </div>
+                    <div class="user-name-info">
+                      <span class="user-fullname">{{ mod.fullName }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="username-txt">{{ mod.username }}</div>
+                    <div class="email-txt">{{ mod.email }}</div>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class.visible]="!mod.isLocked" [class.hidden]="mod.isLocked">
+                      <i class="bi" [class.bi-check-circle-fill]="!mod.isLocked" [class.bi-lock-fill]="mod.isLocked"></i>
+                      {{ mod.isLocked ? 'Bị khóa' : 'Hoạt động' }}
+                    </span>
+                  </td>
+                  <td class="date-cell">
+                    <div>{{ formatDate(mod.createdAt) }}</div>
+                  </td>
+                  <td>
+                    <div class="user-table-actions">
+                      <button class="btn-perm" (click)="openManageModal(mod)" title="Phân quyền kiểm duyệt">
+                        <i class="bi bi-shield-lock-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Manage Moderator Permissions Modal -->
+  @if (isManageModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box manage-modal">
+      <div class="manage-header">
+        <h3><i class="bi bi-shield-lock-fill" style="color:var(--color-purple);margin-right:8px;"></i>Phân quyền Moderator</h3>
+        <button class="manage-close" (click)="closeManageModal()" title="Đóng"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      @if (isLoadingManage) {
+        <div class="manage-loading"><i class="bi bi-arrow-repeat"></i> Đang tải quyền hạn...</div>
+      } @else {
+        <div class="manage-body">
+          <!-- User info -->
+          <section class="manage-section">
+            <div class="manage-section-title">Thông tin Moderator</div>
+            <div class="manage-userinfo">
+              <div class="info-row"><span class="info-label">Username</span><span class="info-value">{{ manageUser?.username }}</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-value">{{ manageUser?.email }}</span></div>
+              @if (manageUser?.fullName) {
+                <div class="info-row"><span class="info-label">Họ tên</span><span class="info-value">{{ manageUser?.fullName }}</span></div>
+              }
+            </div>
+          </section>
+
+          <!-- Permissions -->
+          <section class="manage-section">
+            <div class="manage-section-title">Quyền kiểm duyệt</div>
+            @if (manageModules.length === 0) {
+              <div class="manage-empty">Không có quyền kiểm duyệt nào.</div>
+            } @else {
+              @for (mod of manageModules; track mod.module) {
+                <div class="perm-group">
+                  <div class="perm-group-head">
+                    <span class="perm-group-name">{{ mod.module }}</span>
+                    <span class="perm-group-count">{{ countCheckedInModule(mod) }}/{{ mod.permissions.length }}</span>
+                  </div>
+                  <div class="perm-checkbox-grid">
+                    @for (perm of mod.permissions; track perm.name) {
+                      <label class="perm-checkbox-item" [class.checked]="manageChecked[perm.name]">
+                        <input type="checkbox" [(ngModel)]="manageChecked[perm.name]" [name]="'perm_' + perm.name">
+                        <span class="perm-checkbox-text">
+                          <span class="perm-checkbox-label">{{ perm.description || perm.name }}</span>
+                          <span class="perm-checkbox-code">{{ perm.name }}</span>
+                        </span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        </div>
+
+        <div class="modal-actions-row manage-footer">
+          <button class="btn-modal-cancel" (click)="closeManageModal()">Hủy bỏ</button>
+          <button class="btn-modal-confirm purple" (click)="saveManage()" [disabled]="isSavingManage">
+            @if (isSavingManage) {
+              <i class="bi bi-arrow-repeat"></i> Đang lưu...
+            } @else {
+              Lưu quyền
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+  }
+</div>

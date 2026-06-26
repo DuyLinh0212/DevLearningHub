@@ -48,11 +48,13 @@ export class AdminDashboardComponent implements OnInit {
       const payloadPart = token.split('.')[1];
       const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
       const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      
+
       if (Array.isArray(roleClaim)) {
-        return roleClaim.map((r: string) => r.toLowerCase()).includes('admin');
+        return roleClaim.map((r: string) => r.toLowerCase()).includes('admin') ||
+               roleClaim.map((r: string) => r.toLowerCase()).includes('moderator');
       }
-      return roleClaim?.toLowerCase() === 'admin';
+      const role = roleClaim?.toLowerCase();
+      return role === 'admin' || role === 'moderator';
     } catch (e) {
       return false;
     }

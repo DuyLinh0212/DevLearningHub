@@ -10,13 +10,19 @@
       </a>
       <div class="header-actions">
         @if (post) {
-          <button class="btn-action-moderate" (click)="toggleModeratePost()">
-            <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
-            {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
-          </button>
-          <button class="btn-action-danger" (click)="deletePost()">
-            <i class="bi bi-trash"></i> Xóa bài
-          </button>
+          @if (canModeratePosts) {
+            <button class="btn-action-moderate" (click)="toggleModeratePost()">
+              <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
+              {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
+            </button>
+            <button class="btn-action-danger" (click)="deletePost()">
+              <i class="bi bi-trash"></i> Xóa bài
+            </button>
+          } @else {
+            <span class="moderator-notice" title="Bạn chỉ có quyền kiểm duyệt bình luận">
+              <i class="bi bi-info-circle"></i> Chế độ Moderator
+            </span>
+          }
         }
       </div>
     </header>
@@ -46,6 +52,12 @@
                 <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
                 {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
               </span>
+              @if (post.author.isStaff) {
+                <span class="staff-badge" [class.admin-badge]="post.author.isAdmin" [class.moderator-badge]="!post.author.isAdmin">
+                  <i class="bi" [class.bi-shield-fill]="post.author.isAdmin" [class.bi-person-badge]="!post.author.isAdmin"></i>
+                  {{ post.author.isAdmin ? 'Admin' : 'Moderator' }}
+                </span>
+              }
             </div>
           </div>
           <h1 class="post-detail-title">
@@ -118,8 +130,11 @@
         <div class="comment-header">
           <div class="comment-author-info">
             <span class="comment-author-name">{{ comment.author.fullName || comment.author.username }}</span>
-            @if (comment.isStaff) {
-              <span class="admin-comment-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+            @if (comment.author.isStaff) {
+              <span class="admin-comment-badge" [class.admin-badge]="comment.author.isAdmin" [class.moderator-badge]="!comment.author.isAdmin">
+                <i class="bi" [class.bi-shield-fill]="comment.author.isAdmin" [class.bi-person-badge]="!comment.author.isAdmin"></i>
+                {{ comment.author.isAdmin ? 'Admin' : 'Moderator' }}
+              </span>
             } @else if (isPostAuthorComment(comment)) {
               <span class="author-badge">Chủ bài viết</span>
             }
@@ -129,12 +144,20 @@
             }
           </div>
           <div class="comment-actions">
-            <button class="btn-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
-            <button class="btn-link-action text-warning" (click)="toggleModerateComment(comment)">
-              <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-              {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+            <button class="btn-link-action" (click)="toggleReplyForm(comment.id)">
+              <i class="bi bi-reply"></i> Trả lời
             </button>
-            <button class="btn-link-action text-danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xóa</button>
+            @if (canModerateComments) {
+              <button class="btn-link-action text-warning" (click)="toggleModerateComment(comment)">
+                <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
+                {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+              </button>
+            }
+            @if (comment.author.id === currentUserId || canModerateComments) {
+              <button class="btn-link-action text-danger" (click)="deleteComment(comment.id)">
+                <i class="bi bi-trash"></i> Xóa
+              </button>
+            }
           </div>
         </div>
         <div class="comment-body-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>

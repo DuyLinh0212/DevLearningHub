@@ -253,13 +253,18 @@ public class CommentsController : ControllerBase
             }
         }
 
+        // Constraint accepts: 'hide', 'delete', 'restore'
+        // Use 'hide' when hiding, 'restore' when showing
+        var actionValue = request.Hidden ? "hide" : "restore";
+        Console.Error.WriteLine($"ModerateComment: Using actionValue={actionValue}, Hidden={request.Hidden}");
+
         _db.ModerationLogs.Add(new ModerationLog
         {
             Id = Guid.NewGuid(),
             ModeratorId = moderatorId,
             TargetType = CommunityVotes.CommentTarget,
             TargetId = comment.Id,
-            Action = request.Hidden ? "hide" : "restore",
+            Action = actionValue,
             Reason = request.Reason?.Trim(),
             CreatedAt = DateTime.Now
         });

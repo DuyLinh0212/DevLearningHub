@@ -62,20 +62,16 @@ export class LoginComponent {
           try {
             const payloadPart = token.split('.')[1];
             const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
-            
+
             const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-            const responseRoles = target?.user?.roles || target?.user?.Roles || res?.data?.user?.roles || res?.data?.user?.Roles || [];
-            const isAdminFromToken = Array.isArray(roleClaim)
-              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin')
-              : roleClaim?.toLowerCase() === 'admin';
-            const isAdminFromBody = Array.isArray(responseRoles)
-              ? responseRoles.map((r: string) => String(r).toLowerCase()).includes('admin')
-              : String(responseRoles || '').toLowerCase() === 'admin';
-            const isAdmin = isAdminFromToken || isAdminFromBody;            
-            
-            if (!isAdmin) {
-              this.errorMessage = 'Tài khoản này không có quyền Admin. Bạn sẽ được giữ phiên đăng nhập để dùng khu vực user.';
-              this.router.navigate(['/dashboard']);
+            const isAdminOrModerator = Array.isArray(roleClaim)
+              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') ||
+                roleClaim.map((r: string) => r.toLowerCase()).includes('moderator')
+              : ['admin', 'moderator'].includes((roleClaim || '').toLowerCase());
+
+            if (!isAdminOrModerator) {
+              this.errorMessage = 'Bạn không có quyền truy cập cổng Quản trị!';
+              localStorage.removeItem('accessToken');
               this.cdr.detectChanges();
               return;
             }

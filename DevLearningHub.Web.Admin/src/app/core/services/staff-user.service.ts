@@ -6,13 +6,19 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 const STAFF_ROLES = new Set(['admin', 'moderator']);
 const STAFF_CACHE_KEY = 'staff_users_cache';
 
+interface StaffUserInfo {
+  id: string;
+  username: string;
+  roles: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class StaffUserService {
   private http = inject(HttpClient);
-  private staffUserIds = new Set<string>();
-  private staffUsernames = new Set<string>();
+  private staffUsers = new Map<string, StaffUserInfo>(); // id -> info
+  private staffUsernames = new Map<string, StaffUserInfo>(); // username -> info
   private loaded = false;
 
   ensureLoaded(): Observable<void> {
@@ -25,10 +31,16 @@ export class StaffUserService {
       catchError(() => of({ userIds: [] as string[], usernames: [] as string[] })),
       tap((config) => {
         (config.userIds || []).forEach(id => {
-          if (id) this.staffUserIds.add(id.toLowerCase());
+          if (id) {
+            const lowerId = id.toLowerCase();
+            this.staffUsers.set(lowerId, { id: lowerId, username: '', roles: ['admin'] });
+          }
         });
         (config.usernames || []).forEach(username => {
-          if (username) this.staffUsernames.add(username.toLowerCase());
+          if (username) {
+            const lowerUsername = username.toLowerCase();
+            this.staffUsernames.set(lowerUsername, { id: '', username: lowerUsername, roles: ['admin'] });
+          }
         });
         this.loadStaffCacheFromStorage();
       }),
@@ -40,8 +52,13 @@ export class StaffUserService {
 
             const id = (user.id || '').toString().toLowerCase();
             const username = (user.username || '').toLowerCase();
-            if (id) this.staffUserIds.add(id);
-            if (username) this.staffUsernames.add(username);
+            const info: StaffUserInfo = {
+              id,
+              username,
+              roles: roles
+            };
+            if (id) this.staffUsers.set(id, info);
+            if (username) this.staffUsernames.set(username, info);
           });
           this.persistStaffCacheToStorage();
         }),
@@ -59,24 +76,59 @@ export class StaffUserService {
   }
 
   isStaffAuthor(author: any): boolean {
-    if (!author) return false;
+    return this.getStaffInfo(author) !== null;
+  }
+
+  isAdminAuthor(author: any): boolean {
+    const info = this.getStaffInfo(author);
+    return info !== null && info.roles.includes('admin');
+  }
+
+  getStaffInfo(author: any): StaffUserInfo | null {
+    if (!author) return null;
 
     const id = (author.id || '').toString().toLowerCase();
     const username = (author.username || '').toLowerCase();
 
-    if (id && this.staffUserIds.has(id)) return true;
-    if (username && this.staffUsernames.has(username)) return true;
+    if (id && this.staffUsers.has(id)) {
+      return this.staffUsers.get(id)!;
+    }
+    if (username && this.staffUsernames.has(username)) {
+      return this.staffUsernames.get(username)!;
+    }
 
-    return this.hasStaffRole(this.normalizeRoles(author));
+    // Fallback: check roles directly on author object
+    const roles = this.normalizeRoles(author);
+    if (this.hasStaffRole(roles)) {
+      return {
+        id: id || '',
+        username: username || '',
+        roles: roles
+      };
+    }
+
+    return null;
   }
 
   annotateComments(comments: any[]): any[] {
     return (comments || []).map(comment => ({
       ...comment,
       isStaff: this.isStaffAuthor(comment.author),
+      isAdmin: this.isAdminAuthor(comment.author),
       replies: comment.replies?.length
         ? this.annotateComments(comment.replies)
         : (comment.replies || [])
+    }));
+  }
+
+  annotatePostAuthors(posts: any[]): any[] {
+    return (posts || []).map(post => ({
+      ...post,
+      author: {
+        ...post.author,
+        isStaff: this.isStaffAuthor(post.author),
+        isAdmin: this.isAdminAuthor(post.author)
+      }
     }));
   }
 
@@ -133,11 +185,14 @@ export class StaffUserService {
   }
 
   private persistStaffCacheToStorage() {
+    const userData = Array.from(this.staffUsers.values());
+    const usernameData = Array.from(this.staffUsernames.values());
+
     localStorage.setItem(
       STAFF_CACHE_KEY,
       JSON.stringify({
-        userIds: Array.from(this.staffUserIds),
-        usernames: Array.from(this.staffUsernames)
+        users: userData,
+        usernames: usernameData
       })
     );
   }
@@ -148,11 +203,23 @@ export class StaffUserService {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      (parsed.userIds || []).forEach((id: string) => {
-        if (id) this.staffUserIds.add(id.toLowerCase());
+      (parsed.users || parsed.userIds || []).forEach((item: any) => {
+        if (typeof item === 'string') {
+          const lowerId = item.toLowerCase();
+          this.staffUsers.set(lowerId, { id: lowerId, username: '', roles: ['admin'] });
+        } else if (item && item.id) {
+          const lowerId = item.id.toLowerCase();
+          this.staffUsers.set(lowerId, item);
+        }
       });
-      (parsed.usernames || []).forEach((username: string) => {
-        if (username) this.staffUsernames.add(username.toLowerCase());
+      (parsed.usernames || []).forEach((item: any) => {
+        if (typeof item === 'string') {
+          const lowerUsername = item.toLowerCase();
+          this.staffUsernames.set(lowerUsername, { id: '', username: lowerUsername, roles: ['admin'] });
+        } else if (item && item.username) {
+          const lowerUsername = item.username.toLowerCase();
+          this.staffUsernames.set(lowerUsername, item);
+        }
       });
     } catch {
       // Ignore invalid cache payload.
