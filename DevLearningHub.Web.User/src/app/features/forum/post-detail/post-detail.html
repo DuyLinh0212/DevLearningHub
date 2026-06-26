@@ -171,10 +171,14 @@
         <div class="comment-header">
           <div class="comment-author-info">
             <span class="comment-author-name" style="cursor:pointer" (click)="goToProfile(comment.author.id)">{{ comment.author.fullName || comment.author.username }}</span>
-            @if (comment.isStaff) {
-              <span class="admin-comment-badge"><i class="bi bi-shield-fill"></i> Admin</span>
-            } @else if (isPostAuthorComment(comment)) {
+            @if (isPostAuthorComment(comment)) {
               <span class="author-badge">Chủ bài viết</span>
+            }
+            @if (comment.isStaff) {
+              <span class="admin-comment-badge" [class.admin-badge]="comment.isAdmin || !comment.isModerator" [class.moderator-badge]="comment.isModerator">
+                <i class="bi" [class.bi-shield-fill]="comment.isAdmin || !comment.isModerator" [class.bi-person-badge]="comment.isModerator"></i>
+                {{ comment.isAdmin || !comment.isModerator ? 'Admin' : 'Moderator' }}
+              </span>
             }
             <span class="comment-date">• &nbsp;{{ formatRelativeTime(comment.createdAt) }}</span>
             @if (comment.isHidden) {

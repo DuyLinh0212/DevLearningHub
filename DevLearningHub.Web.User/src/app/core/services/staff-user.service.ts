@@ -11,8 +11,17 @@ const STAFF_CACHE_KEY = 'staff_users_cache';
 })
 export class StaffUserService {
   private http = inject(HttpClient);
+  
+  // Flat Sets for backward compatibility and fallback
   private staffUserIds = new Set<string>();
   private staffUsernames = new Set<string>();
+  
+  // Specific role sets
+  private adminUserIds = new Set<string>();
+  private adminUsernames = new Set<string>();
+  private moderatorUserIds = new Set<string>();
+  private moderatorUsernames = new Set<string>();
+  
   private loaded = false;
 
   /** Load staff accounts from local config + localStorage cache. */
@@ -21,17 +30,54 @@ export class StaffUserService {
       return of(void 0);
     }
 
-    return this.http.get<{ userIds?: string[]; usernames?: string[] }>('assets/config/staff-users.json').pipe(
+    return this.http.get<any>('assets/config/staff-users.json').pipe(
       catchError(() => of({ userIds: [] as string[], usernames: [] as string[] })),
       tap((config) => {
-        (config.userIds || []).forEach(id => {
+        // Flat lists fallback
+        (config.userIds || []).forEach((id: string) => {
           if (id) this.staffUserIds.add(id.toLowerCase());
         });
-        (config.usernames || []).forEach(username => {
+        (config.usernames || []).forEach((username: string) => {
           if (username) this.staffUsernames.add(username.toLowerCase());
         });
 
-        // Đọc thêm từ localStorage (Admin app có thể đã cache ở đây nếu cùng domain)
+        // Specific Admins list
+        if (config.admins) {
+          (config.admins.userIds || []).forEach((id: string) => {
+            if (id) {
+              const lowerId = id.toLowerCase();
+              this.adminUserIds.add(lowerId);
+              this.staffUserIds.add(lowerId);
+            }
+          });
+          (config.admins.usernames || []).forEach((username: string) => {
+            if (username) {
+              const lowerUsername = username.toLowerCase();
+              this.adminUsernames.add(lowerUsername);
+              this.staffUsernames.add(lowerUsername);
+            }
+          });
+        }
+
+        // Specific Moderators list
+        if (config.moderators) {
+          (config.moderators.userIds || []).forEach((id: string) => {
+            if (id) {
+              const lowerId = id.toLowerCase();
+              this.moderatorUserIds.add(lowerId);
+              this.staffUserIds.add(lowerId);
+            }
+          });
+          (config.moderators.usernames || []).forEach((username: string) => {
+            if (username) {
+              const lowerUsername = username.toLowerCase();
+              this.moderatorUsernames.add(lowerUsername);
+              this.staffUsernames.add(lowerUsername);
+            }
+          });
+        }
+
+        // Load more from LocalStorage cache
         this.loadStaffCacheFromStorage();
         this.loaded = true;
       }),
@@ -43,14 +89,10 @@ export class StaffUserService {
     );
   }
 
-  /**
-   * Kiểm tra từ role trong author object (nếu BE trả về),
-   * hoặc từ staffUserIds/staffUsernames đã nạp.
-   */
   isStaffAuthor(author: any): boolean {
     if (!author) return false;
 
-    // Ưu tiên: check roles trực tiếp từ author object (nếu BE trả)
+    // Check roles directly from author object if backend returns them
     const roles = this.normalizeRoles(author);
     if (this.hasStaffRole(roles)) return true;
 
@@ -63,30 +105,61 @@ export class StaffUserService {
     return false;
   }
 
+  isAdminAuthor(author: any): boolean {
+    if (!author) return false;
+
+    const roles = this.normalizeRoles(author);
+    if (roles.includes('admin')) return true;
+
+    const id = (author.id || '').toString().toLowerCase();
+    const username = (author.username || '').toLowerCase();
+
+    if (id && this.adminUserIds.has(id)) return true;
+    if (username && this.adminUsernames.has(username)) return true;
+
+    return false;
+  }
+
+  isModeratorAuthor(author: any): boolean {
+    if (!author) return false;
+
+    const roles = this.normalizeRoles(author);
+    if (roles.includes('moderator')) return true;
+
+    const id = (author.id || '').toString().toLowerCase();
+    const username = (author.username || '').toLowerCase();
+
+    if (id && this.moderatorUserIds.has(id)) return true;
+    if (username && this.moderatorUsernames.has(username)) return true;
+
+    return false;
+  }
+
   annotateComments(comments: any[]): any[] {
     return (comments || []).map(comment => ({
       ...comment,
       isStaff: this.isStaffAuthor(comment.author),
+      isAdmin: this.isAdminAuthor(comment.author),
+      isModerator: this.isModeratorAuthor(comment.author),
       replies: comment.replies?.length
         ? this.annotateComments(comment.replies)
         : (comment.replies || [])
     }));
   }
 
-
   private normalizeRoles(source: any): string[] {
     if (!source) return [];
 
     if (Array.isArray(source.roles)) {
-      return source.roles.filter((role: unknown) => typeof role === 'string');
+      return source.roles.filter((role: unknown) => typeof role === 'string').map((r: string) => r.toLowerCase());
     }
 
     if (typeof source.role === 'string' && source.role.trim()) {
-      return [source.role];
+      return [source.role.toLowerCase()];
     }
 
     if (typeof source.roles === 'string' && source.roles.trim()) {
-      return [source.roles];
+      return [source.roles.toLowerCase()];
     }
 
     return [];
@@ -102,11 +175,40 @@ export class StaffUserService {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
+      // Support string array format
       (parsed.userIds || []).forEach((id: string) => {
         if (id) this.staffUserIds.add(id.toLowerCase());
       });
       (parsed.usernames || []).forEach((username: string) => {
         if (username) this.staffUsernames.add(username.toLowerCase());
+      });
+
+      // Support Map/Object-based format with roles
+      const usersList = parsed.users || [];
+      const usernamesList = parsed.usernames || [];
+
+      usersList.forEach((user: any) => {
+        if (user && user.id) {
+          const lowerId = user.id.toLowerCase();
+          this.staffUserIds.add(lowerId);
+          if (user.roles?.map((r: string) => r.toLowerCase()).includes('admin')) {
+            this.adminUserIds.add(lowerId);
+          } else if (user.roles?.map((r: string) => r.toLowerCase()).includes('moderator')) {
+            this.moderatorUserIds.add(lowerId);
+          }
+        }
+      });
+
+      usernamesList.forEach((user: any) => {
+        if (user && user.username) {
+          const lowerName = user.username.toLowerCase();
+          this.staffUsernames.add(lowerName);
+          if (user.roles?.map((r: string) => r.toLowerCase()).includes('admin')) {
+            this.adminUsernames.add(lowerName);
+          } else if (user.roles?.map((r: string) => r.toLowerCase()).includes('moderator')) {
+            this.moderatorUsernames.add(lowerName);
+          }
+        }
       });
     } catch {
       // Ignore invalid cache payload.

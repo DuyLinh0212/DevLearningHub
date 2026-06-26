@@ -292,7 +292,7 @@ export class AdminPostDetailComponent implements OnInit {
     return `${Math.floor(d / 30)} tháng trước`;
   }
 
-  renderMarkdown(markdown: string): string {
+  renderMarkdown(markdown: string): SafeHtml {
     if (!markdown) return '';
     
     // Escape HTML tags to prevent XSS
@@ -337,12 +337,6 @@ export class AdminPostDetailComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustHtml(`<p>${escaped}</p>`);
   }
 
-  isPostAuthorComment(comment: any): boolean {
-    if (!comment?.author) return false;
-    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    const currentId = this.currentUserId?.toLowerCase();
-    return commentAuthorId === currentId;
-  }
 
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
