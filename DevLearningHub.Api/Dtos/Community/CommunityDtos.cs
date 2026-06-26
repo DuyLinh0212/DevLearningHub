@@ -59,6 +59,9 @@ public class AuthorSummary
     public string? FullName { get; set; }
 
     public string? AvatarUrl { get; set; }
+
+    /// <summary>Role names the author holds (e.g. "Admin", "Moderator").</summary>
+    public List<string> Roles { get; set; } = new();
 }
 
 // Post responses and payloads.

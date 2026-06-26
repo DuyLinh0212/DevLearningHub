@@ -128,8 +128,11 @@ public class PostsController : ControllerBase
     {
         var post = await _db.Posts
             .Include(p => p.Author)
+                .ThenInclude(a => a.UserRoleUsers)
+                    .ThenInclude(ur => ur.Role)
             .Include(p => p.Tags)
             .FirstOrDefaultAsync(p => p.Id == id);
+
 
         if (post == null)
         {
@@ -457,7 +460,11 @@ public class PostsController : ControllerBase
                     Id = c.Author.Id,
                     Username = c.Author.Username,
                     FullName = c.Author.FullName,
-                    AvatarUrl = c.Author.AvatarUrl
+                    AvatarUrl = c.Author.AvatarUrl,
+                    Roles = c.Author.UserRoleUsers
+                        .Where(ur => ur.Role.IsActive)
+                        .Select(ur => ur.Role.Name)
+                        .ToList()
                 },
                 BodyMarkdown = c.BodyMarkdown,
                 Upvotes = c.Upvotes,
@@ -536,7 +543,11 @@ public class PostsController : ControllerBase
         _db.Comments.Add(comment);
         await _db.SaveChangesAsync();
 
-        var author = await _db.Users.FirstAsync(u => u.Id == userId);
+        var author = await _db.Users
+            .Include(u => u.UserRoleUsers)
+                .ThenInclude(ur => ur.Role)
+            .FirstAsync(u => u.Id == userId);
+
 
         var response = new CommentResponse
         {
@@ -694,7 +705,11 @@ public class PostsController : ControllerBase
             Id = user.Id,
             Username = user.Username,
             FullName = user.FullName,
-            AvatarUrl = user.AvatarUrl
+            AvatarUrl = user.AvatarUrl,
+            Roles = (user.UserRoleUsers ?? (ICollection<UserRole>)[])
+                .Where(ur => ur.Role?.IsActive == true)
+                .Select(ur => ur.Role.Name)
+                .ToList()
         };
     }
 

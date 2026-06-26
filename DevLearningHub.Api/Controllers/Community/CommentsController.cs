@@ -43,6 +43,8 @@ public class CommentsController : ControllerBase
 
         var comment = await _db.Comments
             .Include(c => c.Author)
+                .ThenInclude(a => a.UserRoleUsers)
+                    .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (comment == null)
@@ -323,7 +325,11 @@ public class CommentsController : ControllerBase
                 Id = author.Id,
                 Username = author.Username,
                 FullName = author.FullName,
-                AvatarUrl = author.AvatarUrl
+                AvatarUrl = author.AvatarUrl,
+                Roles = (author.UserRoleUsers ?? [])
+                    .Where(ur => ur.Role?.IsActive == true)
+                    .Select(ur => ur.Role.Name)
+                    .ToList()
             },
             BodyMarkdown = comment.BodyMarkdown,
             Upvotes = comment.Upvotes,
