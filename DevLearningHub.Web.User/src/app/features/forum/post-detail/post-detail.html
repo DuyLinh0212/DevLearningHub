@@ -155,7 +155,7 @@
      🧬 RECURSIVE TEMPLATE CHO NESTED COMMENTS (BÌNH LUẬN LỒNG NHAU)
      ========================================================================== -->
 <ng-template #commentTemplate let-comment="comment" let-depth="depth">
-  <div class="comment-node" [class.is-accepted]="comment.isAccepted" [class.is-reply]="depth > 0" [class.admin-comment-highlight]="comment.isStaff">
+  <div class="comment-node" [class.is-accepted]="comment.isAccepted" [class.is-reply]="depth > 0" [class.admin-comment-highlight]="comment.isAdmin" [class.moderator-comment-highlight]="comment.isModerator && !comment.isAdmin">
     <div class="comment-layout">
       <!-- Left side: Avatar -->
       <div class="comment-avatar-cell">
@@ -174,12 +174,18 @@
             @if (isPostAuthorComment(comment)) {
               <span class="author-badge">Chủ bài viết</span>
             }
-            @if (comment.isStaff) {
-              <span class="admin-comment-badge" [class.admin-badge]="comment.isAdmin || !comment.isModerator" [class.moderator-badge]="comment.isModerator">
-                <i class="bi" [class.bi-shield-fill]="comment.isAdmin || !comment.isModerator" [class.bi-person-badge]="comment.isModerator"></i>
-                {{ comment.isAdmin || !comment.isModerator ? 'Admin' : 'Moderator' }}
+            @if (comment.isAdmin) {
+              <span class="admin-comment-badge admin-badge">
+                <i class="bi bi-shield-fill"></i>
+                Admin
+              </span>
+            } @else if (comment.isModerator) {
+              <span class="admin-comment-badge moderator-badge">
+                <i class="bi bi-person-badge"></i>
+                Moderator
               </span>
             }
+
             <span class="comment-date">• &nbsp;{{ formatRelativeTime(comment.createdAt) }}</span>
             @if (comment.isHidden) {
               <span class="mini-hidden-badge">Đã ẩn</span>
