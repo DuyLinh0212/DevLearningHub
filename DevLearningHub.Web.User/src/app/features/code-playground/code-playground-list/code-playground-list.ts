@@ -59,11 +59,11 @@ export class CodePlaygroundListComponent implements OnInit {
         this.problems = problems || [];
         this.totalCount = this.problems.length;
 
-        // Submissions & Progress
+        // Submissions & Progress — compare case-insensitive
         this.completedProblemIds.clear();
         const subs = submissions || [];
-        subs.forEach(s => {
-          if (s.verdict === 'Accepted') {
+        subs.forEach((s: any) => {
+          if ((s.verdict || '').toLowerCase() === 'accepted') {
             this.completedProblemIds.add(s.problemId.toLowerCase());
           }
         });
@@ -75,8 +75,26 @@ export class CodePlaygroundListComponent implements OnInit {
       },
       error: (err) => {
         console.error('Lỗi tải dữ liệu Code Playground:', err);
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        // Nếu submissions fail (401), vẫn thử tải problems và topics riêng
+        forkJoin({
+          problems: this.codeService.getProblems(),
+          topics: this.http.get<any>('/api/topics')
+        }).subscribe({
+          next: ({ problems, topics }) => {
+            const topicsData = topics?.data || topics;
+            this.topics = Array.isArray(topicsData) ? topicsData : [];
+            this.problems = problems || [];
+            this.totalCount = this.problems.length;
+            this.solvedCount = 0;
+            this.applyFilters();
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
       }
     });
   }

@@ -590,7 +590,7 @@
   width: 650px;
   max-width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .import-modal {
@@ -1214,7 +1214,7 @@
   .admin-large-modal {
     width: calc(100% - 16px) !important;
     max-height: 90vh !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
     padding: 16px !important;
     margin: 8px !important;
   }

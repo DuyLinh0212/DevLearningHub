@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { forkJoin } from "rxjs";
+import { forkJoin, of } from "rxjs";
+import { catchError } from 'rxjs/operators';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
@@ -88,6 +89,7 @@ export class UserManagementComponent implements OnInit {
   manageModules: ManageModule[] = [];
   manageSelectedRole = 'User';
   manageChecked: Record<string, boolean> = {};
+  manageStats: any = null;
 
   // Permissions that are never assignable to certain roles, so they are hidden
   // from the checkbox list (and stripped on save) when that role is selected.
@@ -457,12 +459,16 @@ export class UserManagementComponent implements OnInit {
     this.manageRoles = [];
     this.manageModules = [];
     this.manageChecked = {};
+    this.manageStats = null;
     this.manageSelectedRole = user.role || 'User';
     this.cdr.detectChanges();
 
-    this.http.get<any>(`/api/admin/users/${user.id}/management`).subscribe({
-      next: (res) => {
-        const data = res?.data || {};
+    forkJoin({
+      manage: this.http.get<any>(`/api/admin/users/${user.id}/management`),
+      stats: this.http.get<any>(`/api/users/${user.id}/stats`).pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ manage, stats }) => {
+        const data = manage?.data || {};
         this.manageRoles = data.roles || [];
         this.manageModules = data.permissionModules || [];
         this.manageSelectedRole = this.manageRoles.find(r => r.selected)?.name || user.role || 'User';
@@ -485,6 +491,10 @@ export class UserManagementComponent implements OnInit {
           avatarUrl: data.avatarUrl ?? this.manageUser.avatarUrl
         };
 
+        // Store coding stats (may be null if API not ready yet)
+        const statsData = stats?.data || stats;
+        this.manageStats = statsData || null;
+
         this.isLoadingManage = false;
         this.cdr.detectChanges();
       },
@@ -503,6 +513,7 @@ export class UserManagementComponent implements OnInit {
     this.manageRoles = [];
     this.manageModules = [];
     this.manageChecked = {};
+    this.manageStats = null;
     this.cdr.detectChanges();
   }
 

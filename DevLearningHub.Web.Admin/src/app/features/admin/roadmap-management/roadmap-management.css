@@ -209,7 +209,7 @@
   .admin-large-modal {
     width: calc(100% - 24px) !important;
     max-height: 90vh !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
     padding: 18px !important;
   }
 }

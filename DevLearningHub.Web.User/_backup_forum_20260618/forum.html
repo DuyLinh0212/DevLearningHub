@@ -1,4 +1,4 @@
-<header class="content-header">
+﻿<header class="content-header">
   <div class="top-breadcrumb">
     <a routerLink="/forum">Cộng đồng</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Diễn đàn thảo luận</span>
   </div>
@@ -96,8 +96,7 @@
                   
                   @if (post.imageUrl) {
                     <div class="post-image-container">
-                      <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable"
-                           (click)="openImageZoom(post.imageUrl, post)" title="Nhấn để phóng to">
+                      <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
                     </div>
                   }
 
@@ -154,10 +153,22 @@
           }
         </div>
 
-        @if (loading && page > 1) {
-          <div class="forum-loading-state" style="padding: 24px 0;">
-            <i class="bi bi-arrow-repeat spin-animation" style="font-size: 1.5rem; color: #a855f7;"></i>
-            <p style="font-size: 0.85rem; margin: 0;">Đang tải thêm bài viết...</p>
+        <!-- Phân trang -->
+        @if (totalPages > 1) {
+          <div class="pagination-container">
+            <button class="page-btn" [disabled]="page === 1" (click)="changePage(page - 1)">
+              <i class="bi bi-chevron-left"></i> Trước
+            </button>
+            
+            @for (p of getPageNumbers(); track p) {
+              <button class="page-btn num-btn" [class.active]="p === page" (click)="changePage(p)">
+                {{ p }}
+              </button>
+            }
+
+            <button class="page-btn" [disabled]="page === totalPages" (click)="changePage(page + 1)">
+              Sau <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
         }
       }
@@ -203,35 +214,5 @@
   </div>
 </div>
 
-@if (zoomedImageUrl) {
-  <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">
-    <button class="lightbox-close-btn fb-close-btn" (click)="closeImageZoom()" aria-label="Đóng">
-      <i class="bi bi-x-lg"></i>
-    </button>
 
-    <div class="fb-lightbox-media" (click)="$event.stopPropagation()">
-      <div class="fb-zoom-toolbar" (click)="$event.stopPropagation()">
-        <button type="button" (click)="zoomImage(-0.15, $event)" title="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
-        <input type="range" min="0.5" max="3" step="0.05" [(ngModel)]="imageZoomLevel" aria-label="Mức phóng to ảnh">
-        <button type="button" (click)="zoomImage(0.15, $event)" title="Phóng to"><i class="bi bi-zoom-in"></i></button>
-        <button type="button" (click)="resetImageZoom($event)" title="Về 100%"><i class="bi bi-arrows-fullscreen"></i></button>
-        <span>{{ imageZoomLevel * 100 | number:'1.0-0' }}%</span>
-      </div>
-      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image" [class.is-dragging]="isImageDragging" [style.transform]="imageTransform" (mousedown)="startImageDrag($event)" (touchstart)="startImageDrag($event)">
-    </div>
 
-    <aside class="fb-lightbox-side" (click)="$event.stopPropagation()">
-      <div class="fb-post-mini-header" *ngIf="selectedLightboxPost as viewerPost">
-        <img [src]="viewerPost.author?.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="fb-post-avatar" (error)="onAvatarError($event)">
-        <div class="fb-post-meta">
-          <strong>{{ viewerPost.author?.fullName || viewerPost.author?.username || 'Người dùng' }}</strong>
-          <span>{{ formatRelativeTime(viewerPost.createdAt) }}</span>
-        </div>
-      </div>
-      <div class="fb-lightbox-side-body" *ngIf="selectedLightboxPost as viewerPost">
-        <p class="fb-lightbox-post-title">{{ viewerPost.title || '' }}</p>
-        <p class="fb-lightbox-post-excerpt">{{ getExcerpt(viewerPost.bodyMarkdown) }}</p>
-      </div>
-    </aside>
-  </div>
-}

@@ -176,13 +176,38 @@ public class UsersController : ControllerBase
             ? 0
             : scoreRows.Average(s => (double)s.Score / s.TotalQuestions);
 
+        var totalSubmissions = await _db.Submissions.CountAsync(s => s.UserId == id);
+        var totalProblemsSolved = await _db.Submissions
+            .Where(s => s.UserId == id && s.Verdict == "accepted")
+            .Select(s => s.ProblemId)
+            .Distinct()
+            .CountAsync();
+        var totalProblemsAttempted = await _db.Submissions
+            .Where(s => s.UserId == id)
+            .Select(s => s.ProblemId)
+            .Distinct()
+            .CountAsync();
+        var languageStats = await _db.Submissions
+            .Where(s => s.UserId == id)
+            .GroupBy(s => s.Language)
+            .Select(g => new LanguageStatDto
+            {
+                Language = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync();
+
         var stats = new UserStatsResponse
         {
             UserId = user.Id,
             TotalQuizTaken = totalQuizTaken,
             TotalXP = userXp,
             AvgScore = Math.Round(avgScore, 4),
-            Rank = rank
+            Rank = rank,
+            TotalProblemsSolved = totalProblemsSolved,
+            TotalProblemsAttempted = totalProblemsAttempted,
+            TotalSubmissions = totalSubmissions,
+            LanguageStats = languageStats
         };
 
         return Ok(ApiResponse<UserStatsResponse>.Ok(stats));
@@ -275,6 +300,21 @@ public class UserStatsResponse
     public double AvgScore { get; set; }
 
     public int Rank { get; set; }
+
+    public int TotalProblemsSolved { get; set; }
+
+    public int TotalProblemsAttempted { get; set; }
+
+    public int TotalSubmissions { get; set; }
+
+    public List<LanguageStatDto> LanguageStats { get; set; } = new();
+}
+
+public class LanguageStatDto
+{
+    public string Language { get; set; } = string.Empty;
+
+    public int Count { get; set; }
 }
 
 public class LeaderboardEntryResponse

@@ -14,7 +14,6 @@
 <div class="dashboard-scroll-body leaderboard-page">
   <section class="leaderboard-hero-banner">
     <div class="hero-copy">
-      <span class="hero-kicker">DevLearningHub leaderboard</span>
       <h1>Bảng xếp hạng học viên</h1>
       <p>Chạm vào một người bất kỳ để xem hồ sơ, XP, điểm trung bình và hành trình học tập của họ.</p>
     </div>
@@ -83,10 +82,10 @@
             <div class="leader-metrics">
               <span><i class="bi bi-gem"></i> {{ user.xp }} XP</span>
               <span><i class="bi bi-patch-question-fill"></i> {{ user.quizTaken }} quiz</span>
+              @if (user.isSelf) {
+                <span class="self-badge">Bạn</span>
+              }
             </div>
-            @if (user.isSelf) {
-              <span class="self-badge">Bạn</span>
-            }
             <i class="bi bi-chevron-right leader-chevron"></i>
           </button>
         }

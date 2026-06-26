@@ -1,0 +1,252 @@
+<div class="dashboard-container">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+
+    <header class="content-header">
+      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="top-breadcrumb">
+        <button class="back-btn" (click)="goBack()" title="Quay lại trang trước">
+          <i class="bi bi-chevron-left"></i> {{ backLabel }}
+        </button>
+        <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i>
+        <span>Trang cá nhân</span>
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      @if (isLoading) {
+        <div class="forum-loading-state">
+          <i class="bi bi-arrow-repeat spin-animation" style="font-size: 2rem; color: #a855f7;"></i>
+          <p>Đang tải Trang cá nhân...</p>
+        </div>
+      } @else if (notFound) {
+        <div class="empty-state-card">
+          <i class="bi bi-person-x"></i>
+          <h3>Không tìm thấy người dùng</h3>
+          <p>Người dùng này không tồn tại hoặc đã bị xóa.</p>
+          <button class="btn-create" (click)="goBack()" style="margin-top: 16px;">
+            <i class="bi bi-arrow-left"></i> Quay lại
+          </button>
+        </div>
+      } @else {
+        <div class="profile-card-container">
+          <div class="profile-card">
+            <div class="profile-header-bg"></div>
+            <div class="profile-content">
+              <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar" (error)="onAvatarError($event)">
+              <div class="profile-info">
+                <h1 class="profile-name">
+                  {{ user.fullName || user.username || 'Người dùng' }}
+                  @for (role of user.roles; track role) {
+                    <span class="role-badge" 
+                          [class.role-admin]="role === 'Admin'" 
+                          [class.role-moderator]="role === 'Moderator'"
+                          [class.role-user]="role === 'User'">
+                      {{ role }}
+                    </span>
+                  }
+                </h1>
+                <p class="profile-username">@{{ user.username }}</p>
+                <p class="profile-bio">{{ user.bio || 'Thành viên Dev Learning Hub' }}</p>
+
+                <div class="admin-profile-actions">
+                  <span class="admin-view-badge">
+                    <i class="bi bi-shield-fill"></i> Chế độ xem Admin
+                  </span>
+                  <button class="btn-admin-act purple btn-sm-act" (click)="goBack()">
+                    <i class="bi bi-arrow-left"></i> {{ backLabel }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-posts-section">
+          <div class="forum-layout profile-layout">
+            <div class="posts-column profile-main-column">
+              <h2 class="section-title">Bài viết gần đây ({{ posts.length }})</h2>
+              <div class="posts-list">
+                @if (posts.length === 0) {
+                  <div class="empty-state-card">
+                    <i class="bi bi-chat-right-text-fill"></i>
+                    <h3>Chưa có bài viết nào</h3>
+                    <p>Người dùng này chưa đăng bài viết nào trên diễn đàn.</p>
+                  </div>
+                } @else {
+                  @for (post of posts; track post.id) {
+                    <div class="social-post-card" [class.post-hidden-card]="post.isHidden" (click)="goToPost(post.id)">
+                      @if (post.isHidden) {
+                        <div class="post-hidden-ribbon">
+                          <i class="bi bi-eye-slash-fill"></i> Đã ẩn
+                        </div>
+                      }
+
+                      <div class="post-card-header">
+                        <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
+                        <div class="author-meta-text">
+                          <span class="author-name">{{ user.fullName || user.username }}</span>
+                          <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
+                        </div>
+                      </div>
+
+                      <div class="post-card-body">
+                        <div class="post-card-text">
+                          <h3 class="post-title">{{ post.title }}</h3>
+                          @if (post.imageUrl) {
+                            <div class="post-image-container">
+                              <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable" (click)="openImageZoom(post.imageUrl)" title="Nhấn để phóng to">
+                            </div>
+                          }
+                          <p class="post-excerpt">{{ post.bodyMarkdown?.slice(0, 180) || '' }}{{ post.bodyMarkdown?.length > 180 ? '...' : '' }}</p>
+                        </div>
+                      </div>
+
+                      <div class="post-tags">
+                        @for (tag of post.tags; track tag.id) {
+                          <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
+                        }
+                      </div>
+
+                      <div class="post-card-metrics">
+                        <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i>{{ post.upvotes || 0 }} lượt thích</span>
+                        <span class="comments-count">{{ post.commentCount || 0 }} bình luận &nbsp;•&nbsp; {{ post.viewCount || 0 }} lượt xem</span>
+                      </div>
+
+                      <div class="post-divider"></div>
+
+                      <div class="post-card-actions" (click)="$event.stopPropagation()">
+                        <button class="action-btn" (click)="goToPost(post.id)">
+                          <i class="bi bi-eye"></i><span>Xem & Kiểm duyệt</span>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+
+            <div class="sidebar-column profile-side-column">
+              <div class="sidebar-card profile-identity-card">
+                <h3>Hồ sơ thành viên</h3>
+                <div class="profile-inline-card">
+                  <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-inline-avatar" (error)="onAvatarError($event)">
+                  <div class="profile-inline-meta">
+                    <h2>{{ user.fullName || user.username || 'Người dùng' }}</h2>
+                    @if (user.username) { <span>@{{ user.username }}</span> }
+                  </div>
+                </div>
+              </div>
+
+              <div class="sidebar-card stats-card">
+                <h3>Thống kê hoạt động</h3>
+                <div class="profile-stats-list">
+                  <div class="profile-stat-item"><i class="bi bi-award-fill"></i><strong>{{ stats.totalXP }}</strong><span>XP tích lũy</span></div>
+                  <div class="profile-stat-item"><i class="bi bi-trophy-fill"></i><strong>#{{ stats.rank }}</strong><span>Xếp hạng</span></div>
+                  <div class="profile-stat-item"><i class="bi bi-patch-question-fill"></i><strong>{{ stats.totalQuizTaken }}</strong><span>Quiz đã làm</span></div>
+                  <div class="profile-stat-item"><i class="bi bi-bar-chart-fill"></i><strong>{{ (stats.avgScore * 100) | number:'1.0-0' }}%</strong><span>Điểm trung bình</span></div>
+                </div>
+              </div>
+
+              <div class="sidebar-card stats-card">
+                <h3>Thống kê lập trình</h3>
+                <div class="profile-stats-list">
+                  <div class="profile-stat-item">
+                    <i class="bi bi-check-circle-fill" style="color: #22c55e;"></i>
+                    <strong>{{ stats.totalProblemsSolved }}</strong>
+                    <span>Bài đã giải</span>
+                  </div>
+                  <div class="profile-stat-item">
+                    <i class="bi bi-code-slash" style="color: #3b82f6;"></i>
+                    <strong>{{ stats.totalProblemsAttempted }}</strong>
+                    <span>Bài đã làm</span>
+                  </div>
+                  <div class="profile-stat-item" style="grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 8px; padding: 8px 12px;">
+                    <i class="bi bi-send-fill" style="color: #eab308;"></i>
+                    <strong>{{ stats.totalSubmissions }}</strong>
+                    <span>Lượt nộp bài</span>
+                  </div>
+                </div>
+
+                @if (stats.languageStats && stats.languageStats.length > 0) {
+                  <div class="language-stats-section" style="margin-top: 16px; border-top: 1px solid var(--border-nested); padding-top: 12px; text-align: left; width: 100%;">
+                    <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">Ngôn ngữ sử dụng:</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                      @for (lang of stats.languageStats; track lang.language) {
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted-dark); border-bottom: 1px dashed var(--border-nested); padding-bottom: 4px;">
+                          <span><i class="bi bi-file-code" style="color: #a855f7; margin-right: 6px;"></i>{{ lang.language | uppercase }}</span>
+                          <strong>{{ lang.count }} lần nộp</strong>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="sidebar-card rules-card">
+                <h3><i class="bi bi-shield-check" style="color:#a855f7;margin-right:6px;"></i>Ghi chú Admin</h3>
+                <ul class="rules-list">
+                  <li><i class="bi bi-eye text-purple"></i> Bạn đang xem hồ sơ dưới quyền Admin.</li>
+                  <li><i class="bi bi-eye-slash text-purple"></i> Bài viết bị ẩn được hiển thị với viền đỏ.</li>
+                  <li><i class="bi bi-cursor-fill text-purple"></i> Nhấn vào bài viết để kiểm duyệt chi tiết.</li>
+                  <li><i class="bi bi-people-fill text-purple"></i> Quản lý tài khoản trong danh sách thành viên.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </main>
+</div>
+
+@if (zoomedImageUrl) {
+  <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">
+    <button class="lightbox-close-btn fb-close-btn" (click)="closeImageZoom()" aria-label="Đóng">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="fb-lightbox-media" (click)="$event.stopPropagation()">
+      <div class="fb-zoom-toolbar" (click)="$event.stopPropagation()">
+        <button type="button" (click)="zoomImage(-0.15, $event)" title="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
+        <input type="range" min="0.5" max="3" step="0.05" [(ngModel)]="imageZoomLevel" aria-label="Mức phóng to ảnh">
+        <button type="button" (click)="zoomImage(0.15, $event)" title="Phóng to"><i class="bi bi-zoom-in"></i></button>
+        <button type="button" (click)="resetImageZoom($event)" title="Về 100%"><i class="bi bi-arrows-fullscreen"></i></button>
+        <span>{{ imageZoomLevel * 100 | number:'1.0-0' }}%</span>
+      </div>
+      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image" [class.is-dragging]="isImageDragging" [style.transform]="imageTransform" (mousedown)="startImageDrag($event)" (touchstart)="startImageDrag($event)">
+    </div>
+
+    <aside class="fb-lightbox-side" (click)="$event.stopPropagation()">
+      @if (posts.length > 0) {
+        <div class="fb-lightbox-comments compact-fb-comments">
+          @for (post of posts; track post.id) {
+            @if (post.imageUrl) {
+              <div class="comment-node">
+                <div class="comment-layout">
+                  <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="comment-avatar" (error)="onAvatarError($event)">
+                  <div class="comment-content-cell">
+                    <div class="comment-header">
+                      <strong>{{ user.fullName || user.username }}</strong>
+                      <span>{{ formatRelativeTime(post.createdAt) }}</span>
+                    </div>
+                    <div class="comment-body-text">{{ post.title }}</div>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="fb-lightbox-comment-box">
+          <button class="btn-submit-comment" type="button" (click)="closeImageZoom()">Đóng</button>
+        </div>
+      }
+    </aside>
+  </div>
+}
+
+

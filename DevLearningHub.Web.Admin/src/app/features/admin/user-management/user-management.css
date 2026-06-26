@@ -74,6 +74,7 @@
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .xp-badge i {
@@ -459,10 +460,10 @@
 }
 
 /* ==========================================================================
-   ðŸ“± USER MANAGEMENT RESPONSIVE - BREAKPOINTS 768px & 480px
+   ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â± USER MANAGEMENT RESPONSIVE - BREAKPOINTS 768px & 480px
    ========================================================================== */
 @media (max-width: 768px) {
-  /* Sidebar áº©n, main-content full width */
+  /* Sidebar ÃƒÂ¡Ã‚ÂºÃ‚Â©n, main-content full width */
   .sidebar {
     display: none !important;
   }
@@ -798,7 +799,7 @@
   border-color: var(--color-purple);
   background: color-mix(in srgb, var(--color-purple) 7%, transparent);
 }
-.perm-checkbox-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-purple); cursor: pointer; flex-shrink: 0; }
+.perm-checkbox-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--color-purple); cursor: pointer; flex-shrink: 0; }
 .perm-checkbox-text { display: flex; flex-direction: column; min-width: 0; }
 .perm-checkbox-label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .perm-checkbox-code { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -815,4 +816,57 @@
 @media (max-width: 640px) {
   .perm-checkbox-grid { grid-template-columns: 1fr; }
   .role-radio-desc { display: none; }
+}
+
+/* === STATS MINI CARDS IN MANAGE MODAL === */
+.stats-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stat-mini-card {
+  background: var(--bg-nested, rgba(255,255,255,0.05));
+  border: 1px solid var(--border-nested, rgba(255,255,255,0.08));
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.stat-mini-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-purple, #8b5cf6);
+  line-height: 1;
+}
+
+.stat-mini-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #9ca3af);
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.lang-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.lang-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: color-mix(in srgb, var(--color-purple) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-purple) 30%, transparent);
+  color: var(--color-purple, #8b5cf6);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .stats-grid-mini { grid-template-columns: repeat(2, 1fr); }
 }

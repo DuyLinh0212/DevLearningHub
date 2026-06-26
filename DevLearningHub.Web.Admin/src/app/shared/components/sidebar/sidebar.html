@@ -17,6 +17,94 @@
     </div>
   </a>
 
+  <!-- Khối Tìm kiếm Toàn cục phía Admin -->
+  <div class="sidebar-search">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" placeholder="Tìm kiếm nhanh..." [value]="searchQuery" (input)="onSearchInput($event)">
+      @if (searchQuery) {
+        <button class="btn-clear-search" (click)="clearSearch()"><i class="bi bi-x-lg"></i></button>
+      }
+    </div>
+    
+    <!-- Dropdown Kết quả tìm kiếm toàn cục -->
+    @if (searchQuery && showSearchResults) {
+      <div class="global-search-results">
+        @if (searchLoading) {
+          <div class="search-loading">
+            <i class="bi bi-arrow-repeat spin-animation" style="display: inline-block;"></i> Đang tìm kiếm...
+          </div>
+        } @else if (matchedPages.length > 0 || matchedProblems.length > 0 || matchedQuizzes.length > 0 || matchedUsers.length > 0) {
+          <!-- Phân mục: Chức năng -->
+          @if (matchedPages.length > 0) {
+            <div class="search-category">
+              <div class="category-header">Chức năng</div>
+              @for (page of matchedPages; track page.path) {
+                <a [routerLink]="page.path" class="search-result-item" (click)="clearSearch()">
+                  <i [class]="page.icon" style="color: #a855f7;"></i>
+                  <span>{{ page.name }}</span>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- Phân mục: Bài tập code -->
+          @if (matchedProblems.length > 0) {
+            <div class="search-category">
+              <div class="category-header">Bài tập code</div>
+              @for (prob of matchedProblems; track prob.id) {
+                <a [routerLink]="['/admin/problems']" class="search-result-item" (click)="clearSearch()">
+                  <i class="bi bi-cpu-fill" style="color: #3b82f6;"></i>
+                  <div class="result-meta">
+                    <span class="result-title">{{ prob.title }}</span>
+                    <span class="result-desc">Độ khó: {{ prob.difficulty }}</span>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- Phân mục: Đề thi -->
+          @if (matchedQuizzes.length > 0) {
+            <div class="search-category">
+              <div class="category-header">Đề thi</div>
+              @for (quiz of matchedQuizzes; track quiz.id) {
+                <a [routerLink]="['/admin/quiz']" class="search-result-item" (click)="clearSearch()">
+                  <i class="bi bi-database-fill" style="color: #22c55e;"></i>
+                  <div class="result-meta">
+                    <span class="result-title">{{ quiz.title }}</span>
+                    <span class="result-desc">{{ quiz.description || 'Không có mô tả' }}</span>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- Phân mục: Người dùng -->
+          @if (matchedUsers.length > 0) {
+            <div class="search-category">
+              <div class="category-header">Người dùng</div>
+              @for (user of matchedUsers; track user.id) {
+                <a [routerLink]="['/admin/users']" class="search-result-item" (click)="clearSearch()">
+                  <i class="bi bi-person-fill" style="color: #f59e0b;"></i>
+                  <div class="result-meta">
+                    <span class="result-title">{{ user.fullName || user.username }}</span>
+                    <span class="result-desc">{{ user.email }}</span>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        } @else {
+          <div class="no-search-results">
+            <i class="bi bi-exclamation-circle"></i>
+            <div>Không tìm thấy kết quả phù hợp</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   <nav class="sidebar-menu">
     <div class="menu-heading">ĐIỀU PHỐI</div>
     <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
@@ -24,6 +112,9 @@
     </a>
     <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
       <i class="bi bi-database-fill"></i> Quản lý Đề thi
+    </a>
+    <a routerLink="/admin/problems" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-cpu-fill"></i> Quản lý Bài tập
     </a>
     <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
       <i class="bi bi-bezier2"></i> Quản lý Lộ trình
@@ -40,17 +131,12 @@
       <i class="bi bi-newspaper"></i> Quản lý Bài viết
     </a>
 
-    <div class="menu-heading">HẠ TẦNG KỸ THUẬT</div>
-    <a routerLink="/admin/problems" routerLinkActive="active" class="menu-item">
-      <i class="bi bi-cpu-fill"></i> Quản lý Bài tập
-    </a>
-    <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
-      <i class="bi bi-terminal-fill"></i> Logs hệ thống
-    </a>
-
     <div class="menu-heading">HỆ THỐNG</div>
     <a routerLink="/admin/users" routerLinkActive="active" class="menu-item">
       <i class="bi bi-people-fill"></i> Quản lý Người dùng
+    </a>
+    <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-terminal-fill"></i> Logs hệ thống
     </a>
     <a routerLink="/settings" routerLinkActive="active" class="menu-item"><i class="bi bi-gear"></i> Cài đặt</a>
     <a (click)="themeService.toggleTheme()" class="menu-item theme-toggle-btn" style="cursor: pointer;">

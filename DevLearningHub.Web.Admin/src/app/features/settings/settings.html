@@ -40,53 +40,53 @@
           </div>
 
           <div class="settings-menu-card">
-            <button type="button" class="settings-tab-btn active"><i class="bi bi-person-circle"></i> Hồ sơ</button>
-            <button type="button" class="settings-tab-btn"><i class="bi bi-shield-lock"></i> Bảo mật</button>
-            <button type="button" class="settings-tab-btn"><i class="bi bi-bell"></i> Thông báo</button>
-            <button type="button" class="settings-tab-btn"><i class="bi bi-palette"></i> Giao diện</button>
-            <button type="button" class="settings-tab-btn"><i class="bi bi-shield-shaded"></i> Riêng tư</button>
+            <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'"><i class="bi bi-person-circle"></i> Hồ sơ</button>
           </div>
         </div>
 
         <!-- CỘT PHẢI: NỘI DUNG THIẾT LẬP -->
         <div class="settings-content">
-          <div class="settings-main-card">
-            <div class="card-header">
-              <h3>Thông tin hồ sơ cá nhân</h3>
-              <p>Thông tin này hiển thị trên danh mục tài khoản phân quyền quản trị hệ thống DevLearningHub.</p>
+          @if (activeTab === 'profile') {
+            <div class="settings-main-card">
+              <div class="card-header">
+                <h3>Thông tin hồ sơ cá nhân</h3>
+                <p>Thông tin này hiển thị trên danh mục tài khoản phân quyền quản trị hệ thống DevLearningHub.</p>
+              </div>
+
+              <form (ngSubmit)="saveChanges()" #settingsForm="ngForm" class="form-column">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Tên của bạn</label>
+                    <input type="text" name="firstName" [(ngModel)]="firstName" required class="admin-input-field">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Họ và tên đệm</label>
+                    <input type="text" name="lastName" [(ngModel)]="lastName" required class="admin-input-field">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Địa chỉ Email liên hệ</label>
+                    <input type="email" name="email" [(ngModel)]="email" disabled class="disabled-input">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Loại tài khoản</label>
+                    <input type="text" name="role" [(ngModel)]="role" disabled class="disabled-input">
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-submit-save" [disabled]="isSaving || isUploadingAvatar || !settingsForm.form.valid">
+                    <i class="bi bi-check-circle-fill"></i>
+                    {{ isSaving ? 'ĐANG LƯU HỒ SƠ...' : 'CẬP NHẬT HỒ SƠ' }}
+                  </button>
+                </div>
+              </form>
             </div>
+          }
 
-            <form (ngSubmit)="saveChanges()" #settingsForm="ngForm" class="form-column">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Tên của bạn</label>
-                  <input type="text" name="firstName" [(ngModel)]="firstName" required class="admin-input-field">
-                </div>
 
-                <div class="form-group">
-                  <label>Họ và tên đệm</label>
-                  <input type="text" name="lastName" [(ngModel)]="lastName" required class="admin-input-field">
-                </div>
-
-                <div class="form-group">
-                  <label>Địa chỉ Email liên hệ</label>
-                  <input type="email" name="email" [(ngModel)]="email" disabled class="disabled-input">
-                </div>
-
-                <div class="form-group">
-                  <label>Loại tài khoản</label>
-                  <input type="text" name="role" [(ngModel)]="role" disabled class="disabled-input">
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" class="btn-submit-save" [disabled]="isSaving || isUploadingAvatar || !settingsForm.form.valid">
-                  <i class="bi bi-check-circle-fill"></i>
-                  {{ isSaving ? 'ĐANG LƯU HỒ SƠ...' : 'CẬP NHẬT HỒ SƠ' }}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     </div>

@@ -105,6 +105,30 @@
       <h3><i class="bi bi-file-earmark-code-fill" style="color:var(--color-purple);margin-right:8px;"></i>{{ isEditing ? 'Cập nhật bài tập' : 'Tạo bài tập mới' }}</h3>
 
       <div class="admin-modal-form-body" style="margin-top: 16px; max-height: 62vh; overflow-y: auto; padding-right: 8px;">
+        <!-- Nhập nhanh từ Thư Viện Bài Tập Mẫu (12+ Thuật toán) -->
+        <div class="problem-library-section" style="border: 1px dashed var(--color-purple); padding: 14px; border-radius: 12px; background: rgba(168, 85, 247, 0.03); margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <span style="font-weight: 700; color: var(--color-purple); font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-journal-code"></i> Nhập nhanh từ Thư viện bài tập mẫu (12+ thuật toán)
+            </span>
+            <select (change)="onSelectLibraryProblem($event)" class="admin-top-select" style="min-width: 320px; font-weight: 600; border-color: var(--color-purple); height: 38px; padding: 6px 12px; border-radius: 8px;">
+              <option value="">-- Chọn bài tập mẫu để điền nhanh --</option>
+              <option value="fibonacci">1. Tìm số Fibonacci thứ n (Dễ)</option>
+              <option value="isPrime">2. Kiểm tra số nguyên tố (Dễ)</option>
+              <option value="twoSum">3. Tổng hai số - Two Sum (Dễ)</option>
+              <option value="reverseString">4. Đảo ngược chuỗi (Dễ)</option>
+              <option value="palindrome">5. Kiểm tra chuỗi đối xứng (Dễ)</option>
+              <option value="factorial">6. Tính giai thừa của n (Dễ)</option>
+              <option value="fizzBuzz">7. Trò chơi FizzBuzz (Dễ)</option>
+              <option value="findMaxMin">8. Tìm Max/Min trong mảng (Dễ)</option>
+              <option value="binarySearch">9. Tìm kiếm nhị phân (Trung bình)</option>
+              <option value="bubbleSort">10. Sắp xếp mảng tăng dần (Trung bình)</option>
+              <option value="gcdLcm">11. Tìm UCLN và BCNN (Trung bình)</option>
+              <option value="validParentheses">12. Kiểm tra dãy ngoặc hợp lệ (Trung bình)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="input-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div class="input-field-group">
             <label>Tên bài tập <span class="text-danger">*</span></label>

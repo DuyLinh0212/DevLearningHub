@@ -1,0 +1,500 @@
+/* --- USER PROFILE (locked to forum rhythm) --- */
+@import '../../dashboard/dashboard.css';
+
+.content-header {padding: 12px 24px;margin-bottom: 0;}.top-breadcrumb {color: var(--text-muted-dark);font-size: 0.88rem;display: flex;align-items: center;gap: 4px;}.top-breadcrumb a {color: var(--text-muted-dark);text-decoration: none;}.top-breadcrumb a:hover {color: #c084fc;}.back-btn {background: transparent;border: none;color: var(--text-muted-dark);font-size: 0.88rem;padding: 0;cursor: pointer;display: flex;align-items: center;gap: 4px;transition: color 0.2s ease;}.back-btn:hover {color: #c084fc;}.profile-welcome {margin: 0 0 20px 0;padding: 22px 24px;border-radius: var(--radius-lg, 12px);background: var(--bg-card);border: 1px solid var(--bg-card-border);box-shadow: var(--shadow-soft);}.profile-welcome h1 {font-family: 'Anton', sans-serif;font-size: 2rem;font-weight: 400;color: #b56cff;margin: 0;line-height: 1;letter-spacing: 0.5px;}.profile-welcome p {color: var(--text-muted);font-size: 0.95rem;margin: 10px 0 0;line-height: 1.55;}.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-main-column,
+.profile-side-column {
+  min-width: 0;
+}
+
+/* Profile-specific sidebar spacing */
+.sidebar-card {
+  margin-bottom: 16px;
+}
+
+.sidebar-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: var(--text-main);
+}
+
+.profile-inline-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-inline-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(168, 85, 247, 0.4);
+}
+
+.profile-inline-meta h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.profile-inline-meta span {
+  color: var(--text-muted-dark);
+  font-size: 0.8rem;
+}
+
+.profile-stats-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.profile-stat-item {
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid var(--bg-card-border);
+  border-radius: 10px;
+  background: var(--bg-nested);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.profile-stat-item i { font-size: 0.95rem; color: #a855f7; }
+.profile-stat-item strong { font-size: 0.95rem; color: var(--text-main); }
+.profile-stat-item span { font-size: 0.7rem; color: var(--text-muted); }
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   PROFILE CARD - FACEBOOK/LEETCODE STYLE
+   ========================================================================== */
+.profile-card-container {
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-header-bg {
+  height: 140px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  position: relative;
+}
+
+.profile-content {
+  padding: 0 24px 24px 24px;
+  position: relative;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(168, 85, 247, 0.4);
+  object-fit: cover;
+  margin-top: -60px;
+  margin-bottom: 16px;
+}
+
+.profile-info {
+  margin-top: 0;
+}
+
+.profile-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.profile-username {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.profile-bio {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 0 0;
+  line-height: 1.5;
+}
+
+.profile-posts-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 20px 0;
+  padding: 0 12px;
+}
+
+@media (max-width: 992px) {
+  .profile-layout { grid-template-columns: 1fr; gap: 16px; }
+  .profile-side-column { order: -1; }
+  .profile-avatar { width: 100px; height: 100px; margin-top: -50px; }
+}
+
+@media (max-width: 768px) {
+  .profile-card { border-radius: 12px; }
+  .profile-header-bg { height: 120px; }
+  .profile-avatar { width: 90px; height: 90px; margin-top: -45px; }
+  .profile-name { font-size: 1.4rem; }
+  .profile-content { padding: 0 16px 16px 16px; }
+  .section-title { font-size: 1.1rem; }
+}
+
+@media (max-width: 480px) {
+  .profile-header-bg { height: 100px; }
+  .profile-avatar { width: 80px; height: 80px; margin-top: -40px; margin-bottom: 12px; }
+  .profile-name { font-size: 1.2rem; }
+  .profile-content { padding: 0 12px 12px 12px; }
+}
+
+
+/* ========================================================================== 
+   ADMIN PROFILE ONLY - keep user/forum rhythm, add admin controls lightly
+   ========================================================================== */
+.admin-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.admin-view-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.btn-sm-act {
+  background: transparent;
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-sm-act:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.post-hidden-card {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: rgba(239, 68, 68, 0.03) !important;
+  position: relative;
+}
+
+.post-hidden-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+/* forum-shared equivalent: post cards/sidebar must match user forum exactly */
+.social-post-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg, 12px);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  padding: var(--padding-lg, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.social-post-card:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: var(--shadow-hover-purple);
+}
+
+.post-card-header { display: flex; align-items: center; gap: 12px; position: relative; }
+.post-card-header .author-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(168, 85, 247, 0.4); }
+.post-card-header .author-meta-text { display: flex; flex-direction: column; gap: 2px; }
+.post-card-header .author-name { color: var(--text-main); font-weight: 700; font-size: 0.95rem; }
+.post-card-header .post-date { color: var(--text-muted-dark); font-size: 0.78rem; font-weight: 500; }
+.post-card-body { display: flex; flex-direction: column; gap: 12px; }
+.post-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1.4; word-wrap: break-word; transition: color 0.2s ease; }
+.social-post-card:hover .post-title { color: #c084fc; }
+.post-excerpt { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+.post-image-container { width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 8px; margin-bottom: 12px; }
+.post-detail-image { max-width: 100%; height: auto; max-height: 400px; object-fit: contain; border-radius: 8px; border: 1px solid var(--bg-card-border); background-color: var(--bg-nested, #18181b); padding: 6px; display: block; }
+.post-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.post-tag-badge { background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.15); font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; transition: all 0.2s ease; }
+.post-card-metrics { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted-dark); padding: 0 4px; }
+.post-divider { height: 1px; background-color: var(--bg-card-border); }
+.post-card-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.action-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; padding: 8px 4px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; }
+.action-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
+.sidebar-card { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg, 12px); padding: var(--padding-lg, 24px); margin-bottom: 16px; }
+.rules-list { list-style: none; padding: 0; margin: 12px 0 0 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); }
+.rules-list li { display: flex; align-items: flex-start; gap: 10px; }
+.text-purple { color: #c084fc; }
+
+/* Image viewer: Facebook-style zoom lightbox */
+.post-image-zoomable {
+  cursor: zoom-in;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-image-zoomable:hover {
+  transform: scale(1.01);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.image-lightbox-overlay.fb-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) 420px;
+  background: rgba(8, 10, 18, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.fb-lightbox-media {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  touch-action: none;
+}
+
+.lightbox-image.fb-lightbox-image {
+  max-width: min(100%, 1000px);
+  max-height: calc(100vh - 48px);
+  object-fit: contain;
+  border-radius: 12px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.15s ease;
+  transform-origin: center center;
+}
+
+.lightbox-image.fb-lightbox-image.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.lightbox-close-btn.fb-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(17, 24, 39, 0.88);
+  color: #fff;
+}
+
+.fb-lightbox-side {
+  background: rgba(12, 15, 22, 0.96);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.fb-zoom-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.82);
+  color: #fff;
+  opacity: 0.9;
+}
+
+.fb-zoom-toolbar button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.fb-zoom-toolbar input[type="range"] {
+  width: 120px;
+}
+
+.fb-lightbox-comments.compact-fb-comments {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.compact-fb-comments .comment-node {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  margin-bottom: 10px;
+}
+
+.compact-fb-comments .comment-layout {
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+.compact-fb-comments .comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.compact-fb-comments .comment-content-cell {
+  background: var(--bg-nested, #f3f4f6);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 16px;
+  padding: 9px 12px;
+}
+
+.compact-fb-comments .comment-header {
+  margin-bottom: 4px;
+}
+
+.compact-fb-comments .comment-body-text {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.fb-lightbox-comment-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.fb-lightbox-comment-box .btn-submit-comment {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 992px) {
+  .image-lightbox-overlay.fb-lightbox {
+    grid-template-columns: 1fr;
+  }
+
+  .fb-lightbox-side {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    max-height: 40vh;
+  }
+}
+
+@media (max-width: 576px) {
+  .fb-zoom-toolbar {
+    left: 12px;
+    top: 12px;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .fb-zoom-toolbar input[type="range"] {
+    width: 84px;
+  }
+
+  .lightbox-image.fb-lightbox-image {
+    max-width: 100%;
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* --- ROLE BADGES --- */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.role-badge.role-admin {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.role-badge.role-moderator {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.role-badge.role-user {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+

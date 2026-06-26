@@ -11,6 +11,12 @@
       <span class="diff-badge-header" [ngClass]="getDifficultyClass(problem?.difficulty || '')">
         {{ getDifficultyLabel(problem?.difficulty || '') }}
       </span>
+      <span class="dcc-badge-header" title="Daily Coding Challenge">
+        <i class="bi bi-calendar2-check-fill text-warning"></i> DCC
+      </span>
+      <span class="streak-flame-header" title="Chuỗi liên tục ngày lập trình">
+        <i class="bi bi-fire text-orange"></i> {{ streakCount }}
+      </span>
     </div>
 
     <div class="header-actions">
@@ -42,6 +48,18 @@
             <i class="bi bi-file-text-fill"></i> Description
           </button>
           <button 
+            [class.active]="activeLeftTab === 'editorial'" 
+            (click)="activeLeftTab = 'editorial'; showSubmissionDetail = false"
+          >
+            <i class="bi bi-journal-text"></i> Editorial
+          </button>
+          <button 
+            [class.active]="activeLeftTab === 'solutions'" 
+            (click)="activeLeftTab = 'solutions'; showSubmissionDetail = false"
+          >
+            <i class="bi bi-chat-left-text-fill"></i> Solutions
+          </button>
+          <button 
             [class.active]="activeLeftTab === 'submissions'" 
             (click)="activeLeftTab = 'submissions'; showSubmissionDetail = false"
           >
@@ -53,17 +71,37 @@
           <!-- Description View -->
           @if (activeLeftTab === 'description' && !showSubmissionDetail) {
             <div class="description-view">
-              <h2>{{ problem?.title }}</h2>
+              <div class="title-rating-row">
+                <h2>{{ problem?.title }}</h2>
+                <div class="rating-buttons">
+                  <button class="btn-rate" [class.active]="isLiked" (click)="toggleLike()" title="Thích bài tập này">
+                    <i class="bi" [class.bi-hand-thumbs-up-fill]="isLiked" [class.bi-hand-thumbs-up]="!isLiked"></i>
+                    <span>{{ likes }}</span>
+                  </button>
+                  <button class="btn-rate" [class.active]="isDisliked" (click)="toggleDislike()" title="Không thích bài tập này">
+                    <i class="bi" [class.bi-hand-thumbs-down-fill]="isDisliked" [class.bi-hand-thumbs-down]="!isDisliked"></i>
+                    <span>{{ dislikes }}</span>
+                  </button>
+                </div>
+              </div>
               <div class="desc-meta-row">
                 <span class="diff-badge" [ngClass]="getDifficultyClass(problem?.difficulty || '')">
                   {{ getDifficultyLabel(problem?.difficulty || '') }}
                 </span>
-                <span class="meta-tag"><i class="bi bi-tags-fill"></i> Tags</span>
-                <span class="meta-tag"><i class="bi bi-lightning-charge-fill"></i> Solved</span>
+                
+                @for (tag of problem?.tags; track tag) {
+                  <span class="meta-tag"><i class="bi bi-tag-fill text-primary"></i> {{ tag }}</span>
+                }
+
+                @if (isSolved) {
+                  <span class="meta-tag" style="color: #2cbb5d; background: rgba(44, 187, 93, 0.1);"><i class="bi bi-check-circle-fill"></i> Solved</span>
+                } @else {
+                  <span class="meta-tag" style="color: var(--text-muted); background: var(--bg-nested);"><i class="bi bi-circle"></i> Unsolved</span>
+                }
               </div>
 
-              <!-- Problem description content (Markdown format) -->
-              <div class="markdown-content" [innerHTML]="problem?.description"></div>
+              <!-- Problem description content (Markdown rendered) -->
+              <div class="markdown-content" [innerHTML]="parsedDescription"></div>
 
               <!-- Sample Test Cases -->
               @if (problem?.sampleTestCases && problem!.sampleTestCases.length > 0) {
@@ -79,6 +117,149 @@
                   }
                 </div>
               }
+              <!-- Seen this question before feedback -->
+              <div class="seen-interview-section">
+                <p class="seen-text">Seen this question in a real interview before?</p>
+                @if (!feedbackVoted) {
+                  <div class="seen-btn-group">
+                    <button class="btn-seen btn-seen-yes" (click)="voteFeedback('yes')">Yes</button>
+                    <button class="btn-seen btn-seen-no" (click)="voteFeedback('no')">No</button>
+                  </div>
+                } @else {
+                  <div class="feedback-poll-results">
+                    <span class="poll-result-badge yes-badge" [class.selected-vote]="feedbackSelection === 'yes'">
+                      <i class="bi bi-hand-thumbs-up-fill"></i> Yes ({{ feedbackYesPercent }}%)
+                    </span>
+                    <span class="poll-result-badge no-badge" [class.selected-vote]="feedbackSelection === 'no'">
+                      <i class="bi bi-hand-thumbs-down-fill"></i> No ({{ feedbackNoPercent }}%)
+                    </span>
+                    <span class="poll-voted-thankyou">Thank you!</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Accepted / Submissions Statistics -->
+              <div class="leetcode-stats-row">
+                <div class="stat-item-box">
+                  <span class="stat-label">Accepted</span>
+                  <span class="stat-value">{{ acceptedStr }}</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item-box">
+                  <span class="stat-label">Submissions</span>
+                  <span class="stat-value">{{ totalSubsStr }}</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item-box">
+                  <span class="stat-label">Acceptance Rate</span>
+                  <span class="stat-value">{{ acceptanceRate }}</span>
+                </div>
+              </div>
+
+              <!-- Collapsible Accordion Sections -->
+              <div class="accordion-group">
+                <!-- Topics Section -->
+                <div class="accordion-item" [class.open]="showTopics">
+                  <button class="accordion-header" (click)="toggleAccordion('topics')">
+                    <span><i class="bi bi-tags-fill text-muted"></i> Topics</span>
+                    <i class="bi bi-chevron-right arrow-icon"></i>
+                  </button>
+                  @if (showTopics) {
+                    <div class="accordion-content">
+                      <div class="topics-pills-row">
+                        @for (tag of problem?.tags; track tag) {
+                          <span class="topic-pill-badge">{{ tag }}</span>
+                        } @empty {
+                          <span class="text-muted" style="font-size: 0.82rem;">Không có tags thuật toán.</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Companies Section -->
+                <div class="accordion-item" [class.open]="showCompanies">
+                  <button class="accordion-header" (click)="toggleAccordion('companies')">
+                    <span><i class="bi bi-building-fill text-muted"></i> Companies</span>
+                    <i class="bi bi-chevron-right arrow-icon"></i>
+                  </button>
+                  @if (showCompanies) {
+                    <div class="accordion-content">
+                      <div class="companies-pills-row">
+                        @for (comp of companies; track comp) {
+                          <span class="company-lock-badge">
+                            {{ comp }} <i class="bi bi-lock-fill text-warning lock-icon"></i>
+                          </span>
+                        }
+                        <span class="premium-notice">
+                          <i class="bi bi-exclamation-triangle-fill text-warning"></i> Access all company info with our Premium subscription!
+                        </span>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Hints Section -->
+                @if (hints && hints.length > 0) {
+                  @for (hint of hints; track hint; let idx = $index) {
+                    <div class="accordion-item" [class.open]="activeHintIndex === idx">
+                      <button class="accordion-header" (click)="toggleHint(idx)">
+                        <span><i class="bi bi-lightbulb-fill text-warning"></i> Hint {{ idx + 1 }}</span>
+                        <i class="bi bi-chevron-right arrow-icon"></i>
+                      </button>
+                      @if (activeHintIndex === idx) {
+                        <div class="accordion-content hint-content-box">
+                          <p>{{ hint }}</p>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+
+                <!-- Discussion Quicklink -->
+                <div class="accordion-item discussion-link-item">
+                  @if (discussionPostId) {
+                    <a [routerLink]="['/forum/post', discussionPostId]" class="accordion-header-link">
+                      <span><i class="bi bi-chat-dots-fill text-primary"></i> Discussion ({{ discussionCount }})</span>
+                      <i class="bi bi-box-arrow-up-right link-icon"></i>
+                    </a>
+                  } @else {
+                    <a routerLink="/forum" [queryParams]="{ search: problem?.title }" class="accordion-header-link">
+                      <span><i class="bi bi-chat-dots-fill text-primary"></i> Discussion ({{ discussionCount }})</span>
+                      <i class="bi bi-box-arrow-up-right link-icon"></i>
+                    </a>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Editorial View -->
+          @if (activeLeftTab === 'editorial' && !showSubmissionDetail) {
+            <div class="editorial-view" style="animation: fadeIn 0.2s ease-out;">
+              <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; color: var(--text-main);">Lời giải từ Biên tập viên (Editorial)</h3>
+              <div class="markdown-content" [innerHTML]="parsedEditorial"></div>
+            </div>
+          }
+
+          <!-- Solutions View -->
+          @if (activeLeftTab === 'solutions' && !showSubmissionDetail) {
+            <div class="solutions-view" style="animation: fadeIn 0.2s ease-out;">
+              <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; color: var(--text-main);">Giải thuật từ Cộng đồng</h3>
+              <div class="markdown-content" [innerHTML]="parsedSolutions"></div>
+              
+              <div class="solutions-forum-callout">
+                <p>Muốn chia sẻ giải pháp của riêng bạn hoặc trao đổi trực tiếp với cộng đồng?</p>
+                @if (discussionPostId) {
+                  <a [routerLink]="['/forum/post', discussionPostId]" class="btn-back-to-subs forum-link-btn">
+                    <i class="bi bi-chat-left-text-fill"></i> Thảo luận / Xem bài đăng giải pháp của bài tập
+                  </a>
+                } @else {
+                  <a routerLink="/forum" [queryParams]="{ search: problem?.title }" class="btn-back-to-subs forum-link-btn">
+                    <i class="bi bi-chat-left-text-fill"></i> Thảo luận / Đăng giải pháp trên Diễn đàn
+                  </a>
+                }
+              </div>
             </div>
           }
 
@@ -207,6 +388,12 @@
                   <option [ngValue]="lang">{{ lang.name }}</option>
                 }
               </select>
+            </div>
+            
+            <!-- Auto save indicators -->
+            <div class="editor-sync-status">
+              <span class="status-saved"><i class="bi bi-cloud-check-fill"></i> Saved</span>
+              <span class="badge-auto">Auto</span>
             </div>
           </div>
 

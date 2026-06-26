@@ -62,6 +62,7 @@ export class DashboardComponent implements OnInit {
             this.leaderboard = rawLeaderboard.map((u: any, idx: number) => ({
               rank: u.rank ?? (idx + 1),
               name: u.fullName || u.username || 'Học viên',
+              username: u.username || 'member',
               avatar: u.avatarUrl || 'assets/images/default-avatar.svg',
               xp: u.xp ?? u.xpPoints ?? 0
             }));
@@ -152,12 +153,15 @@ export class DashboardComponent implements OnInit {
       const savedProgress = this.quizService.getQuizProgress(q.id);
       // Nếu đã làm bài nhưng chưa có tiến độ cụ thể → dùng 100% (đã hoàn thành toàn bộ)
       const displayProgress = realAttempts > 0 && savedProgress === 0 ? 100 : savedProgress;
+      const hasAttempted = realAttempts > 0;
       return {
         id: q.id,
         title: q.title,
         questions: q.questionCount || q.questionsCount || 0,
         attempts: realAttempts,
-        progress: displayProgress
+        progress: displayProgress,
+        duration: q.duration || 15,
+        btnText: hasAttempted ? 'Tiếp tục' : 'Làm ngay'
       };
     });
 

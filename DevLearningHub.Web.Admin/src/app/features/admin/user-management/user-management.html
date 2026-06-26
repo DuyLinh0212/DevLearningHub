@@ -153,22 +153,22 @@
       <div class="admin-modal-form-body" style="margin-top: 16px;">
         <div class="input-field-group">
           <label>Tên đăng nhập (Username)</label>
-          <input type="text" [(ngModel)]="createForm.username" placeholder="Ví dụ: linhhuit, ngoc_admin">
+          <input type="text" [(ngModel)]="createForm.username" placeholder="Ví dụ: linhhuit, ngoc_admin" autocomplete="off">
         </div>
 
         <div class="input-field-group" style="margin-top: 12px;">
           <label>Email tài khoản</label>
-          <input type="email" [(ngModel)]="createForm.email" placeholder="Ví dụ: linhhuit@gmail.com">
+          <input type="email" [(ngModel)]="createForm.email" placeholder="Ví dụ: linhhuit@gmail.com" autocomplete="off">
         </div>
 
         <div class="input-field-group" style="margin-top: 12px;">
           <label>Họ và tên</label>
-          <input type="text" [(ngModel)]="createForm.fullName" placeholder="Ví dụ: Nguyễn Văn A">
+          <input type="text" [(ngModel)]="createForm.fullName" placeholder="Ví dụ: Nguyễn Văn A" autocomplete="off">
         </div>
 
         <div class="input-field-group" style="margin-top: 12px;">
           <label>Mật khẩu ban đầu</label>
-          <input type="password" [(ngModel)]="createForm.password" placeholder="Nhập mật khẩu ít nhất 6 ký tự">
+          <input type="password" [(ngModel)]="createForm.password" placeholder="Nhập mật khẩu ít nhất 6 ký tự" autocomplete="new-password">
         </div>
 
         <div class="input-field-group" style="margin-top: 12px;">
@@ -213,6 +213,40 @@
               }
             </div>
           </section>
+
+          <!-- Coding Stats -->
+          @if (manageStats) {
+          <section class="manage-section">
+            <div class="manage-section-title"><i class="bi bi-bar-chart-fill" style="margin-right:6px;color:var(--color-purple);"></i>Thống kê lập trình</div>
+            <div class="stats-grid-mini">
+              <div class="stat-mini-card">
+                <div class="stat-mini-value">{{ manageStats.totalProblemsSolved ?? 0 }}</div>
+                <div class="stat-mini-label">Bài đã giải</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="stat-mini-value">{{ manageStats.totalProblemsAttempted ?? 0 }}</div>
+                <div class="stat-mini-label">Bài đã thử</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="stat-mini-value">{{ manageStats.totalSubmissions ?? 0 }}</div>
+                <div class="stat-mini-label">Lần nộp bài</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="stat-mini-value">{{ manageStats.totalXP ?? manageUser?.xpPoints ?? 0 }}</div>
+                <div class="stat-mini-label">Điểm XP</div>
+              </div>
+            </div>
+            @if (manageStats.languageStats && manageStats.languageStats.length > 0) {
+              <div class="lang-stats-row">
+                @for (lang of manageStats.languageStats; track lang.language) {
+                  <span class="lang-stat-badge">
+                    <i class="bi bi-code-slash"></i> {{ lang.language }}: <strong>{{ lang.solved }}</strong>
+                  </span>
+                }
+              </div>
+            }
+          </section>
+          }
 
           <!-- Role -->
           <section class="manage-section">

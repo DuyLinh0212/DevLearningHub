@@ -251,10 +251,11 @@
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
+  min-width: 850px;
 }
 
 .problems-table th {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-nested);
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -276,12 +277,12 @@
 }
 
 .problems-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--bg-nested);
 }
 
 /* Row states */
 .solved-row td {
-  background: rgba(34, 197, 94, 0.01);
+  background: rgba(34, 197, 94, 0.02);
 }
 
 /* Status cell */
@@ -299,7 +300,8 @@
 }
 
 .text-muted-dark {
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--text-muted-dark);
+  opacity: 0.5;
 }
 
 /* Title cell */
@@ -310,7 +312,7 @@
 .problem-link {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-main);
   text-decoration: none;
   transition: color 0.15s;
 }
@@ -329,11 +331,11 @@
 .tag-pill {
   font-size: 0.68rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-nested);
   color: var(--text-muted);
   padding: 2px 8px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-nested);
 }
 
 /* Topic cell */
@@ -344,9 +346,9 @@
 .topic-badge {
   font-size: 0.78rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(168, 85, 247, 0.08);
-  border: 1px solid rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
   padding: 4px 10px;
   border-radius: 6px;
   white-space: nowrap;
@@ -408,9 +410,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-nested);
+  color: var(--text-main);
+  border: 1px solid var(--border-nested);
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 0.8rem;
@@ -424,6 +426,7 @@
 .btn-solve:hover {
   background: linear-gradient(135deg, #a855f7, #6366f1);
   border-color: transparent;
+  color: #fff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
 }
@@ -460,7 +463,7 @@
 }
 
 .empty-state h3 {
-  color: #fff;
+  color: var(--text-main);
   margin: 0 0 8px 0;
   font-size: 1.2rem;
 }
@@ -484,4 +487,33 @@
 
 .btn-clear-filters:hover {
   background: #9333ea;
+}
+
+/* Controls Actions */
+.controls-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-create-problem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 11px 20px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+  white-space: nowrap;
+}
+
+.btn-create-problem:hover {
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+  transform: translateY(-1px);
+  color: #fff;
 }

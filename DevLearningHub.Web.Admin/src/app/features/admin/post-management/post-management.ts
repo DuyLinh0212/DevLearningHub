@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -316,7 +316,7 @@ export class PostManagementComponent implements OnInit {
 
   goToUserProfile(userId: string) {
     if (userId) {
-      window.open(`/user/${userId}`, '_blank');
+      this.router.navigate(['/admin/users', userId], { queryParams: { returnUrl: this.router.url } });
     }
   }
 

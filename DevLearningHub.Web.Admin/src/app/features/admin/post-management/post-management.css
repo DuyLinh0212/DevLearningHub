@@ -195,12 +195,14 @@
   background: var(--bg-card);
   border: 1px solid var(--bg-card-border);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .post-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 900px;
 }
 
 .post-table thead th {

@@ -1,8 +1,7 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { QuizService } from '../../../core/services/quiz.service';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
@@ -13,73 +12,33 @@ import { MobileMenuService } from '../../../core/services/mobile-menu.service';
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
-export class AdminDashboardComponent implements OnInit, OnDestroy {
-  private quizService = inject(QuizService);
+export class AdminDashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   public mobileMenu = inject(MobileMenuService);
 
-  activeTab: string = 'dashboard';
-  searchText: string = '';
-  selectedLogLevel: string = 'ALL';
-  isRebooting: boolean = false;
-  isQuickModModalOpen: boolean = false;
-  private intervalId: any;
-
   statsData = {
     users: 0,
-    submissions: 0,
-    nodes: 3,
-    health: 100
+    problems: 0,
+    quizSets: 0,
+    topics: 0
   };
 
-  moderationQueue: any[] = [];
-  usersList: any[] = [];
-  systemLogs: any[] = [];
-
-  systemMetrics = [
-    { name: 'Sandbox Engine Node 1', load: 0 },
-    { name: 'Sandbox Engine Node 2', load: 0 },
-    { name: 'Database Cluster Node', load: 0 }
-  ];
-
-  techLeads: any[] = [];
-
-  ojConfig = {
-    timeout: 2000,
-    memoryLimit: 256,
-    forbiddenImports: 'System.IO, os, subprocess, child_process',
-    parallelCompile: true
-  };
+  recentUsers: any[] = [];
+  recentLogs: any[] = [];
+  hasLogsError = false;
 
   get adminStats() {
     return [
       { title: 'Tổng số thành viên', value: this.statsData.users.toLocaleString(), icon: 'bi-people-fill', color: 'purple' },
-      { title: 'Lượt nộp bài chấm', value: this.statsData.submissions.toLocaleString(), icon: 'bi-code-square', color: 'blue' },
-      { title: 'Cụm Node hoạt động', value: `${this.statsData.nodes} / 3`, icon: 'bi-cpu-fill', color: 'green' },
-      { title: 'Trạng thái hạ tầng', value: `${this.statsData.health}%`, icon: 'bi-heart-pulse-fill', color: 'orange' }
+      { title: 'Tổng số bài tập', value: this.statsData.problems.toLocaleString(), icon: 'bi-cpu-fill', color: 'blue' },
+      { title: 'Tổng số đề thi', value: this.statsData.quizSets.toLocaleString(), icon: 'bi-database-fill', color: 'green' },
+      { title: 'Tổng số chủ đề', value: this.statsData.topics.toLocaleString(), icon: 'bi-tags-fill', color: 'orange' }
     ];
-  }
-
-  get filteredQueue() {
-    if (!this.searchText.trim()) return this.moderationQueue;
-    return this.moderationQueue.filter(task =>
-      (task.title || '').toLowerCase().includes(this.searchText.toLowerCase())
-    );
-  }
-
-  get filteredLogs() {
-    if (this.selectedLogLevel === 'ALL') return this.systemLogs;
-    return this.systemLogs.filter(log => log.level === this.selectedLogLevel);
   }
 
   ngOnInit() {
     this.loadBackendData();
-    this.startLiveSimulation();
-  }
-
-  ngOnDestroy() {
-    if (this.intervalId) clearInterval(this.intervalId);
   }
 
   private checkAdminRole(): boolean {
@@ -102,10 +61,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private loadBackendData() {
     if (!this.checkAdminRole()) return;
 
-    this.http.get<any>('/api/admin/users?pageSize=1').subscribe({
+    // 1. Fetch Users & Recent Users
+    this.http.get<any>('/api/admin/users?pageSize=5').subscribe({
       next: (res: any) => {
         const responseData = res?.data;
         this.statsData.users = responseData?.totalCount || 0;
+        this.recentUsers = responseData?.items || [];
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -113,67 +74,63 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.systemLogs = [];
-    this.cdr.detectChanges();
-  }
+    // 2. Fetch Problems
+    this.http.get<any[]>('/api/problems').subscribe({
+      next: (res: any[]) => {
+        this.statsData.problems = res?.length || 0;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi lấy stats Problems:', err);
+      }
+    });
 
-  switchTab(tabName: string) {
-    this.activeTab = tabName;
-    this.cdr.detectChanges();
-  }
+    // 3. Fetch Quiz Sets
+    this.http.get<any>('/api/quiz-sets').subscribe({
+      next: (res: any) => {
+        this.statsData.quizSets = res?.data?.length || 0;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi lấy stats Quiz Sets:', err);
+      }
+    });
 
-  approveTask(id: number) {
-    this.moderationQueue = this.moderationQueue.filter(t => t.id !== id);
-    this.cdr.detectChanges();
-  }
+    // 4. Fetch Topics
+    this.http.get<any>('/api/topics').subscribe({
+      next: (res: any) => {
+        this.statsData.topics = res?.data?.length || 0;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi lấy stats Topics:', err);
+      }
+    });
 
-  rejectTask(id: number) {
-    this.moderationQueue = this.moderationQueue.filter(t => t.id !== id);
-    this.cdr.detectChanges();
-  }
-
-  saveOJConfig() {
-    this.http.post('/api/problems/config', this.ojConfig).subscribe({
-      next: () => alert('Cấu hình đã áp dụng thành công!'),
-      error: () => alert('Lỗi kết nối API cấu hình Sandbox.')
+    // 5. Fetch Recent Audit Logs
+    this.http.get<any>('/api/admin/audit-logs?pageSize=5').subscribe({
+      next: (res: any) => {
+        const responseData = res?.data;
+        this.recentLogs = responseData?.items || [];
+        this.hasLogsError = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi lấy stats Audit Logs:', err);
+        this.hasLogsError = true;
+        this.recentLogs = [];
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  resetOJConfig() {
-    this.ojConfig = { timeout: 2000, memoryLimit: 256, forbiddenImports: 'System.IO', parallelCompile: true };
-    this.cdr.detectChanges();
-  }
-
-  triggerMasterReboot() {
-    if (confirm('Khởi động lại Cluster Engine?')) {
-      this.isRebooting = true;
-      this.cdr.detectChanges();
-      setTimeout(() => { this.isRebooting = false; this.cdr.detectChanges(); }, 2000);
-    }
-  }
-
-  private startLiveSimulation() {
-    this.intervalId = setInterval(() => {
-      if (this.isRebooting) return;
-      this.systemMetrics.forEach(m => m.load = Math.max(10, Math.min(90, m.load + Math.floor(Math.random() * 11) - 5)));
-      this.cdr.detectChanges();
-    }, 2000);
-  }
-
-  openQuickModModal() {
-    this.isQuickModModalOpen = true;
-    this.cdr.detectChanges();
-  }
-
-  closeQuickModModal() {
-    this.isQuickModModalOpen = false;
-    this.cdr.detectChanges();
-  }
-
-  batchApproveAll() {
-    this.moderationQueue = [];
-    this.closeQuickModModal();
-    alert('Đã phê duyệt hàng loạt toàn bộ nội dung đóng góp hợp lệ thành công!');
-    this.cdr.detectChanges();
+  formatDateTime(value: string): string {
+    if (!value) return 'N/A';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+    return d.toLocaleString('vi-VN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
   }
 }

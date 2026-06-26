@@ -445,7 +445,31 @@ public class RoadmapResponse
 
     public short OrderIndex { get; set; }
 
+    public string? TargetRole { get; set; }
+
     public List<RoadmapTopicResponse> Topics { get; set; } = new();
+}
+
+public class CreateRoadmapRequest
+{
+    public string Title { get; set; } = null!;
+    public string Level { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? TargetRole { get; set; }
+}
+
+public class UpdateRoadmapRequest
+{
+    public string Title { get; set; } = null!;
+    public string Level { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? TargetRole { get; set; }
+}
+
+public class AddTopicToRoadmapRequest
+{
+    public Guid TopicId { get; set; }
+    public int OrderIndex { get; set; }
 }
 
 // Bulk import summary.

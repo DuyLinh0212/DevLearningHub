@@ -26,10 +26,12 @@ export class SettingsComponent implements OnInit {
   xpPoints: number = 0;
   isSaving: boolean = false;
   isUploadingAvatar: boolean = false;
+  activeTab: string = 'profile';
 
   ngOnInit() {
     this.loadUserProfile();
   }
+
 
   loadUserProfile() {
     console.log('=== SETTINGS ADMIN: BẮT ĐẦU TẢI HỒ SƠ VÀ GIẢI MÃ TOKEN PHÒNG THỦ ===');

@@ -47,15 +47,23 @@ export class RoadmapManagementComponent implements OnInit {
         const actualData = res?.data || res;
         const dataArray = Array.isArray(actualData) ? actualData : [];
         
-        this.roadmaps = dataArray.map((rm: any) => ({
-          id: rm.id,
-          title: rm.title || '',
-          description: rm.description || '',
-          targetRole: rm.targetRole || 'Web Developer', 
-          level: rm.level || 'Trung bình',
-          topicsCount: rm.topics ? rm.topics.length : 0,
-          topicIds: rm.topics ? rm.topics.map((t: any) => t.topicId) : []
-        }));
+        this.roadmaps = dataArray.map((rm: any) => {
+          const lvl = (rm.level || '').toLowerCase().trim();
+          let vnLvl = 'Trung bình';
+          if (lvl === 'beginner') vnLvl = 'Cơ bản';
+          else if (lvl === 'advanced') vnLvl = 'Nâng cao';
+          else if (lvl === 'intermediate') vnLvl = 'Trung bình';
+
+          return {
+            id: rm.id,
+            title: rm.title || '',
+            description: rm.description || '',
+            targetRole: rm.targetRole || 'Web Developer', 
+            level: vnLvl,
+            topicsCount: rm.topics ? rm.topics.length : 0,
+            topicIds: rm.topics ? rm.topics.map((t: any) => t.topicId) : []
+          };
+        });
         
         console.log('=== ADMIN_ROADMAP: MẢNG LỘ TRÌNH ĐÃ ĐỒNG BỘ SWAGGER ===', this.roadmaps);
         this.cdr.detectChanges();
@@ -85,11 +93,17 @@ export class RoadmapManagementComponent implements OnInit {
       return;
     }
 
+    let dbLevel = 'intermediate';
+    const currentLevel = this.roadmapForm.level;
+    if (currentLevel === 'Cơ bản') dbLevel = 'beginner';
+    else if (currentLevel === 'Trung bình') dbLevel = 'intermediate';
+    else if (currentLevel === 'Nâng cao' || currentLevel === 'Chuyên sâu') dbLevel = 'advanced';
+
     const payload = {
       title: this.roadmapForm.title.trim(),
       description: this.roadmapForm.description.trim(),
       targetRole: this.roadmapForm.targetRole,
-      level: this.roadmapForm.level
+      level: dbLevel
     };
 
     const request$ = this.isEditingRoadmap

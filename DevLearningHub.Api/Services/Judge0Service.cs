@@ -34,7 +34,8 @@ public sealed class Judge0Service : IJudge0Service
 {
     private static readonly JsonSerializerOptions _json = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
     private readonly IHttpClientFactory _httpFactory;
@@ -86,8 +87,21 @@ public sealed class Judge0Service : IJudge0Service
         var postResponse = await client.PostAsJsonAsync(postUrl, batchBody, _json);
         postResponse.EnsureSuccessStatusCode();
 
-        var tokens = await postResponse.Content.ReadFromJsonAsync<List<Judge0TokenResponse>>(_json)
-                     ?? new List<Judge0TokenResponse>();
+        var jsonRoot = await postResponse.Content.ReadFromJsonAsync<JsonElement>(_json);
+        var tokens = new List<Judge0TokenResponse>();
+        if (jsonRoot.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in jsonRoot.EnumerateArray())
+            {
+                var tok = item.Deserialize<Judge0TokenResponse>(_json);
+                if (tok != null) tokens.Add(tok);
+            }
+        }
+        else if (jsonRoot.ValueKind == JsonValueKind.Object)
+        {
+            var tok = jsonRoot.Deserialize<Judge0TokenResponse>(_json);
+            if (tok != null) tokens.Add(tok);
+        }
 
         var tokenList = string.Join(",", tokens.Select(t => t.Token));
 

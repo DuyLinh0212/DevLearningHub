@@ -34,14 +34,15 @@
 }
 
 .sidebar-brand h2 {
-  font-family: 'Anton', sans-serif;
-  font-size: 1.35rem;
-  font-weight: normal;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  background: linear-gradient(to right, #f43f5e, #a855f7);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  text-transform: none;
+  background: linear-gradient(135deg, #f43f5e 0%, #a855f7 60%, #6366f1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
 }
 

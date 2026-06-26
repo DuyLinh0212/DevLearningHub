@@ -1,4 +1,4 @@
-﻿using DevLearningHub.Api.Dtos.CodePlayground;
+using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -81,7 +81,7 @@ public class ProblemsController : ControllerBase
         return Ok(response);
     }
 
-    // 37. POST /api/problems (Admin)
+    // 37. POST /api/problems (Admin only)
     [HttpPost("problems")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProblemDetailResponse>> CreateProblem([FromBody] CreateProblemRequest request)
@@ -101,7 +101,15 @@ public class ProblemsController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        // TODO: Map thêm Tags từ request.TagIds vào problem.Tags nếu cần
+        // Map tags nếu có
+        if (request.TagIds?.Count > 0)
+        {
+            var tags = await _context.Tags
+                .Where(t => request.TagIds.Contains(t.Id))
+                .ToListAsync();
+            foreach (var tag in tags)
+                problem.Tags.Add(tag);
+        }
 
         _context.Problems.Add(problem);
         await _context.SaveChangesAsync();

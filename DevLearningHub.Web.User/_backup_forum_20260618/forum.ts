@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { ForumService } from '../../core/services/forum.service';
   templateUrl: './forum.html',
   styleUrl: './forum.css'
 })
-export class ForumComponent implements OnInit, OnDestroy {
+export class ForumComponent implements OnInit {
   private forumService = inject(ForumService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -33,32 +33,13 @@ export class ForumComponent implements OnInit, OnDestroy {
   
   loading: boolean = false;
   tagsLoading: boolean = false;
-  zoomedImageUrl: string | null = null;
-  selectedLightboxPost: any = null;
-  imageZoomLevel = 1;
-  imageTranslateX = 0;
-  imageTranslateY = 0;
-  isImageDragging = false;
-  private imageDragStartX = 0;
-  private imageDragStartY = 0;
-  private imageDragBaseX = 0;
-  private imageDragBaseY = 0;
 
   ngOnInit() {
     // Lắng nghe queryParams để hỗ trợ quay lại/đi tiếp bằng browser history
     this.route.queryParams.subscribe(params => {
-      const newTag = params['tag'] || '';
-      const newSearch = params['search'] || '';
-      
-      // Nếu thay đổi bộ lọc hoặc từ khóa tìm kiếm, reset danh sách và số trang
-      if (newTag !== this.selectedTag || newSearch !== this.searchText) {
-        this.selectedTag = newTag;
-        this.searchText = newSearch;
-        this.page = 1;
-        this.posts = [];
-        this.filteredPosts = [];
-      }
-      
+      this.page = params['page'] ? parseInt(params['page'], 10) : 1;
+      this.selectedTag = params['tag'] || '';
+      this.searchText = params['search'] || '';
       this.loadPosts();
       this.cdr.detectChanges();
     });
@@ -78,36 +59,6 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  @HostListener('document:scroll', ['$event'])
-  onScroll(event: any) {
-    if (this.loading || this.page >= this.totalPages) return;
-
-    const container = document.querySelector('.dashboard-scroll-body');
-    if (!container) return;
-
-    const threshold = 250; // px từ cạnh dưới
-    const position = container.scrollTop + container.clientHeight;
-    const height = container.scrollHeight;
-
-    if (height - position < threshold) {
-      this.page++;
-      this.loadPosts();
-    }
-  }
-
-  ngOnDestroy() {
-    document.body.style.overflow = '';
-  }
-
-  private shuffleArray(array: any[]): any[] {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
   loadPosts() {
     if (this.loading) return;
     this.loading = true;
@@ -116,11 +67,8 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.forumService.getPosts(this.page, this.pageSize, this.searchText, this.selectedTag).subscribe({
       next: (res) => {
         const pagedData = res || { items: [], totalCount: 0, page: 1, pageSize: 15, totalPages: 0 };
-        
-        // Trộn ngẫu nhiên danh sách bài viết nhận được từ API để hiển thị kiểu Facebook recommendation
-        const shuffledItems = this.shuffleArray(pagedData.items || []);
-        
-        const mappedItems = shuffledItems.map((post: any) => {
+        const bookmarkedIds: string[] = [];
+        this.posts = (pagedData.items || []).map((post: any) => {
           post.isBookmarked = false;
           // Tải chi tiết bài viết bất đồng bộ để lấy nội dung & ảnh
           this.forumService.getPost(post.id).subscribe({
@@ -128,6 +76,7 @@ export class ForumComponent implements OnInit, OnDestroy {
               if (detail) {
                 post.bodyMarkdown = detail.bodyMarkdown;
                 post.imageUrl = detail.imageUrl;
+                // Lấy trạng thái vote của user hiện tại để giữ màu tim
                 post.myVote = detail.myVote || null;
                 this.applyFilters();
                 this.cdr.detectChanges();
@@ -136,13 +85,6 @@ export class ForumComponent implements OnInit, OnDestroy {
           });
           return post;
         });
-
-        if (this.page === 1) {
-          this.posts = mappedItems;
-        } else {
-          this.posts = [...this.posts, ...mappedItems];
-        }
-
         this.totalCount = pagedData.totalCount || 0;
         this.totalPages = pagedData.totalPages || 0;
         this.page = pagedData.page || 1;
@@ -152,10 +94,10 @@ export class ForumComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Lỗi tải bài đăng:', err);
-        if (this.page === 1) {
-          this.posts = [];
-          this.filteredPosts = [];
-        }
+        this.posts = [];
+        this.filteredPosts = [];
+        this.totalCount = 0;
+        this.totalPages = 0;
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -196,16 +138,18 @@ export class ForumComponent implements OnInit, OnDestroy {
 
   triggerSearch() {
     this.page = 1;
-    this.posts = [];
-    this.filteredPosts = [];
     this.updateRoute();
   }
 
   filterByTag(tagSlug: string) {
     this.selectedTag = tagSlug;
     this.page = 1;
-    this.posts = [];
-    this.filteredPosts = [];
+    this.updateRoute();
+  }
+
+  changePage(newPage: number) {
+    if (newPage < 1 || newPage > this.totalPages) return;
+    this.page = newPage;
     this.updateRoute();
   }
 
@@ -213,6 +157,7 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
+        page: this.page,
         tag: this.selectedTag || null,
         search: this.searchText || null
       },
@@ -256,7 +201,19 @@ export class ForumComponent implements OnInit, OnDestroy {
   }
 
   getPageNumbers(): number[] {
-    return [];
+    const numbers: number[] = [];
+    const maxVisiblePages = 5;
+    let start = Math.max(1, this.page - 2);
+    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      numbers.push(i);
+    }
+    return numbers;
   }
 
   formatRelativeTime(dateString: string): string {
@@ -315,87 +272,5 @@ export class ForumComponent implements OnInit, OnDestroy {
   onAvatarError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img) img.src = 'assets/images/default-avatar.svg';
-  }
-
-  openImageZoom(url: string, post?: any) {
-    this.zoomedImageUrl = url;
-    this.selectedLightboxPost = post || null;
-    this.resetImageTransform();
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeImageZoom() {
-    this.zoomedImageUrl = null;
-    this.selectedLightboxPost = null;
-    this.resetImageTransform();
-    document.body.style.overflow = '';
-  }
-
-  zoomImage(delta: number, event?: Event) {
-    if (event) event.stopPropagation();
-    this.imageZoomLevel = Math.max(0.5, Math.min(3, +(this.imageZoomLevel + delta).toFixed(2)));
-    if (this.imageZoomLevel <= 1) {
-      this.imageTranslateX = 0;
-      this.imageTranslateY = 0;
-    }
-  }
-
-  resetImageZoom(event?: Event) {
-    if (event) event.stopPropagation();
-    this.resetImageTransform();
-  }
-
-  resetImageTransform() {
-    this.imageZoomLevel = 1;
-    this.imageTranslateX = 0;
-    this.imageTranslateY = 0;
-    this.isImageDragging = false;
-  }
-
-  get imageTransform(): string {
-    return `translate(${this.imageTranslateX}px, ${this.imageTranslateY}px) scale(${this.imageZoomLevel})`;
-  }
-
-  startImageDrag(event: MouseEvent | TouchEvent) {
-    if (this.imageZoomLevel <= 1) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const point = this.getDragPoint(event);
-    this.isImageDragging = true;
-    this.imageDragStartX = point.x;
-    this.imageDragStartY = point.y;
-    this.imageDragBaseX = this.imageTranslateX;
-    this.imageDragBaseY = this.imageTranslateY;
-  }
-
-  @HostListener('document:mousemove', ['$event'])
-  onImageDragMove(event: MouseEvent) { this.moveImageDrag(event); }
-
-  @HostListener('document:touchmove', ['$event'])
-  onImageTouchMove(event: TouchEvent) { this.moveImageDrag(event); }
-
-  @HostListener('document:mouseup')
-  @HostListener('document:touchend')
-  stopImageDrag() { this.isImageDragging = false; }
-
-  private moveImageDrag(event: MouseEvent | TouchEvent) {
-    if (!this.isImageDragging || this.imageZoomLevel <= 1) return;
-    event.preventDefault();
-    const point = this.getDragPoint(event);
-    this.imageTranslateX = this.imageDragBaseX + point.x - this.imageDragStartX;
-    this.imageTranslateY = this.imageDragBaseY + point.y - this.imageDragStartY;
-  }
-
-  private getDragPoint(event: MouseEvent | TouchEvent): { x: number; y: number } {
-    if ('touches' in event && event.touches.length > 0) return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    const mouseEvent = event as MouseEvent;
-    return { x: mouseEvent.clientX, y: mouseEvent.clientY };
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscapeKey() {
-    if (this.zoomedImageUrl) {
-      this.closeImageZoom();
-    }
   }
 }

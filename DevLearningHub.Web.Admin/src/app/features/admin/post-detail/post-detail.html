@@ -2,20 +2,20 @@
   <app-sidebar></app-sidebar>
   <main class="main-content">
     <header class="content-header">
-      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mo menu">
+      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
         <i class="bi bi-list"></i>
       </button>
       <a class="btn-back" routerLink="/admin/posts">
-        <i class="bi bi-arrow-left"></i> Quay lai quan ly bai viet
+        <i class="bi bi-arrow-left"></i> Quay lại quản lý bài viết
       </a>
       <div class="header-actions">
         @if (post) {
           <button class="btn-action-moderate" (click)="toggleModeratePost()">
             <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
-            {{ post.isHidden ? 'Bo an bai viet' : 'An bai viet' }}
+            {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
           </button>
           <button class="btn-action-danger" (click)="deletePost()">
-            <i class="bi bi-trash"></i> Xoa bai
+            <i class="bi bi-trash"></i> Xóa bài
           </button>
         }
       </div>
@@ -24,14 +24,14 @@
       @if (loading) {
         <div class="forum-loading-state">
           <i class="bi bi-arrow-repeat spin-animation" style="font-size: 2rem; color: #a855f7;"></i>
-          <p>Dang tai bai viet...</p>
+          <p>Đang tải bài viết...</p>
         </div>
       } @else if (!post) {
         <div class="empty-state-card">
           <i class="bi bi-exclamation-triangle-fill" style="color: #ef4444;"></i>
-          <h3>Khong tim thay bai viet</h3>
-          <p>Bai viet khong ton tai hoac da bi xoa.</p>
-          <button class="btn-create" routerLink="/admin/posts" style="margin-top: 16px;">Ve danh sach</button>
+          <h3>Không tìm thấy bài viết</h3>
+          <p>Bài viết không tồn tại hoặc đã bị xóa.</p>
+          <button class="btn-create" routerLink="/admin/posts" style="margin-top: 16px;">Về danh sách</button>
         </div>
       } @else {
         <article class="social-post-detail-card">
@@ -39,19 +39,19 @@
             <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
             <div class="author-meta-text">
               <h3 class="author-name">{{ post.author.fullName || post.author.username }}</h3>
-              <span class="post-date">Dang {{ formatRelativeTime(post.createdAt) }}</span>
+              <span class="post-date">Đăng {{ formatRelativeTime(post.createdAt) }}</span>
             </div>
             <div class="post-detail-status">
               <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
                 <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
-                {{ post.isHidden ? 'Da an' : 'Hien thi' }}
+                {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
               </span>
             </div>
           </div>
           <h1 class="post-detail-title">
             {{ post.title }}
             @if (post.isHidden) {
-              <span class="moderated-badge">Bi an</span>
+              <span class="moderated-badge">Bị ẩn</span>
             }
           </h1>
           <div class="post-detail-tags">
@@ -63,39 +63,39 @@
           <div class="post-detail-body">
             @if (post.imageUrl) {
               <div class="post-image-container">
-                <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable" (click)="openImageZoom(post.imageUrl)" title="Nhan de phong to">
+                <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable" (click)="openImageZoom(post.imageUrl)" title="Nhấn để phóng to">
               </div>
             }
             <div class="post-text-body" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
           </div>
           <div class="post-card-metrics">
-            <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i> {{ post.upvotes }} luot thich</span>
-            <span class="comments-count">{{ post.commentCount }} binh luan &nbsp;&bull;&nbsp; {{ post.viewCount }} luot xem</span>
+            <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i> {{ post.upvotes }} lượt thích</span>
+            <span class="comments-count">{{ post.commentCount }} bình luận &nbsp;&bull;&nbsp; {{ post.viewCount }} lượt xem</span>
           </div>
           <div class="post-divider"></div>
           <div class="post-card-actions">
             <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
-              <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i> Thich
+              <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i> Thích
             </button>
             <button class="action-btn" (click)="scrollToComments()">
-              <i class="bi bi-chat-right-text"></i> Binh luan
+              <i class="bi bi-chat-right-text"></i> Bình luận
             </button>
           </div>
         </article>
         <section class="discussion-section">
-          <h2>Thao luan ({{ post.commentCount }})</h2>
+          <h2>Thảo luận ({{ post.commentCount }})</h2>
           <div class="comment-write-box">
-            <div class="comment-write-header"><span>Dong gop cau tra loi</span></div>
-            <textarea placeholder="Nhap binh luan..." [(ngModel)]="rootCommentText" rows="4" class="comment-textarea"></textarea>
+            <div class="comment-write-header"><span>Đóng góp câu trả lời</span></div>
+            <textarea placeholder="Nhập bình luận..." [(ngModel)]="rootCommentText" rows="4" class="comment-textarea"></textarea>
             <div class="comment-write-actions">
               <button class="btn-submit-comment" [disabled]="!rootCommentText.trim()" (click)="addRootComment()">
-                <i class="bi bi-send-fill"></i> Gui cau tra loi
+                <i class="bi bi-send-fill"></i> Gửi câu trả lời
               </button>
             </div>
           </div>
           <div class="comments-tree">
             @if (comments.length === 0) {
-              <p class="no-comments-text">Chua co binh luan nao.</p>
+              <p class="no-comments-text">Chưa có bình luận nào.</p>
             } @else {
               @for (comment of comments; track comment.id) {
                 <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
@@ -121,28 +121,28 @@
             @if (comment.isStaff) {
               <span class="admin-comment-badge"><i class="bi bi-shield-fill"></i> Admin</span>
             } @else if (isPostAuthorComment(comment)) {
-              <span class="author-badge">Chu bai viet</span>
+              <span class="author-badge">Chủ bài viết</span>
             }
             <span class="comment-date">&bull; {{ formatRelativeTime(comment.createdAt) }}</span>
             @if (comment.isHidden) {
-              <span class="mini-hidden-badge">Da an</span>
+              <span class="mini-hidden-badge">Đã ẩn</span>
             }
           </div>
           <div class="comment-actions">
-            <button class="btn-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Tra loi</button>
+            <button class="btn-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
             <button class="btn-link-action text-warning" (click)="toggleModerateComment(comment)">
               <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-              {{ comment.isHidden ? 'Hien' : 'An' }}
+              {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
             </button>
-            <button class="btn-link-action text-danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xoa</button>
+            <button class="btn-link-action text-danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xóa</button>
           </div>
         </div>
         <div class="comment-body-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
         <div class="comment-footer-row">
           <div class="comment-vote-pill">
-            <button class="btn-vote-like" [class.voted]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')" title="Thich">
+            <button class="btn-vote-like" [class.voted]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')" title="Thích">
               <i class="bi" [class.bi-heart-fill]="comment.myVote === 'up'" [class.bi-heart]="comment.myVote !== 'up'"></i>
-              <span class="vote-like-text">Thich</span>
+              <span class="vote-like-text">Thích</span>
               @if (comment.upvotes > 0) {
                 <span class="vote-like-count">({{ comment.upvotes }})</span>
               }
@@ -150,16 +150,16 @@
           </div>
           <div class="comment-accept-wrapper">
             @if (comment.isAccepted) {
-              <span class="accepted-badge-pill"><i class="bi bi-check-circle-fill"></i> Cau tra loi hay nhat</span>
+              <span class="accepted-badge-pill"><i class="bi bi-check-circle-fill"></i> Câu trả lời hay nhất</span>
             }
           </div>
         </div>
         @if (replyingCommentId === comment.id) {
           <div class="reply-write-box">
-            <textarea placeholder="Viet cau tra loi..." [(ngModel)]="replyCommentText" rows="3" class="comment-textarea"></textarea>
+            <textarea placeholder="Viết câu trả lời..." [(ngModel)]="replyCommentText" rows="3" class="comment-textarea"></textarea>
             <div class="reply-box-actions">
-              <button class="btn-submit-comment btn-sm" [disabled]="!replyCommentText.trim()" (click)="addReplyComment(comment.id)">Gui tra loi</button>
-              <button class="btn-cancel-comment btn-sm" (click)="toggleReplyForm(null)">Huy</button>
+              <button class="btn-submit-comment btn-sm" [disabled]="!replyCommentText.trim()" (click)="addReplyComment(comment.id)">Gửi trả lời</button>
+              <button class="btn-cancel-comment btn-sm" (click)="toggleReplyForm(null)">Hủy</button>
             </div>
           </div>
         }

@@ -27,40 +27,78 @@
   </section>
 
   <div class="middle-layout">
-    <section class="recommend-box">
-      <h2>Đề xuất ôn luyện</h2>
-      <p class="section-subtitle">Danh sách bộ đề được đề xuất dựa trên kết quả ôn tập gần đây của bạn</p>
+    <div class="dashboard-left-col">
+      <section class="recommend-box">
+        <h2>Đề xuất ôn luyện</h2>
+        <p class="section-subtitle">Danh sách bộ đề được đề xuất dựa trên kết quả ôn tập gần đây của bạn</p>
 
-      <div class="recommend-list">
-        @for (item of recommendations; track item.id; let idx = $index) {
-        <div class="recommend-item" 
-             [class.card-gradient-1]="idx % 3 === 0"
-             [class.card-gradient-2]="idx % 3 === 1"
-             [class.card-gradient-3]="idx % 3 === 2"
-             (click)="handleAction(item.id)">
-          
-          <div class="card-header-row">
-            <span class="card-badge">Đề xuất</span>
-            <i class="bi bi-lightning-charge-fill"></i>
-          </div>
+        <div class="recommend-list">
+          @for (item of recommendations; track item.id; let idx = $index) {
+          <div class="recommend-item" 
+               [class.card-gradient-1]="idx % 3 === 0"
+               [class.card-gradient-2]="idx % 3 === 1"
+               [class.card-gradient-3]="idx % 3 === 2"
+               (click)="handleAction(item.id)">
+            
+            <div class="card-header-row">
+              <span class="card-badge">Đề xuất</span>
+              <i class="bi bi-lightning-charge-fill"></i>
+            </div>
 
-          <div class="card-title-row">
-            <h4>{{ item.title }}</h4>
-          </div>
+            <div class="card-title-row">
+              <h4>{{ item.title }}</h4>
+            </div>
 
-          <div class="card-footer-row">
-            <span class="card-meta" style="display: flex; align-items: center; gap: 8px;">
-              <span><i class="bi bi-journal-text"></i> {{ item.questions }} câu</span>
-              <span><i class="bi bi-clock"></i> {{ item.duration }} phút</span>
-            </span>
-            <button class="btn-card-go" (click)="handleAction(item.id); $event.stopPropagation()">
-              {{ item.btnText }} <i class="bi bi-chevron-right"></i>
-            </button>
+            <div class="card-footer-row">
+              <span class="card-meta" style="display: flex; align-items: center; gap: 8px;">
+                <span><i class="bi bi-journal-text"></i> {{ item.questions }} câu</span>
+                <span><i class="bi bi-clock"></i> {{ item.duration }} phút</span>
+              </span>
+              <button class="btn-card-go" (click)="handleAction(item.id); $event.stopPropagation()">
+                {{ item.btnText }} <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
           </div>
+          }
         </div>
-        }
-      </div>
-    </section>
+      </section>
+
+      <section class="recent-activity-section">
+        <h2>Tiến độ từng bộ đề</h2>
+        <p class="section-subtitle">Theo dõi mức độ hoàn thành và lịch sử ôn tập của bạn đối với từng kho kiến thức</p>
+
+        <div class="activity-list">
+          @for (act of activities; track act.id; let idx = $index) {
+          <div class="recommend-item" 
+               [class.explorer-gradient-1]="idx % 4 === 0"
+               [class.explorer-gradient-2]="idx % 4 === 1"
+               [class.explorer-gradient-3]="idx % 4 === 2"
+               [class.explorer-gradient-4]="idx % 4 === 3"
+               (click)="handleAction(act.id)">
+            
+            <div class="card-header-row">
+              <span class="card-badge">Chủ đề</span>
+              <i class="bi bi-journal-bookmark-fill"></i>
+            </div>
+
+            <div class="card-title-row">
+              <h4>{{ act.title }}</h4>
+            </div>
+
+            <div class="card-footer-row">
+              <span class="card-meta" style="display: flex; align-items: center; gap: 8px;">
+                <span><i class="bi bi-journal-text"></i> {{ act.questions }} câu</span>
+                <span><i class="bi bi-clock"></i> {{ act.duration }} phút</span>
+              </span>
+              <button class="btn-card-go" (click)="handleAction(act.id); $event.stopPropagation()">
+                {{ act.btnText }} <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+      </section>
+    </div>
 
     <section class="leaderboard-box">
       <div class="leaderboard-heading">
@@ -115,7 +153,7 @@
           </div>
           <div class="user-info">
             <h4>{{ user.name }}</h4>
-            <p>Thành viên DevLearningHub</p>
+            <p>@{{ user.username }}</p>
           </div>
           <span class="xp-value">
             <i class="bi bi-award-fill"></i> {{ user.xp }}
@@ -125,57 +163,4 @@
       </div>
     </section>
   </div>
-
-  <section class="recent-activity-section">
-    <h2>Tiến độ từng bộ đề</h2>
-    <p class="section-subtitle">Theo dõi mức độ hoàn thành và lịch sử ôn tập của bạn đối với từng kho kiến thức</p>
-
-    <div class="activity-list">
-      @for (act of activities; track act.id; let idx = $index) {
-      <div class="explore-card" 
-           [class.explorer-gradient-1]="idx % 4 === 0"
-           [class.explorer-gradient-2]="idx % 4 === 1"
-           [class.explorer-gradient-3]="idx % 4 === 2"
-           [class.explorer-gradient-4]="idx % 4 === 3"
-           (click)="handleAction(act.id)">
-        
-        <!-- Top Gradient Header -->
-        <div class="explore-card-top">
-          <span class="explore-card-topic">Chủ đề</span>
-          <h3 class="explore-card-title">{{ act.title }}</h3>
-          
-          <!-- Floating Play Button -->
-          <button class="btn-explore-play" (click)="handleAction(act.id); $event.stopPropagation()">
-            <i class="bi bi-play-fill"></i>
-          </button>
-        </div>
-
-        <!-- Bottom Stats Card -->
-        <div class="explore-card-bottom">
-          <div class="explore-stats-row">
-            <span class="explore-stat-item">
-              <i class="bi bi-journal-text"></i> <strong>{{ act.questions }}</strong> câu
-            </span>
-            <!-- Ẩn số lượt làm do BE chưa hỗ trợ API -->
-            @if (false) {
-            <span class="explore-stat-item">
-              <i class="bi bi-person-workspace"></i> <strong>{{ act.attempts }}</strong> lượt làm
-            </span>
-            }
-          </div>
-          
-          <!-- Ẩn thanh tiến độ do BE chưa hỗ trợ API trả về tiến độ của từng bộ đề cụ thể -->
-          @if (false) {
-          <div class="explore-progress-row">
-            <div class="explore-progress-bar-wrapper">
-              <div class="explore-progress-fill" [style.width.%]="act.progress"></div>
-            </div>
-            <span class="explore-progress-text">{{ act.progress }}%</span>
-          </div>
-          }
-        </div>
-      </div>
-      }
-    </div>
-  </section>
 </div>

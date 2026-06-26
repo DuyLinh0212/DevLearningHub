@@ -1,4 +1,4 @@
-﻿import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -80,6 +80,7 @@ export class LoginComponent {
               return;
             }
 
+            alert('Đăng nhập thành công!');
             this.router.navigate(['/admin']);
             
           } catch (e) {

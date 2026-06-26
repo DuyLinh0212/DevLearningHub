@@ -1,4 +1,4 @@
-﻿using DevLearningHub.Api.Dtos.CodePlayground;
+using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -47,10 +47,10 @@ public class CodePlaygroundController : ControllerBase
     {
         var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
 
-        // 1. Lấy thông tin ngôn ngữ lập trình để lưu tên ngôn ngữ (ví dụ: "C++", "Java")
+        // 1. Lấy thông tin ngôn ngữ lập trình để lưu slug ngôn ngữ (ví dụ: "cpp", "python")
         var langEntity = await _context.ProgrammingLanguages
             .FirstOrDefaultAsync(l => l.Judge0LanguageId == request.LanguageId);
-        string languageName = langEntity?.Name ?? $"Language #{request.LanguageId}";
+        string languageName = langEntity?.Slug ?? "python";
 
         // 2. Lấy toàn bộ test cases của bài tập ra
         var testCases = await _context.TestCases
@@ -81,10 +81,10 @@ public class CodePlaygroundController : ControllerBase
             ProblemId = request.ProblemId,
             Code = request.Code,
             Language = languageName,
-            LanguageId = request.LanguageId,
+            LanguageId = langEntity?.Id,
             SubmittedAt = DateTime.UtcNow,
             // Sẽ update chi tiết lỗi tổng quan ở bước duyệt kết quả dưới đây
-            Verdict = "Accepted",
+            Verdict = "accepted",
             PassedCases = 0,
             TotalCases = (short)testCases.Count
         };
@@ -117,10 +117,10 @@ public class CodePlaygroundController : ControllerBase
                 {
                     submission.PassedCases++;
                 }
-                else if (submission.Verdict == "Accepted")
+                else if (submission.Verdict == "accepted")
                 {
-                    // Lấy lỗi của case thất bại đầu tiên làm Verdict chung cho bài nộp (ví dụ: Wrong Answer, Time Limit Exceeded)
-                    submission.Verdict = res.Status;
+                    // Lấy lỗi của case thất bại đầu tiên làm Verdict chung cho bài nộp
+                    submission.Verdict = MapJudgeStatusToVerdict(res.StatusId);
                     submission.Stdout = res.Stdout;
                     submission.Stderr = res.Stderr;
                     submission.CompileOutput = res.CompileOutput;
@@ -238,5 +238,17 @@ public class CodePlaygroundController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    private static string MapJudgeStatusToVerdict(int statusId)
+    {
+        return statusId switch
+        {
+            3 => "accepted",
+            4 => "wrong_answer",
+            5 => "time_limit",
+            6 => "compile_error",
+            _ => "runtime_error"
+        };
     }
 }
