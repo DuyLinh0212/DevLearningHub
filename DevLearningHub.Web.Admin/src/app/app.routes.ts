@@ -11,10 +11,12 @@ import { TagManagementComponent } from './features/admin/tag-management/tag-mana
 import { PostManagementComponent } from './features/admin/post-management/post-management';
 import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
 import { UserManagementComponent } from './features/admin/user-management/user-management';
+import { ModeratorManagementComponent } from './features/admin/moderator-management/moderator-management';
+import { ModeratorDashboardComponent } from './features/admin/moderator-dashboard/moderator-dashboard';
 import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs';
 import { SettingsComponent } from './features/settings/settings';
 import { adminGuard } from './core/guards/admin.guard';
-
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -22,14 +24,16 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
   { path: 'landing', component: LandingComponent },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard]},
-  { path: 'admin/quiz', component: QuizManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/roadmap', component: RoadmapManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/topics', component: TopicManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/tags', component: TagManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/posts', component: PostManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [adminGuard] },
-  { path: 'admin/users', component: UserManagementComponent, canActivate: [adminGuard] },
-  { path: 'admin/audit-logs', component: AuditLogsComponent, canActivate: [adminGuard] },
+  { path: 'admin/quiz', component: QuizManagementComponent, canActivate: [permissionGuard('quiz:edit')] },
+  { path: 'admin/roadmap', component: RoadmapManagementComponent, canActivate: [permissionGuard('roadmap:edit')] },
+  { path: 'admin/topics', component: TopicManagementComponent, canActivate: [permissionGuard('topic:edit')] },
+  { path: 'admin/tags', component: TagManagementComponent, canActivate: [permissionGuard('tag:edit')] },
+  { path: 'admin/posts', component: PostManagementComponent, canActivate: [permissionGuard(['post:hide', 'post:edit_any', 'post:delete_any'])] },
+  { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [permissionGuard(['post:hide', 'post:edit_any', 'post:delete_any'])] },
+  { path: 'admin/users', component: UserManagementComponent, canActivate: [permissionGuard('user:view_all')] },
+  { path: 'admin/moderators', component: ModeratorManagementComponent, canActivate: [adminGuard] },
+  { path: 'admin/moderator-dashboard', component: ModeratorDashboardComponent, canActivate: [adminGuard] },
+  { path: 'admin/audit-logs', component: AuditLogsComponent, canActivate: [permissionGuard('audit:view')] },
   { path: 'settings', component: SettingsComponent, canActivate: [adminGuard] },
   { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

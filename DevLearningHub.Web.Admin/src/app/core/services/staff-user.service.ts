@@ -6,13 +6,19 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 const STAFF_ROLES = new Set(['admin', 'moderator']);
 const STAFF_CACHE_KEY = 'staff_users_cache';
 
+interface StaffUserInfo {
+  id: string;
+  username: string;
+  roles: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class StaffUserService {
   private http = inject(HttpClient);
-  private staffUserIds = new Set<string>();
-  private staffUsernames = new Set<string>();
+  private staffUsers = new Map<string, StaffUserInfo>(); // id -> info
+  private staffUsernames = new Map<string, StaffUserInfo>(); // username -> info
   private loaded = false;
 
   /** Load all Admin/Moderator accounts from admin users API. */
@@ -29,8 +35,13 @@ export class StaffUserService {
 
           const id = (user.id || '').toString().toLowerCase();
           const username = (user.username || '').toLowerCase();
-          if (id) this.staffUserIds.add(id);
-          if (username) this.staffUsernames.add(username);
+          const info: StaffUserInfo = {
+            id,
+            username,
+            roles: roles
+          };
+          if (id) this.staffUsers.set(id, info);
+          if (username) this.staffUsernames.set(username, info);
         });
         this.persistStaffCacheToStorage();
         this.loaded = true;
@@ -44,24 +55,59 @@ export class StaffUserService {
   }
 
   isStaffAuthor(author: any): boolean {
-    if (!author) return false;
+    return this.getStaffInfo(author) !== null;
+  }
+
+  isAdminAuthor(author: any): boolean {
+    const info = this.getStaffInfo(author);
+    return info !== null && info.roles.includes('admin');
+  }
+
+  getStaffInfo(author: any): StaffUserInfo | null {
+    if (!author) return null;
 
     const id = (author.id || '').toString().toLowerCase();
     const username = (author.username || '').toLowerCase();
 
-    if (id && this.staffUserIds.has(id)) return true;
-    if (username && this.staffUsernames.has(username)) return true;
+    if (id && this.staffUsers.has(id)) {
+      return this.staffUsers.get(id)!;
+    }
+    if (username && this.staffUsernames.has(username)) {
+      return this.staffUsernames.get(username)!;
+    }
 
-    return this.hasStaffRole(this.normalizeRoles(author));
+    // Fallback: check roles directly on author object
+    const roles = this.normalizeRoles(author);
+    if (this.hasStaffRole(roles)) {
+      return {
+        id: id || '',
+        username: username || '',
+        roles: roles
+      };
+    }
+
+    return null;
   }
 
   annotateComments(comments: any[]): any[] {
     return (comments || []).map(comment => ({
       ...comment,
       isStaff: this.isStaffAuthor(comment.author),
+      isAdmin: this.isAdminAuthor(comment.author),
       replies: comment.replies?.length
         ? this.annotateComments(comment.replies)
         : (comment.replies || [])
+    }));
+  }
+
+  annotatePostAuthors(posts: any[]): any[] {
+    return (posts || []).map(post => ({
+      ...post,
+      author: {
+        ...post.author,
+        isStaff: this.isStaffAuthor(post.author),
+        isAdmin: this.isAdminAuthor(post.author)
+      }
     }));
   }
 
@@ -118,11 +164,14 @@ export class StaffUserService {
   }
 
   private persistStaffCacheToStorage() {
+    const userData = Array.from(this.staffUsers.values());
+    const usernameData = Array.from(this.staffUsernames.values());
+
     localStorage.setItem(
       STAFF_CACHE_KEY,
       JSON.stringify({
-        userIds: Array.from(this.staffUserIds),
-        usernames: Array.from(this.staffUsernames)
+        users: userData,
+        usernames: usernameData
       })
     );
   }

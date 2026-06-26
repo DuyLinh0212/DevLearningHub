@@ -1,0 +1,53 @@
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+
+/**
+ * Factory function that creates a guard requiring specific permission(s).
+ * Usage:
+ *   canActivate: [permissionGuard('post:hide')]  // single permission
+ *   canActivate: [permissionGuard(['post:hide', 'post:edit_any', 'post:delete_any'])] // any of these
+ */
+export const permissionGuard = (requiredPermissions: string | string[]) => {
+  return () => {
+    const router = inject(Router);
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+
+    if (!token) {
+      router.navigate(['/login']);
+      return false;
+    }
+
+    try {
+      const payloadPart = token.split('.')[1];
+      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+
+      // Check role first (Admin có full control)
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim) ? roleClaim.map((r: string) => r.toLowerCase()) : [roleClaim?.toLowerCase()];
+      if (roles.includes('admin')) {
+        return true;
+      }
+
+      // Check permissions from token
+      const tokenPermissions = decoded['permissions'] || [];
+      if (!Array.isArray(tokenPermissions)) {
+        return false;
+      }
+
+      const hasFullControl = tokenPermissions.some((p: string) => p.toLowerCase() === 'system.full_control');
+      if (hasFullControl) {
+        return true;
+      }
+
+      // Check required permission(s)
+      const requiredList = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
+      return requiredList.some((reqPerm: string) =>
+        tokenPermissions.some((p: string) => p.toLowerCase() === reqPerm.toLowerCase())
+      );
+    } catch (e) {
+      console.error('Lỗi kiểm tra permission trong Guard:', e);
+      router.navigate(['/login']);
+      return false;
+    }
+  };
+};

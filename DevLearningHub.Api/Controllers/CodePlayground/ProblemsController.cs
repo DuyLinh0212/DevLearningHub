@@ -1,4 +1,5 @@
-﻿using DevLearningHub.Api.Dtos.CodePlayground;
+﻿using DevLearningHub.Api.Authorization;
+using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -81,9 +82,9 @@ public class ProblemsController : ControllerBase
         return Ok(response);
     }
 
-    // 37. POST /api/problems (Admin)
+    // 37. POST /api/problems (Admin + Moderator)
     [HttpPost("problems")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<ActionResult<ProblemDetailResponse>> CreateProblem([FromBody] CreateProblemRequest request)
     {
         var currentUserId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
@@ -109,9 +110,9 @@ public class ProblemsController : ControllerBase
         return CreatedAtAction(nameof(GetProblem), new { id = problem.Id }, null);
     }
 
-    // 38. PUT /api/problems/{id} (Admin)
+    // 38. PUT /api/problems/{id} (Admin + Moderator)
     [HttpPut("problems/{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<IActionResult> UpdateProblem(Guid id, [FromBody] UpdateProblemRequest request)
     {
         var problem = await _context.Problems.FindAsync(id);
@@ -130,9 +131,9 @@ public class ProblemsController : ControllerBase
         return NoContent();
     }
 
-    // 39. DELETE /api/problems/{id} -> Xóa mềm (Admin)
+    // 39. DELETE /api/problems/{id} -> Xóa mềm (Admin + Moderator)
     [HttpDelete("problems/{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<IActionResult> DeleteProblem(Guid id)
     {
         var problem = await _context.Problems.FindAsync(id);
@@ -145,9 +146,9 @@ public class ProblemsController : ControllerBase
 
     // ── Quản lý Test Cases (Admin) ────────────────────────────────────────────
 
-    // 40. GET /api/problems/{id}/test-cases (Admin)
+    // 40. GET /api/problems/{id}/test-cases (Admin + Moderator)
     [HttpGet("problems/{id:guid}/test-cases")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<ActionResult<IEnumerable<TestCaseResponse>>> GetTestCases(Guid id)
     {
         var testCases = await _context.TestCases
@@ -166,9 +167,9 @@ public class ProblemsController : ControllerBase
         return Ok(testCases);
     }
 
-    // 41. POST /api/problems/{id}/test-cases (Admin)
+    // 41. POST /api/problems/{id}/test-cases (Admin + Moderator)
     [HttpPost("problems/{id:guid}/test-cases")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<IActionResult> AddTestCase(Guid id, [FromBody] CreateTestCaseRequest request)
     {
         var problemExists = await _context.Problems.AnyAsync(p => p.Id == id);
@@ -189,9 +190,9 @@ public class ProblemsController : ControllerBase
         return Ok(testCase);
     }
 
-    // 42. PUT /api/test-cases/{id} (Admin)
+    // 42. PUT /api/test-cases/{id} (Admin + Moderator)
     [HttpPut("test-cases/{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<IActionResult> UpdateTestCase(Guid id, [FromBody] UpdateTestCaseRequest request)
     {
         var testCase = await _context.TestCases.FindAsync(id);
@@ -206,9 +207,9 @@ public class ProblemsController : ControllerBase
         return NoContent();
     }
 
-    // 43. DELETE /api/test-cases/{id} (Admin)
+    // 43. DELETE /api/test-cases/{id} (Admin + Moderator)
     [HttpDelete("test-cases/{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")]
     public async Task<IActionResult> DeleteTestCase(Guid id)
     {
         var testCase = await _context.TestCases.FindAsync(id);

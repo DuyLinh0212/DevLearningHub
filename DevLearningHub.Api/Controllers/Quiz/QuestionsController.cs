@@ -3,6 +3,7 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +19,13 @@ namespace DevLearningHub.Api.Controllers.Quiz;
 public class QuestionsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
+    private readonly IPermissionService _permissions;
 
 
-    public QuestionsController(DevLearningHubContext db)
+    public QuestionsController(DevLearningHubContext db, IPermissionService permissions)
     {
         _db = db;
+        _permissions = permissions;
     }
 
     [HttpGet]
@@ -68,6 +71,12 @@ public class QuestionsController : ControllerBase
         if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(ApiResponse<QuestionResponse>.Fail("Unauthorized."));
+        }
+
+        // Check permission to create questions
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
         }
 
         if (!await _db.Topics.AnyAsync(t => t.Id == request.TopicId && t.IsActive))
@@ -125,7 +134,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<QuestionResponse>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (question.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden."));
         }
@@ -179,7 +188,7 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (question.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -203,6 +212,12 @@ public class QuestionsController : ControllerBase
         if (!await _db.Users.AnyAsync(user => user.Id == userId && user.IsActive && !user.IsLocked))
         {
             return Unauthorized(ApiResponse<ImportQuestionsResultResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        // Check permission to import questions
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ImportQuestionsResultResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
         }
 
         if (requests == null || requests.Count == 0)

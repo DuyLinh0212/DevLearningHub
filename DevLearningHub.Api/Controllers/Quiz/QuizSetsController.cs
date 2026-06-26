@@ -17,11 +17,13 @@ public class QuizSetsController : ControllerBase
 {
     private readonly DevLearningHubContext _db;
     private readonly IAuditService _audit;
+    private readonly IPermissionService _permissions;
 
-    public QuizSetsController(DevLearningHubContext db, IAuditService audit)
+    public QuizSetsController(DevLearningHubContext db, IAuditService audit, IPermissionService permissions)
     {
         _db = db;
         _audit = audit;
+        _permissions = permissions;
     }
 
     [HttpGet]
@@ -41,7 +43,8 @@ public class QuizSetsController : ControllerBase
         if (includePrivate && User.TryGetUserId(out var userId))
         {
             // Quiz managers (quiz:edit) see every set; others only public ones plus their own.
-            if (!User.HasPermission("quiz:edit"))
+            var canManage = await _permissions.HasPermissionAsync(userId, "quiz:edit");
+            if (!canManage)
             {
                 query = query.Where(qs => qs.IsPublic || qs.CreatedBy == userId);
             }
@@ -92,7 +95,7 @@ public class QuizSetsController : ControllerBase
         }
 
         var isOwner = User.TryGetUserId(out var userId) && quizSet.CreatedBy == userId;
-        var canManageAny = User.HasPermission("quiz:edit");
+        var canManageAny = await _permissions.HasPermissionAsync(userId, "quiz:edit");
         var canManage = isOwner || canManageAny;
         if (!quizSet.IsPublic && !canManage)
         {
@@ -142,7 +145,7 @@ public class QuizSetsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    // Create a new quiz set.
+    // Create a new quiz set. Requires quiz:create permission.
     public async Task<ActionResult<ApiResponse<QuizSetResponse>>> CreateQuizSet(CreateQuizSetRequest request)
     {
         if (!User.TryGetUserId(out var userId))
@@ -153,6 +156,12 @@ public class QuizSetsController : ControllerBase
         if (!await IsActiveUserAsync(userId))
         {
             return Unauthorized(ApiResponse<QuizSetResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        // Check permission to create quiz sets
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
         }
 
         var topic = await ResolveOrCreateTopicAsync(request.TopicId, request.Topic);
@@ -220,7 +229,7 @@ public class QuizSetsController : ControllerBase
         }
 
         var isOwner = source.CreatedBy == userId;
-        var canManageAny = User.HasPermission("quiz:edit");
+        var canManageAny = await _permissions.HasPermissionAsync(userId, "quiz:edit");
 
         // Hidden quiz sets can only be copied by their owner or a quiz manager (quiz:edit).
         if (!source.IsPublic && !isOwner && !canManageAny)
@@ -319,7 +328,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<QuizSetResponse>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
@@ -381,7 +390,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -417,7 +426,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -469,7 +478,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))
+        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -502,9 +511,17 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<List<QuizSetQuestionResponse>>.Fail("Quiz set not found."));
         }
 
-        if (!quizSet.IsPublic && (!User.TryGetUserId(out var userId) || (quizSet.CreatedBy != userId && !User.HasPermission("quiz:edit"))))
+        if (!quizSet.IsPublic)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
+            var canAccess = false;
+            if (User.TryGetUserId(out var userId))
+            {
+                canAccess = quizSet.CreatedBy == userId || await _permissions.HasPermissionAsync(userId, "quiz:edit");
+            }
+            if (!canAccess)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
+            }
         }
 
         var response = quizSet.QuizSetQuestions
@@ -667,7 +684,7 @@ public class QuizSetsController : ControllerBase
             .Where(question => requestedIds.Contains(question.Id));
 
         // Quiz managers (quiz:edit) may reuse any existing question; others only their own.
-        if (!User.HasPermission("quiz:edit"))
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
             existingQuestionQuery = existingQuestionQuery.Where(question => question.CreatedBy == userId);
         }

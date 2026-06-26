@@ -62,13 +62,14 @@ export class LoginComponent {
           try {
             const payloadPart = token.split('.')[1];
             const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
-            
+
             const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-            const isAdmin = Array.isArray(roleClaim) 
-              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') 
-              : roleClaim?.toLowerCase() === 'admin';            
-            
-            if (!isAdmin) {
+            const isAdminOrModerator = Array.isArray(roleClaim)
+              ? roleClaim.map((r: string) => r.toLowerCase()).includes('admin') ||
+                roleClaim.map((r: string) => r.toLowerCase()).includes('moderator')
+              : ['admin', 'moderator'].includes((roleClaim || '').toLowerCase());
+
+            if (!isAdminOrModerator) {
               this.errorMessage = 'Bạn không có quyền truy cập cổng Quản trị!';
               localStorage.removeItem('accessToken');
               this.cdr.detectChanges();

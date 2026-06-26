@@ -1,4 +1,5 @@
-﻿using DevLearningHub.Api.Dtos.CodePlayground;
+﻿using DevLearningHub.Api.Authorization;
+using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace DevLearningHub.Api.Controllers.CodePlayground;
 
 [ApiController]
 [Route("api/admin/judge")]
-[Authorize(Roles = "Admin")] // Đảm bảo chỉ Admin mới gọi được
+[Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Moderator}")] // Cho phép cả Admin và Moderator
 public class AdminJudgeController : ControllerBase
 {
     private readonly Judge0UrlHolder _urlHolder;

@@ -387,8 +387,9 @@ export class UserManagementComponent implements OnInit {
           }
         }
 
-        // Apply baseline grants (e.g., quiz perms for User) after loading initial checked state.
-        this.applyRolePermissionPresets();
+        // Note: Do NOT apply role permission presets here - we want to respect
+        // the actual permissions from the API. Presets are only applied when
+        // admin changes the role selection in the UI (onRoleChange).
 
         this.manageUser = {
           ...this.manageUser,

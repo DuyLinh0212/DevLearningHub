@@ -29,7 +29,7 @@ public class TopicsController : ControllerBase
     {
         var query = _db.Topics.AsNoTracking();
 
-        if (!includeInactive || !User.IsInRole(AppRoles.Admin))
+        if (!includeInactive || !(User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Moderator)))
         {
             query = query.Where(t => t.IsActive);
         }
@@ -43,7 +43,7 @@ public class TopicsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [Authorize(Policy = AppPolicies.ModeratorOrAdmin)]
     // Create a new topic.
     public async Task<ActionResult<ApiResponse<TopicResponse>>> CreateTopic(CreateTopicRequest request)
     {
@@ -80,7 +80,7 @@ public class TopicsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [Authorize(Policy = AppPolicies.ModeratorOrAdmin)]
     // Update an existing topic.
     public async Task<ActionResult<ApiResponse<TopicResponse>>> UpdateTopic(Guid id, UpdateTopicRequest request)
     {
@@ -125,7 +125,7 @@ public class TopicsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [Authorize(Policy = AppPolicies.ModeratorOrAdmin)]
     // Soft delete a topic by marking it inactive to preserve linked content.
     public async Task<ActionResult<ApiResponse<object>>> DeleteTopic(Guid id)
     {

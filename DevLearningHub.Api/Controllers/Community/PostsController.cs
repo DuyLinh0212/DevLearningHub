@@ -72,6 +72,9 @@ public class PostsController : ControllerBase
         var totalCount = await query.CountAsync();
 
         var posts = await query
+            .Include(p => p.Author)
+            .Include(p => p.Tags)
+            .Include(p => p.Comments)
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -177,7 +180,7 @@ public class PostsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    // Create a new post.
+    // Create a new post. Requires post:create permission.
     public async Task<ActionResult<ApiResponse<PostDetailResponse>>> CreatePost(CreatePostRequest request)
     {
         if (!User.TryGetUserId(out var userId))
@@ -188,6 +191,12 @@ public class PostsController : ControllerBase
         if (!await IsActiveUserAsync(userId))
         {
             return Unauthorized(ApiResponse<PostDetailResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        // Check permission to create posts
+        if (!await _permissions.HasPermissionAsync(userId, "post:create"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Forbidden. Missing permission: post:create"));
         }
 
         var title = request.Title.Trim();
@@ -467,7 +476,7 @@ public class PostsController : ControllerBase
 
     [HttpPost("{id:guid}/comments")]
     [Authorize]
-    // Add a comment or reply to a post.
+    // Add a comment or reply to a post. Requires comment:create permission.
     public async Task<ActionResult<ApiResponse<CommentResponse>>> AddComment(Guid id, CreateCommentRequest request)
     {
         if (!User.TryGetUserId(out var userId))
@@ -478,6 +487,12 @@ public class PostsController : ControllerBase
         if (!await IsActiveUserAsync(userId))
         {
             return Unauthorized(ApiResponse<CommentResponse>.Fail("Your session is no longer valid. Please sign in again."));
+        }
+
+        // Check permission to create comments
+        if (!await _permissions.HasPermissionAsync(userId, "comment:create"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CommentResponse>.Fail("Forbidden. Missing permission: comment:create"));
         }
 
         var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsHidden);
@@ -549,39 +564,73 @@ public class PostsController : ControllerBase
     // Hide or unhide a post and record a moderation log entry. Requires the post:hide permission.
     public async Task<ActionResult<ApiResponse<object>>> ModeratePost(Guid id, ModerateRequest request)
     {
-        if (!User.TryGetUserId(out var moderatorId))
+        try
         {
-            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+            if (!User.TryGetUserId(out var moderatorId))
+            {
+                Console.Error.WriteLine($"ModeratePost: User not authenticated properly. User.Identity.IsAuthenticated: {User?.Identity?.IsAuthenticated}");
+                return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+            }
+
+            Console.Error.WriteLine($"ModeratePost: UserId={moderatorId}, PostId={id}, Hidden={request.Hidden}");
+
+            var hasPerm = await _permissions.HasPermissionAsync(moderatorId, "post:hide");
+            Console.Error.WriteLine($"ModeratePost: hasPermission(post:hide) = {hasPerm}");
+
+            if (!hasPerm)
+            {
+                // Get user's effective permissions for debugging
+                var userPerms = await _permissions.GetEffectivePermissionsAsync(moderatorId);
+                Console.Error.WriteLine($"ModeratePost: User permissions: {string.Join(", ", userPerms)}");
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden. Missing permission: post:hide"));
+            }
+
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
+            if (post == null)
+            {
+                Console.Error.WriteLine($"ModeratePost: Post not found. PostId={id}");
+                return NotFound(ApiResponse<object>.Fail("Post not found."));
+            }
+
+            Console.Error.WriteLine($"ModeratePost: Found post. Current IsHidden={post.IsHidden}, request.Hidden={request.Hidden}");
+
+            post.IsHidden = request.Hidden;
+            post.UpdatedAt = DateTime.Now;
+
+            // Constraint accepts: 'hide', 'delete', 'restore'
+            // Use 'hide' when hiding, 'restore' when showing
+            var actionValue = request.Hidden ? "hide" : "restore";
+            Console.Error.WriteLine($"ModeratePost: Using actionValue={actionValue}, Hidden={request.Hidden}");
+
+            _db.ModerationLogs.Add(new ModerationLog
+            {
+                Id = Guid.NewGuid(),
+                ModeratorId = moderatorId,
+                TargetType = CommunityVotes.PostTarget,
+                TargetId = post.Id,
+                Action = actionValue,
+                Reason = request.Reason?.Trim(),
+                CreatedAt = DateTime.Now
+            });
+
+            Console.Error.WriteLine($"ModeratePost: Saving changes...");
+            await _db.SaveChangesAsync();
+            Console.Error.WriteLine($"ModeratePost: Save successful. Post IsHidden={post.IsHidden}");
+
+            return Ok(ApiResponse<object>.Ok(new { id = post.Id, isHidden = post.IsHidden }));
         }
-
-        if (!await _permissions.HasPermissionAsync(moderatorId, "post:hide"))
+        catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
+            // Log the exception details
+            Console.Error.WriteLine($"ModeratePost EXCEPTION: {ex.GetType().Name}: {ex.Message}");
+            Console.Error.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.Error.WriteLine($"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                Console.Error.WriteLine($"Inner stack: {ex.InnerException.StackTrace}");
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<object>.Fail($"Internal error: {ex.Message}"));
         }
-
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
-        if (post == null)
-        {
-            return NotFound(ApiResponse<object>.Fail("Post not found."));
-        }
-
-        post.IsHidden = request.Hidden;
-        post.UpdatedAt = DateTime.Now;
-
-        _db.ModerationLogs.Add(new ModerationLog
-        {
-            Id = Guid.NewGuid(),
-            ModeratorId = moderatorId,
-            TargetType = CommunityVotes.PostTarget,
-            TargetId = post.Id,
-            Action = request.Hidden ? "hide" : "unhide",
-            Reason = request.Reason?.Trim(),
-            CreatedAt = DateTime.Now
-        });
-
-        await _db.SaveChangesAsync();
-
-        return Ok(ApiResponse<object>.Ok(new { id = post.Id, isHidden = post.IsHidden }));
     }
 
     // ----- Helpers -----
