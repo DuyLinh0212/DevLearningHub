@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
@@ -14,6 +15,7 @@ import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 export class AdminDashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
   public mobileMenu = inject(MobileMenuService);
 
   statsData = {
@@ -37,7 +39,29 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    if (this.isOnlyModerator()) {
+      this.router.navigate(['/admin/moderator-dashboard']);
+      return;
+    }
     this.loadBackendData();
+  }
+
+  private isOnlyModerator(): boolean {
+    try {
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (!token) return false;
+      const payloadPart = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      const roleClaim = decodedPayload['role'] || decodedPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
+      const roles = Array.isArray(roleClaim)
+        ? roleClaim.map((r: string) => r.toLowerCase())
+        : [ (roleClaim || '').toLowerCase() ];
+
+      return roles.includes('moderator') && !roles.includes('admin');
+    } catch (e) {
+      return false;
+    }
   }
 
   private checkAdminRole(): boolean {

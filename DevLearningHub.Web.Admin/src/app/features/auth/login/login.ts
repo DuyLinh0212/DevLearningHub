@@ -77,7 +77,15 @@ export class LoginComponent {
             }
 
             alert('Đăng nhập thành công!');
-            this.router.navigate(['/admin']);
+            const roles = Array.isArray(roleClaim)
+              ? roleClaim.map((r: string) => r.toLowerCase())
+              : [ (roleClaim || '').toLowerCase() ];
+
+            if (roles.includes('moderator') && !roles.includes('admin')) {
+              this.router.navigate(['/admin/moderator-dashboard']);
+            } else {
+              this.router.navigate(['/admin']);
+            }
             
           } catch (e) {
             this.errorMessage = 'Không đọc được vai trò từ token. Phiên đăng nhập vẫn được giữ lại.';
