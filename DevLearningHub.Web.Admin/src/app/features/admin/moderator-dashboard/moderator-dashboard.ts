@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -17,7 +18,7 @@ interface ModerationAction {
 @Component({
   selector: 'app-moderator-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './moderator-dashboard.html',
   styleUrl: './moderator-dashboard.css'
 })
