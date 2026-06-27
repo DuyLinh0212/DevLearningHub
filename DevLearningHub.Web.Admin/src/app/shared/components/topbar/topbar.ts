@@ -44,6 +44,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
 
   readonly pagesList = [
     { name: 'Bảng điều phối', path: '/admin', icon: 'bi bi-speedometer2' },
+    { name: 'Dashboard Moderator', path: '/admin/moderator-dashboard', icon: 'bi bi-speedometer2' },
     { name: 'Quản lý Đề thi', path: '/admin/quiz', icon: 'bi bi-database-fill' },
     { name: 'Quản lý Bài tập', path: '/admin/problems', icon: 'bi bi-cpu-fill' },
     { name: 'Quản lý Lộ trình', path: '/admin/roadmap', icon: 'bi bi-bezier2' },

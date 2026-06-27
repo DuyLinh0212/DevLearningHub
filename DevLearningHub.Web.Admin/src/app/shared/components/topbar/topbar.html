@@ -19,7 +19,7 @@
     <!-- Nav links (desktop) -->
     <nav class="topbar-nav" aria-label="Main navigation">
       <!-- Dropdown 1: Điều phối -->
-      @if (hasRole('Admin') || hasPermission('quiz:edit') || hasPermission('roadmap:edit') || hasPermission('topic:edit')) {
+      @if (hasRole('Admin') || hasRole('Moderator') || hasPermission('quiz:edit') || hasPermission('roadmap:edit') || hasPermission('topic:edit')) {
         <div class="nav-dropdown" [class.open]="activeDropdown === 'dieu-phoi'">
           <button class="nav-link dropdown-toggle-btn" (click)="toggleDropdown('dieu-phoi', $event)">
             <i class="bi bi-speedometer2"></i>
@@ -30,6 +30,11 @@
             @if (hasRole('Admin')) {
               <a routerLink="/admin" routerLinkActive="dropdown-active" [routerLinkActiveOptions]="{exact: true}" class="dropdown-item" (click)="activeDropdown = null">
                 <i class="bi bi-speedometer2"></i> Bảng điều phối
+              </a>
+            }
+            @if (hasRole('Moderator')) {
+              <a routerLink="/admin/moderator-dashboard" routerLinkActive="dropdown-active" class="dropdown-item" (click)="activeDropdown = null">
+                <i class="bi bi-speedometer2"></i> Dashboard Moderator
               </a>
             }
             @if (hasPermission('quiz:edit')) {
