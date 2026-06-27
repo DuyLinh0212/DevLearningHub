@@ -31,6 +31,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
 
   isSearchOpen = false;
   isProfileOpen = false;
+  activeDropdown: string | null = null;
   searchQuery = '';
   searchLoading = false;
   matchedPages: any[] = [];
@@ -187,11 +188,24 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
+  toggleDropdown(dropdownName: string, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.activeDropdown === dropdownName) {
+      this.activeDropdown = null;
+    } else {
+      this.activeDropdown = dropdownName;
+      this.isProfileOpen = false;
+      this.isSearchOpen = false;
+    }
+    this.cdr.detectChanges();
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(e: MouseEvent) {
     if (!this.elementRef.nativeElement.contains(e.target)) {
       if (this.isSearchOpen) { this.isSearchOpen = false; this.clearSearch(); }
       if (this.isProfileOpen) { this.isProfileOpen = false; }
+      this.activeDropdown = null;
       this.cdr.detectChanges();
     }
   }

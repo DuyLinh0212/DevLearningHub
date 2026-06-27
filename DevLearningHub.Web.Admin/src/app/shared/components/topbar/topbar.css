@@ -385,7 +385,7 @@
   margin-left: 2px;
 }
 
-.nav-dropdown:hover .dropdown-chevron {
+.nav-dropdown.open .dropdown-chevron {
   transform: rotate(180deg);
 }
 
@@ -407,7 +407,7 @@
   animation: dropIn 0.15s ease;
 }
 
-.nav-dropdown:hover .nav-dropdown-menu {
+.nav-dropdown.open .nav-dropdown-menu {
   display: flex;
 }
 

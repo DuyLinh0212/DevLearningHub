@@ -532,7 +532,8 @@ app-tag-management,
 app-topic-management,
 app-testcase-management,
 app-moderator-management,
-app-audit-logs {
+app-audit-logs,
+app-settings {
   display: flex;
   flex-direction: column;
   flex: 1;
