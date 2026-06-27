@@ -52,6 +52,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     { name: 'Quản lý Tag', path: '/admin/tags', icon: 'bi bi-tag-fill' },
     { name: 'Quản lý Bài viết', path: '/admin/posts', icon: 'bi bi-newspaper' },
     { name: 'Quản lý Người dùng', path: '/admin/users', icon: 'bi bi-people-fill' },
+    { name: 'Quản lý Moderator', path: '/admin/moderators', icon: 'bi bi-person-badge' },
+    { name: 'Dashboard Moderator', path: '/admin/moderator-dashboard', icon: 'bi bi-speedometer2' },
     { name: 'Logs hệ thống', path: '/admin/audit-logs', icon: 'bi bi-terminal-fill' },
     { name: 'Cài đặt', path: '/settings', icon: 'bi bi-gear' }
   ];
@@ -130,23 +132,35 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!permission) return false;
     const target = permission.toLowerCase();
 
-    // Check from profile permissions (loaded from API)
+    // Check from profile permissions (loaded from API - most accurate)
     if (this.profile.permissions?.some(p => p.toLowerCase() === target)) {
       return true;
     }
 
-    // Fallback: check token
+    // Fallback: check token directly
+    // JWT stores permissions as multiple 'permission' claims (singular key)
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
     if (!token) return false;
 
     try {
       const payloadPart = token.split('.')[1];
       const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
-      const permissions = decoded['permissions'] || [];
-      if (Array.isArray(permissions)) {
-        return permissions.some(p => p.toLowerCase() === target) ||
-               permissions.includes('system.full_control');
-      }
+
+      // Admin role = full control
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim)
+        ? roleClaim.map((r: string) => r.toLowerCase())
+        : [(roleClaim || '').toLowerCase()];
+      if (roles.includes('admin')) return true;
+
+      // Read 'permission' claims (singular, not 'permissions')
+      const permClaim = decoded['permission'];
+      const permList: string[] = Array.isArray(permClaim)
+        ? permClaim
+        : (permClaim ? [permClaim] : []);
+
+      return permList.some(p => p.toLowerCase() === target) ||
+             permList.some(p => p.toLowerCase() === 'system.full_control');
     } catch (e) {
       console.error('Error checking permission:', e);
     }
@@ -168,7 +182,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log('User profile loaded:', { roles: user.roles, permissions: user.permissions });
 
         this.profile = {
-          displayName: user.username || user.fullName || 'Quản trị viên',
+          displayName: user.fullName || user.username || 'Quản trị viên',
           username: user.username || '',
           email: user.email || '',
           avatarUrl: user.avatarUrl || '',
@@ -198,10 +212,40 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     this.searchLoading = true;
     this.cdr.detectChanges();
 
-    // 1. Tìm trong Chức năng (Local)
-    this.matchedPages = this.pagesList.filter(p => p.name.toLowerCase().includes(query));
+    // 1. Tìm trong Chức năng (Local) - Lọc theo vai trò và quyền hạn
+    this.matchedPages = this.pagesList.filter(p => {
+      if (!p.name.toLowerCase().includes(query)) return false;
+      if (p.path === '/admin') return this.hasRole('Admin');
+      if (p.path === '/admin/quiz') return this.hasPermission('quiz:edit');
+      if (p.path === '/admin/problems') return this.hasPermission('quiz:edit');
+      if (p.path === '/admin/roadmap') return this.hasPermission('roadmap:edit');
+      if (p.path === '/admin/topics') return this.hasPermission('topic:edit');
+      if (p.path === '/admin/tags') return this.hasPermission('tag:edit');
+      if (p.path === '/admin/posts') return this.hasPermission('post:hide_any') || this.hasPermission('post:edit_any') || this.hasPermission('post:delete_any');
+      if (p.path === '/admin/audit-logs') return this.hasPermission('audit:view');
+      if (p.path === '/admin/users') return this.hasPermission('user:view_all');
+      if (p.path === '/admin/moderators') return this.hasRole('Admin');
+      if (p.path === '/admin/moderator-dashboard') return this.hasRole('Moderator') && !this.hasRole('Admin');
+      return true; // Cài đặt
+    });
 
-    let activeRequests = 3;
+    const searchProblems = this.hasRole('Admin') || this.hasPermission('quiz:edit');
+    const searchQuizzes = this.hasRole('Admin') || this.hasPermission('quiz:edit');
+    const searchUsers = this.hasRole('Admin') || this.hasPermission('user:view_all');
+
+    let activeRequests = 0;
+    if (searchProblems) activeRequests++;
+    if (searchQuizzes) activeRequests++;
+    if (searchUsers) activeRequests++;
+
+    if (activeRequests === 0) {
+      this.searchLoading = false;
+      this.matchedProblems = [];
+      this.matchedQuizzes = [];
+      this.matchedUsers = [];
+      this.cdr.detectChanges();
+      return;
+    }
 
     const checkLoading = () => {
       activeRequests--;
@@ -212,51 +256,63 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     };
 
     // 2. Tìm trong Bài tập code (BE)
-    this.http.get<any[]>('/api/problems').subscribe({
-      next: (res) => {
-        const raw = Array.isArray(res) ? res : [];
-        this.matchedProblems = raw.filter(p =>
-          p.title?.toLowerCase().includes(query) ||
-          p.difficulty?.toLowerCase().includes(query)
-        ).slice(0, 5);
-        checkLoading();
-      },
-      error: () => {
-        this.matchedProblems = [];
-        checkLoading();
-      }
-    });
+    if (searchProblems) {
+      this.http.get<any[]>('/api/problems').subscribe({
+        next: (res) => {
+          const raw = Array.isArray(res) ? res : [];
+          this.matchedProblems = raw.filter(p =>
+            p.title?.toLowerCase().includes(query) ||
+            p.difficulty?.toLowerCase().includes(query)
+          ).slice(0, 5);
+          checkLoading();
+        },
+        error: () => {
+          this.matchedProblems = [];
+          checkLoading();
+        }
+      });
+    } else {
+      this.matchedProblems = [];
+    }
 
     // 3. Tìm trong Đề thi (BE)
-    this.http.get<any>('/api/quiz-sets').subscribe({
-      next: (res) => {
-        const list = res?.data || res || [];
-        const rawList = Array.isArray(list) ? list : [];
-        this.matchedQuizzes = rawList.filter(q =>
-          q.title?.toLowerCase().includes(query) ||
-          q.description?.toLowerCase().includes(query)
-        ).slice(0, 5);
-        checkLoading();
-      },
-      error: () => {
-        this.matchedQuizzes = [];
-        checkLoading();
-      }
-    });
+    if (searchQuizzes) {
+      this.http.get<any>('/api/quiz-sets').subscribe({
+        next: (res) => {
+          const list = res?.data || res || [];
+          const rawList = Array.isArray(list) ? list : [];
+          this.matchedQuizzes = rawList.filter(q =>
+            q.title?.toLowerCase().includes(query) ||
+            q.description?.toLowerCase().includes(query)
+          ).slice(0, 5);
+          checkLoading();
+        },
+        error: () => {
+          this.matchedQuizzes = [];
+          checkLoading();
+        }
+      });
+    } else {
+      this.matchedQuizzes = [];
+    }
 
     // 4. Tìm trong Người dùng (BE)
-    this.http.get<any>('/api/admin/users', { params: { search: query, pageSize: '5' } }).subscribe({
-      next: (res) => {
-        const data = res?.data;
-        const rawItems = data?.items || [];
-        this.matchedUsers = Array.isArray(rawItems) ? rawItems : [];
-        checkLoading();
-      },
-      error: () => {
-        this.matchedUsers = [];
-        checkLoading();
-      }
-    });
+    if (searchUsers) {
+      this.http.get<any>('/api/admin/users', { params: { search: query, pageSize: '5' } }).subscribe({
+        next: (res) => {
+          const data = res?.data;
+          const rawItems = data?.items || [];
+          this.matchedUsers = Array.isArray(rawItems) ? rawItems : [];
+          checkLoading();
+        },
+        error: () => {
+          this.matchedUsers = [];
+          checkLoading();
+        }
+      });
+    } else {
+      this.matchedUsers = [];
+    }
   }
 
   clearSearch() {

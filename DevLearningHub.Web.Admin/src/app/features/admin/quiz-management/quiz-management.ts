@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
@@ -10,7 +9,7 @@ import * as XLSX from 'xlsx';
 @Component({
   selector: 'app-quiz-management',
   standalone: true,
-  imports: [FormsModule, SidebarComponent, CommonModule],
+  imports: [FormsModule,  CommonModule],
   templateUrl: './quiz-management.html',
   styleUrl: './quiz-management.css'
 })

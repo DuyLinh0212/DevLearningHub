@@ -74,9 +74,9 @@ public class QuestionsController : ControllerBase
         }
 
         // Check permission to create questions
-        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:create") && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden. Missing permission: quiz:create"));
         }
 
         if (!await _db.Topics.AnyAsync(t => t.Id == request.TopicId && t.IsActive))
@@ -134,7 +134,11 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<QuestionResponse>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        var isOwner = question.CreatedBy == userId;
+        var canEditOwn = isOwner && (await _permissions.HasPermissionAsync(userId, "quiz:create") || await _permissions.HasPermissionAsync(userId, "quiz:edit"));
+        var canEditAny = await _permissions.HasPermissionAsync(userId, "quiz:edit");
+
+        if (!canEditOwn && !canEditAny)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuestionResponse>.Fail("Forbidden."));
         }
@@ -188,7 +192,11 @@ public class QuestionsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Question not found."));
         }
 
-        if (question.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        var isOwner = question.CreatedBy == userId;
+        var canDeleteOwn = isOwner && (await _permissions.HasPermissionAsync(userId, "quiz:create") || await _permissions.HasPermissionAsync(userId, "quiz:edit"));
+        var canDeleteAny = await _permissions.HasPermissionAsync(userId, "quiz:edit");
+
+        if (!canDeleteOwn && !canDeleteAny)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -215,9 +223,9 @@ public class QuestionsController : ControllerBase
         }
 
         // Check permission to import questions
-        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:create") && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
         {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ImportQuestionsResultResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ImportQuestionsResultResponse>.Fail("Forbidden. Missing permission: quiz:create"));
         }
 
         if (requests == null || requests.Count == 0)

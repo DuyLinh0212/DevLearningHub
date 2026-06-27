@@ -20,10 +20,10 @@ export class ForumService {
     tag?: string,
     authorId?: string
   ): Observable<any> {
-    // Nạp cả trường 'page' vào query string gửi lên API Backend
     let params = new HttpParams()
       .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
+      .set('pageSize', pageSize.toString())
+      .set('_t', new Date().getTime().toString());
 
     if (search && search.trim()) {
       params = params.set('search', search.trim());
@@ -41,7 +41,8 @@ export class ForumService {
   }
 
   getPost(id: string): Observable<any> {
-    return this.http.get<any>(`${this.postsUrl}/${id}`).pipe(
+    const params = new HttpParams().set('_t', new Date().getTime().toString());
+    return this.http.get<any>(`${this.postsUrl}/${id}`, { params }).pipe(
       map(res => res?.data || res)
     );
   }
@@ -87,7 +88,8 @@ export class ForumService {
 
   // --- COMMENTS ---
   getComments(postId: string): Observable<any> {
-    return this.http.get<any>(`${this.postsUrl}/${postId}/comments`).pipe(
+    const params = new HttpParams().set('_t', new Date().getTime().toString());
+    return this.http.get<any>(`${this.postsUrl}/${postId}/comments`, { params }).pipe(
       map(res => res?.data || res)
     );
   }

@@ -2,13 +2,12 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })

@@ -3,7 +3,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { StaffUserService } from '../../../core/services/staff-user.service';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -12,7 +11,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 @Component({
   selector: 'app-admin-post-detail',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, NgTemplateOutlet, SidebarComponent],
+  imports: [RouterLink, CommonModule, FormsModule, NgTemplateOutlet],
   templateUrl: './post-detail.html',
   styleUrl: './post-detail.css'
 })

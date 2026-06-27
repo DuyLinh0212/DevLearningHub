@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
 const PROBLEM_TEMPLATES: Record<string, { title: string; difficulty: string; description: string; starterCode: string }> = {
   fibonacci: {
@@ -539,7 +538,7 @@ int main() {
 @Component({
   selector: 'app-problem-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './problem-management.html',
   styleUrl: './problem-management.css'
 })

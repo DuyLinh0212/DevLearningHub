@@ -1,113 +1,165 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
-  <main class="main-content">
-    <header class="content-header">
-      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
-        <i class="bi bi-list"></i>
-      </button>
-      <a class="btn-back" routerLink="/admin/posts">
-        <i class="bi bi-arrow-left"></i> Quay lại quản lý bài viết
-      </a>
-      <div class="header-actions">
-        @if (post) {
-          @if (canModeratePosts) {
-            <button class="btn-action-moderate" (click)="toggleModeratePost()">
-              <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
-              {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
-            </button>
-            <button class="btn-action-danger" (click)="deletePost()">
-              <i class="bi bi-trash"></i> Xóa bài
-            </button>
-          } @else {
-            <span class="moderator-notice" title="Bạn chỉ có quyền kiểm duyệt bình luận">
-              <i class="bi bi-info-circle"></i> Chế độ Moderator
-            </span>
-          }
-        }
-      </div>
-    </header>
-    <div class="dashboard-scroll-body">
-      @if (loading) {
-        <div class="forum-loading-state">
-          <i class="bi bi-arrow-repeat spin-animation" style="font-size: 2rem; color: #a855f7;"></i>
-          <p>Đang tải bài viết...</p>
-        </div>
-      } @else if (!post) {
-        <div class="empty-state-card">
-          <i class="bi bi-exclamation-triangle-fill" style="color: #ef4444;"></i>
-          <h3>Không tìm thấy bài viết</h3>
-          <p>Bài viết không tồn tại hoặc đã bị xóa.</p>
-          <button class="btn-create" routerLink="/admin/posts" style="margin-top: 16px;">Về danh sách</button>
-        </div>
+<header class="content-header">
+  <a class="btn-back" routerLink="/admin/posts">
+    <i class="bi bi-arrow-left"></i> Quản lý bài viết
+  </a>
+  <div class="header-actions">
+    @if (post) {
+      @if (canModeratePosts) {
+        <button class="btn-action-moderate" (click)="toggleModeratePost()">
+          <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
+          {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
+        </button>
+        <button class="btn-action-danger" (click)="deletePost()">
+          <i class="bi bi-trash"></i> Xóa bài
+        </button>
       } @else {
-        <article class="social-post-detail-card">
-          <div class="post-detail-header">
-            <img [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
-            <div class="author-meta-text">
-              <h3 class="author-name">{{ post.author.fullName || post.author.username }}</h3>
-              <span class="post-date">Đăng {{ formatRelativeTime(post.createdAt) }}</span>
+        <span class="moderator-notice" title="Bạn chỉ có quyền kiểm duyệt bình luận">
+          <i class="bi bi-info-circle"></i> Chế độ Moderator
+        </span>
+      }
+    }
+  </div>
+</header>
+
+<div class="dashboard-scroll-body">
+  @if (loading) {
+    <div class="forum-loading-state">
+      <i class="bi bi-arrow-repeat spin-animation" style="font-size: 2rem; color: #a855f7;"></i>
+      <p>Đang tải bài viết...</p>
+    </div>
+  } @else if (!post) {
+    <div class="empty-state-card">
+      <i class="bi bi-exclamation-triangle-fill" style="color: #ef4444;"></i>
+      <h3>Không tìm thấy bài viết</h3>
+      <p>Bài viết không tồn tại hoặc đã bị xóa.</p>
+      <button class="btn-create" routerLink="/admin/posts" style="margin-top: 16px;">Về danh sách</button>
+    </div>
+  } @else {
+
+    <!-- ================================================================
+         LEETCODE STYLE: Main content (70%) + Info Sidebar (30%)
+         ================================================================ -->
+    <div class="lc-post-layout">
+
+      <!-- LEFT: Article + Comments -->
+      <main class="lc-post-main">
+
+        <!-- Article Card -->
+        <article class="lc-article-card">
+
+          <!-- Author row -->
+          <div class="lc-author-row">
+            <img
+              [src]="post.author.avatarUrl || 'assets/images/default-avatar.svg'"
+              [alt]="post.author.fullName"
+              class="lc-author-avatar"
+              (error)="onAvatarError($event)"
+            />
+            <div class="lc-author-info">
+              <span class="lc-author-name">{{ post.author.fullName || post.author.username }}</span>
+              <div class="lc-post-meta">
+                <i class="bi bi-eye"></i> {{ post.viewCount || 0 }}
+                &nbsp;·&nbsp;
+                <i class="bi bi-calendar3"></i> {{ formatRelativeTime(post.createdAt) }}
+              </div>
             </div>
-            <div class="post-detail-status">
-              <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
-                <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
-                {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
-              </span>
-              @if (post.author.isStaff) {
-                <span class="staff-badge" [class.admin-badge]="post.author.isAdmin" [class.moderator-badge]="!post.author.isAdmin">
-                  <i class="bi" [class.bi-shield-fill]="post.author.isAdmin" [class.bi-person-badge]="!post.author.isAdmin"></i>
-                  {{ post.author.isAdmin ? 'Admin' : 'Moderator' }}
+            <div class="lc-tags-inline">
+              @for (tag of post.tags; track tag.id) {
+                <span class="lc-tag-pill" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">
+                  #{{ tag.name }}
                 </span>
               }
             </div>
+            <!-- Admin status badge -->
+            <span class="admin-status-badge" [class.badge-hidden]="post.isHidden" [class.badge-visible]="!post.isHidden">
+              <i class="bi" [class.bi-eye-slash-fill]="post.isHidden" [class.bi-check-circle-fill]="!post.isHidden"></i>
+              {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
+            </span>
           </div>
-          <h1 class="post-detail-title">
+
+          <!-- Title -->
+          <h1 class="lc-post-title">
             {{ post.title }}
             @if (post.isHidden) {
               <span class="moderated-badge">Bị ẩn</span>
             }
+            @if (post.author.isStaff) {
+              <span class="staff-badge" [class.admin-badge-pill]="post.author.isAdmin" [class.mod-badge-pill]="!post.author.isAdmin">
+                <i class="bi" [class.bi-shield-fill]="post.author.isAdmin" [class.bi-person-badge]="!post.author.isAdmin"></i>
+                {{ post.author.isAdmin ? 'Admin' : 'Moderator' }}
+              </span>
+            }
           </h1>
-          <div class="post-detail-tags">
-            @for (tag of post.tags; track tag.id) {
-              <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
-            }
-          </div>
-          <div class="post-divider"></div>
-          <div class="post-detail-body">
-            @if (post.imageUrl) {
-              <div class="post-image-container">
-                <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image post-image-zoomable" (click)="openImageZoom(post.imageUrl)" title="Nhấn để phóng to">
-              </div>
-            }
-            <div class="post-text-body" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
-          </div>
-          <div class="post-card-metrics">
-            <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i> {{ post.upvotes }} lượt thích</span>
-            <span class="comments-count">{{ post.commentCount }} bình luận &nbsp;&bull;&nbsp; {{ post.viewCount }} lượt xem</span>
-          </div>
-          <div class="post-divider"></div>
-          <div class="post-card-actions">
-            <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
-              <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i> Thích
-            </button>
-            <button class="action-btn" (click)="scrollToComments()">
-              <i class="bi bi-chat-right-text"></i> Bình luận
-            </button>
-          </div>
-        </article>
-        <section class="discussion-section">
-          <h2>Thảo luận ({{ post.commentCount }})</h2>
-          <div class="comment-write-box">
-            <div class="comment-write-header"><span>Đóng góp câu trả lời</span></div>
-            <textarea placeholder="Nhập bình luận..." [(ngModel)]="rootCommentText" rows="4" class="comment-textarea"></textarea>
-            <div class="comment-write-actions">
-              <button class="btn-submit-comment" [disabled]="!rootCommentText.trim()" (click)="addRootComment()">
-                <i class="bi bi-send-fill"></i> Gửi câu trả lời
+
+          <div class="lc-article-divider"></div>
+
+          <!-- Image -->
+          @if (post.imageUrl) {
+            <div class="lc-post-image-wrap">
+              <img
+                [src]="post.imageUrl"
+                alt="Ảnh bài viết"
+                class="lc-post-image"
+                (click)="openImageZoom(post.imageUrl)"
+                title="Nhấn để phóng to"
+              />
+            </div>
+          }
+
+          <!-- Markdown body -->
+          <div class="lc-post-body" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
+
+          <div class="lc-article-divider"></div>
+
+          <!-- Action bar -->
+          <div class="lc-action-bar">
+            <div class="lc-action-left">
+              <button class="lc-vote-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
+                <i class="bi" [class.bi-arrow-up-circle-fill]="post.myVote === 'up'" [class.bi-arrow-up-circle]="post.myVote !== 'up'"></i>
+                {{ post.upvotes }}
               </button>
+              <button class="lc-vote-btn" [class.active]="post.myVote === 'down'" (click)="votePost('down')">
+                <i class="bi" [class.bi-arrow-down-circle-fill]="post.myVote === 'down'" [class.bi-arrow-down-circle]="post.myVote !== 'down'"></i>
+              </button>
+              <span class="lc-metric-chip"><i class="bi bi-chat-left-text"></i> {{ post.commentCount }}</span>
+              <span class="lc-metric-chip"><i class="bi bi-eye"></i> {{ post.viewCount }}</span>
             </div>
           </div>
-          <div class="comments-tree">
+        </article>
+
+        <!-- COMMENTS SECTION -->
+        <section class="lc-comments-section" id="comments-anchor">
+          <h2 class="lc-comments-title">
+            <i class="bi bi-chat-left-text"></i> Thảo luận
+            <span class="lc-comment-count">{{ post.commentCount }}</span>
+          </h2>
+
+          <!-- Write box -->
+          <div class="lc-write-box">
+            <img src="assets/images/default-avatar.svg" class="lc-write-avatar" alt="You" />
+            <div class="lc-write-input-wrap">
+              <textarea
+                placeholder="Đóng góp câu trả lời (hỗ trợ Markdown)..."
+                [(ngModel)]="rootCommentText"
+                rows="3"
+                class="lc-comment-textarea"
+              ></textarea>
+              <div class="lc-write-actions">
+                <button
+                  class="lc-btn-comment"
+                  [disabled]="!rootCommentText.trim()"
+                  (click)="addRootComment()"
+                >
+                  <i class="bi bi-send-fill"></i> Comment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comment list -->
+          <div class="lc-comments-list">
             @if (comments.length === 0) {
-              <p class="no-comments-text">Chưa có bình luận nào.</p>
+              <p class="lc-no-comments">Chưa có bình luận nào.</p>
             } @else {
               @for (comment of comments; track comment.id) {
                 <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
@@ -115,90 +167,168 @@
             }
           </div>
         </section>
-      }
+      </main>
+
+      <!-- RIGHT: Admin Info Sidebar -->
+      <aside class="lc-explore-sidebar admin-info-sidebar">
+        <div class="lc-explore-header">
+          <i class="bi bi-shield-check"></i> Thông tin Admin
+        </div>
+
+        <div class="admin-info-card">
+          <div class="admin-info-row">
+            <span class="admin-info-label">Trạng thái</span>
+            <span class="admin-info-value" [class.text-danger]="post.isHidden" [class.text-success]="!post.isHidden">
+              <i class="bi" [class.bi-eye-slash-fill]="post.isHidden" [class.bi-check-circle-fill]="!post.isHidden"></i>
+              {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}
+            </span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Tác giả</span>
+            <span class="admin-info-value">{{ post.author.fullName || post.author.username }}</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Email</span>
+            <span class="admin-info-value" style="font-size: 0.78rem; word-break: break-all;">{{ post.author.email || '—' }}</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Đăng lúc</span>
+            <span class="admin-info-value">{{ formatRelativeTime(post.createdAt) }}</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Lượt xem</span>
+            <span class="admin-info-value">{{ post.viewCount || 0 }}</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Lượt thích</span>
+            <span class="admin-info-value">{{ post.upvotes || 0 }}</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Bình luận</span>
+            <span class="admin-info-value">{{ post.commentCount || 0 }}</span>
+          </div>
+          @if (post.tags?.length > 0) {
+            <div class="admin-info-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+              <span class="admin-info-label">Tags</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                @for (tag of post.tags; track tag.id) {
+                  <span class="lc-tag-pill" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (canModeratePosts) {
+          <div class="admin-action-group">
+            <button class="btn-action-moderate w-full" (click)="toggleModeratePost()">
+              <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
+              {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
+            </button>
+            <button class="btn-action-danger w-full" (click)="deletePost()">
+              <i class="bi bi-trash"></i> Xóa bài vĩnh viễn
+            </button>
+          </div>
+        }
+      </aside>
     </div>
-  </main>
+  }
 </div>
 
+<!-- RECURSIVE COMMENT TEMPLATE -->
 <ng-template #commentTemplate let-comment="comment" let-depth="depth">
-  <div class="comment-node" [class.is-accepted]="comment.isAccepted" [class.is-reply]="depth > 0" [class.admin-comment-highlight]="comment.isStaff">
-    <div class="comment-layout">
-      <div class="comment-avatar-cell">
-        <img [src]="comment.author.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="comment-avatar" (error)="onAvatarError($event)">
+  <div class="lc-comment-node" [class.is-reply]="depth > 0"
+       [class.admin-highlight]="comment.author?.isAdmin"
+       [class.mod-highlight]="comment.author?.isStaff && !comment.author?.isAdmin">
+
+    <div class="lc-comment-layout">
+      <!-- Avatar -->
+      <div class="lc-comment-avatar-col">
+        <img
+          [src]="comment.author.avatarUrl || 'assets/images/default-avatar.svg'"
+          class="lc-comment-avatar"
+          (error)="onAvatarError($event)"
+          alt="avatar"
+        />
+        @if (comment.replies?.length > 0) {
+          <div class="lc-comment-thread-line"></div>
+        }
       </div>
-      <div class="comment-content-cell">
-        <div class="comment-header">
-          <div class="comment-author-info">
-            <span class="comment-author-name">{{ comment.author.fullName || comment.author.username }}</span>
-            @if (comment.author.isStaff) {
-              <span class="admin-comment-badge" [class.admin-badge]="comment.author.isAdmin" [class.moderator-badge]="!comment.author.isAdmin">
-                <i class="bi" [class.bi-shield-fill]="comment.author.isAdmin" [class.bi-person-badge]="!comment.author.isAdmin"></i>
-                {{ comment.author.isAdmin ? 'Admin' : 'Moderator' }}
-              </span>
-            } @else if (isPostAuthorComment(comment)) {
-              <span class="author-badge">Chủ bài viết</span>
-            }
-            <span class="comment-date">&bull; {{ formatRelativeTime(comment.createdAt) }}</span>
-            @if (comment.isHidden) {
-              <span class="mini-hidden-badge">Đã ẩn</span>
-            }
-          </div>
-          <div class="comment-actions">
-            <button class="btn-link-action" (click)="toggleReplyForm(comment.id)">
-              <i class="bi bi-reply"></i> Trả lời
-            </button>
-            @if (canModerateComments) {
-              <button class="btn-link-action text-warning" (click)="toggleModerateComment(comment)">
-                <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-                {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
-              </button>
-            }
-            @if (comment.author.id === currentUserId || canModerateComments) {
-              <button class="btn-link-action text-danger" (click)="deleteComment(comment.id)">
-                <i class="bi bi-trash"></i> Xóa
-              </button>
-            }
-          </div>
+
+      <!-- Content -->
+      <div class="lc-comment-body-col">
+        <!-- Header -->
+        <div class="lc-comment-head">
+          <span class="lc-comment-author">{{ comment.author.fullName || comment.author.username }}</span>
+          @if (isPostAuthorComment(comment)) {
+            <span class="lc-badge author-badge">Chủ bài</span>
+          }
+          @if (comment.author?.isAdmin) {
+            <span class="lc-badge admin-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+          } @else if (comment.author?.isStaff) {
+            <span class="lc-badge admin-badge"><i class="bi bi-shield"></i> Mod</span>
+          }
+          @if (comment.isHidden) {
+            <span class="lc-badge hidden-badge">Đã ẩn</span>
+          }
+          <span class="lc-comment-time">· {{ formatRelativeTime(comment.createdAt) }}</span>
         </div>
-        <div class="comment-body-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
-        <div class="comment-footer-row">
-          <div class="comment-vote-pill">
-            <button class="btn-vote-like" [class.voted]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')" title="Thích">
-              <i class="bi" [class.bi-heart-fill]="comment.myVote === 'up'" [class.bi-heart]="comment.myVote !== 'up'"></i>
-              <span class="vote-like-text">Thích</span>
-              @if (comment.upvotes > 0) {
-                <span class="vote-like-count">({{ comment.upvotes }})</span>
-              }
+
+        <!-- Body -->
+        <div class="lc-comment-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
+
+        <!-- Footer actions -->
+        <div class="lc-comment-footer">
+          <div class="lc-vote-row">
+            <button class="lc-vote-btn sm" [class.active]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')">
+              <i class="bi" [class.bi-arrow-up-circle-fill]="comment.myVote === 'up'" [class.bi-arrow-up-circle]="comment.myVote !== 'up'"></i>
+              @if (comment.upvotes > 0) { {{ comment.upvotes }} }
+            </button>
+            <button class="lc-vote-btn sm" [class.active]="comment.myVote === 'down'" (click)="voteComment(comment, 'down')">
+              <i class="bi" [class.bi-arrow-down-circle-fill]="comment.myVote === 'down'" [class.bi-arrow-down-circle]="comment.myVote !== 'down'"></i>
             </button>
           </div>
-          <div class="comment-accept-wrapper">
-            @if (comment.isAccepted) {
-              <span class="accepted-badge-pill"><i class="bi bi-check-circle-fill"></i> Câu trả lời hay nhất</span>
-            }
-          </div>
+
+          <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
+          @if (canModerateComments) {
+            <button class="lc-link-action warn" (click)="toggleModerateComment(comment)">
+              <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
+              {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+            </button>
+            <button class="lc-link-action danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xóa</button>
+          }
         </div>
+
+        <!-- Reply form -->
         @if (replyingCommentId === comment.id) {
-          <div class="reply-write-box">
-            <textarea placeholder="Viết câu trả lời..." [(ngModel)]="replyCommentText" rows="3" class="comment-textarea"></textarea>
-            <div class="reply-box-actions">
-              <button class="btn-submit-comment btn-sm" [disabled]="!replyCommentText.trim()" (click)="addReplyComment(comment.id)">Gửi trả lời</button>
-              <button class="btn-cancel-comment btn-sm" (click)="toggleReplyForm(null)">Hủy</button>
+          <div class="lc-reply-box">
+            <textarea
+              [placeholder]="'Trả lời ' + (comment.author.fullName || comment.author.username) + '...'"
+              [(ngModel)]="replyCommentText"
+              rows="2"
+              class="lc-comment-textarea"
+            ></textarea>
+            <div class="lc-edit-actions">
+              <button class="lc-btn-comment btn-sm" [disabled]="!replyCommentText.trim()" (click)="addReplyComment(comment.id)">Gửi</button>
+              <button class="lc-btn-cancel btn-sm" (click)="toggleReplyForm(null)">Hủy</button>
             </div>
           </div>
         }
       </div>
     </div>
+
+    <!-- Nested replies -->
+    @if (comment.replies?.length > 0) {
+      <div class="lc-replies-wrap">
+        @for (reply of comment.replies; track reply.id) {
+          <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: reply, depth: depth + 1 }"></ng-container>
+        }
+      </div>
+    }
   </div>
-  @if (comment.replies && comment.replies.length > 0) {
-    <div class="comment-replies-wrapper">
-      @for (reply of comment.replies; track reply.id) {
-        <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: reply, depth: depth + 1 }"></ng-container>
-      }
-    </div>
-  }
 </ng-template>
 
-<!-- Image Zoom Lightbox -->
+<!-- Image Zoom Lightbox (giống User app) -->
 @if (zoomedImageUrl) {
   <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">
     <button class="lightbox-close-btn fb-close-btn" (click)="closeImageZoom()" aria-label="Đóng">
@@ -213,9 +343,14 @@
         <button type="button" (click)="resetImageZoom($event)" title="Về 100%"><i class="bi bi-arrows-fullscreen"></i></button>
         <span>{{ imageZoomLevel * 100 | number:'1.0-0' }}%</span>
       </div>
-      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image" [class.is-dragging]="isImageDragging" [style.transform]="imageTransform" (mousedown)="startImageDrag($event)" (touchstart)="startImageDrag($event)">
+      <img [src]="zoomedImageUrl" alt="Phóng to" class="lightbox-image fb-lightbox-image"
+           [class.is-dragging]="isImageDragging"
+           [style.transform]="imageTransform"
+           (mousedown)="startImageDrag($event)"
+           (touchstart)="startImageDrag($event)">
     </div>
 
+    <!-- Side panel: Post info + comments -->
     <aside class="fb-lightbox-side" (click)="$event.stopPropagation()">
       @if (post) {
         <div class="fb-post-mini-header">
@@ -225,37 +360,53 @@
             <span>Đăng {{ formatRelativeTime(post.createdAt) }}</span>
           </div>
         </div>
-        <div class="fb-lightbox-side-body">
-          <p class="fb-lightbox-post-title">{{ post.title }}</p>
-          <div class="fb-post-text" [innerHTML]="renderMarkdown(post.bodyMarkdown)"></div>
-        </div>
-        <div class="fb-post-mini-metrics">
-          <span><i class="bi bi-heart-fill text-danger"></i> {{ post.upvotes || 0 }}</span>
-          <span>{{ post.commentCount }} bình luận</span>
-        </div>
 
-        <div class="fb-post-mini-actions">
-          <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')">
-            <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i><span>Thích</span>
-          </button>
-          <button class="action-btn" (click)="closeImageZoom(); scrollToComments()">
-            <i class="bi bi-chat-right-text"></i><span>Bình luận</span>
-          </button>
-        </div>
+        <div class="fb-lightbox-scrollable-content" style="overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+          <div class="fb-lightbox-side-body" style="word-break: break-word; overflow-wrap: break-word; padding: 14px 22px;">
+            <p class="fb-lightbox-post-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0 0 8px;">{{ post.title }}</p>
+          </div>
 
-        <div class="fb-lightbox-comments compact-fb-comments">
-          @if (comments.length === 0) {
-            <p class="no-comments-text">Chưa có bình luận nào.</p>
-          } @else {
+          <!-- Action bar -->
+          <div style="padding: 10px 22px; border-top: 1px solid var(--border-nested); border-bottom: 1px solid var(--border-nested); display: flex; align-items: center; gap: 8px; background: var(--bg-nested); flex-shrink: 0;">
+            <button class="lc-vote-btn" [class.active]="post.myVote === 'up'" (click)="votePost('up')" style="padding: 5px 10px; border-radius: 99px; border: 1px solid var(--border-nested); background: var(--bg-card); color: var(--text-main); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              <i class="bi" [class.bi-arrow-up-circle-fill]="post.myVote === 'up'" [class.bi-arrow-up-circle]="post.myVote !== 'up'"></i> {{ post.upvotes || 0 }}
+            </button>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--text-muted); padding: 5px 10px; border-radius: 99px; border: 1px solid var(--border-nested); background: var(--bg-card);">
+              <i class="bi bi-chat-left-text"></i> {{ post.commentCount || 0 }}
+            </span>
+          </div>
+
+          <!-- Comments in lightbox -->
+          <div style="padding: 14px 22px; flex: 1; width: 100%; box-sizing: border-box;">
             @for (comment of comments; track comment.id) {
               <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
             }
-          }
+            @if (comments.length === 0) {
+              <div style="text-align: center; color: var(--text-muted-dark); font-size: 0.82rem; padding: 20px 0;">
+                <i class="bi bi-chat-left-dots" style="font-size: 1.5rem; display: block; margin-bottom: 6px; opacity: 0.5;"></i>
+                Chưa có bình luận nào
+              </div>
+            }
+          </div>
         </div>
 
-        <div class="fb-lightbox-comment-box">
-          <textarea placeholder="Viết bình luận..." [(ngModel)]="rootCommentText" rows="1" class="comment-textarea"></textarea>
-          <button class="btn-submit-comment" [disabled]="!rootCommentText.trim()" (click)="addRootComment()"><i class="bi bi-send-fill"></i></button>
+        <!-- Bottom comment box -->
+        <div style="border-top: 1px solid var(--border-nested); background: var(--bg-card); display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-shrink: 0;">
+          <textarea
+            placeholder="Viết bình luận..."
+            [(ngModel)]="rootCommentText"
+            class="comment-textarea"
+            rows="1"
+            style="flex: 1; border: 1px solid var(--border-nested); border-radius: 18px; padding: 8px 12px; background: var(--bg-nested); color: var(--text-main); outline: none; resize: none; font-size: 0.85rem;"
+          ></textarea>
+          <button
+            class="btn-submit-comment"
+            [disabled]="!rootCommentText.trim()"
+            (click)="addRootComment()"
+            style="border: none; background: none; color: #a855f7; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"
+          >
+            <i class="bi bi-send-fill"></i>
+          </button>
         </div>
       }
     </aside>

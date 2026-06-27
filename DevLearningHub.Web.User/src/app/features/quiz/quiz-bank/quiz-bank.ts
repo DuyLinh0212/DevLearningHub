@@ -3,27 +3,37 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-quiz-bank',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './quiz-bank.html',
   styleUrl: './quiz-bank.css'
 })
 export class QuizBankComponent implements OnInit {
   private quizService = inject(QuizService);
   private route = inject(ActivatedRoute);
-  private cdr = inject(ChangeDetectorRef);
+  public cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
 
   quizzes: any[] = [];
+  topics: any[] = [];
   searchText: string = '';
   selectedStatus: string = 'all';
+  selectedTopicId: string = '';
+  selectedDifficulty: string = '';
   currentUserId: string = '';
   activeQuizMenuId: string | null = null;
 
+  // Calendar properties
+  calendarDays: (number | null)[] = [];
+  currentDay = new Date().getDate();
+  currentMonthYearLabel = '';
+
   ngOnInit() {
+    this.generateCalendar();
     this.loadCurrentUser();
 
     // LẮNG NGHE ĐƯỜNG DẪN URL ĐỂ BẮT TỪ KHÓA TÌM KIẾM TỪ SIDEBAR CHUYỂN SANG
@@ -35,6 +45,51 @@ export class QuizBankComponent implements OnInit {
       }
       this.cdr.detectChanges();
     });
+  }
+
+  generateCalendar() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const monthNames = [
+      'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+      'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+    ];
+    this.currentMonthYearLabel = `${monthNames[month]} ${year}`;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    const days: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(i);
+    }
+    this.calendarDays = days;
+  }
+
+  getTopicProblemCount(topicId: string): number {
+    if (!this.quizzes) return 0;
+    const searchId = (topicId || '').toString().toLowerCase();
+    return this.quizzes.filter(q => (q.topicId || '').toString().toLowerCase() === searchId).length;
+  }
+
+  getDifficultyLabel(level: string): string {
+    const l = (level || '').toLowerCase();
+    if (l === 'beginner' || l === 'easy') return 'Dễ';
+    if (l === 'intermediate' || l === 'medium') return 'Trung bình';
+    if (l === 'advanced' || l === 'hard') return 'Khó';
+    return 'Dễ';
+  }
+
+  getDifficultyClass(level: string): string {
+    const l = (level || '').toLowerCase();
+    if (l === 'beginner' || l === 'easy') return 'diff-easy';
+    if (l === 'intermediate' || l === 'medium') return 'diff-medium';
+    if (l === 'advanced' || l === 'hard') return 'diff-hard';
+    return 'diff-easy';
   }
 
   toggleQuizMenu(quizId: string, event: Event) {
@@ -66,50 +121,62 @@ export class QuizBankComponent implements OnInit {
         if (user) {
           this.currentUserId = (user.id || user.Id || user.userId || user.sub || '').toString().toLowerCase();
         }
-        this.loadQuizzes();
+        this.loadTopicsAndQuizzes();
       },
       error: (err) => {
         console.error('Lỗi lấy thông tin cá nhân tại Kho đề:', err);
+        this.loadTopicsAndQuizzes();
+      }
+    });
+  }
+
+  loadTopicsAndQuizzes() {
+    // Tải danh sách topics
+    this.http.get<any>('/api/topics').subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        this.topics = Array.isArray(data) ? data : [];
+        this.loadQuizzes();
+      },
+      error: (err) => {
+        console.error('Lỗi tải danh sách chủ đề:', err);
         this.loadQuizzes();
       }
     });
   }
 
-loadQuizzes() {
-  console.log('=== USER_BANK: KHỞI CHẠY DEBUG ĐỂ TÌM BỘ ĐỀ ===');
+  loadQuizzes() {
+    console.log('=== USER_BANK: KHỞI CHẠY KHẢO SÁT BỘ ĐỀ ===');
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
   
-  const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
-
-  this.quizService.getAllQuizzes(hasToken).subscribe({
-    next: (res: any[]) => {
-      console.log('👉 [DEBUG DỮ LIỆU TỪ SERVICE]:', res);
-      
-      this.quizzes = res.map((quiz: any) => {
-        return {
-          id: quiz.id,
-          createdBy: quiz.createdBy,
-          title: quiz.title,
-          desc: quiz.desc || 'Chưa có mô tả.',
-          questions: quiz.questionsCount || 0, 
-          duration: quiz.duration || 15,
-          attempts: quiz.attempts || 0,
-          statusClass: quiz.statusClass,
-          status: quiz.status,
-          allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
-          updated: 'Mới cập nhật'
-        };
-      });
-      
-      console.log('🎯 [MẢNG CUỐI CÙNG SAU KHI MAP]:', this.quizzes);
-      this.cdr.detectChanges();
-    },
-    error: (err) => {
-      console.error('❌ [DEBUG LỖI API]:', err);
-      this.quizzes = [];
-      this.cdr.detectChanges();
-    }
-  });
-}
+    this.quizService.getAllQuizzes(hasToken).subscribe({
+      next: (res: any[]) => {
+        this.quizzes = res.map((quiz: any) => {
+          return {
+            id: quiz.id,
+            createdBy: quiz.createdBy,
+            title: quiz.title,
+            desc: quiz.desc || 'Chưa có mô tả.',
+            questions: quiz.questionsCount || 0, 
+            duration: quiz.duration || 15,
+            attempts: quiz.attempts || 0,
+            statusClass: quiz.statusClass,
+            status: quiz.status,
+            topicId: quiz.topicId || '',
+            level: quiz.level || 'beginner',
+            allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
+            updated: 'Mới cập nhật'
+          };
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi API bộ đề:', err);
+        this.quizzes = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   get filteredQuizzes(): any[] {
     if (!Array.isArray(this.quizzes)) return [];
@@ -121,14 +188,22 @@ loadQuizzes() {
       const searchLower = this.searchText.toLowerCase();
       const matchesSearch = title.includes(searchLower) || desc.includes(searchLower);
 
-      if (this.selectedStatus === 'all') {
-        return matchesSearch;
-      } else if (this.selectedStatus === 'public') {
-        return matchesSearch && statusClass === 'public';
-      } else if (this.selectedStatus === 'draft') {
-        return matchesSearch && statusClass === 'draft';
+      const matchesStatus = this.selectedStatus === 'all' || statusClass === this.selectedStatus;
+      const matchesTopic = !this.selectedTopicId || (quiz.topicId || '').toString().toLowerCase() === this.selectedTopicId.toLowerCase();
+      
+      const qLevel = (quiz.level || 'beginner').toString().toLowerCase();
+      let matchesDiff = true;
+      if (this.selectedDifficulty) {
+        if (this.selectedDifficulty === 'easy') {
+          matchesDiff = qLevel === 'beginner' || qLevel === 'easy';
+        } else if (this.selectedDifficulty === 'medium') {
+          matchesDiff = qLevel === 'intermediate' || qLevel === 'medium';
+        } else if (this.selectedDifficulty === 'hard') {
+          matchesDiff = qLevel === 'advanced' || qLevel === 'hard';
+        }
       }
-      return matchesSearch;
+
+      return matchesSearch && matchesStatus && matchesTopic && matchesDiff;
     });
   }
 

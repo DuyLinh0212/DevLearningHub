@@ -148,6 +148,47 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Get the public profile of a user by ID.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<UserProfileResponse>>> GetUserProfile(Guid id)
+    {
+        var user = await _db.Users
+            .Include(u => u.UserRoleUsers)
+            .ThenInclude(ur => ur.Role)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null)
+        {
+            return NotFound(ApiResponse<UserProfileResponse>.Fail("User not found."));
+        }
+
+        var roles = user.UserRoleUsers
+            .Where(ur => ur.Role.IsActive)
+            .Select(ur => ur.Role.Name)
+            .OrderBy(name => name)
+            .ToList();
+
+        var profile = new UserProfileResponse
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl,
+            XpPoints = user.XpPoints,
+            Roles = roles,
+            Permissions = new List<string>()
+        };
+
+        return Ok(ApiResponse<UserProfileResponse>.Ok(profile));
+    }
+
+    /// <summary>
     /// Get learning statistics for a user.
     /// </summary>
     [HttpGet("{id:guid}/stats")]

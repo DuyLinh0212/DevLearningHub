@@ -1,128 +1,117 @@
-.dashboard-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  font-family: 'Inter', sans-serif;
-  overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* =================================================================
+   SHARED LAYOUT BASE — imported by ALL page components
+   (forum, quiz-bank, roadmap, leaderboard, settings, etc.)
+   New layout (topbar + sidebar) is handled by UserLayoutComponent.
+   ================================================================= */
+
+/* ---- Shared scroll wrapper ---- */
+.dashboard-scroll-body {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  height: 0; /* force flex scroll */
+  box-sizing: border-box;
 }
 
-.sidebar {
-  width: 250px;
-  background-color: var(--bg-sidebar);
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--bg-card-border);
-  padding: 20px 0;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+.dashboard-scroll-body::-webkit-scrollbar { width: 5px; }
+.dashboard-scroll-body::-webkit-scrollbar-track { background: transparent; }
+.dashboard-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.15);
+  border-radius: 4px;
+}
+.dashboard-scroll-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.3);
 }
 
-.sidebar-brand {
+/* ---- Content header (breadcrumb + action bar) ---- */
+.content-header {
+  flex-shrink: 0;
+  height: 52px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-nested);
+  background: var(--bg-main);
   gap: 12px;
-  padding: 10px 20px 20px 20px;
+  transition: border-color 0.25s, background 0.25s;
 }
 
-.brand-icon {
-  font-size: 1.4rem;
-}
-
-.sidebar-brand h2 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  background: linear-gradient(to right, #f43f5e, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-}
-
-.sidebar-search {
-  padding: 0 16px 16px 16px;
-}
-
-.search-box, .top-search {
+/* ---- Search boxes (shared by quiz-bank, forum, etc.) ---- */
+.search-box,
+.top-search,
+.library-search {
   display: flex;
   align-items: center;
   background-color: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md, 8px);
   padding: 8px 12px;
   gap: 8px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.2s, background 0.2s;
 }
 
-  .search-box input, .top-search input {
-    background: none;
-    border: none;
-    color: var(--text-main);
-    outline: none;
-    font-size: 0.85rem;
-    width: 100%;
-  }
-
-.sidebar-menu {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0 12px;
+.search-box:focus-within,
+.top-search:focus-within {
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
 }
 
-.menu-heading {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted-dark);
-  padding: 16px 12px 6px 12px;
-  letter-spacing: 0.5px;
+.search-box input,
+.top-search input {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  width: 100%;
 }
 
+.search-box input::placeholder,
+.top-search input::placeholder { color: var(--text-muted-dark); }
+
+/* ---- Menu items (used in some pages for sub-nav) ---- */
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 9px 10px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 6px;
-  transition: all 0.2s;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  cursor: pointer;
 }
+.menu-item:hover { color: var(--text-main); background: var(--bg-nested); }
+.menu-item.active { color: #a855f7; background: rgba(168, 85, 247, 0.1); font-weight: 600; }
 
-  .menu-item:hover {
-    background-color: var(--bg-nested);
-    color: var(--text-main);
-  }
-
-  .menu-item.active {
-    background-color: #6d28d9;
-    color: #ffffff;
-  }
-
-.main-content {
-  flex: 1;
+/* ---- Page-level wrapper ---- */
+.dashboard-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
 }
 
-.content-header {
-  height: 64px;
+/* ---- Breadcrumb ---- */
+.top-breadcrumb {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 32px;
-  border-bottom: 1px solid var(--bg-card-border);
-  transition: border-color 0.3s ease;
+  gap: 6px;
 }
+.top-breadcrumb a { text-decoration: none; color: var(--text-muted-dark); transition: color 0.2s; }
+.top-breadcrumb a:hover { color: var(--text-main); }
+.top-breadcrumb span:last-child { color: var(--text-main); font-weight: 600; }
 
-.top-search {
-  width: 450px;
-  max-width: 100%;
-}
 
 .btn-create {
   background: linear-gradient(135deg, #a855f7, #6d28d9);

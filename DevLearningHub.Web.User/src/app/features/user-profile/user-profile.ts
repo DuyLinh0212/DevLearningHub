@@ -45,33 +45,35 @@ export class UserProfileComponent implements OnInit {
   loadProfile(id: string) {
     this.isLoading = true;
     forkJoin({
+      user: this.http.get<any>(`/api/users/${id}`).pipe(catchError(() => of(null))),
       stats: this.http.get<any>(`/api/users/${id}/stats`).pipe(catchError(() => of(null))),
       posts: this.http.get<any>(`/api/posts?authorId=${id}&pageSize=20`).pipe(catchError(() => of(null)))
     }).subscribe({
       next: (res) => {
-        if (!res.stats) { this.notFound = true; this.isLoading = false; this.cdr.detectChanges(); return; }
+        if (!res.user) { this.notFound = true; this.isLoading = false; this.cdr.detectChanges(); return; }
+        const u = res.user?.data || res.user;
         const s = res.stats?.data || res.stats;
         
-        // Lấy user info từ bài viết đầu tiên (nếu có) hoặc khởi tạo rỗng
         const postData = res.posts?.data || res.posts;
         const items = postData?.items || (Array.isArray(postData) ? postData : []);
         
         this.user = {
-          id: s.userId || (items.length > 0 ? items[0].author?.id : null),
-          fullName: items.length > 0 ? items[0].author?.fullName : null,
-          username: items.length > 0 ? items[0].author?.username : null,
-          avatarUrl: items.length > 0 ? items[0].author?.avatarUrl : null,
+          id: u.id,
+          fullName: u.fullName || u.username,
+          username: u.username,
+          avatarUrl: u.avatarUrl,
           bio: 'Thành viên Dev Learning Hub',
-          xpPoints: s.totalXP ?? 0
+          xpPoints: u.xpPoints ?? s?.totalXP ?? 0,
+          roles: u.roles || []
         };
         
         this.stats = {
-          totalQuizTaken: s.totalQuizTaken ?? 0,
-          totalXP: s.totalXP ?? 0,
-          avgScore: s.avgScore ?? 0,
-          rank: s.rank ?? 0,
-          totalUpvotes: s.totalUpvotes ?? 0,
-          totalComments: s.totalComments ?? 0
+          totalQuizTaken: s?.totalQuizTaken ?? 0,
+          totalXP: s?.totalXP ?? u.xpPoints ?? 0,
+          avgScore: s?.avgScore ?? 0,
+          rank: s?.rank ?? 0,
+          totalUpvotes: s?.totalUpvotes ?? 0,
+          totalComments: s?.totalComments ?? 0
         };
         
         this.posts = items;
@@ -102,6 +104,10 @@ export class UserProfileComponent implements OnInit {
       },
       error: () => { this.notFound = true; this.isLoading = false; this.cdr.detectChanges(); }
     });
+  }
+
+  hasRole(roleName: string): boolean {
+    return this.user?.roles?.some((r: string) => r.toLowerCase() === roleName.toLowerCase()) || false;
   }
 
   viewPost(postId: string) {

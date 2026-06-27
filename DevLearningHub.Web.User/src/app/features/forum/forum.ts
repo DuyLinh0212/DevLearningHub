@@ -35,6 +35,8 @@ export class ForumComponent implements OnInit, OnDestroy {
   tagsLoading: boolean = false;
   zoomedImageUrl: string | null = null;
   selectedLightboxPost: any = null;
+  lightboxComments: any[] = [];
+  lightboxCommentText: string = '';
   imageZoomLevel = 1;
   imageTranslateX = 0;
   imageTranslateY = 0;
@@ -162,8 +164,21 @@ export class ForumComponent implements OnInit, OnDestroy {
     });
   }
 
+  sortBy: 'newest' | 'votes' = 'newest';
+
+  setSortBy(sortType: 'newest' | 'votes') {
+    this.sortBy = sortType;
+    this.applyFilters();
+  }
+
   applyFilters() {
-    this.filteredPosts = [...this.posts];
+    let result = [...this.posts];
+    if (this.sortBy === 'newest') {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (this.sortBy === 'votes') {
+      result.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+    }
+    this.filteredPosts = result;
     this.cdr.detectChanges();
   }
 
@@ -202,7 +217,11 @@ export class ForumComponent implements OnInit, OnDestroy {
   }
 
   filterByTag(tagSlug: string) {
-    this.selectedTag = tagSlug;
+    if (this.selectedTag === tagSlug) {
+      this.selectedTag = '';
+    } else {
+      this.selectedTag = tagSlug;
+    }
     this.page = 1;
     this.posts = [];
     this.filteredPosts = [];
@@ -297,6 +316,33 @@ export class ForumComponent implements OnInit, OnDestroy {
     return text;
   }
 
+  renderMarkdown(markdown: string): string {
+    if (!markdown) return '';
+    let escaped = markdown
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const codeBlocks: string[] = [];
+    const codeBlockRegex = /```([a-zA-Z0-9+#-]+)?\s*([\s\S]*?)\s*```/g;
+    escaped = escaped.replace(codeBlockRegex, (match, lang, code) => {
+      const index = codeBlocks.length;
+      const cleanCode = code.trim();
+      const languageClass = lang ? ` lang-${lang}` : '';
+      const badge = lang ? `<span class="code-badge">${lang.toUpperCase()}</span>` : '';
+      codeBlocks.push(`<div class="code-block-wrapper">${badge}<pre class="markdown-code-block${languageClass}"><code>${cleanCode}</code></pre></div>`);
+      return `___CODEBLOCK_${index}___`;
+    });
+    escaped = escaped.replace(/`([^`]+)`/g, '<code class="markdown-inline-code">$1</code>');
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="markdown-link">$1</a>');
+    escaped = escaped.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+    codeBlocks.forEach((html, index) => {
+      escaped = escaped.replace(`___CODEBLOCK_${index}___`, html);
+    });
+    return `<p>${escaped}</p>`;
+  }
+
   sharePost(postId: string, event: Event) {
     event.stopPropagation();
     const shareUrl = `${window.location.origin}/forum/post/${postId}`;
@@ -320,8 +366,54 @@ export class ForumComponent implements OnInit, OnDestroy {
   openImageZoom(url: string, post?: any) {
     this.zoomedImageUrl = url;
     this.selectedLightboxPost = post || null;
+    this.lightboxComments = [];
+    this.lightboxCommentText = '';
     this.resetImageTransform();
     document.body.style.overflow = 'hidden';
+
+    if (post) {
+      this.forumService.getComments(post.id).subscribe({
+        next: (comments) => {
+          const raw = comments || [];
+          let arr = Array.isArray(raw) ? raw : [];
+          arr = arr.filter((c: any) => !c.parentId);
+          this.lightboxComments = arr;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+    this.cdr.detectChanges();
+  }
+
+  addLightboxComment() {
+    if (!this.selectedLightboxPost || !this.lightboxCommentText.trim()) return;
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để bình luận!');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const payload = { bodyMarkdown: this.lightboxCommentText.trim() };
+    this.forumService.addComment(this.selectedLightboxPost.id, payload).subscribe({
+      next: (res) => {
+        this.lightboxCommentText = '';
+        this.forumService.getComments(this.selectedLightboxPost.id).subscribe({
+          next: (comments) => {
+            const raw = comments || [];
+            let arr = Array.isArray(raw) ? raw : [];
+            this.selectedLightboxPost.commentCount = arr.length;
+            arr = arr.filter((c: any) => !c.parentId);
+            this.lightboxComments = arr;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Lỗi gửi bình luận trong lightbox:', err);
+        alert('Có lỗi xảy ra khi gửi bình luận.');
+      }
+    });
   }
 
   closeImageZoom() {
@@ -329,6 +421,7 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.selectedLightboxPost = null;
     this.resetImageTransform();
     document.body.style.overflow = '';
+    this.cdr.detectChanges();
   }
 
   zoomImage(delta: number, event?: Event) {

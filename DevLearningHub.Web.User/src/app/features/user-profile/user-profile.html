@@ -1,4 +1,4 @@
-﻿<header class="content-header">
+<header class="content-header">
   <div class="top-breadcrumb">
     <button class="back-btn" (click)="goBack()" title="Quay lại">
       <i class="bi bi-chevron-left"></i> Quay lại
@@ -33,7 +33,18 @@
           <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar" (error)="onAvatarError($event)">
           
           <div class="profile-info">
-            <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
+            <div class="profile-name-row">
+              <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
+              @if (hasRole('Admin')) {
+                <span class="profile-badge admin-badge">
+                  <i class="bi bi-shield-fill"></i> Admin
+                </span>
+              } @else if (hasRole('Moderator')) {
+                <span class="profile-badge moderator-badge">
+                  <i class="bi bi-person-badge"></i> Moderator
+                </span>
+              }
+            </div>
             <p class="profile-username">@{{ user.username }}</p>
             <p class="profile-bio">{{ user.bio || 'Thành viên Dev Learning Hub' }}</p>
           </div>

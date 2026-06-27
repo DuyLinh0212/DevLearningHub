@@ -1,122 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* =====================================================================
+   DESIGN TOKENS — Dark (default)
+   ===================================================================== */
 :root {
-  --bg-main: #09090b;
-  --bg-sidebar: #121214;
-  --bg-card: #121214;
-  --bg-card-border: #1f1f23;
-  --bg-nested: #161619;
-  --border-nested: #232327;
-  --input-bg: #1a1a1e;
-  --input-border: #27272a;
-  --text-main: #ffffff;
-  --text-muted: #a1a1aa;
-  --text-muted-dark: #71717a;
-  --nav-link-color: #9ca3af;
-  --btn-white-bg: #ffffff;
+  /* Backgrounds */
+  --bg-main:       #0f0f11;
+  --bg-sidebar:    #141416;
+  --bg-card:       #18181b;
+  --bg-card-border:#232327;
+  --bg-nested:     #1c1c20;
+  --border-nested: #27272b;
+
+  /* Inputs */
+  --input-bg:      #1a1a1e;
+  --input-border:  #2d2d32;
+
+  /* Text */
+  --text-main:        #f4f4f5;
+  --text-muted:       #a1a1aa;
+  --text-muted-dark:  #71717a;
+  --nav-link-color:   #9ca3af;
+
+  /* Buttons */
+  --btn-white-bg:   #ffffff;
   --btn-white-text: #000000;
-  --footer-bg: #020204;
-  --footer-border: #1f1f23;
-  
-  /* Quy chuẩn bo góc và đệm mới */
+
+  /* Accent */
+  --accent:         #a855f7;
+  --accent-subtle:  rgba(168, 85, 247, 0.1);
+  --accent-border:  rgba(168, 85, 247, 0.3);
+
+  /* Layout */
+  --topbar-height: 52px;
+  --sidebar-width: 180px;
+
+  /* Radii & Shadows */
   --radius-lg: 12px;
   --radius-md: 8px;
   --radius-sm: 6px;
-  --padding-lg: 24px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
-  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.12);
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-hover-purple: 0 8px 24px rgba(168, 85, 247, 0.15);
 }
 
+/* =====================================================================
+   DESIGN TOKENS — Light
+   ===================================================================== */
 html.light-theme {
-  --bg-main: #f4f4f5;
-  --bg-sidebar: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-border: #e4e4e7;
-  --bg-nested: #fafafa;
+  --bg-main:       #f4f4f5;
+  --bg-sidebar:    #ffffff;
+  --bg-card:       #ffffff;
+  --bg-card-border:#e4e4e7;
+  --bg-nested:     #f1f1f3;
   --border-nested: #e4e4e7;
-  --input-bg: #ffffff;
-  --input-border: #d4d4d8;
-  --text-main: #09090b;
-  --text-muted: #4b5563;
+  --input-bg:      #ffffff;
+  --input-border:  #d4d4d8;
+  --text-main:     #09090b;
+  --text-muted:    #52525b;
   --text-muted-dark: #71717a;
   --nav-link-color: #4b5563;
-  --btn-white-bg: #111827;
-  --btn-white-text: #ffffff;
-  --footer-bg: #f3f4f6;
-  --footer-border: #e5e7eb;
-  
-  /* Quy chuẩn bo góc và đệm light-theme */
-  --radius-lg: 12px;
-  --radius-md: 8px;
-  --radius-sm: 6px;
-  --padding-lg: 24px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.03);
-  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.08);
+  --btn-white-bg:  #111827;
+  --btn-white-text:#ffffff;
+  --accent:        #7c3aed;
+  --accent-subtle: rgba(124,58,237,0.08);
+  --accent-border: rgba(124,58,237,0.25);
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-hover-purple: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
-body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spin-animation {
-  display: inline-block;
-  animation: spin 1s linear infinite;
-}
-
-/* Core Layout System */
+/* =====================================================================
+   BASE
+   ===================================================================== */
 html, body {
   margin: 0;
   padding: 0;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
 }
 
-.dashboard-container {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
+/* =====================================================================
+   GLOBAL LAYOUT HELPERS
+   ===================================================================== */
+/* Hide router-outlet from flex flow */
+router-outlet { display: none !important; }
 
-app-sidebar {
-  flex-shrink: 0;
-  height: 100vh;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Hide router-outlet tag from rendering in DOM to avoid taking up flex space */
-router-outlet {
-  display: none !important;
-}
-
-/* Make router components flex containers so that dashboard-scroll-body can use flex: 1 */
+/* Route components fill parent — must be flex column with overflow:hidden
+   so inner .dashboard-scroll-body can scroll independently */
 .main-content > * {
   display: flex;
   flex-direction: column;
@@ -124,64 +103,99 @@ router-outlet {
   height: 100%;
   width: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
-.content-header {
-  flex-shrink: 0;
-  height: 70px;
-}
-
+/* Scrollable page body (canonical definition also in dashboard.css for imports) */
 .dashboard-scroll-body {
   flex: 1;
   overflow-y: auto !important;
   overflow-x: hidden;
-  height: auto;
   min-height: 0;
-  box-sizing: border-box;
+  height: 0; /* force flex scroll */
 }
 
-.dashboard-scroll-body::-webkit-scrollbar {
-  width: 6px;
+.dashboard-scroll-body::-webkit-scrollbar { width: 5px; }
+.dashboard-scroll-body::-webkit-scrollbar-track { background: transparent; }
+.dashboard-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(168,85,247,.15);
+  border-radius: 4px;
+}
+.dashboard-scroll-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(168,85,247,.3);
 }
 
-.dashboard-scroll-body::-webkit-scrollbar-track {
-  background: transparent;
+/* Legacy class — kept for backward compat */
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Content header (used in some pages) */
+.content-header {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-nested);
+  background: var(--bg-main);
+  gap: 12px;
+}
 
-/* Breadcrumb System */
+/* =====================================================================
+   ANIMATIONS
+   ===================================================================== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin-animation { display: inline-block; animation: spin 1s linear infinite; }
+
+/* =====================================================================
+   BREADCRUMB
+   ===================================================================== */
 .top-breadcrumb {
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-muted);
   display: flex;
   align-items: center;
+  gap: 6px;
 }
-
 .top-breadcrumb a {
   text-decoration: none;
   color: var(--text-muted-dark);
-  transition: color 0.2s ease;
-  cursor: pointer;
+  transition: color 0.2s;
+}
+.top-breadcrumb a:hover { color: var(--text-main); }
+.top-breadcrumb span:last-child { color: var(--text-main); font-weight: 600; }
+
+/* =====================================================================
+   SCROLLBAR GLOBAL
+   ===================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168,85,247,.15) transparent;
 }
 
-.top-breadcrumb a:hover {
-  color: var(--text-main);
+/* Hide scrollbars globally but preserve scrollability for Forum Detail & Lightbox */
+.lc-post-main,
+.lc-explore-sidebar,
+.fb-lightbox-scrollable-content {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
 }
-
-.top-breadcrumb span:last-child {
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-/* ==========================================================================
-   📱 GLOBAL MOBILE RESPONSIVE (max-width: 768px)
-   ========================================================================== */
-@media (max-width: 768px) {
-  /* Khống chế thẻ app-sidebar không chiếm không gian trên mobile */
-  app-sidebar {
-    height: 0 !important;
-    width: 0 !important;
-    display: block;
-  }
+.lc-post-main::-webkit-scrollbar,
+.lc-explore-sidebar::-webkit-scrollbar,
+.fb-lightbox-scrollable-content::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
 }

@@ -1,0 +1,117 @@
+<div class="mod-user-list-page">
+  <div class="page-header">
+    <div class="header-title">
+      <i class="bi bi-people-fill"></i>
+      <div>
+        <h1>Quản lý người dùng</h1>
+        <p class="subtitle">Danh sách toàn bộ thành viên · {{ totalCount }} người dùng</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        placeholder="Tìm theo tên, email, username..."
+        [(ngModel)]="searchText"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+    <button class="btn-search" (click)="onSearch()">Tìm kiếm</button>
+  </div>
+
+  @if (errorMsg) {
+    <div class="error-banner"><i class="bi bi-exclamation-triangle-fill"></i> {{ errorMsg }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">
+      <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+    </div>
+  } @else if (users.length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-inbox"></i>
+      <p>Không tìm thấy người dùng nào.</p>
+    </div>
+  } @else {
+    <div class="user-table-wrap">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Thành viên</th>
+            <th>Email</th>
+            <th>Vai trò</th>
+            <th>XP</th>
+            <th>Trạng thái</th>
+            <th>Ngày tham gia</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users; track user.id) {
+            <tr [class.locked-row]="user.isLocked">
+              <td class="user-cell">
+                <img
+                  [src]="user.avatarUrl || 'assets/images/default-avatar.svg'"
+                  [alt]="user.username"
+                  class="user-avatar"
+                />
+                <div>
+                  <div class="user-name">{{ user.fullName || user.username }}</div>
+                  <div class="user-sub">&#64;{{ user.username }}</div>
+                </div>
+              </td>
+              <td class="email-cell">{{ user.email }}</td>
+              <td>
+                <span class="role-badge" [ngClass]="getRoleBadgeClass(user.role)">
+                  {{ user.role }}
+                </span>
+              </td>
+              <td class="xp-cell">{{ user.xpPoints | number }}</td>
+              <td>
+                @if (user.isLocked) {
+                  <span class="status-badge status-locked"><i class="bi bi-lock-fill"></i> Bị khóa</span>
+                } @else {
+                  <span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Hoạt động</span>
+                }
+              </td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td class="actions-cell">
+                <button class="btn-action btn-view" (click)="viewProfile(user)" title="Xem hồ sơ">
+                  <i class="bi bi-person-lines-fill"></i>
+                </button>
+                @if (hasPermission('user:ban')) {
+                  <button
+                    class="btn-action"
+                    [class.btn-unlock]="user.isLocked"
+                    [class.btn-ban]="!user.isLocked"
+                    (click)="toggleBan(user)"
+                    [title]="user.isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'"
+                  >
+                    <i class="bi" [class.bi-unlock-fill]="user.isLocked" [class.bi-lock-fill]="!user.isLocked"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button class="btn-page" [disabled]="currentPage <= 1" (click)="prevPage()">
+          <i class="bi bi-chevron-left"></i> Trước
+        </button>
+        <span class="page-info">Trang {{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn-page" [disabled]="currentPage >= totalPages" (click)="nextPage()">
+          Tiếp <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    }
+  }
+</div>

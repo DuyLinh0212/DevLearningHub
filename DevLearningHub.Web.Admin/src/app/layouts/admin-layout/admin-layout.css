@@ -1,0 +1,36 @@
+/* =====================================================================
+   ADMIN LAYOUT — Topbar + Sidebar + Content (mirrors User layout)
+   ===================================================================== */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.layout-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- MOBILE ---- */
+@media (max-width: 768px) {
+  app-sidebar {
+    /* sidebar becomes fixed overlay on mobile */
+    width: 0 !important;
+    flex: none;
+  }
+}

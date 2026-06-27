@@ -368,3 +368,34 @@
 .no-search-results i {
   font-size: 1.5rem;
 }
+
+/* Sync menu-item design with the User app */
+.sidebar .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.sidebar .menu-item:hover {
+  color: var(--text-main);
+  background: var(--bg-nested);
+}
+
+.sidebar .menu-item.active {
+  color: #a855f7 !important;
+  background: rgba(168, 85, 247, 0.1) !important;
+  font-weight: 600;
+}

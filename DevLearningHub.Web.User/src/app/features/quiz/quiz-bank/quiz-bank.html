@@ -1,165 +1,275 @@
-    <header class="content-header">
-      <div class="top-breadcrumb">
-        <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Bài tập Trắc nghiệm</span>
+<div class="dashboard-scroll-body playground-list-container">
+  <!-- Topbar Header actions (Create Quiz) -->
+  <header class="content-header" style="background: transparent; border: none; padding: 0 0 16px 0; height: auto;">
+    <div class="top-breadcrumb">
+      <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Bài tập Trắc nghiệm</span>
+    </div>
+    <button class="btn-create" routerLink="/quiz-create" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: var(--accent); color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+      <i class="bi bi-plus-circle-fill"></i> Tạo đề thi mới
+    </button>
+  </header>
+
+  <!-- Two-column Layout: scrolls naturally together -->
+  <div class="quiz-layout-row">
+    
+    <!-- LEFT COLUMN: Main content (Banners, Topics, Filters, Table) -->
+    <div class="quiz-main-content-col">
+      <!-- Quiz banners row -->
+      <div class="lc-banners-row">
+        <div class="lc-banner-card card-blue">
+          <div class="card-inner">
+            <span class="card-logo">Dev-LearningHub</span>
+            <h3>Luyện trắc nghiệm lập trình</h3>
+            <p>Kiểm tra và củng cố nhanh kiến thức lý thuyết cơ bản đến nâng cao.</p>
+          </div>
+        </div>
+        <div class="lc-banner-card card-green">
+          <div class="card-inner">
+            <span class="card-logo">Database & SQL</span>
+            <h3>Đề trắc nghiệm Cơ sở dữ liệu</h3>
+            <p>Hệ thống câu hỏi truy vấn SQL, thiết kế DB và chuẩn hóa.</p>
+          </div>
+        </div>
+        <div class="lc-banner-card card-purple">
+          <div class="card-inner">
+            <span class="card-logo">Interview Prep</span>
+            <h3>Lý thuyết phỏng vấn lập trình</h3>
+            <p>Tổng hợp OOP, cấu trúc dữ liệu, thuật toán và câu hỏi phỏng vấn.</p>
+          </div>
+        </div>
       </div>
-      <button class="btn-create" routerLink="/quiz-create">
-        <i class="bi bi-plus-circle-fill"></i> Tạo đề thi mới
-      </button>
-    </header>
 
-    <div class="dashboard-scroll-body">
+      <!-- Topics Pills Row (Dynamic topics showing topic names and counts) -->
+      <div class="lc-topics-row">
+        @for (t of topics; track t.id) {
+          <button 
+            class="lc-topic-pill" 
+            (click)="selectedTopicId = (selectedTopicId === t.id ? '' : t.id)" 
+            [class.active]="selectedTopicId === t.id"
+          >
+            {{ t.name }} <span class="pill-count">{{ getTopicProblemCount(t.id) }}</span>
+          </button>
+        }
+      </div>
 
-      <section class="welcome-section">
-        <h1>Thư Viện Đề Thi & Ôn Luyện Lập Trình</h1>
-        <p>Củng cố kiến thức chuyên ngành, luyện tư duy lập trình và sẵn sàng cho các kỳ thi hay phỏng vấn xin việc.</p>
-      </section>
+      <!-- Filters & Search Controls -->
+      <div class="lc-controls-row">
+        <div class="lc-sub-topics">
+          <button class="lc-sub-pill" [class.active]="selectedStatus === 'all'" (click)="changeFilter('all')">Tất cả đề</button>
+          <button class="lc-sub-pill" [class.active]="selectedStatus === 'public'" (click)="changeFilter('public')">Đã phát hành</button>
+          <button class="lc-sub-pill" [class.active]="selectedStatus === 'draft'" (click)="changeFilter('draft')">Bản nháp</button>
+        </div>
 
-      <div class="quiz-layout">
-        <!-- CỘT TRÁI: DANH SÁCH BỘ ĐỀ -->
-        <div class="quiz-main-column">
-          <section class="quiz-library-card">
-            <div class="library-header">
-              <h2>Thư viện Đề thi & Ôn luyện</h2>
-              <p>Khám phá các bộ đề trắc nghiệm lập trình chất lượng được đóng góp bởi cộng đồng.</p>
-            </div>
+        <div class="lc-filter-inputs">
+          <!-- Search box -->
+          <div class="lc-search-box">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              [value]="searchText"
+              (input)="onSearchChange($event)"
+              placeholder="Tìm kiếm bộ đề..."
+            />
+          </div>
 
-            <div class="library-toolbar">
-              <div class="toolbar-pills">
-                <span class="pill" [class.active]="selectedStatus === 'all'" (click)="changeFilter('all')">Tất cả bộ đề</span>
-                <span class="pill" [class.active]="selectedStatus === 'public'" (click)="changeFilter('public')">Đã phát hành</span>
-                <span class="pill" [class.active]="selectedStatus === 'draft'" (click)="changeFilter('draft')">Bản nháp</span>
-              </div>
-              <div class="toolbar-actions">
-                <div class="search-box library-search">
-                  <i class="bi bi-search"></i>
-                  <input type="text" placeholder="Tìm kiếm bộ đề học tập..." [value]="searchText" (input)="onSearchChange($event)">
-                </div>
-              </div>
-            </div>
+          <!-- Difficulty select -->
+          <div class="lc-select-box">
+            <select [(ngModel)]="selectedDifficulty">
+              <option value="">Tất cả độ khó</option>
+              <option value="easy">Dễ</option>
+              <option value="medium">Trung bình</option>
+              <option value="hard">Khó</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-            <div class="quiz-grid-list">
-              @for (quiz of filteredQuizzes; track quiz.id) {
-              <div class="quiz-card-item" [class.card-disabled]="quiz.statusClass !== 'public'">
-                <div class="card-header-line">
-                  <span class="status-badge" [class.public]="quiz.statusClass === 'public'" [class.draft]="quiz.statusClass !== 'public'">
-                    {{ quiz.status }}
-                  </span>
-                  @if (quiz.allowedCopy) {
-                    <span class="status-badge copyable" style="background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.2); margin-left: 6px;">
-                      <i class="bi bi-copy"></i> Sao chép OK
-                    </span>
-                  }
+      <!-- Quizzes Table -->
+      <div class="problems-table-card">
+        <div class="table-responsive">
+          <table class="problems-table">
+            <thead>
+              <tr>
+                <th class="col-status">Trạng thái</th>
+                <th class="col-title">Tên bộ đề</th>
+                <th class="col-cases">Số câu</th>
+                <th class="col-duration">Thời gian</th>
+                <th class="col-diff">Độ khó</th>
+                <th class="col-action" style="text-align: right; padding-right: 24px;">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (quiz of filteredQuizzes; track quiz.id; let idx = $index) {
+                <tr [class.solved-row]="quiz.statusClass === 'draft'" style="position: relative;">
+                  <!-- Status -->
+                  <td class="col-status">
+                    @if (quiz.statusClass === 'public') {
+                      <i class="bi bi-check-circle-fill text-success" title="Đã phát hành" style="font-size: 1.05rem;"></i>
+                    } @else if (quiz.statusClass === 'draft') {
+                      <i class="bi bi-pencil-square text-warning" title="Bản nháp" style="font-size: 1.05rem;"></i>
+                    } @else {
+                      <i class="bi bi-lock-fill text-muted-dark" title="Khóa" style="font-size: 1rem;"></i>
+                    }
+                  </td>
                   
-                  <div class="btn-more-options-wrapper" style="position: relative; display: inline-block; margin-left: auto;">
-                    <button class="btn-more-options" (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"><i class="bi bi-three-dots-vertical"></i></button>
-                    @if (activeQuizMenuId === quiz.id) {
-                      <div class="quiz-options-dropdown" (click)="$event.stopPropagation()">
-                        <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
-                          <i class="bi bi-eye"></i> Xem chi tiết
+                  <!-- Title -->
+                  <td class="col-title">
+                    <div style="display: flex; flex-direction: column;">
+                      <a [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : ['/quiz-create']" [queryParams]="quiz.statusClass === 'draft' ? { id: quiz.id } : null" class="problem-link">
+                        {{ idx + 1 }}. {{ quiz.title }}
+                      </a>
+                      <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                        {{ quiz.desc }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Number of questions -->
+                  <td class="col-cases">
+                    <span class="cases-num">{{ quiz.questions }} câu</span>
+                  </td>
+
+                  <!-- Duration -->
+                  <td class="col-duration" style="color: var(--text-muted); font-size: 0.82rem;">
+                    <span>{{ quiz.duration }} phút</span>
+                  </td>
+
+                  <!-- Difficulty -->
+                  <td class="col-diff">
+                    <span class="diff-text-label" [ngClass]="getDifficultyClass(quiz.level)">
+                      {{ getDifficultyLabel(quiz.level) }}
+                    </span>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="col-action" style="text-align: right; padding-right: 24px;">
+                    <div style="display: inline-flex; align-items: center; gap: 12px; position: relative;">
+                      @if (compareIds(quiz.createdBy, currentUserId)) {
+                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }" style="padding: 4px 10px; font-size: 0.75rem;">
+                          Sửa
+                        </a>
+                      }
+                      
+                      @if (quiz.statusClass === 'public') {
+                        <a class="btn-solve" [routerLink]="['/quiz', quiz.id]" style="padding: 4px 10px; font-size: 0.75rem;">
+                          Luyện tập <i class="bi bi-chevron-right"></i>
+                        </a>
+                      } @else if (quiz.statusClass === 'draft') {
+                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }" style="padding: 4px 10px; font-size: 0.75rem;">
+                          Tiếp tục
+                        </a>
+                      }
+
+                      <!-- LeetCode Options menu button -->
+                      <div class="btn-more-options-wrapper" style="position: relative; display: inline-block;">
+                        <button class="lc-comment-more-btn" (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()" style="border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 0.95rem; display: flex; align-items: center;" title="Tùy chọn">
+                          <i class="bi bi-three-dots-vertical"></i>
                         </button>
-                        @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
-                          <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null">
-                            <i class="bi bi-copy"></i> Sao chép bộ đề
-                          </button>
-                        }
-                        <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
-                          <i class="bi bi-send"></i> Chia sẻ bộ đề
-                        </button>
-                        @if (quiz.statusClass === 'public' && quiz.allowedCopy !== false) {
-                          <button class="dropdown-item" (click)="copyQuiz(quiz, $event); activeQuizMenuId = null">
-                            <i class="bi bi-files"></i> Sao chép bộ đề
-                          </button>
-                        }
-                        @if (compareIds(quiz.createdBy, currentUserId)) {
-                          <button class="dropdown-item danger" style="color: #ef4444;" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
-                            <i class="bi bi-trash3"></i> Xóa bộ đề
-                          </button>
+                        @if (activeQuizMenuId === quiz.id) {
+                          <div class="comment-options-dropdown" (click)="$event.stopPropagation()" style="position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px; display: flex; flex-direction: column; padding: 6px 0;">
+                            <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                              <i class="bi bi-eye"></i> Chi tiết
+                            </button>
+                            @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
+                              <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                                <i class="bi bi-copy"></i> Sao chép đề
+                              </button>
+                            }
+                            <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                              <i class="bi bi-send"></i> Chia sẻ
+                            </button>
+                            @if (compareIds(quiz.createdBy, currentUserId)) {
+                              <button class="dropdown-item" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: #ef4444; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                                <i class="bi bi-trash3"></i> Xóa bộ đề
+                              </button>
+                            }
+                          </div>
                         }
                       </div>
-                    }
-                  </div>
-                </div>
-
-                <div class="card-content-area" [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : null" style="cursor: pointer;">
-                  <h3 class="card-title">{{ quiz.title }}</h3>
-                  <p class="card-description">{{ quiz.desc }}</p>
-                </div>
-
-                <div class="card-meta-row">
-                  <span><i class="bi bi-journal-text"></i> {{ quiz.questions }} câu</span>
-                  <span><i class="bi bi-clock"></i> {{ quiz.duration }} phút</span>
-                  <!-- Ẩn số lượt làm do BE chưa hỗ trợ API trả về attempts của từng quiz set -->
-                  @if (false) {
-                  <span><i class="bi bi-people"></i> {{ quiz.attempts }} lượt làm</span>
-                  }
-                </div>
-
-                <div class="card-actions-row">
-                  @if (compareIds(quiz.createdBy, currentUserId)) {
-                    <button class="btn-card-action btn-edit" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">Sửa</button>
-                  }
-                  @if (quiz.statusClass === 'public') {
-                    <button class="btn-card-action btn-primary" [routerLink]="['/quiz', quiz.id]">Luyện tập</button>
-                    @if (quiz.allowedCopy !== false) {
-                      <button class="btn-card-action btn-copy" (click)="copyQuiz(quiz, $event)">
-                        Sao chép
-                      </button>
-                    }
-                  } @else if (quiz.statusClass === 'draft') {
-                    <button class="btn-card-action btn-draft"
-                            [routerLink]="['/quiz-create']"
-                            [queryParams]="{ id: quiz.id }">
-                      Làm tiếp
-                    </button>
-                  } @else {
-                    <button class="btn-card-action btn-locked" disabled><i class="bi bi-lock-fill"></i> Khóa</button>
-                  }
-                </div>
-              </div>
+                    </div>
+                  </td>
+                </tr>
               } @empty {
-              <div class="empty-results-box" style="text-align: center; padding: 40px; color: #71717a; font-size: 0.9rem; grid-column: 1 / -1;">
-                <i class="bi bi-folder-x" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
-                Không tìm thấy bộ đề trắc nghiệm nào phù hợp từ khóa.
-              </div>
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-muted); font-size: 0.85rem;">
+                    <i class="bi bi-folder-x" style="font-size: 2rem; display: block; margin-bottom: 12px; color: var(--text-muted-dark);"></i>
+                    Không tìm thấy bộ đề trắc nghiệm nào phù hợp bộ lọc của bạn.
+                  </td>
+                </tr>
               }
-            </div>
-          </section>
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
 
-        <!-- CỘT PHẢI: SIDEBAR WIDGETS -->
-        <div class="quiz-sidebar-column">
-          <!-- Widget Tiến trình cá nhân -->
-          <div class="quiz-sidebar-card">
-            <h3>Tiến trình ôn luyện</h3>
-            <p class="sidebar-card-desc">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
-            <div class="quiz-stats-widget">
-              <div class="quiz-stat-row">
-                <span>Bộ đề khả dụng:</span>
-                <strong>{{ filteredQuizzes.length }} đề</strong>
-              </div>
-              <div class="quiz-stat-row">
-                <span>Học viên hiện tại:</span>
-                <strong style="color: #a855f7;">Học viên HUIT</strong>
-              </div>
-              <div class="quiz-stat-row">
-                <span>Trạng thái ôn thi:</span>
-                <strong style="color: #22c55e;">Sẵn sàng</strong>
-              </div>
+    <!-- RIGHT COLUMN: Sidebar Widgets (Calendar, Quiz Stats, Rules) -->
+    <aside class="quiz-sidebar-widgets-col">
+      <!-- Calendar Card -->
+      <div class="lc-calendar-card">
+        <div class="calendar-header">
+          <span class="calendar-title">{{ currentMonthYearLabel }}</span>
+          <span class="calendar-today-btn">Hôm nay</span>
+        </div>
+        <div class="calendar-weekdays">
+          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div class="calendar-grid">
+          @for (day of calendarDays; track $index) {
+            <div class="calendar-day" [class.empty-day]="day === null" [class.today]="day === currentDay">
+              <span>{{ day }}</span>
             </div>
-          </div>
+          }
+        </div>
+        <div class="calendar-footer-stats">
+          <span>Đã hoàn thành: <strong>0</strong> ngày liên tiếp</span>
+        </div>
+      </div>
 
-          <!-- Widget Quy chế luyện tập -->
-          <div class="quiz-sidebar-card rules-card">
-            <h3>Lưu ý khi làm bài thi</h3>
-            <p class="sidebar-card-desc">Một số quy tắc để bài thi đạt kết quả tốt nhất</p>
-            <ul class="rules-list">
-              <li><i class="bi bi-check2-circle text-purple"></i> Mỗi bộ đề thi đều có giới hạn thời gian cụ thể.</li>
-              <li><i class="bi bi-check2-circle text-purple"></i> Hệ thống sẽ tự động nộp bài khi hết giờ.</li>
-              <li><i class="bi bi-check2-circle text-purple"></i> Hãy tập trung làm bài và hạn chế chuyển tab để tránh bị lỗi hệ thống.</li>
-              <li><i class="bi bi-check2-circle text-purple"></i> Hoàn thành bài thi đạt kết quả tốt để tích lũy thêm điểm kinh nghiệm (XP).</li>
-            </ul>
+      <!-- Quiz Stats widget -->
+      <div class="lc-premium-card" style="background: var(--bg-card); border-color: var(--bg-card-border);">
+        <div class="premium-header">
+          <h4 style="color: var(--text-main);"><i class="bi bi-bar-chart-line"></i> Tiến trình ôn luyện</h4>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
+        <div class="quiz-stats-widget" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--bg-card-border); padding-bottom: 6px;">
+            <span style="color: var(--text-muted);">Bộ đề khả dụng:</span>
+            <strong style="color: var(--text-main);">{{ quizzes.length }} đề</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--bg-card-border); padding-bottom: 6px;">
+            <span style="color: var(--text-muted);">Học viên hiện tại:</span>
+            <strong style="color: var(--accent);">Học viên HUIT</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-bottom: 2px;">
+            <span style="color: var(--text-muted);">Trạng thái ôn thi:</span>
+            <strong style="color: #2db55d;">Sẵn sàng</strong>
           </div>
         </div>
       </div>
 
-    </div>
+      <!-- Quiz Rules card -->
+      <div class="lc-companies-card">
+        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Lưu ý khi làm bài thi</h4>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+          <li style="display: flex; gap: 8px; align-items: flex-start;">
+            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+            <span>Mỗi bộ đề thi đều có giới hạn thời gian cụ thể.</span>
+          </li>
+          <li style="display: flex; gap: 8px; align-items: flex-start;">
+            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+            <span>Hệ thống sẽ tự động nộp bài khi hết giờ.</span>
+          </li>
+          <li style="display: flex; gap: 8px; align-items: flex-start;">
+            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+            <span>Hãy tập trung làm bài và hạn chế chuyển tab.</span>
+          </li>
+          <li style="display: flex; gap: 8px; align-items: flex-start;">
+            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+            <span>Hoàn thành bài thi tốt để tích lũy thêm điểm kinh nghiệm (XP).</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>

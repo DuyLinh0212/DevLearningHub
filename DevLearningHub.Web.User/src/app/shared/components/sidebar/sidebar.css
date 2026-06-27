@@ -1,341 +1,149 @@
-@import '../../../features/dashboard/dashboard.css';
-
+/* =====================================================================
+   SLIM SIDEBAR — LeetCode Style (180px, no profile card, no search)
+   ===================================================================== */
 .sidebar {
-  width: 260px;
-  height: 100vh;
+  width: 180px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  box-sizing: border-box;
-  background-color: var(--bg-sidebar, #121215);
-  border-right: 1px solid var(--border-nested, #2d2d38);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 16px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-nested);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), background 0.25s, border-color 0.25s;
   flex-shrink: 0;
 }
 
-.brand-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-logo-img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
-
-.sidebar-brand h2 {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  text-transform: none;
-  background: linear-gradient(135deg, #f43f5e 0%, #a855f7 60%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
-
-.sidebar-profile {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  margin: 0 12px 16px;
-  padding: 12px;
-  border: 1px solid var(--border-nested, #2d2d38);
-  border-radius: var(--radius-lg, 12px);
-  background: var(--bg-nested, rgba(255, 255, 255, 0.035));
-  color: var(--text-main, #ffffff);
-  text-decoration: none;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar-profile:hover {
-  border-color: rgba(168, 85, 247, 0.45);
-  background: rgba(168, 85, 247, 0.06);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
-}
-
-.sidebar-profile-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid rgba(168, 85, 247, 0.45);
-  background: #18181b;
-}
-
-.sidebar-profile-info {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sidebar-profile-info strong,
-.sidebar-profile-info span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-profile-info strong {
-  font-size: 0.92rem;
-  line-height: 1.2;
-}
-
-.sidebar-profile-info span {
-  color: var(--text-muted, #a1a1aa);
-  font-size: 0.76rem;
-}
-
-.sidebar-profile-info small {
-  color: #a855f7;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.btn-sidebar-close-mobile {
-  display: none; /* Mặc định giấu trên màn hình máy tính lớn */
-  background: none;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 4px;
-  font-size: 1.25rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-search {
-  padding: 0 16px 16px 16px;
-  flex-shrink: 0;
-  position: relative; /* Cho phép dropdown tìm kiếm định vị tuyệt đối chuẩn xác */
-}
-
-/* Dropdown tìm kiếm toàn cục */
-.global-search-results {
-  position: absolute;
-  top: 100%;
-  left: 16px;
-  right: 16px;
-  background: var(--bg-card, #121214);
-  border: 1px solid var(--bg-card-border, #1f1f23);
-  border-radius: var(--radius-md, 8px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  z-index: 9999;
-  max-height: 380px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-.search-loading,
-.no-search-results {
-  padding: 16px;
-  text-align: center;
-  color: var(--text-muted, #a1a1aa);
-  font-size: 0.82rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-loading i,
-.no-search-results i {
-  font-size: 1.25rem;
-}
-
-.search-category {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--bg-card-border, #1f1f23);
-}
-
-.search-category:last-child {
-  border-bottom: none;
-}
-
-.category-header {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-muted-dark, #71717a);
-  padding: 4px 12px 6px 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  color: var(--text-main, #ffffff);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.15s ease;
-  cursor: pointer;
-}
-
-.search-result-item:hover {
-  background: var(--bg-nested, rgba(255, 255, 255, 0.035));
-  color: #c084fc;
-}
-
-.search-result-item i {
-  color: var(--text-muted, #a1a1aa);
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.search-result-item:hover i {
-  color: #c084fc;
-}
-
-.result-meta {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 2px;
-}
-
-.result-title {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.result-desc {
-  font-size: 0.72rem;
-  color: var(--text-muted-dark, #71717a);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* ---- NAV ITEMS ---- */
 .sidebar-menu {
   flex: 1;
-  overflow-y: auto !important;
+  overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding: 0 8px;
+  padding: 10px 8px;
+  gap: 2px;
 }
 
-.menu-heading {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #52525b;
-  padding: 16px 16px 8px 12px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+.sidebar-menu::-webkit-scrollbar { width: 3px; }
+.sidebar-menu::-webkit-scrollbar-track { background: transparent; }
+.sidebar-menu::-webkit-scrollbar-thumb { background: rgba(168,85,247,.15); border-radius: 4px; }
+.sidebar-menu::-webkit-scrollbar-thumb:hover { background: rgba(168,85,247,.3); }
+
+.menu-section-divider {
+  height: 1px;
+  background: var(--border-nested);
+  margin: 8px 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
   text-align: left;
 }
 
-.sidebar-footer {
+.menu-item i {
+  font-size: 1rem;
   flex-shrink: 0;
-  padding: 16px;
-  border-top: 1px solid #2d2d38;
+  width: 18px;
+  text-align: center;
+}
+
+.menu-item:hover {
+  color: var(--text-main);
+  background: var(--bg-nested);
+}
+
+.menu-item.active {
+  color: #a855f7;
+  background: rgba(168,85,247,.1);
+  font-weight: 600;
+}
+
+.menu-item.logout {
+  color: #f43f5e;
   margin-top: auto;
 }
+.menu-item.logout:hover { background: rgba(244,63,94,.08); }
 
-.logout {
-  color: #f43f5e !important;
+/* ---- FOOTER ---- */
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 8px;
+  border-top: 1px solid var(--border-nested);
+}
+
+/* ---- MOBILE CLOSE BTN ---- */
+.btn-sidebar-close-mobile {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  z-index: 10;
 }
+.btn-sidebar-close-mobile:hover { color: var(--text-main); background: var(--bg-nested); }
 
-.sidebar-menu::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.15);
-  border-radius: 4px;
-}
-
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.3);
-}
-
-/* ==========================================================================
-   ⚡ PHÂN HỆ MOBILE RESPONSIVE CHO SIDEBAR USER
-   ========================================================================== */
+/* =====================================================================
+   MOBILE: Sidebar slides in as drawer
+   ===================================================================== */
 @media (max-width: 768px) {
   .sidebar {
-    display: flex !important;
-    position: fixed !important;
-    top: 0;
+    position: fixed;
+    top: 52px; /* topbar height */
     left: 0;
-    width: min(320px, 86vw);
-    height: 100vh;
-    z-index: 99999 !important;
-    transform: translateX(-100%); /* Trượt hẳn sang bên trái màn hình ẩn đi */
-    box-shadow: 20px 0 30px rgba(0, 0, 0, 0.5);
+    bottom: 0;
+    z-index: 800;
+    width: 220px !important;
+    transform: translateX(-100%);
+    box-shadow: 6px 0 24px rgba(0,0,0,.35);
   }
 
-  /* Kích hoạt class này khi học sinh bấm nút Hamburger mở menu */
   .sidebar.is-mobile-open {
     transform: translateX(0);
   }
 
-  .btn-sidebar-close-mobile {
-    display: flex;
-  }
+  .btn-sidebar-close-mobile { display: flex; }
 
   .sidebar-mobile-overlay {
     position: fixed;
-    top: 0;
+    top: 52px;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 99998 !important;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(3px);
+    z-index: 799;
   }
 }
 
-/* ==========================================================================
-   📱 SIDEBAR BỔ SUNG - @480px (Very Small Mobile)
-   ========================================================================== */
-@media (max-width: 480px) {
-  .sidebar {
-    width: 280px; /* Sidebar hẹp hơn tí trên điện thoại rất nhỏ */
-  }
+/* Light theme */
+html.light-theme .sidebar {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
 
-  .sidebar-brand h2 {
-    font-size: 1.1rem;
-  }
-
-  .brand-logo-img {
-    width: 38px;
-    height: 38px;
-  }
-
-  .sidebar-profile {
-    margin: 0 8px 12px;
-    padding: 10px;
-  }
-
-  .sidebar-profile-info strong {
-    font-size: 0.85rem;
-  }
+html.light-theme .menu-item.active {
+  color: #7c3aed;
+  background: rgba(124,58,237,.08);
 }

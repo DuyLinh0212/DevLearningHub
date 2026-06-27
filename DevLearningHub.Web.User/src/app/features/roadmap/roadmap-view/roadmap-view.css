@@ -1,10 +1,19 @@
 @import '../../dashboard/dashboard.css';
 
+/* Host element must be flex column for scroll chain to work */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Layout Grid */
 .roadmap-layout-grid {
   display: flex;
   gap: 24px;
-  margin-top: 24px;
+  margin: 24px 24px 40px;
   align-items: flex-start;
 }
 

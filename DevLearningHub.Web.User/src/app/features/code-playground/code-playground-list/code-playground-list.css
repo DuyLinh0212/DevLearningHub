@@ -3,7 +3,7 @@
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100%;
   color: var(--text-main);
   background: var(--bg-dashboard);
 }

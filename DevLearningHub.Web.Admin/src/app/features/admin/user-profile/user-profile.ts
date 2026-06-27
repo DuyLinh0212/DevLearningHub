@@ -6,13 +6,12 @@ import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-admin-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './user-profile.html',
   styleUrl: './user-profile.css'
 })

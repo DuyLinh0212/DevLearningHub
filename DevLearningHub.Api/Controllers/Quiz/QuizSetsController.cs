@@ -159,9 +159,9 @@ public class QuizSetsController : ControllerBase
         }
 
         // Check permission to create quiz sets
-        if (!await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await _permissions.HasPermissionAsync(userId, "quiz:create"))
         {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden. Missing permission: quiz:edit"));
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden. Missing permission: quiz:create"));
         }
 
         var topic = await ResolveOrCreateTopicAsync(request.TopicId, request.Topic);
@@ -328,7 +328,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<QuizSetResponse>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await CanManageQuizSetAsync(userId, quizSet))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetResponse>.Fail("Forbidden."));
         }
@@ -390,7 +390,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await CanManageQuizSetAsync(userId, quizSet))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -426,7 +426,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await CanManageQuizSetAsync(userId, quizSet))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -478,7 +478,7 @@ public class QuizSetsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Quiz set not found."));
         }
 
-        if (quizSet.CreatedBy != userId && !await _permissions.HasPermissionAsync(userId, "quiz:edit"))
+        if (!await CanManageQuizSetAsync(userId, quizSet))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -778,5 +778,13 @@ public class QuizSetsController : ControllerBase
             Level = quizSet.Level,
             QuestionCount = questionCount
         };
+    }
+
+    private async Task<bool> CanManageQuizSetAsync(Guid userId, QuizSet quizSet)
+    {
+        var isOwner = quizSet.CreatedBy == userId;
+        var hasCreate = await _permissions.HasPermissionAsync(userId, "quiz:create");
+        var hasEdit = await _permissions.HasPermissionAsync(userId, "quiz:edit");
+        return hasEdit || (isOwner && hasCreate);
     }
 }

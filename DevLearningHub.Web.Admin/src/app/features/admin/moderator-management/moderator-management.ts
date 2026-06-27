@@ -2,7 +2,6 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 interface ManagePermission {
@@ -21,7 +20,7 @@ interface ManageModule {
 @Component({
   selector: 'app-moderator-management',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, FormsModule],
+  imports: [CommonModule,  FormsModule],
   templateUrl: './moderator-management.html',
   styleUrl: './moderator-management.css'
 })

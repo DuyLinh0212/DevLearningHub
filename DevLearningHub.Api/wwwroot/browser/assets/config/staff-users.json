@@ -1,0 +1,26 @@
+{
+  "_comment": "Thêm userIds (UUID) và usernames của tài khoản Admin/Moderator. Có phân chia cụ thể admins và moderators.",
+  "userIds": [
+    "6b5f7226-f549-444f-8339-5cd7b1422edf"
+  ],
+  "usernames": [
+    "admin",
+    "ngoc",
+    "namtqn4"
+  ],
+  "admins": {
+    "userIds": [
+      "6b5f7226-f549-444f-8339-5cd7b1422edf"
+    ],
+    "usernames": [
+      "admin",
+      "ngoc"
+    ]
+  },
+  "moderators": {
+    "userIds": [],
+    "usernames": [
+      "namtqn4"
+    ]
+  }
+}

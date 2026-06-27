@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { TopicService } from '../../../core/services/topic.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-topic-management',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, FormsModule],
+  imports: [CommonModule,  FormsModule],
   templateUrl: './topic-management.html',
   styleUrl: './topic-management.css'
 })

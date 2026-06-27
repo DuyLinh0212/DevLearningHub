@@ -6,13 +6,12 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterLink, Router } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-post-management',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, FormsModule, RouterLink],
+  imports: [CommonModule,  FormsModule, RouterLink],
   templateUrl: './post-management.html',
   styleUrl: './post-management.css'
 })

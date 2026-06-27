@@ -1,13 +1,7 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
-  <main class="main-content">
+
 
     <header class="content-header">
-      <!-- Nút Hamburger chỉ hiện trên Mobile ≤ 768px -->
-      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
-        <i class="bi bi-list"></i>
-      </button>
-      <div class="top-breadcrumb">
+<div class="top-breadcrumb">
         <button class="back-btn" (click)="goBack()" title="Quay lại trang trước">
           <i class="bi bi-chevron-left"></i> {{ backLabel }}
         </button>
@@ -200,8 +194,8 @@
         </div>
       }
     </div>
-  </main>
-</div>
+  
+
 
 @if (zoomedImageUrl) {
   <div class="image-lightbox-overlay fb-lightbox" (click)="closeImageZoom()">

@@ -39,7 +39,8 @@ export const routes: Routes = [
       { path: 'forum/edit/:id', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) },
       { path: 'user/:id', loadComponent: () => import('./features/user-profile/user-profile').then(m => m.UserProfileComponent) },
       { path: 'code', loadComponent: () => import('./features/code-playground/code-playground-list/code-playground-list').then(m => m.CodePlaygroundListComponent) },
-      { path: 'code/:id', loadComponent: () => import('./features/code-playground/code-playground-workspace/code-playground-workspace').then(m => m.CodePlaygroundWorkspaceComponent) }
+      { path: 'code/:id', loadComponent: () => import('./features/code-playground/code-playground-workspace/code-playground-workspace').then(m => m.CodePlaygroundWorkspaceComponent) },
+      { path: 'moderator/users', loadComponent: () => import('./features/moderator/user-list/moderator-user-list').then(m => m.ModeratorUserListComponent) }
     ]
   },
   { path: '**', redirectTo: 'landing' }

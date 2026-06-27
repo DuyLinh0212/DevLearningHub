@@ -844,7 +844,6 @@ public partial class DevLearningHubContext : DbContext
                 .HasColumnName("granted_at");
             entity.Property(e => e.GrantedBy).HasColumnName("granted_by");
             entity.Property(e => e.IsGranted)
-                .HasDefaultValue(true)
                 .HasColumnName("is_granted");
 
             entity.HasOne(d => d.GrantedByNavigation).WithMany(p => p.UserPermissionGrantedByNavigations)

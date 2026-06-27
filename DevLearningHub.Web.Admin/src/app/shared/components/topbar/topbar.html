@@ -1,0 +1,151 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <!-- Hamburger (mobile only) -->
+    <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Menu">
+      <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Logo -->
+    <a routerLink="/admin" class="topbar-logo">
+      <img src="assets/images/logo.png" alt="Logo" class="logo-img" />
+      <span class="logo-text">Dev-Learning<span class="logo-accent">Hub</span></span>
+    </a>
+
+    <!-- Admin Badge -->
+    <span class="topbar-admin-badge">Admin Panel</span>
+  </div>
+
+  <div class="topbar-right">
+    <!-- Search trigger -->
+    <button class="icon-btn" (click)="toggleSearch()" [class.active]="isSearchOpen" aria-label="Tìm kiếm">
+      <i class="bi bi-search"></i>
+    </button>
+
+    <!-- Theme toggle -->
+    <button class="icon-btn" (click)="themeService.toggleTheme()" aria-label="Đổi giao diện">
+      <i class="bi" [class.bi-moon-stars-fill]="!themeService.isDarkMode()" [class.bi-sun-fill]="themeService.isDarkMode()"></i>
+    </button>
+
+    <!-- Profile dropdown -->
+    <div class="profile-wrap" (click)="toggleProfile()">
+      <img
+        [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'"
+        [alt]="profile.displayName"
+        class="profile-avatar"
+      />
+      <span class="profile-name">{{ profile.displayName }}</span>
+      <i class="bi bi-chevron-down profile-chevron" [class.open]="isProfileOpen"></i>
+    </div>
+
+    @if (isProfileOpen) {
+      <div class="profile-dropdown">
+        <div class="dropdown-header">
+          <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" class="dd-avatar" />
+          <div>
+            <div class="dd-name">{{ profile.displayName }}</div>
+            <div class="dd-role">
+              <i class="bi bi-shield-fill"></i>
+              @if (hasRole('Admin')) { Admin } @else { Moderator }
+            </div>
+          </div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a routerLink="/settings" class="dropdown-item"><i class="bi bi-gear"></i> Cài đặt</a>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item dropdown-logout" (click)="logout()">
+          <i class="bi bi-box-arrow-left"></i> Đăng xuất
+        </button>
+      </div>
+    }
+  </div>
+</header>
+
+<!-- Search overlay -->
+@if (isSearchOpen) {
+  <div class="search-overlay">
+    <div class="search-modal">
+      <div class="search-modal-input-wrap">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          id="admin-topbar-search-input"
+          type="text"
+          placeholder="Tìm kiếm chức năng, đề thi, người dùng..."
+          [value]="searchQuery"
+          (input)="onSearchInput($event)"
+          autocomplete="off"
+        />
+        <button class="btn-close-search" (click)="toggleSearch()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="search-results-body">
+        @if (searchLoading) {
+          <div class="search-status"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tìm...</div>
+        } @else if (searchQuery && !showSearchResults) {
+          <div class="search-status">Nhập để tìm kiếm...</div>
+        } @else if (matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedUsers.length === 0 && matchedProblems.length === 0 && searchQuery) {
+          <div class="search-status">Không có kết quả phù hợp</div>
+        }
+
+        @if (matchedPages.length > 0) {
+          <div class="search-section">
+            <div class="search-section-label">Chức năng</div>
+            @for (p of matchedPages; track p.path) {
+              <a [routerLink]="p.path" class="search-result" (click)="toggleSearch()">
+                <i [class]="p.icon"></i>
+                <span>{{ p.name }}</span>
+              </a>
+            }
+          </div>
+        }
+
+        @if (matchedQuizzes.length > 0) {
+          <div class="search-section">
+            <div class="search-section-label">Đề thi</div>
+            @for (q of matchedQuizzes; track q.id) {
+              <a routerLink="/admin/quiz" class="search-result" (click)="toggleSearch()">
+                <i class="bi bi-database-fill"></i>
+                <div class="result-content">
+                  <span class="result-title">{{ q.title }}</span>
+                  <span class="result-desc">{{ q.description || 'Không có mô tả' }}</span>
+                </div>
+              </a>
+            }
+          </div>
+        }
+
+        @if (matchedProblems.length > 0) {
+          <div class="search-section">
+            <div class="search-section-label">Bài tập code</div>
+            @for (p of matchedProblems; track p.id) {
+              <a routerLink="/admin/problems" class="search-result" (click)="toggleSearch()">
+                <i class="bi bi-cpu-fill"></i>
+                <div class="result-content">
+                  <span class="result-title">{{ p.title }}</span>
+                  <span class="result-desc">Độ khó: {{ p.difficulty }}</span>
+                </div>
+              </a>
+            }
+          </div>
+        }
+
+        @if (matchedUsers.length > 0) {
+          <div class="search-section">
+            <div class="search-section-label">Người dùng</div>
+            @for (u of matchedUsers; track u.id) {
+              <a routerLink="/admin/users" class="search-result" (click)="toggleSearch()">
+                <i class="bi bi-person-fill"></i>
+                <div class="result-content">
+                  <span class="result-title">{{ u.fullName || u.username }}</span>
+                  <span class="result-desc">{{ u.email }}</span>
+                </div>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    </div>
+    <div class="search-backdrop" (click)="toggleSearch()"></div>
+  </div>
+}

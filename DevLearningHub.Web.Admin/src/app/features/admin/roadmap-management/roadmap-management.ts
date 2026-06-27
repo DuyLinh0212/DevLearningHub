@@ -2,14 +2,13 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoadmapService } from '../../../core/services/roadmap.service';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-roadmap-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './roadmap-management.html',
   styleUrl: './roadmap-management.css'
 })

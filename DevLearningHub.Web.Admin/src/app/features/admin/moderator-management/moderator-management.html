@@ -1,12 +1,7 @@
-<div class="dashboard-container">
-  <app-sidebar></app-sidebar>
-  <main class="main-content">
+
 
     <header class="content-header">
-      <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Mở menu">
-        <i class="bi bi-list"></i>
-      </button>
-      <div class="top-search">
+<div class="top-search">
         <i class="bi bi-search"></i>
         <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm tên đăng nhập, email, họ tên...">
       </div>
@@ -91,7 +86,7 @@
         </div>
       }
     </div>
-  </main>
+  
 
   <!-- Manage Moderator Permissions Modal -->
   @if (isManageModalOpen) {
@@ -161,4 +156,4 @@
     </div>
   </div>
   }
-</div>
+

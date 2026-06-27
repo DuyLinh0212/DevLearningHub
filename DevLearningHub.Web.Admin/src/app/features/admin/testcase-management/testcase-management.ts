@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-testcase-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './testcase-management.html',
   styleUrl: './testcase-management.css'
 })

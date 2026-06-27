@@ -1,19 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { TopbarComponent } from '../../shared/components/topbar/topbar';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
-import { MobileMenuService } from '../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-user-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet, TopbarComponent, SidebarComponent],
   templateUrl: './user-layout.html',
   styleUrl: './user-layout.css'
 })
-export class UserLayoutComponent {
-  public mobileMenu = inject(MobileMenuService);
-
-  toggleSidebar() {
-    this.mobileMenu.toggle();
-  }
-}
+export class UserLayoutComponent {}

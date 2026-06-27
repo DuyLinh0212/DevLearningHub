@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { forkJoin, of } from "rxjs";
 import { catchError } from 'rxjs/operators';
-import { SidebarComponent } from '../../../shared/components/sidebar/sidebar';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 interface ManageRoleOption {
@@ -30,7 +29,7 @@ interface ManageModule {
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, FormsModule],
+  imports: [CommonModule,  FormsModule],
   templateUrl: './user-management.html',
   styleUrl: './user-management.css'
 })

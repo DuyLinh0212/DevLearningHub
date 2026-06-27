@@ -43,6 +43,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   
   replyingCommentId: string | null = null;
   editingCommentId: string | null = null;
+  activeCommentMenuId: string | null = null;
   
   isBookmarked: boolean = false;
   zoomedImageUrl: string | null = null;
@@ -54,6 +55,11 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   private imageDragStartY = 0;
   private imageDragBaseX = 0;
   private imageDragBaseY = 0;
+
+  // Explore sidebar — recent posts grouped by tag
+  recentPosts: any[] = [];
+  exploreTags: string[] = [];
+  exploreGrouped: { tag: string; posts: any[] }[] = [];
 
   ngOnInit() {
     // Subscribe once to realtime comment events; handlers filter by postId.
@@ -72,6 +78,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         this.postId = params['id'] || '';
         if (this.postId) {
           this.loadCurrentUser();
+          this.loadRecentPosts();
           // Join the SignalR group so this post receives live comment updates.
           this.realtime.joinPost(this.postId);
         }
@@ -83,6 +90,28 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
     this.realtime.leaveCurrentPost();
     document.body.style.overflow = '';
+  }
+
+  private loadRecentPosts() {
+    this.http.get<any>('/api/posts', { params: { page: '1', pageSize: '20', sort: 'newest' } }).subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        const items: any[] = data?.items || (Array.isArray(data) ? data : []);
+        this.recentPosts = items.filter(p => p.id !== this.postId).slice(0, 15);
+
+        // Group by first tag
+        const grouped: Record<string, any[]> = {};
+        this.recentPosts.forEach(p => {
+          const tag = p.tags?.[0]?.name || 'Chung';
+          if (!grouped[tag]) grouped[tag] = [];
+          if (grouped[tag].length < 3) grouped[tag].push(p);
+        });
+        this.exploreGrouped = Object.entries(grouped)
+          .slice(0, 4)
+          .map(([tag, posts]) => ({ tag, posts }));
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // --- REALTIME COMMENT HANDLERS ---
@@ -184,9 +213,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
   }
   private pruneRepliesOfHiddenComments(comments: any[]): any[] {
-    return (comments || []).map(comment => ({
+    const canModerate = this.canModerateComment();
+    return (comments || []
+    ).filter(comment => canModerate || !comment.isHidden
+    ).map(comment => ({
       ...comment,
-      replies: comment.isHidden ? [] : this.pruneRepliesOfHiddenComments(comment.replies || [])
+      replies: this.pruneRepliesOfHiddenComments(comment.replies || [])
     }));
   }
 
@@ -289,6 +321,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   toggleBookmark() {
     // Vô hiệu hóa lưu bookmark local do BE chưa có API
+  }
+
+  toggleCommentMenu(commentId: string, event: Event) {
+    event.stopPropagation();
+    this.activeCommentMenuId = this.activeCommentMenuId === commentId ? null : commentId;
+    this.cdr.detectChanges();
   }
 
   scrollToComments() {
@@ -509,8 +547,9 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   canHidePost(): boolean {
-    // Anyone with post:hide can hide/unhide any post.
-    return this.hasPermission('post:hide');
+    // Author can hide/unhide their own post (requires post:hide_own); Moderator/Admin can hide/unhide any post (requires post:hide_any).
+    const isOwner = this.isPostAuthor();
+    return (isOwner && this.hasPermission('post:hide_own')) || this.hasPermission('post:hide_any');
   }
 
   canEditComment(comment: any): boolean {
@@ -539,14 +578,32 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
     this.forumService.moderateComment(comment.id, hide, reason.trim()).subscribe({
       next: () => {
-        comment.isHidden = hide;
-        this.loadComments();
+        // Cập nhật trực tiếp trong cây comment (không reload toàn bộ)
+        // để tránh mất hidden comments do API filter theo permission trong JWT cũ
+        this.updateCommentInTree(this.comments, comment.id, { isHidden: hide });
+        // Rebuild visibleComments từ comments đã cập nhật
+        this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi kiểm duyệt bình luận:', err);
         alert('Không thể hoàn tất hành động kiểm duyệt.');
       }
     });
+  }
+
+  // Cập nhật thuộc tính của một comment trong cây (đệ quy)
+  private updateCommentInTree(comments: any[], id: string, updates: Partial<any>): boolean {
+    for (const c of comments) {
+      if (c.id === id) {
+        Object.assign(c, updates);
+        return true;
+      }
+      if (c.replies && this.updateCommentInTree(c.replies, id, updates)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   formatRelativeTime(dateString: string): string {
@@ -634,16 +691,28 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   // --- IMAGE ZOOM LIGHTBOX ---
+  onPostBodyClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target && target.tagName === 'IMG') {
+      const src = (target as HTMLImageElement).src;
+      if (src) {
+        this.openImageZoom(src);
+      }
+    }
+  }
+
   openImageZoom(url: string) {
     this.zoomedImageUrl = url;
     this.resetImageTransform();
     document.body.style.overflow = 'hidden';
+    this.cdr.detectChanges();
   }
 
   closeImageZoom() {
     this.zoomedImageUrl = null;
     this.resetImageTransform();
     document.body.style.overflow = '';
+    this.cdr.detectChanges();
   }
 
   zoomImage(delta: number, event?: Event) {

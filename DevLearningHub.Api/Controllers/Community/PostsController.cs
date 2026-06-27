@@ -47,9 +47,9 @@ public class PostsController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
 
-        // Users who can hide posts (post:hide) also see hidden posts in the list; everyone else only sees visible ones.
+        // Users who can hide posts (post:hide_any) also see hidden posts in the list; everyone else only sees visible ones.
         var includeHidden = User.TryGetUserId(out var viewerId)
-            && await _permissions.HasPermissionAsync(viewerId, "post:hide");
+            && await _permissions.HasPermissionAsync(viewerId, "post:hide_any");
         var query = _db.Posts.AsNoTracking().Where(p => includeHidden || !p.IsHidden);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -140,7 +140,7 @@ public class PostsController : ControllerBase
         }
 
         var isOwner = User.TryGetUserId(out var userId) && post.AuthorId == userId;
-        var canViewHidden = userId != Guid.Empty && await _permissions.HasPermissionAsync(userId, "post:hide");
+        var canViewHidden = userId != Guid.Empty && await _permissions.HasPermissionAsync(userId, "post:hide_any");
         if (post.IsHidden && !isOwner && !canViewHidden)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Post is hidden."));
@@ -572,47 +572,39 @@ public class PostsController : ControllerBase
 
     [HttpPost("{id:guid}/moderate")]
     [Authorize]
-    // Hide or unhide a post and record a moderation log entry. Requires the post:hide permission.
+    // Hide or unhide a post.
+    // - Post author can always hide/unhide their own post (no permission required).
+    // - To hide/unhide someone else's post requires the post:hide permission (Moderator/Admin).
     public async Task<ActionResult<ApiResponse<object>>> ModeratePost(Guid id, ModerateRequest request)
     {
         try
         {
             if (!User.TryGetUserId(out var moderatorId))
             {
-                Console.Error.WriteLine($"ModeratePost: User not authenticated properly. User.Identity.IsAuthenticated: {User?.Identity?.IsAuthenticated}");
                 return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
-            }
-
-            Console.Error.WriteLine($"ModeratePost: UserId={moderatorId}, PostId={id}, Hidden={request.Hidden}");
-
-            var hasPerm = await _permissions.HasPermissionAsync(moderatorId, "post:hide");
-            Console.Error.WriteLine($"ModeratePost: hasPermission(post:hide) = {hasPerm}");
-
-            if (!hasPerm)
-            {
-                // Get user's effective permissions for debugging
-                var userPerms = await _permissions.GetEffectivePermissionsAsync(moderatorId);
-                Console.Error.WriteLine($"ModeratePost: User permissions: {string.Join(", ", userPerms)}");
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden. Missing permission: post:hide"));
             }
 
             var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
             if (post == null)
             {
-                Console.Error.WriteLine($"ModeratePost: Post not found. PostId={id}");
                 return NotFound(ApiResponse<object>.Fail("Post not found."));
             }
 
-            Console.Error.WriteLine($"ModeratePost: Found post. Current IsHidden={post.IsHidden}, request.Hidden={request.Hidden}");
+            var isOwner = post.AuthorId == moderatorId;
+            var canHideOwn = isOwner && await _permissions.HasPermissionAsync(moderatorId, "post:hide_own");
+            var canHideAny = await _permissions.HasPermissionAsync(moderatorId, "post:hide_any");
+
+            // Owner can hide/unhide their own post (requires post:hide_own); Moderator/Admin can hide/unhide any post (requires post:hide_any).
+            if (!canHideOwn && !canHideAny)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    ApiResponse<object>.Fail("Forbidden. You don't have permission to hide/unhide this post."));
+            }
 
             post.IsHidden = request.Hidden;
             post.UpdatedAt = DateTime.Now;
 
-            // Constraint accepts: 'hide', 'delete', 'restore'
-            // Use 'hide' when hiding, 'restore' when showing
             var actionValue = request.Hidden ? "hide" : "restore";
-            Console.Error.WriteLine($"ModeratePost: Using actionValue={actionValue}, Hidden={request.Hidden}");
-
             _db.ModerationLogs.Add(new ModerationLog
             {
                 Id = Guid.NewGuid(),
@@ -624,23 +616,15 @@ public class PostsController : ControllerBase
                 CreatedAt = DateTime.Now
             });
 
-            Console.Error.WriteLine($"ModeratePost: Saving changes...");
             await _db.SaveChangesAsync();
-            Console.Error.WriteLine($"ModeratePost: Save successful. Post IsHidden={post.IsHidden}");
 
             return Ok(ApiResponse<object>.Ok(new { id = post.Id, isHidden = post.IsHidden }));
         }
         catch (Exception ex)
         {
-            // Log the exception details
             Console.Error.WriteLine($"ModeratePost EXCEPTION: {ex.GetType().Name}: {ex.Message}");
-            Console.Error.WriteLine($"Stack trace: {ex.StackTrace}");
-            if (ex.InnerException != null)
-            {
-                Console.Error.WriteLine($"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-                Console.Error.WriteLine($"Inner stack: {ex.InnerException.StackTrace}");
-            }
-            return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<object>.Fail($"Internal error: {ex.Message}"));
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                ApiResponse<object>.Fail($"Internal error: {ex.Message}"));
         }
     }
 
