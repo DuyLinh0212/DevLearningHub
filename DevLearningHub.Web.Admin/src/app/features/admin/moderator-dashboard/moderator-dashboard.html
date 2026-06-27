@@ -14,39 +14,35 @@
       } @else {
         <!-- Stats Cards -->
         <section class="stats-grid">
-          @if (canModeratePosts) {
-            <div class="stat-card">
-              <div class="stat-icon posts">
-                <i class="bi bi-newspaper"></i>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ stats.totalPosts }}</div>
-                <div class="stat-label">Tổng bài viết</div>
-              </div>
+          <div class="stat-card">
+            <div class="stat-icon posts">
+              <i class="bi bi-newspaper"></i>
             </div>
-          }
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.totalPosts }}</div>
+              <div class="stat-label">Tổng bài viết</div>
+            </div>
+          </div>
 
-          @if (canViewUsers) {
-            <div class="stat-card">
-              <div class="stat-icon moderators">
-                <i class="bi bi-people"></i>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ stats.totalModerators }}</div>
-                <div class="stat-label">Moderator</div>
-              </div>
+          <div class="stat-card">
+            <div class="stat-icon hidden-posts" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+              <i class="bi bi-eye-slash"></i>
             </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.hiddenPosts }}</div>
+              <div class="stat-label">Bài viết đã ẩn</div>
+            </div>
+          </div>
 
-            <div class="stat-card">
-              <div class="stat-icon users">
-                <i class="bi bi-person-fill"></i>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ stats.totalUsers }}</div>
-                <div class="stat-label">Tổng người dùng</div>
-              </div>
+          <div class="stat-card">
+            <div class="stat-icon pending-reports" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+              <i class="bi bi-exclamation-triangle"></i>
             </div>
-          }
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.pendingReports }}</div>
+              <div class="stat-label">Báo cáo chờ xử lý</div>
+            </div>
+          </div>
         </section>
 
         <!-- Quick Actions & Recent Activity -->
@@ -55,18 +51,18 @@
           <div class="card quick-actions-card">
             <h3><i class="bi bi-lightning-charge-fill"></i> Lối tắt</h3>
             <div class="quick-actions">
-              @if (canModeratePosts) {
-                <a routerLink="/admin/posts" class="quick-action-item">
-                  <i class="bi bi-newspaper"></i>
-                  <span>Quản lý Bài viết</span>
-                </a>
-              }
-              @if (canViewUsers) {
-                <a routerLink="/admin/users" class="quick-action-item">
-                  <i class="bi bi-people-fill"></i>
-                  <span>Quản lý Người dùng</span>
-                </a>
-              }
+              <a routerLink="/admin/posts" class="quick-action-item">
+                <i class="bi bi-newspaper"></i>
+                <span>Quản lý Bài viết</span>
+              </a>
+              <a routerLink="/admin/posts" class="quick-action-item">
+                <i class="bi bi-chat-left-text"></i>
+                <span>Duyệt Bình luận</span>
+              </a>
+              <a routerLink="/settings" class="quick-action-item">
+                <i class="bi bi-gear"></i>
+                <span>Cài đặt cá nhân</span>
+              </a>
             </div>
           </div>
 

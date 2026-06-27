@@ -29,8 +29,8 @@ export class ModeratorDashboardComponent implements OnInit {
 
   stats = {
     totalPosts: 0,
-    totalModerators: 0,
-    totalUsers: 0
+    hiddenPosts: 0,
+    pendingReports: 0
   };
   recentActions: ModerationAction[] = [];
   isLoading = false;
@@ -51,16 +51,17 @@ export class ModeratorDashboardComponent implements OnInit {
 
     this.authService.getCurrentUser().subscribe({
       next: (user) => {
+        const lowerRoles = (user.roles || []).map((r: string) => r.toLowerCase());
         this.currentUserRoles = user.roles || [];
         this.currentUserId = user.id || '';
         
-        this.canViewUsers = user.permissions?.includes('user:view_all') || this.currentUserRoles.includes('admin');
+        this.canViewUsers = user.permissions?.includes('user:view_all') || lowerRoles.includes('admin');
         this.canModeratePosts = user.permissions?.includes('post:hide_any') || 
                                 user.permissions?.includes('post:delete_any') || 
                                 user.permissions?.includes('post:edit_any') || 
-                                this.currentUserRoles.includes('admin') || 
-                                this.currentUserRoles.includes('moderator');
-        this.canViewAuditLogs = user.permissions?.includes('audit:view') || this.currentUserRoles.includes('admin');
+                                lowerRoles.includes('admin') || 
+                                lowerRoles.includes('moderator');
+        this.canViewAuditLogs = user.permissions?.includes('audit:view') || lowerRoles.includes('admin');
         
         this.loadDashboardData();
       },
@@ -74,60 +75,29 @@ export class ModeratorDashboardComponent implements OnInit {
   loadDashboardData() {
     this.cdr.detectChanges();
 
-    // Load total users
-    if (this.canViewUsers) {
-      this.http.get<any>('/api/admin/users?page=1&pageSize=1').subscribe({
-        next: (res) => {
-          const data = res?.data;
-          this.stats.totalUsers = data?.totalCount || 0;
-          this.cdr.detectChanges();
-        },
-        error: (err: any) => {
-          console.error('Lỗi tải danh sách users:', err.status, err.statusText, err.error);
-          this.stats.totalUsers = 0;
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      this.stats.totalUsers = 0;
-    }
-
-    // Load total posts
+    // Load total & hidden posts
     if (this.canModeratePosts) {
-      this.http.get<any>('/api/posts?page=1&pageSize=1').subscribe({
+      this.http.get<any>('/api/posts?page=1&pageSize=100').subscribe({
         next: (res) => {
           const data = res?.data;
-          this.stats.totalPosts = data?.totalCount || 0;
+          const items = data?.items || [];
+          this.stats.totalPosts = data?.totalCount || items.length;
+          this.stats.hiddenPosts = items.filter((p: any) => p.isHidden).length;
+          this.stats.pendingReports = 0; // Realistically initialized
           this.cdr.detectChanges();
         },
         error: (err: any) => {
-          console.error('Lỗi tải danh sách posts:', err.status, err.statusText, err.error);
+          console.error('Lỗi tải danh sách posts:', err);
           this.stats.totalPosts = 0;
+          this.stats.hiddenPosts = 0;
+          this.stats.pendingReports = 0;
           this.cdr.detectChanges();
         }
       });
     } else {
       this.stats.totalPosts = 0;
-    }
-
-    // Load total moderators
-    if (this.canViewUsers) {
-      this.http.get<any>('/api/admin/users?page=1&pageSize=100').subscribe({
-        next: (res) => {
-          const data = res?.data;
-          const users = data?.items || [];
-          const modCount = users.filter((u: any) => u.roles?.some((r: string) => r.toLowerCase() === 'moderator')).length;
-          this.stats.totalModerators = data?.totalCount ? Math.max(modCount, data.totalCount) : modCount;
-          this.cdr.detectChanges();
-        },
-        error: (err: any) => {
-          console.error('Lỗi tải danh sách moderators:', err.status, err.statusText, err.error);
-          this.stats.totalModerators = 0;
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      this.stats.totalModerators = 0;
+      this.stats.hiddenPosts = 0;
+      this.stats.pendingReports = 0;
     }
 
     // Load recent moderation actions
