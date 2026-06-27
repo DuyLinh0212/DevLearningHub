@@ -515,3 +515,29 @@ select option {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   🔧 FEATURE PAGES HOST FLEX LAYOUT
+   ========================================================================== */
+app-admin-dashboard,
+app-moderator-dashboard,
+app-post-management,
+app-admin-post-detail,
+app-user-management,
+app-admin-user-profile,
+app-quiz-management,
+app-problem-management,
+app-roadmap-management,
+app-tag-management,
+app-topic-management,
+app-testcase-management,
+app-moderator-management,
+app-audit-logs {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
