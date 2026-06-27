@@ -13,34 +13,37 @@
         </div>
       } @else {
         <!-- Stats Cards -->
-        <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon posts">
-              <i class="bi bi-newspaper"></i>
+        <section class="stats-container">
+          <!-- Card 1: Tổng bài viết -->
+          <div class="stat-card blue">
+            <div class="stat-card-header">
+              <span class="stat-title">Tổng bài viết</span>
+              <div class="stat-card-icon"><i class="bi bi-newspaper"></i></div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.totalPosts }}</div>
-              <div class="stat-label">Tổng bài viết</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon hidden-posts" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-              <i class="bi bi-eye-slash"></i>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.hiddenPosts }}</div>
-              <div class="stat-label">Bài viết đã ẩn</div>
+            <div class="stat-card-body">
+              <span class="stat-value">{{ stats.totalPosts }}</span>
             </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-icon pending-reports" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-              <i class="bi bi-exclamation-triangle"></i>
+          <!-- Card 2: Bài viết đã ẩn -->
+          <div class="stat-card green">
+            <div class="stat-card-header">
+              <span class="stat-title">Bài viết đã ẩn</span>
+              <div class="stat-card-icon"><i class="bi bi-eye-slash"></i></div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.pendingReports }}</div>
-              <div class="stat-label">Báo cáo chờ xử lý</div>
+            <div class="stat-card-body">
+              <span class="stat-value">{{ stats.hiddenPosts }}</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Báo cáo chờ xử lý -->
+          <div class="stat-card orange">
+            <div class="stat-card-header">
+              <span class="stat-title">Báo cáo chờ xử lý</span>
+              <div class="stat-card-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            </div>
+            <div class="stat-card-body">
+              <span class="stat-value">{{ stats.pendingReports }}</span>
             </div>
           </div>
         </section>
@@ -55,13 +58,19 @@
                 <i class="bi bi-newspaper"></i>
                 <span>Quản lý Bài viết</span>
               </a>
-              <a routerLink="/admin/posts" class="quick-action-item">
-                <i class="bi bi-chat-left-text"></i>
-                <span>Duyệt Bình luận</span>
-              </a>
+              @if (canViewUsers) {
+                <a routerLink="/admin/users" class="quick-action-item">
+                  <i class="bi bi-people-fill"></i>
+                  <span>Quản lý Người dùng</span>
+                </a>
+              }
               <a routerLink="/settings" class="quick-action-item">
                 <i class="bi bi-gear"></i>
                 <span>Cài đặt cá nhân</span>
+              </a>
+              <a routerLink="/dashboard" class="quick-action-item">
+                <i class="bi bi-arrow-left-circle"></i>
+                <span>Quay lại Cổng Học tập</span>
               </a>
             </div>
           </div>
