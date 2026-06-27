@@ -31,6 +31,8 @@ export class ModeratorDashboardComponent implements OnInit {
   stats = {
     totalPosts: 0,
     hiddenPosts: 0,
+    totalProblems: 0,
+    totalRoadmaps: 0,
     pendingReports: 0
   };
   recentActions: ModerationAction[] = [];
@@ -38,12 +40,34 @@ export class ModeratorDashboardComponent implements OnInit {
 
   currentUserRoles: string[] = [];
   currentUserId: string = '';
+  userPermissions: string[] = [];
   canViewUsers: boolean = false;
   canModeratePosts: boolean = false;
   canViewAuditLogs: boolean = false;
 
+  hiddenPostsList: any[] = [];
+  recentProblems: any[] = [];
+  recentRoadmaps: any[] = [];
+  unhidingPostId: string | null = null;
+
   ngOnInit() {
     this.loadCurrentUser();
+  }
+
+  get hasAnyPermission(): boolean {
+    const lowerRoles = this.currentUserRoles.map(r => r.toLowerCase());
+    return lowerRoles.includes('admin') || 
+           this.canViewUsers || 
+           this.canModeratePosts || 
+           this.canViewAuditLogs || 
+           this.hasPermission('quiz:edit') || 
+           this.hasPermission('roadmap:edit') || 
+           this.hasPermission('topic:edit') || 
+           this.hasPermission('tag:edit');
+  }
+
+  hasPermission(perm: string): boolean {
+    return this.userPermissions.includes('system.full_control') || this.userPermissions.includes(perm);
   }
 
   loadCurrentUser() {
@@ -55,6 +79,7 @@ export class ModeratorDashboardComponent implements OnInit {
         const lowerRoles = (user.roles || []).map((r: string) => r.toLowerCase());
         this.currentUserRoles = user.roles || [];
         this.currentUserId = user.id || '';
+        this.userPermissions = user.permissions || [];
         
         this.canViewUsers = user.permissions?.includes('user:view_all') || lowerRoles.includes('admin');
         this.canModeratePosts = user.permissions?.includes('post:hide_any') || 
@@ -83,22 +108,55 @@ export class ModeratorDashboardComponent implements OnInit {
           const data = res?.data;
           const items = data?.items || [];
           this.stats.totalPosts = data?.totalCount || items.length;
-          this.stats.hiddenPosts = items.filter((p: any) => p.isHidden).length;
-          this.stats.pendingReports = 0; // Realistically initialized
+          this.hiddenPostsList = items.filter((p: any) => p.isHidden);
+          this.stats.hiddenPosts = this.hiddenPostsList.length;
+          this.stats.pendingReports = 0; // Simulated reports
           this.cdr.detectChanges();
         },
         error: (err: any) => {
           console.error('Lỗi tải danh sách posts:', err);
           this.stats.totalPosts = 0;
           this.stats.hiddenPosts = 0;
-          this.stats.pendingReports = 0;
+          this.hiddenPostsList = [];
           this.cdr.detectChanges();
         }
       });
-    } else {
-      this.stats.totalPosts = 0;
-      this.stats.hiddenPosts = 0;
-      this.stats.pendingReports = 0;
+    }
+
+    // Load total & recent problems
+    if (this.hasPermission('quiz:edit')) {
+      this.http.get<any[]>('/api/problems').subscribe({
+        next: (res: any[]) => {
+          const list = res || [];
+          this.stats.totalProblems = list.length;
+          this.recentProblems = list.slice(0, 5);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Lỗi tải bài tập:', err);
+          this.stats.totalProblems = 0;
+          this.recentProblems = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+
+    // Load total & recent roadmaps
+    if (this.hasPermission('roadmap:edit')) {
+      this.http.get<any>('/api/roadmaps').subscribe({
+        next: (res: any) => {
+          const list = res?.data || res || [];
+          this.stats.totalRoadmaps = list.length;
+          this.recentRoadmaps = list.slice(0, 5);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Lỗi tải lộ trình:', err);
+          this.stats.totalRoadmaps = 0;
+          this.recentRoadmaps = [];
+          this.cdr.detectChanges();
+        }
+      });
     }
 
     // Load recent moderation actions
@@ -134,6 +192,28 @@ export class ModeratorDashboardComponent implements OnInit {
       this.isLoading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  unhidePost(postId: string, event: Event) {
+    event.stopPropagation();
+    const reason = prompt('Nhập lý do hiện lại bài viết:');
+    if (reason === null) return;
+    this.unhidingPostId = postId;
+    this.cdr.detectChanges();
+
+    this.http.post<any>(`/api/posts/${postId}/moderate`, { reason: reason.trim(), hidden: false }).subscribe({
+      next: () => {
+        alert('Đã hiện lại bài đăng thành công.');
+        this.unhidingPostId = null;
+        this.loadDashboardData();
+      },
+      error: (err) => {
+        console.error('Lỗi hiện bài viết:', err);
+        alert('Không thể hiện lại bài viết.');
+        this.unhidingPostId = null;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   formatDate(dateString: string): string {
