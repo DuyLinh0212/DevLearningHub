@@ -278,7 +278,7 @@
         <div class="lc-comment-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
 
         <!-- Footer actions -->
-        <div class="lc-comment-footer">
+        <div class="lc-comment-footer" style="position: relative;">
           <div class="lc-vote-row">
             <button class="lc-vote-btn sm" [class.active]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')">
               <i class="bi" [class.bi-arrow-up-circle-fill]="comment.myVote === 'up'" [class.bi-arrow-up-circle]="comment.myVote !== 'up'"></i>
@@ -289,14 +289,29 @@
             </button>
           </div>
 
-          <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
-          @if (canModerateComments) {
-            <button class="lc-link-action warn" (click)="toggleModerateComment(comment)">
-              <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-              {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+          <!-- 3-dots actions dropdown wrapper -->
+          <div class="comment-actions-dropdown-wrap" style="position: relative; display: inline-block;">
+            <button class="comment-actions-trigger-btn" (click)="toggleCommentActionDropdown(comment.id, $event)" title="Hành động" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: background 0.15s, color 0.15s;">
+              <i class="bi bi-three-dots"></i>
             </button>
-            <button class="lc-link-action danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xóa</button>
-          }
+            
+            @if (activeCommentActionId === comment.id) {
+              <div class="comment-actions-menu" (click)="$event.stopPropagation()" style="position: absolute; bottom: 100%; left: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-nested); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-bottom: 4px; display: flex; flex-direction: column; padding: 4px 0; overflow: hidden;">
+                <button class="comment-action-item" (click)="toggleReplyForm(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: var(--text-main); font-weight: 500; transition: background 0.12s;">
+                  <i class="bi bi-reply"></i> Trả lời
+                </button>
+                @if (canModerateComments) {
+                  <button class="comment-action-item" (click)="toggleModerateComment(comment); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f59e0b; font-weight: 500; transition: background 0.12s;">
+                    <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
+                    {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+                  </button>
+                  <button class="comment-action-item" (click)="deleteComment(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f43f5e; font-weight: 500; transition: background 0.12s;">
+                    <i class="bi bi-trash"></i> Xóa
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <!-- Reply form -->

@@ -34,6 +34,7 @@ export class AdminPostDetailComponent implements OnInit {
   rootCommentText: string = '';
   replyCommentText: string = '';
   replyingCommentId: string | null = null;
+  activeCommentActionId: string | null = null;
 
   // Lightbox zoom state
   zoomedImageUrl: string | null = null;
@@ -424,5 +425,20 @@ export class AdminPostDetailComponent implements OnInit {
   @HostListener('document:keydown.escape')
   onEscapeKey() {
     if (this.zoomedImageUrl) this.closeImageZoom();
+  }
+
+  toggleCommentActionDropdown(commentId: string, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.activeCommentActionId === commentId) {
+      this.activeCommentActionId = null;
+    } else {
+      this.activeCommentActionId = commentId;
+    }
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click')
+  onGlobalClick() {
+    this.activeCommentActionId = null;
   }
 }

@@ -1090,3 +1090,12 @@
   height: 100% !important;
 }
 
+/* Comment actions dropdown hover styles */
+.comment-actions-trigger-btn:hover {
+  background: var(--bg-nested) !important;
+  color: var(--text-main) !important;
+}
+
+.comment-action-item:hover {
+  background: var(--bg-nested) !important;
+}
