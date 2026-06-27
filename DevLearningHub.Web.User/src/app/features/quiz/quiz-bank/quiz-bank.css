@@ -340,6 +340,7 @@ html.light-theme .problems-table tr:hover {
   font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-solve:hover {

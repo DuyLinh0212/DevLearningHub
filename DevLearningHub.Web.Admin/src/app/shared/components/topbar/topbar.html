@@ -13,6 +13,99 @@
 
     <!-- Admin Badge -->
     <span class="topbar-admin-badge">Admin Panel</span>
+
+    <!-- Nav links (desktop) -->
+    <nav class="topbar-nav" aria-label="Main navigation">
+      <!-- Dropdown 1: Điều phối -->
+      @if (hasRole('Admin') || hasPermission('quiz:edit') || hasPermission('roadmap:edit') || hasPermission('topic:edit')) {
+        <div class="nav-dropdown">
+          <button class="nav-link dropdown-toggle-btn">
+            <i class="bi bi-speedometer2"></i>
+            <span>Điều phối</span>
+            <i class="bi bi-chevron-down dropdown-chevron"></i>
+          </button>
+          <div class="nav-dropdown-menu">
+            @if (hasRole('Admin')) {
+              <a routerLink="/admin" routerLinkActive="dropdown-active" [routerLinkActiveOptions]="{exact: true}" class="dropdown-item">
+                <i class="bi bi-speedometer2"></i> Bảng điều phối
+              </a>
+            }
+            @if (hasPermission('quiz:edit')) {
+              <a routerLink="/admin/quiz" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-database-fill"></i> Quản lý Đề thi
+              </a>
+              <a routerLink="/admin/problems" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-cpu-fill"></i> Quản lý Bài tập
+              </a>
+            }
+            @if (hasPermission('roadmap:edit')) {
+              <a routerLink="/admin/roadmap" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-bezier2"></i> Quản lý Lộ trình
+              </a>
+            }
+            @if (hasPermission('topic:edit')) {
+              <a routerLink="/admin/topics" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-tags-fill"></i> Quản lý Chủ đề
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Dropdown 2: Cộng đồng -->
+      @if (hasPermission('tag:edit') || hasPermission('post:hide_any')) {
+        <div class="nav-dropdown">
+          <button class="nav-link dropdown-toggle-btn">
+            <i class="bi bi-people-fill"></i>
+            <span>Cộng đồng</span>
+            <i class="bi bi-chevron-down dropdown-chevron"></i>
+          </button>
+          <div class="nav-dropdown-menu">
+            @if (hasPermission('tag:edit')) {
+              <a routerLink="/admin/tags" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-tag-fill"></i> Quản lý Tag
+              </a>
+            }
+            @if (hasPermission('post:hide_any')) {
+              <a routerLink="/admin/posts" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-newspaper"></i> Quản lý Bài viết
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Dropdown 3: Hệ thống -->
+      @if (hasRole('Admin') || hasPermission('user:view_all') || hasPermission('audit:view') || hasRole('Moderator')) {
+        <div class="nav-dropdown">
+          <button class="nav-link dropdown-toggle-btn">
+            <i class="bi bi-gear-fill"></i>
+            <span>Hệ thống</span>
+            <i class="bi bi-chevron-down dropdown-chevron"></i>
+          </button>
+          <div class="nav-dropdown-menu">
+            @if (hasPermission('user:view_all')) {
+              <a routerLink="/admin/users" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-people-fill"></i> Quản lý Người dùng
+              </a>
+              <a routerLink="/admin/moderators" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-person-badge"></i> Quản lý Moderator
+              </a>
+            }
+            @if (hasPermission('audit:view')) {
+              <a routerLink="/admin/audit-logs" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-terminal-fill"></i> Logs hệ thống
+              </a>
+            }
+            @if (hasRole('Moderator')) {
+              <a routerLink="/admin/moderator-dashboard" routerLinkActive="dropdown-active" class="dropdown-item">
+                <i class="bi bi-speedometer2"></i> Dashboard Moderator
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </nav>
   </div>
 
   <div class="topbar-right">
@@ -39,7 +132,7 @@
 
     @if (isProfileOpen) {
       <div class="profile-dropdown">
-        <div class="dropdown-header">
+        <a [routerLink]="['/admin/users', currentUserId]" class="dropdown-header" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 12px;" (click)="isProfileOpen = false">
           <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" class="dd-avatar" />
           <div>
             <div class="dd-name">{{ profile.displayName }}</div>
@@ -48,9 +141,9 @@
               @if (hasRole('Admin')) { Admin } @else { Moderator }
             </div>
           </div>
-        </div>
+        </a>
         <div class="dropdown-divider"></div>
-        <a routerLink="/settings" class="dropdown-item"><i class="bi bi-gear"></i> Cài đặt</a>
+        <a routerLink="/settings" class="dropdown-item" (click)="isProfileOpen = false"><i class="bi bi-gear"></i> Cài đặt</a>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item dropdown-logout" (click)="logout()">
           <i class="bi bi-box-arrow-left"></i> Đăng xuất
@@ -59,6 +152,76 @@
     }
   </div>
 </header>
+
+<!-- Mobile menu overlay -->
+@if (isMobileOpen) {
+  <div class="mobile-nav-overlay" (click)="mobileMenu.close()">
+    <div class="mobile-nav-menu" (click)="$event.stopPropagation()">
+      <div class="mobile-nav-section">
+        <div class="mobile-nav-section-title">ĐIỀU PHỐI</div>
+        @if (hasRole('Admin')) {
+          <a routerLink="/admin" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-speedometer2"></i> <span>Bảng điều phối</span>
+          </a>
+        }
+        @if (hasPermission('quiz:edit')) {
+          <a routerLink="/admin/quiz" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-database-fill"></i> <span>Quản lý Đề thi</span>
+          </a>
+          <a routerLink="/admin/problems" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-cpu-fill"></i> <span>Quản lý Bài tập</span>
+          </a>
+        }
+        @if (hasPermission('roadmap:edit')) {
+          <a routerLink="/admin/roadmap" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-bezier2"></i> <span>Quản lý Lộ trình</span>
+          </a>
+        }
+        @if (hasPermission('topic:edit')) {
+          <a routerLink="/admin/topics" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-tags-fill"></i> <span>Quản lý Chủ đề</span>
+          </a>
+        }
+      </div>
+
+      <div class="mobile-nav-section">
+        <div class="mobile-nav-section-title">CỘNG ĐỒNG</div>
+        @if (hasPermission('tag:edit')) {
+          <a routerLink="/admin/tags" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-tag-fill"></i> <span>Quản lý Tag</span>
+          </a>
+        }
+        @if (hasPermission('post:hide_any')) {
+          <a routerLink="/admin/posts" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-newspaper"></i> <span>Quản lý Bài viết</span>
+          </a>
+        }
+      </div>
+
+      <div class="mobile-nav-section">
+        <div class="mobile-nav-section-title">HỆ THỐNG</div>
+        @if (hasPermission('user:view_all')) {
+          <a routerLink="/admin/users" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-people-fill"></i> <span>Quản lý Người dùng</span>
+          </a>
+          <a routerLink="/admin/moderators" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-person-badge"></i> <span>Quản lý Moderator</span>
+          </a>
+        }
+        @if (hasPermission('audit:view')) {
+          <a routerLink="/admin/audit-logs" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-terminal-fill"></i> <span>Logs hệ thống</span>
+          </a>
+        }
+        @if (hasRole('Moderator')) {
+          <a routerLink="/admin/moderator-dashboard" class="mobile-nav-item" (click)="mobileMenu.close()">
+            <i class="bi bi-speedometer2"></i> <span>Dashboard Moderator</span>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Search overlay -->
 @if (isSearchOpen) {

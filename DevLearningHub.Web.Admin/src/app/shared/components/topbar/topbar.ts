@@ -25,6 +25,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
   private routeSub?: Subscription;
 
   profile = { displayName: 'Quản trị viên', avatarUrl: '', email: '' };
+  currentUserId = '';
   userPermissions: string[] = [];
   userRoles: string[] = [];
 
@@ -95,6 +96,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
           avatarUrl: u.avatarUrl || '',
           email: u.email || ''
         };
+        this.currentUserId = u.id || u.Id || '';
         this.userPermissions = u.permissions || [];
         this.userRoles = u.roles || [];
         this.cdr.detectChanges();
