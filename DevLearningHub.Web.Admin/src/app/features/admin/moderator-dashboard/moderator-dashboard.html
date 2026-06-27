@@ -14,28 +14,30 @@
       } @else {
         <!-- Stats Cards -->
         <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon posts">
-              <i class="bi bi-newspaper"></i>
+          @if (canModeratePosts) {
+            <div class="stat-card">
+              <div class="stat-icon posts">
+                <i class="bi bi-newspaper"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.totalPosts }}</div>
+                <div class="stat-label">Tổng bài viết</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.totalPosts }}</div>
-              <div class="stat-label">Tổng bài viết</div>
-            </div>
-          </div>
+          }
 
-          <div class="stat-card">
-            <div class="stat-icon moderators">
-              <i class="bi bi-people"></i>
+          @if (canViewUsers) {
+            <div class="stat-card">
+              <div class="stat-icon moderators">
+                <i class="bi bi-people"></i>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.totalModerators }}</div>
+                <div class="stat-label">Moderator</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.totalModerators }}</div>
-              <div class="stat-label">Moderator</div>
-            </div>
-          </div>
 
-          <div class="stat-card">
-            <div class="stat-card full-width">
+            <div class="stat-card">
               <div class="stat-icon users">
                 <i class="bi bi-person-fill"></i>
               </div>
@@ -44,7 +46,7 @@
                 <div class="stat-label">Tổng người dùng</div>
               </div>
             </div>
-          </div>
+          }
         </section>
 
         <!-- Quick Actions & Recent Activity -->
@@ -53,50 +55,56 @@
           <div class="card quick-actions-card">
             <h3><i class="bi bi-lightning-charge-fill"></i> Lối tắt</h3>
             <div class="quick-actions">
-              <a routerLink="/admin/posts" class="quick-action-item">
-                <i class="bi bi-newspaper"></i>
-                <span>Quản lý Bài viết</span>
-              </a>
-              <a routerLink="/admin/moderators" class="quick-action-item" *ngIf="false">
-                <i class="bi bi-person-badge"></i>
-                <span>Quản lý Moderator</span>
-              </a>
+              @if (canModeratePosts) {
+                <a routerLink="/admin/posts" class="quick-action-item">
+                  <i class="bi bi-newspaper"></i>
+                  <span>Quản lý Bài viết</span>
+                </a>
+              }
+              @if (canViewUsers) {
+                <a routerLink="/admin/users" class="quick-action-item">
+                  <i class="bi bi-people-fill"></i>
+                  <span>Quản lý Người dùng</span>
+                </a>
+              }
             </div>
           </div>
 
           <!-- Recent Moderation Actions -->
-          <div class="card activity-card">
-            <h3><i class="bi bi-clock-history"></i> Hoạt động gần đây</h3>
-            @if (recentActions.length === 0) {
-              <div class="empty-activity">
-                <i class="bi bi-inbox"></i>
-                <p>Chưa có hoạt động kiểm duyệt nào.</p>
-              </div>
-            } @else {
-              <div class="activity-list">
-                @for (action of recentActions; track action.id) {
-                  <div class="activity-item">
-                    <div class="activity-icon">
-                      <i class="bi" [class]="getActionIcon(action.action)"></i>
-                    </div>
-                    <div class="activity-content">
-                      <div class="activity-title">
-                        {{ getActionLabel(action.action) }}
-                        <span class="activity-target">{{ action.targetType }}: {{ action.targetId.slice(0,8) }}...</span>
+          @if (canViewAuditLogs) {
+            <div class="card activity-card">
+              <h3><i class="bi bi-clock-history"></i> Hoạt động gần đây</h3>
+              @if (recentActions.length === 0) {
+                <div class="empty-activity">
+                  <i class="bi bi-inbox"></i>
+                  <p>Chưa có hoạt động kiểm duyệt nào.</p>
+                </div>
+              } @else {
+                <div class="activity-list">
+                  @for (action of recentActions; track action.id) {
+                    <div class="activity-item">
+                      <div class="activity-icon">
+                        <i class="bi" [class]="getActionIcon(action.action)"></i>
                       </div>
-                      <div class="activity-meta">
-                        <span class="actor">Bởi {{ action.actorUsername }}</span>
-                        <span class="time">{{ formatDate(action.createdAt) }}</span>
+                      <div class="activity-content">
+                        <div class="activity-title">
+                          {{ getActionLabel(action.action) }}
+                          <span class="activity-target">{{ action.targetType }}: {{ action.targetId.slice(0,8) }}...</span>
+                        </div>
+                        <div class="activity-meta">
+                          <span class="actor">Bởi {{ action.actorUsername }}</span>
+                          <span class="time">{{ formatDate(action.createdAt) }}</span>
+                        </div>
+                        @if (action.detail) {
+                          <div class="activity-detail">{{ action.detail }}</div>
+                        }
                       </div>
-                      @if (action.detail) {
-                        <div class="activity-detail">{{ action.detail }}</div>
-                      }
                     </div>
-                  </div>
-                }
-              </div>
-            }
-          </div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </section>
       }
     </div>

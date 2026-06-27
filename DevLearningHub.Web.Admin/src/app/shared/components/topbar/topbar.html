@@ -12,7 +12,9 @@
     </a>
 
     <!-- Admin Badge -->
-    <span class="topbar-admin-badge">Admin Panel</span>
+    <span class="topbar-admin-badge">
+      {{ hasRole('Admin') ? 'Admin Panel' : 'Moderator Panel' }}
+    </span>
 
     <!-- Nav links (desktop) -->
     <nav class="topbar-nav" aria-label="Main navigation">

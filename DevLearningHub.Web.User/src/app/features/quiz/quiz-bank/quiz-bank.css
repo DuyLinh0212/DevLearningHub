@@ -371,7 +371,8 @@ html.light-theme .problems-table tr:hover {
 }
 
 .col-action {
-  width: 180px;
+  width: 220px;
+  white-space: nowrap;
 }
 
 .cases-num {
@@ -730,4 +731,13 @@ html.light-theme .premium-header h4 {
     width: 100%;
     height: auto;
   }
+}
+
+/* Force flex height on scroll body to prevent collapse */
+.dashboard-scroll-body {
+  height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
