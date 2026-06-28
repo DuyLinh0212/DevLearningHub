@@ -1,53 +1,63 @@
 <div class="dashboard-scroll-body playground-list-container">
-  <!-- Topbar Header actions (Create Quiz) -->
-  <header class="content-header" style="background: transparent; border: none; padding: 0 0 16px 0; height: auto;">
-    <div class="top-breadcrumb">
-      <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Bài tập Trắc nghiệm</span>
+  <!-- Page Header -->
+  <header class="content-header qb-header">
+    <div class="qb-header-left">
+      <div class="top-breadcrumb">
+        <a routerLink="/dashboard">Học tập</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+        <span>Bài tập Trắc nghiệm</span>
+      </div>
+      <h1 class="qb-page-title">Kho đề trắc nghiệm</h1>
     </div>
-    <button class="btn-create" routerLink="/quiz-create" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: var(--accent); color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+    <button class="btn-create" routerLink="/quiz-create">
       <i class="bi bi-plus-circle-fill"></i> Tạo đề thi mới
     </button>
   </header>
 
-  <!-- Two-column Layout: scrolls naturally together -->
+  <!-- Two-column Layout -->
   <div class="quiz-layout-row">
-    
-    <!-- LEFT COLUMN: Main content (Banners, Topics, Filters, Table) -->
+
+    <!-- LEFT COLUMN: Main content -->
     <div class="quiz-main-content-col">
-      <!-- Quiz banners row -->
+
+      <!-- Banner cards row -->
       <div class="lc-banners-row">
         <div class="lc-banner-card card-blue">
           <div class="card-inner">
-            <span class="card-logo">Dev-LearningHub</span>
+            <span class="card-comment">// DevLearningHub</span>
             <h3>Luyện trắc nghiệm lập trình</h3>
             <p>Kiểm tra và củng cố nhanh kiến thức lý thuyết cơ bản đến nâng cao.</p>
           </div>
+          <div class="card-watermark">&lt;/&gt;</div>
         </div>
         <div class="lc-banner-card card-green">
           <div class="card-inner">
-            <span class="card-logo">Database & SQL</span>
+            <span class="card-comment">// Database &amp; SQL</span>
             <h3>Đề trắc nghiệm Cơ sở dữ liệu</h3>
             <p>Hệ thống câu hỏi truy vấn SQL, thiết kế DB và chuẩn hóa.</p>
           </div>
+          <div class="card-watermark">db</div>
         </div>
         <div class="lc-banner-card card-purple">
           <div class="card-inner">
-            <span class="card-logo">Interview Prep</span>
+            <span class="card-comment">// Interview Prep</span>
             <h3>Lý thuyết phỏng vấn lập trình</h3>
             <p>Tổng hợp OOP, cấu trúc dữ liệu, thuật toán và câu hỏi phỏng vấn.</p>
           </div>
+          <div class="card-watermark">?</div>
         </div>
       </div>
 
-      <!-- Topics Pills Row (Dynamic topics showing topic names and counts) -->
+      <!-- Topic Pills Row -->
       <div class="lc-topics-row">
         @for (t of topics; track t.id) {
-          <button 
-            class="lc-topic-pill" 
-            (click)="selectedTopicId = (selectedTopicId === t.id ? '' : t.id)" 
+          <button
+            class="lc-topic-pill"
+            (click)="selectedTopicId = (selectedTopicId === t.id ? '' : t.id)"
             [class.active]="selectedTopicId === t.id"
           >
-            {{ t.name }} <span class="pill-count">{{ getTopicProblemCount(t.id) }}</span>
+            <span class="pill-hash">#</span>{{ t.name }}
+            <span class="pill-count">{{ getTopicProblemCount(t.id) }}</span>
           </button>
         }
       </div>
@@ -61,18 +71,15 @@
         </div>
 
         <div class="lc-filter-inputs">
-          <!-- Search box -->
           <div class="lc-search-box">
             <i class="bi bi-search"></i>
-            <input 
-              type="text" 
+            <input
+              type="text"
               [value]="searchText"
               (input)="onSearchChange($event)"
               placeholder="Tìm kiếm bộ đề..."
             />
           </div>
-
-          <!-- Difficulty select -->
           <div class="lc-select-box">
             <select [(ngModel)]="selectedDifficulty">
               <option value="">Tất cả độ khó</option>
@@ -90,7 +97,7 @@
           <table class="problems-table">
             <thead>
               <tr>
-                <th class="col-status">Trạng thái</th>
+                <th class="col-status"></th>
                 <th class="col-title">Tên bộ đề</th>
                 <th class="col-cases">Số câu</th>
                 <th class="col-duration">Thời gian</th>
@@ -101,37 +108,40 @@
             <tbody>
               @for (quiz of filteredQuizzes; track quiz.id; let idx = $index) {
                 <tr [class.solved-row]="quiz.statusClass === 'draft'" style="position: relative;">
-                  <!-- Status -->
-                  <td class="col-status">
+
+                  <!-- Status / Difficulty bar -->
+                  <td class="col-status" [ngClass]="'status-td-' + getDifficultyClass(quiz.level)">
                     @if (quiz.statusClass === 'public') {
-                      <i class="bi bi-check-circle-fill text-success" title="Đã phát hành" style="font-size: 1.05rem;"></i>
+                      <i class="bi bi-check-circle-fill text-success" title="Đã phát hành"></i>
                     } @else if (quiz.statusClass === 'draft') {
-                      <i class="bi bi-pencil-square text-warning" title="Bản nháp" style="font-size: 1.05rem;"></i>
+                      <i class="bi bi-pencil-square text-warning" title="Bản nháp"></i>
                     } @else {
-                      <i class="bi bi-lock-fill text-muted-dark" title="Khóa" style="font-size: 1rem;"></i>
+                      <i class="bi bi-lock-fill text-muted-dark" title="Khóa"></i>
                     }
                   </td>
-                  
+
                   <!-- Title -->
                   <td class="col-title">
-                    <div style="display: flex; flex-direction: column;">
-                      <a [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : ['/quiz-create']" [queryParams]="quiz.statusClass === 'draft' ? { id: quiz.id } : null" class="problem-link">
+                    <div class="quiz-title-cell">
+                      <a
+                        [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : ['/quiz-create']"
+                        [queryParams]="quiz.statusClass === 'draft' ? { id: quiz.id } : null"
+                        class="problem-link"
+                      >
                         {{ idx + 1 }}. {{ quiz.title }}
                       </a>
-                      <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                        {{ quiz.desc }}
-                      </span>
+                      <span class="quiz-desc-sub">{{ quiz.desc }}</span>
                     </div>
                   </td>
 
-                  <!-- Number of questions -->
+                  <!-- Questions count -->
                   <td class="col-cases">
                     <span class="cases-num">{{ quiz.questions }} câu</span>
                   </td>
 
                   <!-- Duration -->
-                  <td class="col-duration" style="color: var(--text-muted); font-size: 0.82rem;">
-                    <span>{{ quiz.duration }} phút</span>
+                  <td class="col-duration">
+                    <span class="duration-label">{{ quiz.duration }} phút</span>
                   </td>
 
                   <!-- Difficulty -->
@@ -143,43 +153,47 @@
 
                   <!-- Actions -->
                   <td class="col-action" style="text-align: right; padding-right: 24px;">
-                    <div style="display: inline-flex; align-items: center; gap: 8px; position: relative; flex-wrap: nowrap;">
+                    <div class="row-actions">
                       @if (compareIds(quiz.createdBy, currentUserId)) {
-                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }" style="padding: 4px 10px; font-size: 0.75rem;">
-                          Sửa
+                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">
+                          <i class="bi bi-pencil"></i> Sửa
                         </a>
                       }
-                      
+
                       @if (quiz.statusClass === 'public') {
-                        <a class="btn-solve" [routerLink]="['/quiz', quiz.id]" style="padding: 4px 10px; font-size: 0.75rem;">
+                        <a class="btn-solve btn-solve-primary" [routerLink]="['/quiz', quiz.id]">
                           Luyện tập <i class="bi bi-chevron-right"></i>
                         </a>
                       } @else if (quiz.statusClass === 'draft') {
-                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }" style="padding: 4px 10px; font-size: 0.75rem;">
+                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">
                           Tiếp tục
                         </a>
                       }
 
-                      <!-- LeetCode Options menu button -->
-                      <div class="btn-more-options-wrapper" style="position: relative; display: inline-block;">
-                        <button class="lc-comment-more-btn" (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()" style="border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 0.95rem; display: flex; align-items: center;" title="Tùy chọn">
+                      <!-- More options -->
+                      <div class="btn-more-options-wrapper">
+                        <button
+                          class="lc-comment-more-btn"
+                          (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"
+                          title="Tùy chọn"
+                        >
                           <i class="bi bi-three-dots-vertical"></i>
                         </button>
                         @if (activeQuizMenuId === quiz.id) {
-                          <div class="comment-options-dropdown" (click)="$event.stopPropagation()" style="position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px; display: flex; flex-direction: column; padding: 6px 0;">
-                            <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                          <div class="comment-options-dropdown" (click)="$event.stopPropagation()">
+                            <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
                               <i class="bi bi-eye"></i> Chi tiết
                             </button>
                             @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
-                              <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                              <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null">
                                 <i class="bi bi-copy"></i> Sao chép đề
                               </button>
                             }
-                            <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                            <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
                               <i class="bi bi-send"></i> Chia sẻ
                             </button>
                             @if (compareIds(quiz.createdBy, currentUserId)) {
-                              <button class="dropdown-item" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.8rem; color: #ef4444; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                              <button class="dropdown-item danger" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
                                 <i class="bi bi-trash3"></i> Xóa bộ đề
                               </button>
                             }
@@ -191,9 +205,12 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-muted); font-size: 0.85rem;">
-                    <i class="bi bi-folder-x" style="font-size: 2rem; display: block; margin-bottom: 12px; color: var(--text-muted-dark);"></i>
-                    Không tìm thấy bộ đề trắc nghiệm nào phù hợp bộ lọc của bạn.
+                  <td colspan="6" class="empty-table-cell">
+                    <div class="empty-state">
+                      <i class="bi bi-folder-x"></i>
+                      <h3>Không tìm thấy bộ đề</h3>
+                      <p>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.</p>
+                    </div>
                   </td>
                 </tr>
               }
@@ -203,8 +220,9 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Sidebar Widgets (Calendar, Quiz Stats, Rules) -->
+    <!-- RIGHT COLUMN: Sidebar Widgets -->
     <aside class="quiz-sidebar-widgets-col">
+
       <!-- Calendar Card -->
       <div class="lc-calendar-card">
         <div class="calendar-header">
@@ -227,45 +245,45 @@
       </div>
 
       <!-- Quiz Stats widget -->
-      <div class="lc-premium-card" style="background: var(--bg-card); border-color: var(--bg-card-border);">
+      <div class="lc-premium-card">
         <div class="premium-header">
-          <h4 style="color: var(--text-main);"><i class="bi bi-bar-chart-line"></i> Tiến trình ôn luyện</h4>
+          <h4><i class="bi bi-bar-chart-line"></i> Tiến trình ôn luyện</h4>
         </div>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
-        <div class="quiz-stats-widget" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
-          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--bg-card-border); padding-bottom: 6px;">
-            <span style="color: var(--text-muted);">Bộ đề khả dụng:</span>
-            <strong style="color: var(--text-main);">{{ quizzes.length }} đề</strong>
+        <p class="premium-desc">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
+        <div class="quiz-stats-list">
+          <div class="stat-row">
+            <span>Bộ đề khả dụng</span>
+            <strong>{{ quizzes.length }} đề</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--bg-card-border); padding-bottom: 6px;">
-            <span style="color: var(--text-muted);">Học viên hiện tại:</span>
-            <strong style="color: var(--accent);">Học viên HUIT</strong>
+          <div class="stat-row">
+            <span>Học viên</span>
+            <strong class="stat-accent">Học viên HUIT</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; padding-bottom: 2px;">
-            <span style="color: var(--text-muted);">Trạng thái ôn thi:</span>
-            <strong style="color: #2db55d;">Sẵn sàng</strong>
+          <div class="stat-row">
+            <span>Trạng thái ôn thi</span>
+            <strong class="stat-ready">Sẵn sàng</strong>
           </div>
         </div>
       </div>
 
       <!-- Quiz Rules card -->
       <div class="lc-companies-card">
-        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Lưu ý khi làm bài thi</h4>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
-          <li style="display: flex; gap: 8px; align-items: flex-start;">
-            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+        <h4 class="sidebar-card-title">Lưu ý khi làm bài thi</h4>
+        <ul class="rules-list">
+          <li>
+            <i class="bi bi-check2-circle"></i>
             <span>Mỗi bộ đề thi đều có giới hạn thời gian cụ thể.</span>
           </li>
-          <li style="display: flex; gap: 8px; align-items: flex-start;">
-            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+          <li>
+            <i class="bi bi-check2-circle"></i>
             <span>Hệ thống sẽ tự động nộp bài khi hết giờ.</span>
           </li>
-          <li style="display: flex; gap: 8px; align-items: flex-start;">
-            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+          <li>
+            <i class="bi bi-check2-circle"></i>
             <span>Hãy tập trung làm bài và hạn chế chuyển tab.</span>
           </li>
-          <li style="display: flex; gap: 8px; align-items: flex-start;">
-            <i class="bi bi-check2-circle" style="color: var(--accent); flex-shrink: 0; margin-top: 2px;"></i>
+          <li>
+            <i class="bi bi-check2-circle"></i>
             <span>Hoàn thành bài thi tốt để tích lũy thêm điểm kinh nghiệm (XP).</span>
           </li>
         </ul>

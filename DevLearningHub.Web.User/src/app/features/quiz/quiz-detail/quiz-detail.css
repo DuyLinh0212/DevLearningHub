@@ -38,9 +38,12 @@
   margin: 4px 0 0 0;
 }
 
+/* =====================================================================
+   LAYOUT CHÍNH: 3 CỘT (Thông tin | Chế độ | Lịch sử & Quy tắc)
+   ===================================================================== */
 .quiz-detail-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 320px 300px;
   gap: 24px;
   margin-bottom: 24px;
   align-items: start;
@@ -48,6 +51,14 @@
 
 .main-column {
   min-width: 0;
+}
+
+/* Cột giữa: Khu vực chọn chế độ làm bài (ép xếp dọc) */
+.quiz-paradigm-selection-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 0;
 }
 
 .sidebar-column {
@@ -258,16 +269,7 @@
   flex-shrink: 0;
 }
 
-/* ==========================================================================
-   PHẦN BỔ SUNG: Cấu hình vùng chọn Chế độ làm bài mới (Practice & Exam Cards)
-   ========================================================================== */
-.quiz-paradigm-selection-zone {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 20px;
-  margin-top: 32px;
-}
-
+/* Thẻ chọn chế độ làm bài (Paradigm mode card) */
 .paradigm-mode-card {
   background-color: var(--bg-nested);
   border: 1px solid var(--border-nested);
@@ -388,64 +390,6 @@
   margin-bottom: 8px;
 }
 
-.limiter-form-group select {
-  width: 100%;
-  padding: 10px 36px 10px 12px;
-  background-color: var(--bg-main);
-  border: 1px solid var(--border-nested);
-  color: var(--text-main);
-  border-radius: var(--radius-md, 8px);
-  outline: none;
-  font-size: 0.9rem;
-  cursor: pointer;
-  /* Custom arrow */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a855f7' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.limiter-form-group select:focus {
-  border-color: rgba(234, 179, 8, 0.5);
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.08);
-}
-
-.limiter-form-group select option {
-  background-color: var(--bg-card);
-  color: var(--text-main);
-  padding: 10px;
-}
-
-
-@media (max-width: 768px) {
-  .quiz-detail-layout {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .detail-form-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .detail-card, .paradigm-mode-card {
-    padding: 16px;
-  }
-
-  .quiz-paradigm-selection-zone {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-top: 24px;
-  }
-
-  .header-text-block h1 {
-    font-size: 1.2rem;
-  }
-}
-
 /* BỘ KHUNG STEPPER LƯỚI */
 .stepper-wrapper {
   display: flex;
@@ -521,3 +465,36 @@
   -moz-appearance: textfield;
 }
 
+/* =====================================================================
+   RESPONSIVE (Hỗ trợ tốt trên màn nhỏ)
+   ===================================================================== */
+@media (max-width: 1200px) {
+  .quiz-detail-layout {
+    grid-template-columns: 1fr 300px; /* Thu về 2 cột */
+  }
+  .quiz-paradigm-selection-zone {
+    grid-column: 1 / -1; /* Ép tràn 2 cột */
+    flex-direction: row; /* Trả lại nằm ngang ở dưới */
+  }
+}
+
+@media (max-width: 768px) {
+  .quiz-detail-layout {
+    grid-template-columns: 1fr; /* Thu về 1 cột trên Mobile */
+    gap: 16px;
+  }
+  .quiz-paradigm-selection-zone {
+    flex-direction: column; /* Các thẻ chế độ xếp dọc trên Mobile */
+    grid-column: auto;
+  }
+  .detail-form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .detail-card, .paradigm-mode-card {
+    padding: 16px;
+  }
+  .header-text-block h1 {
+    font-size: 1.2rem;
+  }
+}

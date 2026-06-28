@@ -1,6 +1,10 @@
-<!-- Top Navigation Bar (full width) -->
-<app-topbar></app-topbar>
+<!-- Left nav sidebar -->
+<app-sidebar></app-sidebar>
 
-<main class="main-content">
-  <router-outlet></router-outlet>
-</main>
+<!-- Right body: topbar + page content -->
+<div class="admin-body">
+  <app-topbar></app-topbar>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

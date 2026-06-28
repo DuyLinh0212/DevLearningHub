@@ -1,8 +1,9 @@
 /* =====================================================================
-   SLIM SIDEBAR — LeetCode Style (180px, no profile card, no search)
+   SIDEBAR — "Neon Dojo" identity
+   Wider (200px), glowing cyan active indicator, refined spacing
    ===================================================================== */
 .sidebar {
-  width: 180px;
+  width: 200px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -14,6 +15,46 @@
   flex-shrink: 0;
 }
 
+/* ---- BRAND ---- */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px 14px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: -0.2px;
+  color: var(--text-main);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.brand-text span {
+  color: var(--accent);
+}
+
 /* ---- NAV ITEMS ---- */
 .sidebar-menu {
   flex: 1;
@@ -21,19 +62,34 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding: 10px 8px;
+  padding: 6px 10px;
   gap: 2px;
 }
 
 .sidebar-menu::-webkit-scrollbar { width: 3px; }
 .sidebar-menu::-webkit-scrollbar-track { background: transparent; }
-.sidebar-menu::-webkit-scrollbar-thumb { background: rgba(168,85,247,.15); border-radius: 4px; }
-.sidebar-menu::-webkit-scrollbar-thumb:hover { background: rgba(168,85,247,.3); }
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(6,182,212,.12);
+  border-radius: 4px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(6,182,212,.25);
+}
+
+.menu-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted-dark);
+  padding: 16px 10px 6px;
+  user-select: none;
+}
 
 .menu-section-divider {
   height: 1px;
   background: var(--border-nested);
-  margin: 8px 6px;
+  margin: 6px 6px;
 }
 
 .menu-item {
@@ -43,7 +99,7 @@
   padding: 9px 10px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
   border-radius: 8px;
   transition: color 0.15s, background 0.15s;
@@ -53,6 +109,7 @@
   background: none;
   width: 100%;
   text-align: left;
+  position: relative;
 }
 
 .menu-item i {
@@ -60,6 +117,7 @@
   flex-shrink: 0;
   width: 18px;
   text-align: center;
+  transition: color 0.15s;
 }
 
 .menu-item:hover {
@@ -68,21 +126,35 @@
 }
 
 .menu-item.active {
-  color: #a855f7;
-  background: rgba(168,85,247,.1);
+  color: var(--accent);
+  background: var(--accent-subtle);
   font-weight: 600;
+}
+
+/* Glowing left-border indicator for active item */
+.menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px var(--accent-glow), 0 0 16px var(--accent-glow);
 }
 
 .menu-item.logout {
   color: #f43f5e;
   margin-top: auto;
 }
-.menu-item.logout:hover { background: rgba(244,63,94,.08); }
+.menu-item.logout:hover { background: rgba(244,63,94,.06); }
 
 /* ---- FOOTER ---- */
 .sidebar-footer {
   flex-shrink: 0;
-  padding: 8px;
+  padding: 8px 10px;
   border-top: 1px solid var(--border-nested);
 }
 
@@ -102,7 +174,10 @@
   transition: color 0.15s, background 0.15s;
   z-index: 10;
 }
-.btn-sidebar-close-mobile:hover { color: var(--text-main); background: var(--bg-nested); }
+.btn-sidebar-close-mobile:hover {
+  color: var(--text-main);
+  background: var(--bg-nested);
+}
 
 /* =====================================================================
    MOBILE: Sidebar slides in as drawer
@@ -110,13 +185,13 @@
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    top: 52px; /* topbar height */
+    top: 52px;
     left: 0;
     bottom: 0;
     z-index: 800;
     width: 220px !important;
     transform: translateX(-100%);
-    box-shadow: 6px 0 24px rgba(0,0,0,.35);
+    box-shadow: 6px 0 24px rgba(0,0,0,.4);
   }
 
   .sidebar.is-mobile-open {
@@ -131,8 +206,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,.5);
-    backdrop-filter: blur(3px);
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(4px);
     z-index: 799;
   }
 }
@@ -140,10 +215,16 @@
 /* Light theme */
 html.light-theme .sidebar {
   background: #ffffff;
-  border-color: #e5e7eb;
+  border-color: #e4e6eb;
 }
-
 html.light-theme .menu-item.active {
-  color: #7c3aed;
-  background: rgba(124,58,237,.08);
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.06);
+}
+html.light-theme .menu-item.active::before {
+  background: #0891b2;
+  box-shadow: 0 0 6px rgba(8, 145, 178, 0.2);
+}
+html.light-theme .brand-icon {
+  box-shadow: 0 0 10px rgba(8, 145, 178, 0.2);
 }

@@ -10,7 +10,7 @@ import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterLink, CommonModule],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css'
 })

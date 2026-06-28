@@ -413,29 +413,125 @@
             <button (click)="resetCode()" class="btn-ctrl" title="Reset Code mẫu">
               <i class="bi bi-arrow-counterclockwise"></i>
             </button>
+
+            <!-- Editor Settings -->
+            <div class="esp-trigger-wrap" (click)="stopProp($event)">
+              <button class="btn-ctrl" [class.btn-ctrl-active]="showEditorSettings"
+                      (click)="toggleEditorSettings($event)" title="Cài đặt Syntax Highlighting">
+                <i class="bi bi-palette-fill"></i>
+              </button>
+
+              @if (showEditorSettings) {
+                <div class="editor-settings-panel">
+                  <div class="esp-head">
+                    <span><i class="bi bi-palette-fill"></i> Editor &amp; Syntax</span>
+                    <button class="esp-close" (click)="showEditorSettings = false"><i class="bi bi-x-lg"></i></button>
+                  </div>
+
+                  <!-- Theme presets -->
+                  <div class="esp-section">
+                    <div class="esp-label">Giao diện</div>
+                    <div class="theme-grid">
+                      @for (tname of themeKeys; track tname) {
+                        <button class="theme-swatch"
+                                [class.active]="editorSettings.theme === tname"
+                                (click)="applyTheme(tname)"
+                                [style.background]="EDITOR_THEMES[tname].bg"
+                                [style.border-color]="editorSettings.theme === tname ? '#a855f7' : EDITOR_THEMES[tname].bgAlt"
+                                [title]="tname">
+                          <span [style.color]="EDITOR_THEMES[tname].keyword">fn</span><!--
+                          --><span [style.color]="EDITOR_THEMES[tname].string">"s"</span><!--
+                          --><span [style.color]="EDITOR_THEMES[tname].number">42</span>
+                          <div class="theme-name-label">{{ tname }}</div>
+                        </button>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Per-token color customization -->
+                  <div class="esp-section">
+                    <div class="esp-label">Màu cú pháp</div>
+                    <div class="color-rows">
+                      <div class="color-row">
+                        <span>Keywords</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.keyword" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.keyword }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Strings</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.string" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.string }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Comments</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.comment" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.comment }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Numbers</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.number" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.number }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Functions</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.func" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.func }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Types</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.type" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.type }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Preprocessor</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.preprocessor" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.preprocessor }}</code>
+                      </div>
+                      <div class="color-row">
+                        <span>Background</span>
+                        <input type="color" [(ngModel)]="editorSettings.colors.bg" (change)="onColorChange()">
+                        <code>{{ editorSettings.colors.bg }}</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         </div>
 
-        <!-- Custom Editor Area -->
-        <div class="editor-workspace">
+        <!-- Custom Editor Area — overlay highlight architecture -->
+        <div class="editor-workspace" [style.background]="editorSettings.colors.bg">
           <!-- Line Numbers -->
-          <div class="editor-line-numbers">
+          <div class="editor-line-numbers"
+               [style.background]="editorSettings.colors.bgAlt"
+               [style.color]="editorSettings.colors.lineNum"
+               [style.border-right-color]="editorSettings.colors.bgAlt">
             @for (line of lineCountArr; track line) {
               <div class="line-num">{{ line }}</div>
             }
           </div>
-          
-          <!-- Textarea Workspace -->
-          <textarea 
-            class="editor-textarea"
-            [(ngModel)]="userCode"
-            (ngModelChange)="updateLineNumbers()"
-            (keydown)="onKeyDown($event)"
-            (scroll)="onScroll($event)"
-            [style.fontSize.px]="fontSize"
-            spellcheck="false"
-            placeholder="// Viết lời giải của bạn ở đây..."
-          ></textarea>
+
+          <!-- Overlay wrap: pre (highlighted) + transparent textarea on top -->
+          <div class="editor-overlay-wrap">
+            <pre class="highlight-pre"
+                 [style.background]="editorSettings.colors.bg"
+                 [style.color]="editorSettings.colors.text"
+                 [style.fontSize.px]="fontSize"
+                 [innerHTML]="highlightedCode"></pre>
+
+            <textarea
+              class="editor-textarea"
+              [(ngModel)]="userCode"
+              (ngModelChange)="onEditorCodeChange()"
+              (keydown)="onKeyDown($event)"
+              (scroll)="onScroll($event)"
+              [style.fontSize.px]="fontSize"
+              [style.caretColor]="editorSettings.colors.caret"
+              spellcheck="false"
+              placeholder="// Viết lời giải của bạn ở đây..."
+            ></textarea>
+          </div>
         </div>
 
         <!-- Bottom Console Console -->

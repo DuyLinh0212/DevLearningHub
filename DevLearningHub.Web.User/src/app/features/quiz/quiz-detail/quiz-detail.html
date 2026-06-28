@@ -1,6 +1,8 @@
 <header class="content-header">
   <div class="top-breadcrumb">
-    <a routerLink="/quiz-bank">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Chi tiết Đề ôn luyện</span>
+    <a routerLink="/quiz-bank">Học tập</a> 
+    <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> 
+    <span>Chi tiết Đề ôn luyện</span>
   </div>
 </header>
 
@@ -16,8 +18,11 @@
   </div>
 
   <div class="quiz-detail-layout">
+    <!-- ==========================================
+         CỘT 1 (TRÁI): Thông tin bộ đề
+         ========================================== -->
     <div class="main-column">
-      <div class="detail-card info-card" style="margin-bottom: 24px;">
+      <div class="detail-card info-card" style="height: 100%;">
         <h3>Thông tin bộ đề</h3>
         <p class="card-subtitle">Các thông số cơ bản của bộ đề</p>
 
@@ -32,13 +37,13 @@
         </div>
 
         @if (showQuizCreator) {
-          <div class="detail-form-group">
-            <label>Người tạo</label>
-            <div class="static-display-field">{{ quizCreatedBy }}</div>
-          </div>
+        <div class="detail-form-group">
+          <label>Người tạo</label>
+          <div class="static-display-field">{{ quizCreatedBy }}</div>
+        </div>
         }
 
-        <div class="detail-form-row" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 0;">
+        <div class="detail-form-row">
           <div class="detail-form-group" style="margin-bottom: 0;">
             <label>Tổng số câu hỏi</label>
             <div class="static-display-field">{{ quizQuestionsCount }} câu</div>
@@ -49,116 +54,163 @@
           </div>
         </div>
 
-        @if (isOwner) {
-          <div class="copy-privacy-card">
+        <!-- KHU VỰC CẤU HÌNH SAO CHÉP -->
+        @if (isOwner || quizAllowedCopy) {
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-nested); display: flex; flex-direction: column; gap: 16px;">
+          @if (isOwner) {
+          <div class="copy-privacy-card" style="margin: 0;">
             <div class="copy-privacy-text">
-              <h4>Quyền sao chép bộ đề</h4>
-              <p>{{ quizAllowedCopy ? 'Đang cho phép người khác sao chép bộ đề này.' : 'Bộ đề này đang bị chặn sao chép.' }}</p>
+              <h4>Mở sao chép</h4>
+              <p>Cho phép người khác nhân bản</p>
             </div>
             <label class="copy-privacy-switch">
-              <input #copyToggle type="checkbox" [checked]="quizAllowedCopy" (change)="updateAllowedCopy(copyToggle.checked)">
+              <input type="checkbox" [checked]="quizAllowedCopy" (change)="updateAllowedCopy(!quizAllowedCopy)">
               <span class="copy-privacy-slider"></span>
             </label>
           </div>
+          }
+          @if (quizAllowedCopy || isOwner) {
+          <div>
+            <h4 style="font-size: 0.95rem; color: var(--text-main); margin: 0 0 4px 0;">Sao chép bộ đề</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted-dark); margin: 0 0 12px 0;">Nhân bản bộ đề thi này thành của bạn để tùy chỉnh hoặc thêm bớt câu hỏi.</p>
+            <button (click)="copyQuizSet()" class="btn-start-paradigm btn-practice" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; color: white;">
+              <i class="bi bi-copy"></i> Sao chép bộ đề
+            </button>
+          </div>
+          }
+        </div>
         }
-      </div>
-
-      <div class="quiz-paradigm-selection-zone" style="margin-top: 0;">
-        <div class="paradigm-mode-card practice-card">
-          <div>
-            <h4 class="practice-title"><i class="bi bi-journal-code"></i> Chế độ Luyện tập</h4>
-            <p class="paradigm-desc">Luyện tập không giới hạn thời gian với toàn bộ <strong>{{ quizQuestionsCount }}</strong> câu hỏi. Xem lời giải chi tiết ngay sau mỗi câu để củng cố kiến thức.</p>
-          </div>
-          <button (click)="startQuiz('practice')" class="btn-start-paradigm btn-practice">
-            <i class="bi bi-play-fill"></i> Bắt đầu Luyện tập
-          </button>
-        </div>
-
-        <div class="paradigm-mode-card exam-card">
-          <div>
-            <h4 class="exam-title"><i class="bi bi-stopwatch-fill"></i> Chế độ Thi thử</h4>
-            <p class="paradigm-desc">Làm bài thi thử dưới áp lực thời gian thực tế với số câu hỏi tự chọn.</p>
-
-            <div class="limiter-form-group">
-              <label>Số lượng câu hỏi thi thử:</label>
-
-              <div class="stepper-wrapper">
-                <button type="button" class="stepper-btn btn-minus" (click)="decreaseExamCount()" [disabled]="selectedExamCount <= 1">
-                  <i class="bi bi-dash-lg"></i>
-                </button>
-
-                <input
-                  type="number"
-                  [(ngModel)]="selectedExamCount"
-                  [max]="quizQuestionsCount"
-                  min="1"
-                  class="stepper-input"
-                  placeholder="Nhập số câu...">
-
-                <button type="button" class="stepper-btn btn-plus" (click)="increaseExamCount()" [disabled]="selectedExamCount >= quizQuestionsCount">
-                  <i class="bi bi-plus-lg"></i>
-                </button>
-              </div>
-
-              @if (isExamCountInvalid) {
-                <div class="stepper-error-message">
-                  <i class="bi bi-exclamation-circle"></i> {{ getExamErrorMessage() }}
-                </div>
-              }
-            </div>
-          </div>
-
-          <button
-            (click)="startQuiz('exam')"
-            [disabled]="isExamCountInvalid"
-            class="btn-start-paradigm btn-exam">
-            <i class="bi bi-lightning-charge-fill"></i> Bắt đầu Thi thử
-          </button>
-        </div>
       </div>
     </div>
 
+    <!-- ==========================================
+         CỘT 2 (GIỮA): Chế độ làm bài
+         ========================================== -->
+    <div class="quiz-paradigm-selection-zone">
+      <div class="paradigm-mode-card practice-card">
+        <div>
+          <h4 class="practice-title"><i class="bi bi-journal-code"></i> Chế độ Luyện tập</h4>
+          <p class="paradigm-desc">Luyện tập không giới hạn thời gian với toàn bộ <strong>{{ quizQuestionsCount }}</strong> câu hỏi. Xem lời giải chi tiết ngay sau mỗi câu để củng cố kiến thức.</p>
+        </div>
+        <button (click)="startQuiz('practice')" class="btn-start-paradigm btn-practice">
+          <i class="bi bi-play-fill"></i> Bắt đầu Luyện tập
+        </button>
+      </div>
+
+      <div class="paradigm-mode-card exam-card">
+        <div>
+          <h4 class="exam-title"><i class="bi bi-stopwatch-fill"></i> Chế độ Thi thử</h4>
+          <p class="paradigm-desc">Làm bài thi thử dưới áp lực thời gian thực tế với số câu hỏi tự chọn.</p>
+
+          <div class="limiter-form-group">
+            <label>Số lượng câu hỏi thi thử:</label>
+            <div class="stepper-wrapper">
+              <button type="button" class="stepper-btn btn-minus" (click)="decreaseExamCount()" [disabled]="selectedExamCount <= 1">
+                <i class="bi bi-dash-lg"></i>
+              </button>
+              <input type="number" [(ngModel)]="selectedExamCount" [max]="quizQuestionsCount" min="1" class="stepper-input" placeholder="Nhập số câu...">
+              <button type="button" class="stepper-btn btn-plus" (click)="increaseExamCount()" [disabled]="selectedExamCount >= quizQuestionsCount">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+            @if (isExamCountInvalid) {
+            <div class="stepper-error-message">
+              <i class="bi bi-exclamation-circle"></i> {{ getExamErrorMessage() }}
+            </div>
+            }
+          </div>
+        </div>
+        <button (click)="startQuiz('exam')" [disabled]="isExamCountInvalid" class="btn-start-paradigm btn-exam">
+          <i class="bi bi-lightning-charge-fill"></i> Bắt đầu Thi thử
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CỘT 3 (PHẢI): Thuộc tính & Lịch sử
+         ========================================== -->
     <div class="sidebar-column">
+      
+      <!-- 1. Lịch sử làm bài -->
+      <div class="sidebar-card history-card" style="padding-bottom: 12px;">
+        <h3 style="margin-bottom: 4px;">Lịch sử làm bài</h3>
+        <p class="card-subtitle">Tổng quan kết quả các lần thi</p>
+
+        @if (history.length > 0) {
+        <div class="history-summary" style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div class="summary-ring" style="width: 50px; height: 50px; position: relative;">
+            <svg viewBox="0 0 60 60" style="width: 100%; height: 100%;">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="var(--bg-nested)" stroke-width="5" />
+              <circle cx="30" cy="30" r="24" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="150.8" [style.stroke-dashoffset]="150.8 * (1 - avgAccuracy)" transform="rotate(-90 30 30)" />
+            </svg>
+            <span class="summary-pct" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-main);">{{ avgAccuracyPct }}%</span>
+          </div>
+          <span class="summary-label" style="font-size: 0.85rem; color: var(--text-muted-dark); font-weight: 600;">Tỷ lệ đúng TB</span>
+        </div>
+        }
+
+        @if (isLoadingHistory) {
+        <div class="history-loading" style="font-size: 0.85rem; color: var(--text-muted); padding-bottom: 12px;"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tải lịch sử...</div>
+        } @else if (history.length === 0) {
+        <div class="history-empty" style="text-align: center; padding: 20px 0; color: var(--text-muted-dark);">
+          <i class="bi bi-inbox" style="font-size: 1.5rem;"></i>
+          <p style="font-size: 0.8rem; margin-top: 8px;">Chưa có lịch sử làm bài</p>
+        </div>
+        } @else {
+        <div class="history-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
+          @for (h of history; track h.sessionId; let idx = $index) {
+          <div class="history-row" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-nested);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main);">Lần {{ history.length - idx }}</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted-dark);">{{ h.endedAt | date:'dd/MM HH:mm' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; font-weight: 700;" [style.color]="h.accuracy >= 0.7 ? '#22c55e' : (h.accuracy >= 0.4 ? '#eab308' : '#f43f5e')">
+                {{ h.score }}/{{ h.totalQuestions }} ({{ (h.accuracy * 100).toFixed(0) }}%)
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="bi bi-clock"></i> {{ formatDuration(h.timeTakenSeconds) }}</span>
+            </div>
+            <div style="height: 4px; width: 100%; background: var(--bg-nested); border-radius: 2px; overflow: hidden;">
+              <div style="height: 100%; border-radius: 2px; transition: width 0.3s;" [style.width.%]="h.accuracy * 100" [style.background]="h.accuracy >= 0.7 ? '#22c55e' : (h.accuracy >= 0.4 ? '#eab308' : '#f43f5e')"></div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- 2. Quy tắc phòng thi -->
       <div class="sidebar-card rules-card">
         <h3>Quy tắc phòng thi</h3>
         <p class="card-subtitle">Quy tắc làm bài và chấm điểm</p>
 
         <div class="detail-form-group">
           <label>Thời gian tối đa</label>
-          <div class="unit-input-field" style="display: flex; align-items: center; gap: 8px; background-color: var(--bg-nested); border: 1px solid var(--border-nested); border-radius: var(--radius-md, 8px); padding: 12px 16px; color: var(--text-muted); font-size: 0.9rem; box-sizing: border-box;">
+          <div class="unit-input-field">
             <i class="bi bi-clock" style="color: #eab308;"></i>
             <span>{{ quizDuration }}</span>
-            <span class="field-unit-text" style="margin-left: auto; color: var(--text-muted-dark); font-size: 0.8rem;">phút</span>
+            <span class="field-unit-text">phút</span>
           </div>
         </div>
 
         <div class="detail-form-group">
           <label>Tỷ lệ điểm đạt (%)</label>
-          <div class="unit-input-field" style="display: flex; align-items: center; gap: 8px; background-color: var(--bg-nested); border: 1px solid var(--border-nested); border-radius: var(--radius-md, 8px); padding: 12px 16px; color: var(--text-muted); font-size: 0.9rem; box-sizing: border-box;">
+          <div class="unit-input-field">
             <i class="bi bi-check-circle" style="color: #eab308;"></i>
             <span>70</span>
-            <span class="field-unit-text" style="margin-left: auto; color: var(--text-muted-dark); font-size: 0.8rem;">%</span>
+            <span class="field-unit-text">%</span>
           </div>
         </div>
 
-        <div class="rule-status-row" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background-color: var(--bg-nested); border: 1px solid var(--border-nested); border-radius: var(--radius-md, 8px); margin-top: 8px; box-sizing: border-box;">
+        <div class="rule-status-row">
           <div class="rule-info-left">
-            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin: 0 0 4px 0;">Trộn câu hỏi</h4>
-            <p style="font-size: 0.75rem; color: var(--text-muted-dark); margin: 0; line-height: 1.4;">Xáo thứ tự khi làm bài</p>
+            <h4>Trộn câu hỏi</h4>
+            <p>Xáo thứ tự khi làm bài</p>
           </div>
           <i class="bi" [class.bi-check2]="quizShuffle" [class.bi-dash-circle]="!quizShuffle" [style.color]="quizShuffle ? '#22c55e' : 'var(--text-muted-dark)'" style="font-size: 1.2rem;"></i>
         </div>
       </div>
 
-      @if (quizAllowedCopy || compareIds(creatorId, currentUserId)) {
-        <div class="sidebar-card action-card" style="margin-top: 16px;">
-          <h3>Sao chép bộ đề</h3>
-          <p class="card-subtitle" style="margin-bottom: 12px;">Nhân bản bộ đề thi này thành của bạn để tùy chỉnh hoặc thêm bớt câu hỏi.</p>
-          <button (click)="copyQuizSet()" class="btn-start-paradigm btn-practice" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; color: white;">
-            <i class="bi bi-copy"></i> Sao chép bộ đề
-          </button>
-        </div>
-      }
     </div>
   </div>
 </div>

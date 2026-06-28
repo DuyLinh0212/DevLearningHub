@@ -1,147 +1,363 @@
-<div class="dashboard-scroll-body playground-list-container">
-  <!-- Top Stat Header Banner -->
-  <header class="playground-banner">
-    <div class="banner-overlay"></div>
-    <div class="banner-content">
-      <div class="banner-text">
-        <h1>Luyện Code Trực Tuyến</h1>
-        <p>Thử thách kỹ năng lập trình với ngân hàng câu hỏi chuẩn LeetCode, biên dịch và đánh giá tự động tức thì.</p>
+<div class="dashboard-scroll-body cp-container">
+
+  <!-- Page header -->
+  <header class="cp-header">
+    <div class="cp-header-left">
+      <div class="top-breadcrumb">
+        <a routerLink="/dashboard">Học tập</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>Code Playground</span>
       </div>
-      
-      <!-- Progress circle/card -->
-      <div class="progress-card">
-        <div class="progress-info">
-          <div class="stat-circle">
-            <span class="stat-num">{{ solvedCount }}</span>
-            <span class="stat-label">Đã Giải</span>
-          </div>
-          <div class="stat-details">
-            <h3>Tiến Độ Học Tập</h3>
-            <p>Hoàn thành: <strong>{{ solvedCount }}/{{ totalCount }}</strong> bài tập</p>
-            <div class="progress-bar-wrap">
-              <div class="progress-bar-fill" [style.width.%]="solvedPercent"></div>
-            </div>
-            <span class="percent-label">{{ solvedPercent }}% Hoàn thành</span>
-          </div>
+      <h1 class="cp-page-title">Bài tập Code</h1>
+    </div>
+    <div class="cp-header-right">
+      <div class="cp-stats-row">
+        <span class="cp-stat"><strong>{{ solvedCount }}</strong> / {{ totalCount }}</span>
+        <span class="cp-stat-label">đã giải</span>
+        <div class="cp-progress-bar">
+          <div class="cp-progress-fill" [style.width.%]="solvedPercent"></div>
         </div>
+        <span class="cp-percent">{{ solvedPercent }}%</span>
       </div>
+      <button class="btn-create-problem" (click)="openCreateModal()">
+        <i class="bi bi-plus-circle-fill"></i> Tạo bài tập
+      </button>
     </div>
   </header>
 
-  <!-- Filter & Search Controls -->
-  <section class="controls-row">
-    <div class="search-input-wrap">
-      <i class="bi bi-search"></i>
-      <input 
-        type="text" 
-        [(ngModel)]="searchText" 
-        (input)="applyFilters()" 
-        placeholder="Tìm bài tập theo tên hoặc từ khóa..."
-      >
-    </div>
+  <!-- Main layout: topic sidebar + problems panel -->
+  <div class="cp-layout">
 
-    <div class="filters-wrap">
-      <!-- Topic Filter -->
-      <div class="select-style-wrap">
-        <select [(ngModel)]="selectedTopicId" (change)="applyFilters()">
-          <option value="">Tất cả chủ đề</option>
-          @for (t of topics; track t.id) {
-            <option [value]="t.id">{{ t.name }}</option>
-          }
-        </select>
+    <!-- Topic sidebar -->
+    <aside class="cp-topic-sidebar">
+      <div class="sidebar-section-label">Chủ đề</div>
+
+      <button class="topic-nav-item" [class.active]="selectedTopicId === ''" (click)="selectTopic('')">
+        <span class="topic-nav-name">Tất cả</span>
+        <span class="topic-nav-count">{{ problems.length }}</span>
+      </button>
+
+      @for (t of topics; track t.id) {
+        <button
+          class="topic-nav-item"
+          [class.active]="selectedTopicId === t.id"
+          (click)="selectTopic(t.id)"
+        >
+          <span class="topic-hash">#</span>
+          <span class="topic-nav-name">{{ t.name }}</span>
+          <span class="topic-nav-count">{{ getCountForTopic(t.id) }}</span>
+        </button>
+      }
+    </aside>
+
+    <!-- Problems panel -->
+    <div class="cp-problems-panel">
+
+      <!-- Panel header: title + search + filter -->
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2 class="panel-topic-title">{{ selectedTopicName }}</h2>
+          <span class="panel-problem-count">{{ filteredProblems.length }} bài tập</span>
+        </div>
+        <div class="panel-controls">
+          <div class="search-wrap">
+            <i class="bi bi-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchText"
+              placeholder="Tìm bài tập..."
+            />
+          </div>
+          <div class="select-wrap">
+            <select [(ngModel)]="selectedDifficulty">
+              <option value="">Tất cả độ khó</option>
+              <option value="easy">Dễ</option>
+              <option value="medium">Trung bình</option>
+              <option value="hard">Khó</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Difficulty Filter -->
-      <div class="select-style-wrap">
-        <select [(ngModel)]="selectedDifficulty" (change)="applyFilters()">
-          <option value="">Tất cả độ khó</option>
-          <option value="easy">Dễ</option>
-          <option value="medium">Trung bình</option>
-          <option value="hard">Khó</option>
-        </select>
-      </div>
-    </div>
-  </section>
+      <!-- Problem list body -->
+      <div class="problems-list-body">
+        @if (isLoading) {
+          <div class="loading-state">
+            <div class="spinner-circle"></div>
+            <p>Đang tải bài tập...</p>
+          </div>
+        } @else if (filteredProblems.length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-code-slash"></i>
+            <h3>Chưa có bài tập nào</h3>
+            <p>Thử đổi bộ lọc hoặc tạo bài tập mới.</p>
+            <button class="btn-clear" (click)="searchText = ''; selectedDifficulty = ''">
+              Xóa bộ lọc
+            </button>
+          </div>
+        } @else {
+          <div class="problem-table">
+            <!-- Table header -->
+            <div class="problem-table-head">
+              <span class="col-st"></span>
+              <span class="col-ttl">Bài tập</span>
+              <span class="col-dif">Độ khó</span>
+              <span class="col-tc">Test cases</span>
+              <span class="col-act"></span>
+            </div>
 
-  <!-- Table Body -->
-  <section class="problems-table-card">
-    @if (isLoading) {
-      <div class="loading-state">
-        <div class="spinner-circle"></div>
-        <p>Đang tải danh sách thử thách...</p>
-      </div>
-    } @else if (filteredProblems.length === 0) {
-      <div class="empty-state">
-        <i class="bi bi-file-code"></i>
-        <h3>Không tìm thấy bài tập nào</h3>
-        <p>Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc của bạn.</p>
-        <button class="btn-clear-filters" (click)="searchText = ''; selectedDifficulty = ''; selectedTopicId = ''; applyFilters()">Xóa bộ lọc</button>
-      </div>
-    } @else {
-      <div class="table-responsive">
-        <table class="problems-table">
-          <thead>
-            <tr>
-              <th class="col-status">Trạng thái</th>
-              <th class="col-title">Tên bài tập</th>
-              <th class="col-topic">Chủ đề</th>
-              <th class="col-diff">Độ khó</th>
-              <th class="col-cases">Test Cases</th>
-              <th class="col-action">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of filteredProblems; track p.id) {
-              <tr [class.solved-row]="isSolved(p.id)">
+            <!-- Problem rows -->
+            @for (p of filteredProblems; track p.id; let idx = $index) {
+              <div class="problem-row" [class.solved]="isSolved(p.id)">
+
                 <!-- Status icon -->
-                <td class="col-status">
+                <div class="col-st">
                   @if (isSolved(p.id)) {
-                    <i class="bi bi-check-circle-fill text-success" title="Đã hoàn thành"></i>
+                    <i class="bi bi-check-circle-fill solved-icon"></i>
                   } @else {
-                    <i class="bi bi-circle text-muted-dark"></i>
+                    <i class="bi bi-circle unsolved-icon"></i>
                   }
-                </td>
-                
-                <!-- Title -->
-                <td class="col-title">
-                  <a [routerLink]="['/code', p.id]" class="problem-link">
-                    {{ p.title }}
-                  </a>
-                  <div class="problem-tags-row">
-                    @for (t of p.tags; track t) {
-                      <span class="tag-pill">{{ t }}</span>
-                    }
-                  </div>
-                </td>
+                </div>
 
-                <!-- Topic -->
-                <td class="col-topic">
-                  <span class="topic-badge">{{ getTopicName(p.topicId) }}</span>
-                </td>
+                <!-- Title + tags -->
+                <div class="col-ttl">
+                  <a [routerLink]="['/code', p.id]" class="problem-title-link">
+                    <span class="problem-idx">{{ idx + 1 }}.</span> {{ p.title }}
+                  </a>
+                  @if (p.tags.length > 0) {
+                    <div class="tag-row">
+                      @for (tag of p.tags.slice(0, 3); track tag) {
+                        <span class="tag-chip">{{ tag }}</span>
+                      }
+                      @if (p.tags.length > 3) {
+                        <span class="tag-chip more">+{{ p.tags.length - 3 }}</span>
+                      }
+                    </div>
+                  }
+                </div>
 
                 <!-- Difficulty -->
-                <td class="col-diff">
-                  <span class="diff-badge" [ngClass]="getDifficultyClass(p.difficulty)">
+                <div class="col-dif">
+                  <span class="diff-text" [ngClass]="getDifficultyClass(p.difficulty)">
                     {{ getDifficultyLabel(p.difficulty) }}
                   </span>
-                </td>
+                </div>
 
-                <!-- TestCase count -->
-                <td class="col-cases">
-                  <span class="cases-num">{{ p.testCaseCount }}</span>
-                </td>
+                <!-- Test case count -->
+                <div class="col-tc">
+                  <span class="tc-count">{{ p.testCaseCount }}</span>
+                </div>
 
-                <!-- Action button -->
-                <td class="col-action">
-                  <a [routerLink]="['/code', p.id]" class="btn-solve">
-                    Code <i class="bi bi-chevron-right"></i>
+                <!-- Action -->
+                <div class="col-act">
+                  <a [routerLink]="['/code', p.id]" class="btn-code">
+                    Code <i class="bi bi-arrow-right"></i>
                   </a>
-                </td>
-              </tr>
+                </div>
+              </div>
             }
-          </tbody>
-        </table>
+          </div>
+        }
       </div>
-    }
-  </section>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CREATE PROBLEM MODAL
+       ============================================================ -->
+  @if (showCreateModal) {
+    <div class="modal-overlay" (click)="closeCreateModal()">
+      <div class="modal-create" (click)="$event.stopPropagation()">
+
+        <!-- Modal header -->
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title"><i class="bi bi-code-slash"></i> Tạo bài tập mới</h2>
+            <p class="modal-sub">Đóng góp bài luyện tập cho cộng đồng học lập trình</p>
+          </div>
+          <button class="modal-close" (click)="closeCreateModal()" [disabled]="isSaving">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-grid">
+
+            <!-- LEFT: Basic info + description -->
+            <div class="modal-col-left">
+
+              <!-- Title -->
+              <div class="form-group">
+                <label class="form-label">Tên bài tập <span class="required">*</span></label>
+                <input type="text" class="form-input" [(ngModel)]="form.title"
+                       placeholder="VD: Two Sum, Fibonacci, Reverse String..." />
+              </div>
+
+              <!-- Difficulty + Topic row -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">Độ khó <span class="required">*</span></label>
+                  <select class="form-select" [(ngModel)]="form.difficulty">
+                    <option value="easy">Dễ</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="hard">Khó</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Chủ đề <span class="required">*</span></label>
+                  <select class="form-select" [(ngModel)]="form.topicId">
+                    <option value="">-- Chọn chủ đề --</option>
+                    @for (t of topics; track t.id) {
+                      <option [value]="t.id">{{ t.name }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <!-- Tags -->
+              <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="tag-input-row">
+                  <input type="text" class="form-input" [(ngModel)]="tagInput"
+                         placeholder="Nhập tag, nhấn Enter để thêm..."
+                         (keydown.enter)="addTag(); $event.preventDefault()" />
+                  <button class="btn-add-tag" (click)="addTag()" type="button">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+                @if (form.tags.length > 0) {
+                  <div class="tag-list">
+                    @for (tag of form.tags; track tag; let i = $index) {
+                      <span class="tag-edit-chip">
+                        {{ tag }}
+                        <button type="button" (click)="removeTag(i)"><i class="bi bi-x"></i></button>
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Published toggle -->
+              <div class="form-group form-check-group">
+                <label class="switch-label">
+                  <input type="checkbox" [(ngModel)]="form.isPublished" />
+                  <span class="switch-text">Phát hành ngay</span>
+                </label>
+                <span class="form-hint">Bài tập sẽ hiển thị công khai với mọi người</span>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group form-group-grow">
+                <label class="form-label">
+                  Mô tả bài tập
+                  <span class="hint-inline">(Hỗ trợ Markdown)</span>
+                </label>
+                <textarea class="form-textarea form-textarea-md" [(ngModel)]="form.description"
+                          placeholder="## Mô tả&#10;&#10;Viết mô tả bài toán tại đây...&#10;&#10;**Ví dụ:**&#10;&#10;```&#10;Input: [2,7,11,15], target = 9&#10;Output: [0,1]&#10;```"></textarea>
+              </div>
+            </div>
+
+            <!-- RIGHT: Starter code + Test cases -->
+            <div class="modal-col-right">
+
+              <!-- Starter code with language tabs -->
+              <div class="form-group form-group-grow">
+                <label class="form-label">Starter Code</label>
+                <div class="lang-tabs">
+                  <button class="lang-tab" type="button"
+                          [class.active]="selectedLangTab === 'javascript'"
+                          (click)="selectedLangTab = 'javascript'">JS</button>
+                  <button class="lang-tab" type="button"
+                          [class.active]="selectedLangTab === 'python'"
+                          (click)="selectedLangTab = 'python'">Python</button>
+                  <button class="lang-tab" type="button"
+                          [class.active]="selectedLangTab === 'java'"
+                          (click)="selectedLangTab = 'java'">Java</button>
+                  <button class="lang-tab" type="button"
+                          [class.active]="selectedLangTab === 'cpp'"
+                          (click)="selectedLangTab = 'cpp'">C++</button>
+                </div>
+                @if (selectedLangTab === 'javascript') {
+                  <textarea class="form-textarea form-textarea-code"
+                            [(ngModel)]="form.starterCode.javascript"></textarea>
+                }
+                @if (selectedLangTab === 'python') {
+                  <textarea class="form-textarea form-textarea-code"
+                            [(ngModel)]="form.starterCode.python"></textarea>
+                }
+                @if (selectedLangTab === 'java') {
+                  <textarea class="form-textarea form-textarea-code"
+                            [(ngModel)]="form.starterCode.java"></textarea>
+                }
+                @if (selectedLangTab === 'cpp') {
+                  <textarea class="form-textarea form-textarea-code"
+                            [(ngModel)]="form.starterCode.cpp"></textarea>
+                }
+              </div>
+
+              <!-- Test cases -->
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label class="form-label">Test Cases</label>
+                  <button class="btn-add-tc" type="button" (click)="addTestCase()">
+                    <i class="bi bi-plus"></i> Thêm
+                  </button>
+                </div>
+
+                <div class="tc-list">
+                  @for (tc of form.testCases; track $index; let i = $index) {
+                    <div class="tc-item">
+                      <div class="tc-item-head">
+                        <span class="tc-num">TC {{ i + 1 }}</span>
+                        <label class="tc-hidden-check">
+                          <input type="checkbox" [(ngModel)]="tc.isHidden" />
+                          Ẩn (Hidden)
+                        </label>
+                        @if (form.testCases.length > 1) {
+                          <button class="tc-remove" type="button" (click)="removeTestCase(i)">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        }
+                      </div>
+                      <div class="tc-fields">
+                        <div class="tc-field">
+                          <label>Input</label>
+                          <textarea class="tc-textarea"
+                                    [(ngModel)]="tc.input"
+                                    placeholder="Dữ liệu đầu vào..."></textarea>
+                        </div>
+                        <div class="tc-field">
+                          <label>Expected Output</label>
+                          <textarea class="tc-textarea tc-expected"
+                                    [(ngModel)]="tc.expectedOutput"
+                                    placeholder="Kết quả mong đợi..."></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button class="btn-cancel" type="button" (click)="closeCreateModal()" [disabled]="isSaving">
+            Hủy
+          </button>
+          <button class="btn-save" type="button"
+                  (click)="createProblem()"
+                  [disabled]="isSaving || !form.title.trim() || !form.topicId">
+            @if (isSaving) {
+              <span class="spinner-sm"></span> Đang tạo...
+            } @else {
+              <i class="bi bi-check-circle-fill"></i> Tạo bài tập
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

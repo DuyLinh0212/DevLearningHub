@@ -1,26 +1,46 @@
 @import '../../dashboard/dashboard.css';
 
-/* --- BOXES STRUCTURE --- */
+/* ---- TWO-COL BOXES ---- */
 .recent-users-box, .recent-logs-box {
-  background-color: var(--bg-card);
+  background: var(--bg-card);
   border: 1px solid var(--bg-card-border);
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 24px;
   box-sizing: border-box;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .recent-users-box h2, .recent-logs-box h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--text-main);
   margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-users-box h2::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: #a855f7;
+  border-radius: 2px;
+}
+
+.recent-logs-box h2::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: #3b82f6;
+  border-radius: 2px;
 }
 
 .section-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted-dark);
-  margin: 0 0 16px 0;
+  margin: 0 0 18px 0;
 }
 
 .recent-users-list, .recent-logs-list {
@@ -28,195 +48,130 @@
   flex-direction: column;
 }
 
-/* --- RECENT USERS ITEM --- */
+/* ---- USER ROWS ---- */
 .recent-user-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 12px 8px;
+  padding: 11px 8px;
   border-bottom: 1px solid var(--bg-card-border);
-  transition: background-color 0.2s ease;
-}
-
-.recent-user-item:hover {
-  background-color: var(--bg-nested);
+  transition: background 0.15s;
   border-radius: 6px;
 }
 
-.recent-user-item:last-child {
-  border-bottom: none;
-}
+.recent-user-item:hover { background: var(--bg-nested); }
+.recent-user-item:last-child { border-bottom: none; }
 
-.user-info {
-  flex: 1;
-  text-align: left;
-}
+.user-info { flex: 1; text-align: left; min-width: 0; }
 
 .user-info h4 {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-main);
   margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-info p {
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   color: var(--text-muted);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-status-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 9999px;
+  padding: 3px 9px;
+  border-radius: 99px;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
-.user-status-badge.active {
-  color: #22c55e;
-  background-color: rgba(34, 197, 94, 0.1);
-}
+.user-status-badge.active { color: #22c55e; background: rgba(34,197,94,0.1); }
+.user-status-badge.locked { color: #ef4444; background: rgba(239,68,68,0.1); }
 
-.user-status-badge.locked {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-/* --- RECENT LOGS ITEM --- */
+/* ---- LOG ROWS ---- */
 .recent-log-item {
   display: flex;
-  gap: 16px;
-  padding: 12px 8px;
+  gap: 14px;
+  padding: 11px 8px;
   border-bottom: 1px solid var(--bg-card-border);
   align-items: flex-start;
-  transition: background-color 0.2s ease;
-}
-
-.recent-log-item:hover {
-  background-color: var(--bg-nested);
+  transition: background 0.15s;
   border-radius: 6px;
 }
 
-.recent-log-item:last-child {
-  border-bottom: none;
-}
+.recent-log-item:hover { background: var(--bg-nested); }
+.recent-log-item:last-child { border-bottom: none; }
 
 .log-info-left {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 120px;
+  min-width: 110px;
   flex-shrink: 0;
-  text-align: left;
 }
 
 .log-timestamp {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-muted-dark);
-  font-family: monospace;
+  font-family: 'Consolas', monospace;
 }
 
-.log-actor {
-  font-size: 0.78rem;
-  color: #3b82f6;
-  font-weight: 600;
-}
+.log-actor { font-size: 0.76rem; color: #3b82f6; font-weight: 600; }
 
 .log-content-right {
   display: flex;
   flex-direction: column;
   gap: 4px;
   overflow: hidden;
-  text-align: left;
   flex: 1;
 }
 
 .log-action-badge {
   align-self: flex-start;
-  font-size: 0.65rem;
+  font-size: 0.63rem;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  background-color: rgba(168, 85, 247, 0.1);
+  background: rgba(168,85,247,0.1);
   color: #a855f7;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .log-detail-text {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   margin: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  max-width: 100%;
 }
 
+/* ---- EMPTY STATE ---- */
 .admin-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
+  padding: 44px 20px;
   color: var(--text-muted-dark);
-  gap: 12px;
+  gap: 10px;
 }
 
-.admin-empty-state i {
-  font-size: 2rem;
-  color: var(--text-muted-dark);
-}
+.admin-empty-state i { font-size: 2rem; opacity: 0.5; }
+.admin-empty-state p { font-size: 0.82rem; margin: 0; }
 
-.admin-empty-state p {
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-/* ==========================================================================
-   📱 RESPONSIVE STYLES
-   ========================================================================== */
+/* ---- RESPONSIVE ---- */
 @media (max-width: 768px) {
-  .content-header {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 14px !important;
-    height: auto !important;
-    padding: 16px 12px !important;
-  }
-
-  .middle-layout {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-  }
-
-  .sidebar {
-    display: none !important;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .recent-users-box, .recent-logs-box {
-    padding: 16px !important;
-  }
-
-  .recent-log-item {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .log-info-left {
-    min-width: auto;
-    flex-direction: row;
-    justify-content: space-between;
-    width: 100%;
-  }
+  .content-header { flex-direction: column; align-items: stretch; gap: 10px; }
+  .middle-layout { grid-template-columns: 1fr !important; }
+  .recent-users-box, .recent-logs-box { padding: 16px; }
+  .recent-log-item { flex-direction: column; gap: 6px; }
+  .log-info-left { min-width: auto; flex-direction: row; justify-content: space-between; width: 100%; }
 }

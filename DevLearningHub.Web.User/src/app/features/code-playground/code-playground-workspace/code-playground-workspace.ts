@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,45 @@ interface LanguageOption {
   name: string;
   slug: string;
 }
+
+interface SyntaxColors {
+  keyword: string; string: string; comment: string; number: string;
+  func: string; type: string; preprocessor: string;
+  text: string; bg: string; bgAlt: string; caret: string; lineNum: string;
+}
+
+interface EditorSettings {
+  theme: string;
+  colors: SyntaxColors;
+}
+
+const EDITOR_THEMES: Record<string, SyntaxColors> = {
+  dracula: {
+    keyword:'#FF79C6', string:'#F1FA8C', comment:'#6272A4', number:'#BD93F9',
+    func:'#50FA7B', type:'#8BE9FD', preprocessor:'#BD93F9',
+    text:'#F8F8F2', bg:'#282A36', bgAlt:'#21222C', caret:'#F8F8F2', lineNum:'#6272A4'
+  },
+  vscode: {
+    keyword:'#569CD6', string:'#CE9178', comment:'#6A9955', number:'#B5CEA8',
+    func:'#DCDCAA', type:'#4EC9B0', preprocessor:'#C586C0',
+    text:'#D4D4D4', bg:'#1E1E1E', bgAlt:'#161616', caret:'#AEAFAD', lineNum:'#858585'
+  },
+  monokai: {
+    keyword:'#F92672', string:'#E6DB74', comment:'#75715E', number:'#AE81FF',
+    func:'#A6E22E', type:'#66D9EF', preprocessor:'#F92672',
+    text:'#F8F8F2', bg:'#272822', bgAlt:'#1e1f1b', caret:'#F8F8F2', lineNum:'#75715E'
+  },
+  nord: {
+    keyword:'#81A1C1', string:'#A3BE8C', comment:'#4C566A', number:'#B48EAD',
+    func:'#88C0D0', type:'#8FBCBB', preprocessor:'#81A1C1',
+    text:'#D8DEE9', bg:'#2E3440', bgAlt:'#242933', caret:'#88C0D0', lineNum:'#4C566A'
+  },
+  light: {
+    keyword:'#0070C1', string:'#A31515', comment:'#008000', number:'#098658',
+    func:'#795E26', type:'#267F99', preprocessor:'#AF00DB',
+    text:'#000000', bg:'#FFFFFF', bgAlt:'#F3F3F3', caret:'#000000', lineNum:'#999999'
+  }
+};
 
 @Component({
   selector: 'app-code-playground-workspace',
@@ -51,6 +90,13 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   userCode = '';
   lineCountArr: number[] = [1];
   fontSize = 14;
+
+  // Syntax highlighting & editor settings
+  readonly EDITOR_THEMES = EDITOR_THEMES;
+  readonly themeKeys = Object.keys(EDITOR_THEMES);
+  editorSettings: EditorSettings = this.initSettings();
+  showEditorSettings = false;
+  highlightedCode: SafeHtml = '';
 
   // Tabs control
   activeLeftTab: 'description' | 'editorial' | 'solutions' | 'submissions' = 'description';
@@ -263,6 +309,7 @@ int main() {
     }
 
     this.updateLineNumbers();
+    this.updateHighlight();
   }
 
   private isMatchingStarterCode(code: string, slug: string): boolean {
@@ -292,6 +339,11 @@ int main() {
     this.lineCountArr = Array.from({ length: Math.max(lines.length, 1) }, (_, i) => i + 1);
   }
 
+  onEditorCodeChange() {
+    this.updateLineNumbers();
+    this.updateHighlight();
+  }
+
   onKeyDown(event: KeyboardEvent) {
     const textarea = event.target as HTMLTextAreaElement;
     
@@ -316,8 +368,11 @@ int main() {
   onScroll(event: Event) {
     const textarea = event.target as HTMLTextAreaElement;
     const lineNumbers = document.querySelector('.editor-line-numbers') as HTMLElement;
-    if (lineNumbers && textarea) {
-      lineNumbers.scrollTop = textarea.scrollTop;
+    const pre = document.querySelector('.highlight-pre') as HTMLElement;
+    if (lineNumbers) lineNumbers.scrollTop = textarea.scrollTop;
+    if (pre) {
+      pre.scrollTop = textarea.scrollTop;
+      pre.scrollLeft = textarea.scrollLeft;
     }
   }
 
@@ -704,6 +759,229 @@ int main() {
 
     tableHtml += '</tbody></table>';
     return tableHtml;
+  }
+
+  // ─── Editor Settings ─────────────────────────────────────────────────────────
+
+  private initSettings(): EditorSettings {
+    try {
+      const saved = localStorage.getItem('cp-editor-settings');
+      if (saved) {
+        const parsed = JSON.parse(saved) as EditorSettings;
+        if (parsed.theme && EDITOR_THEMES[parsed.theme] && parsed.colors) return parsed;
+      }
+    } catch {}
+    return { theme: 'dracula', colors: { ...EDITOR_THEMES['dracula'] } };
+  }
+
+  private saveSettings() {
+    localStorage.setItem('cp-editor-settings', JSON.stringify(this.editorSettings));
+  }
+
+  applyTheme(name: string) {
+    if (!EDITOR_THEMES[name]) return;
+    this.editorSettings = { theme: name, colors: { ...EDITOR_THEMES[name] } };
+    this.saveSettings();
+    this.updateHighlight();
+    this.cdr.detectChanges();
+  }
+
+  onColorChange() {
+    this.saveSettings();
+    this.updateHighlight();
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click')
+  onDocClick() {
+    if (this.showEditorSettings) {
+      this.showEditorSettings = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  toggleEditorSettings(event: Event) {
+    event.stopPropagation();
+    this.showEditorSettings = !this.showEditorSettings;
+    this.cdr.detectChanges();
+  }
+
+  stopProp(event: Event) {
+    event.stopPropagation();
+  }
+
+  // ─── Syntax Highlighter ───────────────────────────────────────────────────────
+
+  updateHighlight() {
+    const raw = this.doHighlight(this.userCode, this.selectedLanguage.slug);
+    this.highlightedCode = this.sanitizer.bypassSecurityTrustHtml(raw + '\n');
+  }
+
+  private esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  private tok(color: string, text: string, italic = false): string {
+    const s = italic ? `color:${color};font-style:italic` : `color:${color}`;
+    return `<span style="${s}">${this.esc(text)}</span>`;
+  }
+
+  private doHighlight(code: string, lang: string): string {
+    const c = this.editorSettings.colors;
+    type Rule = { pattern: RegExp; render: (m: string) => string };
+
+    const rules: Rule[] = [];
+
+    // Block comment
+    const blockComment = /\/\*[\s\S]*?\*\//;
+    // Line comment variants
+    const lineCommentSlash = /\/\/[^\n]*/;
+    const lineCommentHash = /#[^\n]*/;
+    // Preprocessor (#include etc)
+    const preprocessor = /#\s*(?:include|define|pragma|ifdef|ifndef|endif|elif|if|else|undef|error)\b[^\n]*/;
+    // Strings
+    const tripleStr = /"""[\s\S]*?"""|'''[\s\S]*?'''/;
+    const dblStr = /"(?:[^"\\]|\\.)*"/;
+    const sglStr = /'(?:[^'\\]|\\.)*'/;
+    const tplStr = /`(?:[^`\\]|\\.)*`/;
+    // Numbers
+    const numHex = /\b0x[0-9a-fA-F]+[uUlL]*/;
+    const numDec = /\b\d+\.?\d*(?:[eE][+-]?\d+)?[fFjJuUlLdD]*/;
+    // Identifiers (for keywords/types/funcs)
+    const ident = /\b[A-Za-z_]\w*/;
+    // Function call lookahead
+    const funcCall = /\b[A-Za-z_]\w*(?=\s*\()/;
+
+    if (lang === 'python') {
+      const KW = new Set(['False','None','True','and','as','assert','async','await','break',
+        'class','continue','def','del','elif','else','except','finally','for','from','global',
+        'if','import','in','is','lambda','nonlocal','not','or','pass','raise','return','try',
+        'while','with','yield']);
+      const TY = new Set(['int','str','float','bool','list','dict','tuple','set','bytes','type',
+        'object','Exception','BaseException','ValueError','TypeError','KeyError','IndexError',
+        'AttributeError','RuntimeError','StopIteration','self','cls','print','len','range',
+        'input','open','map','filter','zip','enumerate','sorted','reversed','isinstance',
+        'hasattr','getattr','setattr','property','staticmethod','classmethod','super',
+        'min','max','sum','abs','round','any','all']);
+
+      rules.push(
+        { pattern: new RegExp(lineCommentHash.source, 'g'), render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(tripleStr.source, 'g'),       render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(dblStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(sglStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp('@\\w+', 'g'),                render: m => this.tok(c.preprocessor, m) },
+        { pattern: new RegExp(numHex.source + '|' + numDec.source, 'g'), render: m => this.tok(c.number, m) },
+        { pattern: new RegExp(funcCall.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.tok(c.func, m) },
+        { pattern: new RegExp(ident.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.esc(m) }
+      );
+    } else if (lang === 'javascript' || lang === 'typescript') {
+      const KW = new Set(['async','await','break','case','catch','class','const','continue',
+        'debugger','default','delete','do','else','export','extends','finally','for','from',
+        'function','if','import','in','instanceof','let','new','of','return','static','super',
+        'switch','this','throw','try','typeof','var','void','while','with','yield']);
+      const TY = new Set(['string','number','boolean','any','void','never','object','unknown',
+        'null','undefined','true','false','NaN','Infinity','console','Math','JSON','Date',
+        'RegExp','Error','Object','Array','String','Number','Boolean','Symbol','Function',
+        'Promise','Map','Set','Record','Partial','Required','Readonly','window','document',
+        'globalThis','setTimeout','setInterval','clearTimeout','clearInterval','fetch',
+        'parseInt','parseFloat','isNaN','isFinite','Omit','Pick','Exclude','Extract',
+        'ReturnType','Parameters','NonNullable','Awaited']);
+
+      rules.push(
+        { pattern: new RegExp(blockComment.source, 'g'),   render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(lineCommentSlash.source, 'g'), render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(tplStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(dblStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(sglStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(numHex.source + '|' + numDec.source, 'g'), render: m => this.tok(c.number, m) },
+        { pattern: new RegExp(funcCall.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.tok(c.func, m) },
+        { pattern: new RegExp(ident.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.esc(m) }
+      );
+    } else if (lang === 'java') {
+      const KW = new Set(['abstract','assert','boolean','break','byte','case','catch','char',
+        'class','const','continue','default','do','double','else','enum','extends','final',
+        'finally','float','for','goto','if','implements','import','instanceof','int','interface',
+        'long','native','new','package','private','protected','public','return','short','static',
+        'strictfp','super','switch','synchronized','this','throw','throws','transient','try',
+        'void','volatile','while','true','false','null']);
+      const TY = new Set(['String','Integer','Long','Double','Float','Boolean','Character','Byte',
+        'Short','Object','Class','System','Math','Arrays','Collections','List','ArrayList',
+        'LinkedList','Map','HashMap','TreeMap','Set','HashSet','TreeSet','Iterator','Exception',
+        'RuntimeException','IOException','StringBuilder','StringBuffer','Thread','Runnable',
+        'Scanner','BufferedReader','InputStreamReader','PrintWriter','Optional','Stream',
+        'Collectors','Objects','var']);
+
+      rules.push(
+        { pattern: new RegExp(blockComment.source, 'g'),   render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(lineCommentSlash.source, 'g'), render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(dblStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(sglStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp('@\\w+', 'g'),                render: m => this.tok(c.preprocessor, m) },
+        { pattern: /\b[A-Z][A-Za-z0-9_]*(?=\s*[(<])/g, render: m => this.tok(c.type, m) },
+        { pattern: new RegExp(numHex.source + '|' + numDec.source, 'g'), render: m => this.tok(c.number, m) },
+        { pattern: new RegExp(funcCall.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.tok(c.func, m) },
+        { pattern: new RegExp(ident.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.esc(m) }
+      );
+    } else if (lang === 'cpp' || lang === 'c') {
+      const KW = new Set(['alignas','alignof','asm','auto','bool','break','case','catch','char',
+        'class','const','constexpr','const_cast','continue','decltype','default','delete','do',
+        'double','dynamic_cast','else','enum','explicit','export','extern','false','float','for',
+        'friend','goto','if','inline','int','long','mutable','namespace','new','noexcept',
+        'nullptr','operator','private','protected','public','register','reinterpret_cast',
+        'return','short','signed','sizeof','static','static_assert','static_cast','struct',
+        'switch','template','this','throw','true','try','typedef','typeid','typename','union',
+        'unsigned','using','virtual','void','volatile','wchar_t','while']);
+      const TY = new Set(['string','vector','map','set','pair','array','deque','list','queue',
+        'stack','priority_queue','unordered_map','unordered_set','unique_ptr','shared_ptr',
+        'weak_ptr','make_unique','make_shared','cout','cin','cerr','endl','size_t','ptrdiff_t',
+        'uint8_t','uint16_t','uint32_t','uint64_t','int8_t','int16_t','int32_t','int64_t',
+        'max','min','sort','reverse','find','lower_bound','upper_bound','abs','swap',
+        'to_string','stoi','stol','stod','printf','scanf','strlen','strcmp','strcpy','memset',
+        'memcpy','NULL','std','ios','ios_base','sync_with_stdio','tie','fixed','setprecision']);
+
+      rules.push(
+        { pattern: new RegExp(blockComment.source, 'g'),   render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(lineCommentSlash.source, 'g'), render: m => this.tok(c.comment, m, true) },
+        { pattern: new RegExp(dblStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(sglStr.source, 'g'),          render: m => this.tok(c.string, m) },
+        { pattern: new RegExp(preprocessor.source, 'g'),   render: m => this.tok(c.preprocessor, m) },
+        { pattern: new RegExp(numHex.source + '|' + numDec.source, 'g'), render: m => this.tok(c.number, m) },
+        { pattern: new RegExp(funcCall.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.tok(c.func, m) },
+        { pattern: new RegExp(ident.source, 'g'), render: m =>
+            KW.has(m) ? this.tok(c.keyword, m) : TY.has(m) ? this.tok(c.type, m) : this.esc(m) }
+      );
+    }
+
+    if (rules.length === 0) return this.esc(code);
+
+    // Build combined regex: each rule becomes one capturing group
+    const combined = new RegExp(rules.map(r => `(${r.pattern.source})`).join('|'), 'g');
+    let result = '';
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = combined.exec(code)) !== null) {
+      if (match.index > lastIndex) result += this.esc(code.slice(lastIndex, match.index));
+      // Find which outer group matched (match[1], match[2], ...)
+      for (let i = 0; i < rules.length; i++) {
+        if (match[i + 1] !== undefined) {
+          result += rules[i].render(match[i + 1]);
+          break;
+        }
+      }
+      lastIndex = combined.lastIndex;
+      if (combined.lastIndex === match.index) combined.lastIndex++;
+    }
+
+    if (lastIndex < code.length) result += this.esc(code.slice(lastIndex));
+    return result;
   }
 
   generateEditorialAndSolutions(title: string) {

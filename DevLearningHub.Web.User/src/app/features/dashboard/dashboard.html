@@ -1,166 +1,175 @@
 <header class="content-header">
-  <div class="top-breadcrumb">
-    <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span style="font-weight: 700; color: #c084fc;">Tổng quan</span>
-  </div>
-  <button class="btn-create" routerLink="/quiz-bank" style="background: var(--border-nested); color: var(--text-main); border: 1px solid var(--input-border);"><i class="bi bi-collection"></i> Vào Thư viện đề</button>
+<div class="top-breadcrumb">
+<a routerLink="/dashboard">Học tập</a>
+<i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i>
+<span style="font-weight: 700; color: var(--accent);">Tổng quan</span>
+</div>
+<button class="btn-action cyan" routerLink="/quiz-bank">
+<i class="bi bi-collection"></i> Vào Thư viện đề
+</button>
 </header>
 
 <div class="dashboard-scroll-body">
-  <section class="welcome-section">
-    <h1>Tổng quan học tập</h1>
-    <p>Chào mừng bạn quay trở lại! Hãy chọn một bộ đề trắc nghiệm để rèn luyện kỹ năng và tích lũy thêm điểm kinh nghiệm (XP) ngay hôm nay.</p>
-  </section>
+<!-- Stats -->
+<section class="stats-container">
+@for (stat of stats; track stat.title) {
+<div class="stat-card {{ stat.color }}">
+<div class="stat-card-header">
+<span class="stat-title">{{ stat.title }}</span>
+<i class="bi {{ stat.icon }} stat-card-icon"></i>
+</div>
+<div class="stat-card-body">
+<span class="stat-value">{{ stat.value }}</span>
+@if (stat.unit) {
+<span class="stat-unit">{{ stat.unit }}</span>
+}
+</div>
+</div>
+}
+</section>
 
-  <section class="stats-container">
-    @for (stat of stats; track stat.title) {
-    <div class="stat-card {{ stat.color }}">
-      <div class="stat-card-header">
-        <span class="stat-title">{{ stat.title }}</span>
-        <i class="bi {{ stat.icon }} stat-card-icon"></i>
-      </div>
-      <div class="stat-card-body">
-        <span class="stat-value">{{ stat.value }}</span>
-      </div>
+<!-- Middle: Quiz Stats + Recommendations | Leaderboard -->
+<div class="middle-layout">
+<div class="dashboard-left-col">
 
-    </div>
-    }
-  </section>
+<!-- Quiz Stats with Circular Progress -->
+<section class="quiz-stats-section">
+<h2>Tiến độ từng bộ đề</h2>
+<p class="section-subtitle">Thống kê điểm cao nhất và số lần làm của top bộ đề bạn đã ôn luyện</p>
 
-  <div class="middle-layout">
-    <div class="dashboard-left-col">
-      <section class="recommend-box">
-        <h2>Đề xuất ôn luyện</h2>
-        <p class="section-subtitle">Danh sách bộ đề được đề xuất dựa trên kết quả ôn tập gần đây của bạn</p>
+@if (quizStats.length === 0) {
+<div class="quiz-stats-empty">
+<i class="bi bi-journal-x" style="font-size: 2rem; color: var(--text-muted-dark);"></i>
+<p>Chưa có dữ liệu làm bài. Hãy bắt đầu với bộ đề đầu tiên!</p>
+</div>
+} @else {
+<div class="quiz-stats-grid">
+@for (stat of quizStats; track stat.quizSetId; let idx = $index) {
+<div class="quiz-stat-card" [class.stat-gradient-1]="idx % 4 === 0" [class.stat-gradient-2]="idx % 4 === 1" [class.stat-gradient-3]="idx % 2 === 0 && idx % 4 !== 0" [class.stat-gradient-4]="idx % 2 === 1 && idx % 4 !== 1" (click)="handleAction(stat.quizSetId)">
+<div class="stat-card-top">
+<div class="circular-progress">
+<svg viewBox="0 0 80 80" class="progress-ring">
+<circle class="progress-ring-bg" cx="40" cy="40" r="34" />
+<circle class="progress-ring-fill" cx="40" cy="40" r="34"
+[style.stroke-dasharray]="circumference"
+[style.stroke-dashoffset]="circumference * (1 - stat.bestAccuracy)" />
+</svg>
+<div class="progress-value">{{ ((stat.bestAccuracy || 0) * 100).toFixed(2) }}%</div>
+</div>
+<div class="stat-card-info">
+<span class="stat-attempts"><i class="bi bi-repeat"></i> {{ stat.attemptsCount }} lần</span>
+</div>
+</div>
+<div class="stat-card-title-row">
+<h4>{{ stat.quizTitle }}</h4>
+@if (stat.level) {
+<span class="stat-level-badge" [class.level-easy]="stat.level === 'Dễ'" [class.level-medium]="stat.level === 'Trung bình'" [class.level-hard]="stat.level === 'Khó'">{{ stat.level }}</span>
+}
+</div>
+<div class="stat-card-footer">
+<span class="stat-best-score">Điểm cao: {{ stat.bestScore }}/{{ stat.bestTotalQuestions }}</span>
+</div>
+</div>
+}
+</div>
+}
+</section>
 
-        <div class="recommend-list">
-          @for (item of recommendations; track item.id; let idx = $index) {
-          <div class="recommend-item" 
-               [class.card-gradient-1]="idx % 3 === 0"
-               [class.card-gradient-2]="idx % 3 === 1"
-               [class.card-gradient-3]="idx % 3 === 2"
-               (click)="handleAction(item.id)">
-            
-            <div class="card-header-row">
-              <span class="card-badge">Đề xuất</span>
-              <i class="bi bi-lightning-charge-fill"></i>
-            </div>
+<!-- Recommendations -->
+<section class="recommend-box">
+<h2>Đề xuất ôn luyện</h2>
+<p class="section-subtitle">Danh sách bộ đề được đề xuất dựa trên kết quả ôn tập gần đây của bạn</p>
 
-            <div class="card-title-row">
-              <h4>{{ item.title }}</h4>
-            </div>
+<div class="recommend-list">
+@for (item of recommendations; track item.id; let idx = $index) {
+<div class="recommend-item" [class.card-gradient-1]="idx % 3 === 0" [class.card-gradient-2]="idx % 3 === 1" [class.card-gradient-3]="idx % 3 === 2" (click)="handleAction(item.id)">
 
-            <div class="card-footer-row">
-              <span class="card-meta" style="display: flex; align-items: center; gap: 8px;">
-                <span><i class="bi bi-journal-text"></i> {{ item.questions }} câu</span>
-                <span><i class="bi bi-clock"></i> {{ item.duration }} phút</span>
-              </span>
-              <button class="btn-card-go" (click)="handleAction(item.id); $event.stopPropagation()">
-                {{ item.btnText }} <i class="bi bi-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-          }
-        </div>
-      </section>
+<div class="card-header-row">
+<span class="card-badge">Đề xuất</span>
+<i class="bi bi-lightning-charge-fill"></i>
+</div>
 
-      <section class="recent-activity-section">
-        <h2>Tiến độ từng bộ đề</h2>
-        <p class="section-subtitle">Theo dõi mức độ hoàn thành và lịch sử ôn tập của bạn đối với từng kho kiến thức</p>
+<div class="card-title-row">
+<h4>{{ item.title }}</h4>
+</div>
 
-        <div class="activity-list">
-          @for (act of activities; track act.id; let idx = $index) {
-          <div class="recommend-item" 
-               [class.explorer-gradient-1]="idx % 4 === 0"
-               [class.explorer-gradient-2]="idx % 4 === 1"
-               [class.explorer-gradient-3]="idx % 4 === 2"
-               [class.explorer-gradient-4]="idx % 4 === 3"
-               (click)="handleAction(act.id)">
-            
-            <div class="card-header-row">
-              <span class="card-badge">Chủ đề</span>
-              <i class="bi bi-journal-bookmark-fill"></i>
-            </div>
+<div class="card-footer-row">
+<span class="card-meta">
+<span><i class="bi bi-journal-text"></i> {{ item.questions }} câu</span>
+<span><i class="bi bi-clock"></i> {{ item.duration }} phút</span>
+</span>
+<button class="btn-card-go" (click)="handleAction(item.id); $event.stopPropagation()">
+{{ item.btnText }} <i class="bi bi-chevron-right"></i>
+</button>
+</div>
+</div>
+}
+</div>
+</section>
+</div>
 
-            <div class="card-title-row">
-              <h4>{{ act.title }}</h4>
-            </div>
+<!-- Leaderboard -->
+<section class="leaderboard-box">
+<div class="leaderboard-heading">
+<div>
+<h2>Bảng xếp hạng hệ thống</h2>
+<p class="section-subtitle">Vinh danh học viên có điểm kinh nghiệm (XP) cao nhất trên DevLearningHub</p>
+</div>
+<div class="leaderboard-badge">
+<i class="bi bi-trophy-fill"></i>
+<span>Top XP</span>
+</div>
+</div>
 
-            <div class="card-footer-row">
-              <span class="card-meta" style="display: flex; align-items: center; gap: 8px;">
-                <span><i class="bi bi-journal-text"></i> {{ act.questions }} câu</span>
-                <span><i class="bi bi-clock"></i> {{ act.duration }} phút</span>
-              </span>
-              <button class="btn-card-go" (click)="handleAction(act.id); $event.stopPropagation()">
-                {{ act.btnText }} <i class="bi bi-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-          }
-        </div>
-      </section>
-    </div>
+<div class="leaderboard-hero">
+<div class="leaderboard-hero-card crown">
+<span class="hero-label">#1</span>
+<strong>{{ leaderboard[0]?.name || 'Đang cập nhật' }}</strong>
+<p>{{ leaderboard[0]?.xp || 0 }} XP</p>
+</div>
+<div class="leaderboard-hero-card silver">
+<span class="hero-label">#2</span>
+<strong>{{ leaderboard[1]?.name || 'Đang cập nhật' }}</strong>
+<p>{{ leaderboard[1]?.xp || 0 }} XP</p>
+</div>
+<div class="leaderboard-hero-card bronze">
+<span class="hero-label">#3</span>
+<strong>{{ leaderboard[2]?.name || 'Đang cập nhật' }}</strong>
+<p>{{ leaderboard[2]?.xp || 0 }} XP</p>
+</div>
+</div>
 
-    <section class="leaderboard-box">
-      <div class="leaderboard-heading">
-        <div>
-          <h2>Bảng xếp hạng hệ thống</h2>
-          <p class="section-subtitle">Vinh danh học viên có điểm kinh nghiệm (XP) cao nhất trên DevLearningHub</p>
-        </div>
-        <div class="leaderboard-badge">
-          <i class="bi bi-trophy-fill"></i>
-          <span>Top XP</span>
-        </div>
-      </div>
+@if (userRank > 0) {
+<div class="leaderboard-current-user">
+<div class="current-user-copy">
+<span class="current-user-label">Vị trí của bạn</span>
+<strong>Hạng #{{ userRank }}</strong>
+</div>
+<div class="current-user-stats">
+<span><i class="bi bi-gem"></i> {{ userXpPoints }} XP</span>
+<span><i class="bi bi-check2-circle"></i> {{ averageScore.toFixed(1) }} điểm TB</span>
+</div>
+</div>
+}
 
-      <div class="leaderboard-hero">
-        <div class="leaderboard-hero-card crown">
-          <span class="hero-label">#1</span>
-          <strong>{{ leaderboard[0]?.name || 'Đang cập nhật' }}</strong>
-          <p>{{ leaderboard[0]?.xp || 0 }} XP</p>
-        </div>
-        <div class="leaderboard-hero-card silver">
-          <span class="hero-label">#2</span>
-          <strong>{{ leaderboard[1]?.name || 'Đang cập nhật' }}</strong>
-          <p>{{ leaderboard[1]?.xp || 0 }} XP</p>
-        </div>
-        <div class="leaderboard-hero-card bronze">
-          <span class="hero-label">#3</span>
-          <strong>{{ leaderboard[2]?.name || 'Đang cập nhật' }}</strong>
-          <p>{{ leaderboard[2]?.xp || 0 }} XP</p>
-        </div>
-      </div>
-
-      @if (userRank > 0) {
-      <div class="leaderboard-current-user">
-        <div class="current-user-copy">
-          <span class="current-user-label">Vị trí của bạn</span>
-          <strong>Hạng #{{ userRank }}</strong>
-        </div>
-        <div class="current-user-stats">
-          <span><i class="bi bi-gem"></i> {{ userXpPoints }} XP</span>
-          <span><i class="bi bi-check2-circle"></i> {{ averageScore.toFixed(1) }} điểm TB</span>
-        </div>
-      </div>
-      }
-
-      <div class="leaderboard-list">
-        @for (user of leaderboard; track user.rank) {
-        <div class="leader-item" [class.is-top]="user.rank <= 3">
-          <span class="rank-number" [class.top-rank]="user.rank <= 3">#{{ user.rank }}</span>
-          <div class="leader-avatar-wrap">
-            <img [src]="user.avatar" alt="Avatar">
-            <span class="leader-avatar-ring" [class.top-ring]="user.rank <= 3"></span>
-          </div>
-          <div class="user-info">
-            <h4>{{ user.name }}</h4>
-            <p>@{{ user.username }}</p>
-          </div>
-          <span class="xp-value">
-            <i class="bi bi-award-fill"></i> {{ user.xp }}
-          </span>
-        </div>
-        }
-      </div>
-    </section>
-  </div>
+<div class="leaderboard-list">
+@for (user of leaderboard; track user.rank) {
+<div class="leader-item" [class.is-top]="user.rank <= 3">
+<span class="rank-number" [class.top-rank]="user.rank <= 3">#{{ user.rank }}</span>
+<div class="leader-avatar-wrap">
+<img [src]="user.avatar" alt="Avatar">
+<span class="leader-avatar-ring" [class.top-ring]="user.rank <= 3"></span>
+</div>
+<div class="user-info">
+<h4>{{ user.name }}</h4>
+<p>@{{ user.username }}</p>
+</div>
+<span class="xp-value">
+<i class="bi bi-award-fill"></i> {{ user.xp }}
+</span>
+</div>
+}
+</div>
+</section>
+</div>
 </div>

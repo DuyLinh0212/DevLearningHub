@@ -1,5 +1,5 @@
 /* =====================================================================
-   USER LAYOUT — Hybrid (Topbar + Slim Sidebar)
+   USER LAYOUT — Topbar (full-width) + scrollable main content
    ===================================================================== */
 
 :host {
@@ -8,6 +8,7 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background: var(--bg-main);
 }
 
 .layout-body {
@@ -25,15 +26,11 @@
   display: flex;
   flex-direction: column;
 }
-app-sidebar {
-  display: none;
-}
 
 /* ---- MOBILE ---- */
 @media (max-width: 768px) {
   app-sidebar {
     display: block;
-    /* sidebar becomes fixed overlay on mobile, no static space */
     width: 0 !important;
     flex: none;
   }

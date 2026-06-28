@@ -136,6 +136,7 @@
           <div class="input-field-group">
             <label>Chủ đề liên quan <span class="text-danger">*</span></label>
             <select [(ngModel)]="form.topicId" class="admin-select-field">
+              <option value="">-- Chọn chủ đề --</option>
               @for (t of topics; track t.id) {
                 <option [value]="t.id">{{ t.name }}</option>
               }

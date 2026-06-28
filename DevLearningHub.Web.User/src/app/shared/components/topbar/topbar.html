@@ -8,29 +8,8 @@
     <!-- Logo -->
     <a routerLink="/dashboard" class="topbar-logo">
       <img src="assets/images/logo.png" alt="Logo" class="logo-img" />
-      <span class="logo-text">Dev-Learning<span class="logo-accent">Hub</span></span>
+      <span class="logo-text">Dev<span class="logo-accent">Hub</span></span>
     </a>
-
-    <!-- Nav links (desktop) -->
-    <nav class="topbar-nav" aria-label="Main navigation">
-      @for (item of navItems; track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="nav-active"
-          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
-          class="nav-link"
-        >
-          <i class="bi" [ngClass]="item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
-      }
-      @if (hasPermission('user:view_all')) {
-        <a routerLink="/moderator/users" routerLinkActive="nav-active" class="nav-link nav-mod">
-          <i class="bi bi-shield-check"></i>
-          <span>Kiểm duyệt</span>
-        </a>
-      }
-    </nav>
   </div>
 
   <div class="topbar-right">
@@ -56,98 +35,98 @@
     </div>
 
     @if (isProfileOpen) {
-      <div class="profile-dropdown">
-        <a [routerLink]="['/user', currentUserId]" class="dropdown-header" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 12px;">
-          <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" class="dd-avatar" />
-          <div>
-            <div class="dd-name" style="font-weight: 600; color: var(--text-main);">{{ profile.displayName }}</div>
-            <div class="dd-xp" style="font-size: 0.75rem; color: var(--accent); margin-top: 2px;"><i class="bi bi-star-fill"></i> {{ profile.xpPoints }} XP</div>
-          </div>
-        </a>
-        <div class="dropdown-divider"></div>
-        <a [routerLink]="['/user', currentUserId]" class="dropdown-item"><i class="bi bi-person-circle"></i> Trang cá nhân</a>
-        <a routerLink="/settings" class="dropdown-item"><i class="bi bi-gear"></i> Cài đặt</a>
-        <a routerLink="/dashboard/progress" class="dropdown-item"><i class="bi bi-bar-chart-line-fill"></i> Phân tích năng lực</a>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item dropdown-logout" (click)="logout()">
-          <i class="bi bi-box-arrow-left"></i> Đăng xuất
-        </button>
-      </div>
+    <div class="profile-dropdown">
+      <a [routerLink]="['/user', currentUserId]" class="dropdown-header" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+        <img [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'" class="dd-avatar" />
+        <div>
+          <div class="dd-name" style="font-weight: 600; color: var(--text-main);">{{ profile.displayName }}</div>
+          <div class="dd-xp" style="font-size: 0.75rem; color: var(--accent); margin-top: 2px;"><i class="bi bi-star-fill"></i> {{ profile.xpPoints }} XP</div>
+        </div>
+      </a>
+      <div class="dropdown-divider"></div>
+      <a [routerLink]="['/user', currentUserId]" class="dropdown-item"><i class="bi bi-person-circle"></i> Trang cá nhân</a>
+      <a routerLink="/settings" class="dropdown-item"><i class="bi bi-gear"></i> Cài đặt</a>
+      <a routerLink="/dashboard/progress" class="dropdown-item"><i class="bi bi-bar-chart-line-fill"></i> Phân tích năng lực</a>
+      <div class="dropdown-divider"></div>
+      <button class="dropdown-item dropdown-logout" (click)="logout()">
+        <i class="bi bi-box-arrow-left"></i> Đăng xuất
+      </button>
+    </div>
     }
   </div>
 </header>
 
 <!-- Search overlay -->
 @if (isSearchOpen) {
-  <div class="search-overlay">
-    <div class="search-modal">
-      <div class="search-modal-input-wrap">
-        <i class="bi bi-search search-icon"></i>
-        <input
-          id="topbar-search-input"
-          type="text"
-          placeholder="Tìm kiếm quiz, bài viết, tính năng..."
-          [value]="searchQuery"
-          (input)="onSearchInput($event)"
-          autocomplete="off"
-        />
-        <button class="btn-close-search" (click)="toggleSearch()">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-
-      <div class="search-results-body">
-        @if (searchLoading) {
-          <div class="search-status"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tìm...</div>
-        } @else if (searchQuery && !showSearchResults) {
-          <div class="search-status">Nhập để tìm kiếm...</div>
-        } @else if (matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedPosts.length === 0 && searchQuery) {
-          <div class="search-status">Không có kết quả phù hợp</div>
-        }
-
-        @if (matchedPages.length > 0) {
-          <div class="search-section">
-            <div class="search-section-label">Tính năng</div>
-            @for (p of matchedPages; track p.path) {
-              <a [routerLink]="p.path" class="search-result" (click)="toggleSearch()">
-                <i [class]="p.icon"></i>
-                <span>{{ p.name }}</span>
-              </a>
-            }
-          </div>
-        }
-
-        @if (matchedQuizzes.length > 0) {
-          <div class="search-section">
-            <div class="search-section-label">Bộ đề ôn tập</div>
-            @for (q of matchedQuizzes; track q.id) {
-              <a [routerLink]="['/quiz', q.id]" class="search-result" (click)="toggleSearch()">
-                <i class="bi bi-journal-text"></i>
-                <div class="result-content">
-                  <span class="result-title">{{ q.title }}</span>
-                  <span class="result-desc">{{ q.description || 'Không có mô tả' }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-
-        @if (matchedPosts.length > 0) {
-          <div class="search-section">
-            <div class="search-section-label">Bài viết diễn đàn</div>
-            @for (p of matchedPosts; track p.id) {
-              <a [routerLink]="['/forum/post', p.id]" class="search-result" (click)="toggleSearch()">
-                <i class="bi bi-chat-left-text"></i>
-                <div class="result-content">
-                  <span class="result-title">{{ p.title }}</span>
-                  <span class="result-desc">{{ getPlainExcerpt(p.bodyMarkdown) }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-      </div>
+<div class="search-overlay">
+  <div class="search-modal">
+    <div class="search-modal-input-wrap">
+      <i class="bi bi-search search-icon"></i>
+      <input
+        id="topbar-search-input"
+        type="text"
+        placeholder="Tìm kiếm quiz, bài viết, tính năng..."
+        [value]="searchQuery"
+        (input)="onSearchInput($event)"
+        autocomplete="off"
+      />
+      <button class="btn-close-search" (click)="toggleSearch()">
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
-    <div class="search-backdrop" (click)="toggleSearch()"></div>
+
+    <div class="search-results-body">
+      @if (searchLoading) {
+      <div class="search-status"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tìm...</div>
+      } @else if (searchQuery && !showSearchResults) {
+      <div class="search-status">Nhập để tìm kiếm...</div>
+      } @else if (matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedPosts.length === 0 && searchQuery) {
+      <div class="search-status">Không có kết quả phù hợp</div>
+      }
+
+      @if (matchedPages.length > 0) {
+      <div class="search-section">
+        <div class="search-section-label">Tính năng</div>
+        @for (p of matchedPages; track p.path) {
+        <a [routerLink]="p.path" class="search-result" (click)="toggleSearch()">
+          <i [class]="p.icon"></i>
+          <span>{{ p.name }}</span>
+        </a>
+        }
+      </div>
+      }
+
+      @if (matchedQuizzes.length > 0) {
+      <div class="search-section">
+        <div class="search-section-label">Bộ đề ôn tập</div>
+        @for (q of matchedQuizzes; track q.id) {
+        <a [routerLink]="['/quiz', q.id]" class="search-result" (click)="toggleSearch()">
+          <i class="bi bi-journal-text"></i>
+          <div class="result-content">
+            <span class="result-title">{{ q.title }}</span>
+            <span class="result-desc">{{ q.description || 'Không có mô tả' }}</span>
+          </div>
+        </a>
+        }
+      </div>
+      }
+
+      @if (matchedPosts.length > 0) {
+      <div class="search-section">
+        <div class="search-section-label">Bài viết diễn đàn</div>
+        @for (p of matchedPosts; track p.id) {
+        <a [routerLink]="['/forum/post', p.id]" class="search-result" (click)="toggleSearch()">
+          <i class="bi bi-chat-left-text"></i>
+          <div class="result-content">
+            <span class="result-title">{{ p.title }}</span>
+            <span class="result-desc">{{ getPlainExcerpt(p.bodyMarkdown) }}</span>
+          </div>
+        </a>
+        }
+      </div>
+      }
+    </div>
   </div>
+  <div class="search-backdrop" (click)="toggleSearch()"></div>
+</div>
 }

@@ -669,11 +669,22 @@ export class ProblemManagementComponent implements OnInit {
       return;
     }
 
+    if (!this.form.topicId) {
+      alert('Vui lòng chọn chủ đề cho bài tập.');
+      return;
+    }
+
+    const rawStarterCode = this.form.starterCode;
+    const starterCodeStr: string | null = rawStarterCode
+      ? (typeof rawStarterCode === 'string' ? rawStarterCode.trim() : JSON.stringify(rawStarterCode))
+      : null;
+
     const payload = {
-      ...this.form,
+      topicId: this.form.topicId,
       title: this.form.title.trim(),
       description: this.form.description.trim(),
-      starterCode: this.form.starterCode ? this.form.starterCode.trim() : null
+      difficulty: this.form.difficulty,
+      starterCode: starterCodeStr || null
     };
 
     if (this.isEditing) {

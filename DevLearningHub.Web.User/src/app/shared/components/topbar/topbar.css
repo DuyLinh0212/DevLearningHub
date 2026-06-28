@@ -1,15 +1,16 @@
 /* =====================================================================
-   TOPBAR — LeetCode Hybrid Style
+   TOPBAR — "Neon Dojo" identity
+   Command-bar feel: tighter, more intentional, developer-tool aesthetic
    ===================================================================== */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 900;
-  height: 52px;
+  height: 80px; /* Tăng từ 52px lên 64px */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px 0 16px;
+  padding: 0 18px 0 14px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-nested);
   gap: 12px;
@@ -31,7 +32,7 @@
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 6px;
@@ -49,67 +50,25 @@
 }
 
 .logo-img {
-  width: 28px;
-  height: 28px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(168,85,247,.3));
+  filter: drop-shadow(0 2px 6px rgba(6,182,212,.25));
 }
 
 .logo-text {
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  font-size: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 1.5rem;
   letter-spacing: -0.3px;
   color: var(--text-main);
   white-space: nowrap;
 }
 
 .logo-accent {
-  background: linear-gradient(135deg, #f43f5e, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
+  font-weight: 800;
 }
-
-/* ---- NAV LINKS ---- */
-.topbar-nav {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-
-.nav-link i { font-size: 0.9rem; }
-
-.nav-link:hover {
-  color: var(--text-main);
-  background: var(--bg-nested);
-}
-
-.nav-link.nav-active {
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.1);
-  font-weight: 600;
-}
-
-.nav-mod {
-  color: #f59e0b;
-}
-.nav-mod:hover { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.nav-mod.nav-active { color: #f59e0b; background: rgba(245,158,11,0.12); }
 
 /* ---- RIGHT ---- */
 .topbar-right {
@@ -130,11 +89,14 @@
   border: none;
   background: none;
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 1.3rem;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
-.icon-btn:hover, .icon-btn.active { color: var(--text-main); background: var(--bg-nested); }
+.icon-btn:hover, .icon-btn.active {
+  color: var(--text-main);
+  background: var(--bg-nested);
+}
 
 /* ---- PROFILE ---- */
 .profile-wrap {
@@ -151,18 +113,18 @@
 .profile-wrap:hover { background: var(--bg-nested); }
 
 .profile-avatar {
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(168,85,247,.4);
+  border: 1.5px solid var(--accent-border);
 }
 
 .profile-name {
-  font-size: 0.875rem;
+  font-size: 1.0rem;
   font-weight: 600;
   color: var(--text-main);
-  max-width: 120px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -184,7 +146,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-nested);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px rgba(6,182,212,.06);
   z-index: 9999;
   overflow: hidden;
   animation: dropIn 0.15s ease;
@@ -192,7 +154,7 @@
 
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .dropdown-header {
@@ -207,7 +169,7 @@
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(168,85,247,.4);
+  border: 1.5px solid var(--accent-border);
 }
 
 .dd-name {
@@ -218,7 +180,7 @@
 
 .dd-xp {
   font-size: 0.78rem;
-  color: #a855f7;
+  color: var(--accent);
   font-weight: 600;
   margin-top: 2px;
 }
@@ -235,7 +197,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -249,7 +211,7 @@
 .dropdown-item:hover { color: var(--text-main); background: var(--bg-nested); }
 
 .dropdown-logout { color: #f43f5e; }
-.dropdown-logout:hover { background: rgba(244,63,94,.08); color: #f43f5e; }
+.dropdown-logout:hover { background: rgba(244,63,94,.06); color: #f43f5e; }
 
 /* =====================================================================
    SEARCH OVERLAY
@@ -267,8 +229,8 @@
 .search-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(6px);
 }
 
 .search-modal {
@@ -279,7 +241,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-nested);
   border-radius: 16px;
-  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(6,182,212,.08);
   overflow: hidden;
   animation: searchIn 0.18s ease;
   display: flex;
@@ -293,7 +255,7 @@
 
 @keyframes searchIn {
   from { opacity: 0; transform: scale(0.96) translateY(-8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .search-modal-input-wrap {
@@ -304,7 +266,7 @@
   border-bottom: 1px solid var(--border-nested);
 }
 
-.search-icon { color: var(--text-muted); font-size: 1.1rem; flex-shrink: 0; }
+.search-icon { color: var(--accent); font-size: 1.1rem; flex-shrink: 0; }
 
 .search-modal-input-wrap input {
   flex: 1;
@@ -315,7 +277,6 @@
   font-family: 'Inter', sans-serif;
   color: var(--text-main);
 }
-
 .search-modal-input-wrap input::placeholder { color: var(--text-muted-dark); }
 
 .btn-close-search {
@@ -359,11 +320,22 @@
   transition: background 0.12s;
 }
 .search-result:hover { background: var(--bg-nested); }
-.search-result i { font-size: 0.95rem; color: var(--text-muted); flex-shrink: 0; }
+.search-result i { font-size: 0.95rem; color: var(--accent); flex-shrink: 0; }
 
-.result-content { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.result-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
 .result-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.result-desc  { font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .spin-anim { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -389,10 +361,12 @@
    ===================================================================== */
 html.light-theme .topbar {
   background: #ffffff;
-  border-color: #e5e7eb;
+  border-color: #e4e6eb;
 }
-
 html.light-theme .nav-link.nav-active {
-  color: #7c3aed;
-  background: rgba(124,58,237,.08);
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.07);
+}
+html.light-theme .profile-avatar {
+  border-color: rgba(8, 145, 178, 0.3);
 }

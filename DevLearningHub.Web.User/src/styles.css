@@ -1,75 +1,97 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 /* =====================================================================
-   DESIGN TOKENS — Dark (default)
+   DESIGN TOKENS — Dark (default) — "Neon Dojo" identity
    ===================================================================== */
 :root {
   /* Backgrounds */
-  --bg-main:       #0f0f11;
-  --bg-sidebar:    #141416;
-  --bg-card:       #18181b;
-  --bg-card-border:#232327;
-  --bg-nested:     #1c1c20;
-  --border-nested: #27272b;
+  --bg-main: #0c0c0f;
+  --bg-sidebar: #111114;
+  --bg-card: #16161a;
+  --bg-card-border: #23232a;
+  --bg-nested: #1a1a1f;
+  --border-nested: #27272e;
 
   /* Inputs */
-  --input-bg:      #1a1a1e;
-  --input-border:  #2d2d32;
+  --input-bg: #1a1a1f;
+  --input-border: #2d2d35;
 
   /* Text */
-  --text-main:        #f4f4f5;
-  --text-muted:       #a1a1aa;
-  --text-muted-dark:  #71717a;
-  --nav-link-color:   #9ca3af;
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-muted-dark: #63636b;
+  --nav-link-color: #9ca3af;
 
   /* Buttons */
-  --btn-white-bg:   #ffffff;
+  --btn-white-bg: #ffffff;
   --btn-white-text: #000000;
 
-  /* Accent */
-  --accent:         #a855f7;
-  --accent-subtle:  rgba(168, 85, 247, 0.1);
-  --accent-border:  rgba(168, 85, 247, 0.3);
+  /* Accent — Electric cyan */
+  --accent: #06b6d4;
+  --accent-subtle: rgba(6, 182, 212, 0.1);
+  --accent-border: rgba(6, 182, 212, 0.3);
+  --accent-glow: rgba(6, 182, 212, 0.15);
+
+  /* XP / Gamification — Amber */
+  --xp: #f59e0b;
+  --xp-subtle: rgba(245, 158, 11, 0.12);
+  --xp-glow: rgba(245, 158, 11, 0.2);
+
+  /* Stat accents */
+  --stat-cyan: #06b6d4;
+  --stat-emerald: #10b981;
+  --stat-blue: #3b82f6;
+  --stat-amber: #f59e0b;
 
   /* Layout */
   --topbar-height: 52px;
-  --sidebar-width: 180px;
+  --sidebar-width: 200px;
 
   /* Radii & Shadows */
-  --radius-lg: 12px;
-  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-sm: 6px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
-  --shadow-hover-purple: 0 8px 24px rgba(168, 85, 247, 0.15);
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-hover-cyan: 0 8px 28px rgba(6, 182, 212, 0.12);
+  --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.08);
 }
 
 /* =====================================================================
    DESIGN TOKENS — Light
    ===================================================================== */
 html.light-theme {
-  --bg-main:       #f4f4f5;
-  --bg-sidebar:    #ffffff;
-  --bg-card:       #ffffff;
-  --bg-card-border:#e4e4e7;
-  --bg-nested:     #f1f1f3;
-  --border-nested: #e4e4e7;
-  --input-bg:      #ffffff;
-  --input-border:  #d4d4d8;
-  --text-main:     #09090b;
-  --text-muted:    #52525b;
-  --text-muted-dark: #71717a;
+  --bg-main: #f8f9fb;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-border: #e4e6eb;
+  --bg-nested: #f1f2f5;
+  --border-nested: #e0e2e7;
+  --input-bg: #ffffff;
+  --input-border: #d4d6dc;
+  --text-main: #0f0f14;
+  --text-muted: #5a5a66;
+  --text-muted-dark: #8a8a96;
   --nav-link-color: #4b5563;
-  --btn-white-bg:  #111827;
-  --btn-white-text:#ffffff;
-  --accent:        #7c3aed;
-  --accent-subtle: rgba(124,58,237,0.08);
-  --accent-border: rgba(124,58,237,0.25);
+  --btn-white-bg: #111827;
+  --btn-white-text: #ffffff;
+  --accent: #0891b2;
+  --accent-subtle: rgba(8, 145, 178, 0.07);
+  --accent-border: rgba(8, 145, 178, 0.22);
+  --accent-glow: rgba(8, 145, 178, 0.06);
+  --xp: #d97706;
+  --xp-subtle: rgba(217, 119, 6, 0.08);
+  --xp-glow: rgba(217, 119, 6, 0.1);
+  --stat-cyan: #0891b2;
+  --stat-emerald: #059669;
+  --stat-blue: #2563eb;
+  --stat-amber: #d97706;
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --shadow-hover-purple: 0 8px 24px rgba(124, 58, 237, 0.12);
+  --shadow-hover-cyan: 0 8px 24px rgba(8, 145, 178, 0.1);
+  --shadow-glow-cyan: 0 0 16px rgba(8, 145, 178, 0.04);
 }
 
 /* =====================================================================
@@ -91,11 +113,8 @@ html, body {
 /* =====================================================================
    GLOBAL LAYOUT HELPERS
    ===================================================================== */
-/* Hide router-outlet from flex flow */
 router-outlet { display: none !important; }
 
-/* Route components fill parent — must be flex column with overflow:hidden
-   so inner .dashboard-scroll-body can scroll independently */
 .main-content > * {
   display: flex;
   flex-direction: column;
@@ -106,26 +125,24 @@ router-outlet { display: none !important; }
   overflow: hidden;
 }
 
-/* Scrollable page body (canonical definition also in dashboard.css for imports) */
 .dashboard-scroll-body {
   flex: 1;
   overflow-y: auto !important;
   overflow-x: hidden;
   min-height: 0;
-  height: 0; /* force flex scroll */
+  height: 0;
 }
 
 .dashboard-scroll-body::-webkit-scrollbar { width: 5px; }
 .dashboard-scroll-body::-webkit-scrollbar-track { background: transparent; }
 .dashboard-scroll-body::-webkit-scrollbar-thumb {
-  background: rgba(168,85,247,.15);
+  background: rgba(6, 182, 212, 0.12);
   border-radius: 4px;
 }
 .dashboard-scroll-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(168,85,247,.3);
+  background: rgba(6, 182, 212, 0.25);
 }
 
-/* Legacy class — kept for backward compat */
 .dashboard-container {
   display: flex;
   height: 100vh;
@@ -137,7 +154,6 @@ router-outlet { display: none !important; }
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Content header (used in some pages) */
 .content-header {
   flex-shrink: 0;
   height: 52px;
@@ -182,20 +198,16 @@ router-outlet { display: none !important; }
    ===================================================================== */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(168,85,247,.15) transparent;
+  scrollbar-color: rgba(6,182,212,.12) transparent;
 }
 
-/* Hide scrollbars globally but preserve scrollability for Forum Detail & Lightbox */
-.lc-post-main,
-.lc-explore-sidebar,
-.fb-lightbox-scrollable-content {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
+.lc-post-main, .lc-explore-sidebar, .fb-lightbox-scrollable-content {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
-.lc-post-main::-webkit-scrollbar,
-.lc-explore-sidebar::-webkit-scrollbar,
+.lc-post-main::-webkit-scrollbar, .lc-explore-sidebar::-webkit-scrollbar,
 .fb-lightbox-scrollable-content::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
+  display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
