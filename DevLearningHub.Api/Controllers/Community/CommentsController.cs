@@ -20,15 +20,18 @@ public class CommentsController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
     private readonly IPermissionService _permissions;
+    private readonly INotificationService _notifications;
 
     public CommentsController(
         DevLearningHubContext db,
         IHubContext<CommentHub, ICommentHubClient> commentHub,
-        IPermissionService permissions)
+        IPermissionService permissions,
+        INotificationService notifications)
     {
         _db = db;
         _commentHub = commentHub;
         _permissions = permissions;
+        _notifications = notifications;
     }
 
     [HttpPut("{id:guid}")]
@@ -129,6 +132,15 @@ public class CommentsController : ControllerBase
             CommentId = comment.Id,
             DeletedIds = deleteIds
         });
+
+        // Notify the comment author it was removed (skipped if they deleted it themselves).
+        await _notifications.NotifyAsync(
+            recipientId: comment.AuthorId,
+            type: NotificationTypes.CommentDeleted,
+            message: "Một bình luận của bạn đã bị xóa bởi quản trị viên.",
+            refId: comment.PostId,
+            refType: NotificationRefTypes.Post,
+            actorId: userId);
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true, count = deleteIds.Count }));
     }

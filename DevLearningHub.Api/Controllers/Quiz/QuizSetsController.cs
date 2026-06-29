@@ -18,12 +18,18 @@ public class QuizSetsController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IAuditService _audit;
     private readonly IPermissionService _permissions;
+    private readonly INotificationService _notifications;
 
-    public QuizSetsController(DevLearningHubContext db, IAuditService audit, IPermissionService permissions)
+    public QuizSetsController(
+        DevLearningHubContext db,
+        IAuditService audit,
+        IPermissionService permissions,
+        INotificationService notifications)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
+        _notifications = notifications;
     }
 
     [HttpGet]
@@ -402,10 +408,22 @@ public class QuizSetsController : ControllerBase
         }
 
         var links = await _db.QuizSetQuestions.Where(qsq => qsq.QuizSetId == id).ToListAsync();
+        var quizCreatorId = quizSet.CreatedBy;
+        var quizTitle = quizSet.Title;
+
         _db.QuizSetQuestions.RemoveRange(links);
         _db.QuizSets.Remove(quizSet);
         await _db.SaveChangesAsync();
         await _audit.LogAsync("quiz.delete", "quiz_set", id, $"title={quizSet.Title}");
+
+        // Notify the quiz creator their set was removed (skipped if self-deleted).
+        await _notifications.NotifyAsync(
+            recipientId: quizCreatorId,
+            type: NotificationTypes.QuizDeleted,
+            message: $"Bộ đề \"{quizTitle}\" của bạn đã bị xóa bởi quản trị viên.",
+            refId: id,
+            refType: NotificationRefTypes.QuizSet,
+            actorId: userId);
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true }));
     }

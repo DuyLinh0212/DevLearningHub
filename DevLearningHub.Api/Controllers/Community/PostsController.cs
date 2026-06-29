@@ -23,15 +23,18 @@ public class PostsController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
     private readonly IPermissionService _permissions;
+    private readonly INotificationService _notifications;
 
     public PostsController(
         DevLearningHubContext db,
         IHubContext<CommentHub, ICommentHubClient> commentHub,
-        IPermissionService permissions)
+        IPermissionService permissions,
+        INotificationService notifications)
     {
         _db = db;
         _commentHub = commentHub;
         _permissions = permissions;
+        _notifications = notifications;
     }
 
     [HttpGet]
@@ -393,10 +396,22 @@ public class PostsController : ControllerBase
         await DeleteVotesAsync(CommunityVotes.PostTarget, new List<Guid> { post.Id });
         await DeleteVotesAsync(CommunityVotes.CommentTarget, commentIds);
 
+        var postAuthorId = post.AuthorId;
+        var postTitle = post.Title;
+
         post.Tags.Clear();
         _db.Comments.RemoveRange(post.Comments);
         _db.Posts.Remove(post);
         await _db.SaveChangesAsync();
+
+        // Tell the author their post was removed (skipped if they deleted it themselves).
+        await _notifications.NotifyAsync(
+            recipientId: postAuthorId,
+            type: NotificationTypes.PostDeleted,
+            message: $"Bài viết \"{postTitle}\" của bạn đã bị xóa bởi quản trị viên.",
+            refId: id,
+            refType: NotificationRefTypes.Post,
+            actorId: userId);
 
         return Ok(ApiResponse<object>.Ok(new { deleted = true }));
     }
@@ -566,6 +581,27 @@ public class PostsController : ControllerBase
 
         // Notify everyone viewing this post that a new comment/reply arrived.
         await _commentHub.Clients.Group(CommentHub.PostGroup(comment.PostId)).CommentCreated(response);
+
+        // When this is a reply, send a personal notification to the author of the
+        // parent comment (skipped automatically if they replied to themselves).
+        if (comment.ParentId.HasValue)
+        {
+            var parentAuthorId = await _db.Comments
+                .Where(c => c.Id == comment.ParentId.Value)
+                .Select(c => (Guid?)c.AuthorId)
+                .FirstOrDefaultAsync();
+
+            if (parentAuthorId.HasValue)
+            {
+                await _notifications.NotifyAsync(
+                    recipientId: parentAuthorId.Value,
+                    type: NotificationTypes.CommentReply,
+                    message: $"{author.FullName ?? author.Username} đã trả lời bình luận của bạn.",
+                    refId: comment.PostId,
+                    refType: NotificationRefTypes.Post,
+                    actorId: userId);
+            }
+        }
 
         return Ok(ApiResponse<CommentResponse>.Ok(response));
     }

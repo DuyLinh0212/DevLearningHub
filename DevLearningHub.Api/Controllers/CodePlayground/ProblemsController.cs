@@ -1,6 +1,8 @@
 using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Entities;
+using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +14,12 @@ namespace DevLearningHub.Api.Controllers.CodePlayground;
 public class ProblemsController : ControllerBase
 {
 	private readonly DevLearningHubContext _context;
+	private readonly INotificationService _notifications;
 
-	public ProblemsController(DevLearningHubContext context)
+	public ProblemsController(DevLearningHubContext context, INotificationService notifications)
 	{
 		_context = context;
+		_notifications = notifications;
 	}
 
 	// 35. GET /api/problems (Public)
@@ -149,6 +153,17 @@ public class ProblemsController : ControllerBase
 
 		problem.IsActive = false; // Xóa mềm bằng cách hạ Active xuống false
 		await _context.SaveChangesAsync();
+
+		// Notify the problem creator their exercise was removed (skipped if self-deleted).
+		User.TryGetUserId(out var actorId);
+		await _notifications.NotifyAsync(
+			recipientId: problem.CreatedBy,
+			type: NotificationTypes.ProblemDeleted,
+			message: $"Bài tập code \"{problem.Title}\" của bạn đã bị xóa bởi quản trị viên.",
+			refId: problem.Id,
+			refType: NotificationRefTypes.Problem,
+			actorId: actorId);
+
 		return NoContent();
 	}
 
