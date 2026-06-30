@@ -17,6 +17,10 @@ public partial class User
 
     public string? AvatarUrl { get; set; }
 
+    public string? BannerUrl { get; set; }
+
+    public string? Bio { get; set; }
+
     public int XpPoints { get; set; }
 
     public DateTime CreatedAt { get; set; }

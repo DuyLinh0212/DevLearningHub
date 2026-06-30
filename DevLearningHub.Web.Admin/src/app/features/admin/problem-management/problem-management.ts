@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 const PROBLEM_TEMPLATES: Record<string, { title: string; difficulty: string; description: string; starterCode: string }> = {
   fibonacci: {
@@ -547,6 +548,9 @@ export class ProblemManagementComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
 
+  // ---- Tab ----
+  activeTab: 'problems' | 'banks' = 'problems';
+
   problems: any[] = [];
   filteredProblems: any[] = [];
   topics: any[] = [];
@@ -555,6 +559,22 @@ export class ProblemManagementComponent implements OnInit {
   searchText = '';
   selectedDifficulty = '';
   selectedTopicId = '';
+
+  // ---- Banks ----
+  banks: any[] = [];
+  filteredBanks: any[] = [];
+  banksLoading = false;
+  bankSearchText = '';
+  bankMinRating = 0;
+
+  isBankModalOpen = false;
+  isSavingBank = false;
+  editingBankId = '';
+  bankForm = { title: '', description: '', isPublic: true };
+
+  showBankDetailModal = false;
+  selectedBank: any = null;
+  bankDetailLoading = false;
 
   // Form State
   isModalOpen = false;
@@ -571,6 +591,7 @@ export class ProblemManagementComponent implements OnInit {
   ngOnInit() {
     this.loadTopics();
     this.loadProblems();
+    this.loadBanks();
   }
 
   loadTopics() {
@@ -772,6 +793,131 @@ export class ProblemManagementComponent implements OnInit {
     const topic = this.topics.find(t => t.id.toLowerCase() === topicId.toLowerCase());
     return topic ? topic.name : 'Khác';
   }
+
+  // ---- Banks ----
+
+  loadBanks() {
+    this.banksLoading = true;
+    this.http.get<any>('/api/problem-banks').subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        this.banks = Array.isArray(data) ? data : [];
+        this.filterBanks();
+        this.banksLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.banksLoading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  filterBanks() {
+    const search = this.bankSearchText.trim().toLowerCase();
+    this.filteredBanks = this.banks.filter(b => {
+      const matchSearch = !search || b.title?.toLowerCase().includes(search) ||
+        (b.description || '').toLowerCase().includes(search);
+      const matchRating = this.bankMinRating === 0 || (b.avgRating ?? 0) >= this.bankMinRating;
+      return matchSearch && matchRating;
+    });
+  }
+
+  openBankDetail(bank: any) {
+    this.bankDetailLoading = true;
+    this.showBankDetailModal = true;
+    this.selectedBank = null;
+    this.cdr.detectChanges();
+    this.http.get<any>(`/api/problem-banks/${bank.id}`).pipe(
+      finalize(() => {
+        this.bankDetailLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (res) => {
+        const data = res?.data ?? res;
+        this.selectedBank = data && typeof data === 'object' ? data : null;
+        if (!this.selectedBank) this.showBankDetailModal = false;
+      },
+      error: () => { this.showBankDetailModal = false; }
+    });
+  }
+
+  closeBankDetail() {
+    this.showBankDetailModal = false;
+    this.selectedBank = null;
+    this.cdr.detectChanges();
+  }
+
+  openBankModal(bank?: any) {
+    if (bank) {
+      this.editingBankId = bank.id;
+      this.bankForm = { title: bank.title, description: bank.description || '', isPublic: bank.isPublic };
+    } else {
+      this.editingBankId = '';
+      this.bankForm = { title: '', description: '', isPublic: true };
+    }
+    this.isBankModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeBankModal() {
+    if (this.isSavingBank) return;
+    this.isBankModalOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  saveBankForm() {
+    if (!this.bankForm.title.trim()) { alert('Vui lòng nhập tên ngân hàng.'); return; }
+    this.isSavingBank = true;
+    this.cdr.detectChanges();
+    const payload = {
+      title: this.bankForm.title.trim(),
+      description: this.bankForm.description.trim() || null,
+      isPublic: this.bankForm.isPublic
+    };
+    const req = this.editingBankId
+      ? this.http.put<any>(`/api/problem-banks/${this.editingBankId}`, payload)
+      : this.http.post<any>('/api/problem-banks', payload);
+    req.pipe(
+      finalize(() => {
+        this.isSavingBank = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.isBankModalOpen = false;
+        this.loadBanks();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể lưu ngân hàng.');
+      }
+    });
+  }
+
+  deleteBank(id: string) {
+    if (!confirm('Xóa ngân hàng bài tập này?')) return;
+    this.http.delete<any>(`/api/problem-banks/${id}`).subscribe({
+      next: () => { this.loadBanks(); },
+      error: () => alert('Không thể xóa ngân hàng.')
+    });
+  }
+
+  removeProblemFromBank(bankId: string, problemId: string) {
+    if (!confirm('Xóa bài tập này khỏi ngân hàng?')) return;
+    this.http.delete<any>(`/api/problem-banks/${bankId}/problems/${problemId}`).subscribe({
+      next: () => {
+        if (this.selectedBank) {
+          this.selectedBank.problems = this.selectedBank.problems.filter((p: any) => p.problemId !== problemId);
+          this.selectedBank.problemCount = this.selectedBank.problems.length;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  getDifficultyClassBank(diff: string): string { return this.getDifficultyClass(diff); }
+  getDifficultyLabelBank(diff: string): string { return this.getDifficultyLabel(diff); }
+
+  getStars(): number[] { return [1,2,3,4,5]; }
 
   applyTemplate(templateKey: string) {
     const tpl = PROBLEM_TEMPLATES[templateKey];

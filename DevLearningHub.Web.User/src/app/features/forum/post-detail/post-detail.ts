@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { ForumService } from '../../../core/services/forum.service';
 import { CommentRealtimeService, CommentDeletedEvent } from '../../../core/services/comment-realtime.service';
 import { StaffUserService } from '../../../core/services/staff-user.service';
+import { ReportService, ReportTargetType } from '../../../core/services/report.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -23,6 +24,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
   private realtime = inject(CommentRealtimeService);
+  private reportService = inject(ReportService);
 
   private subscriptions = new Subscription();
 
@@ -60,6 +62,10 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   recentPosts: any[] = [];
   exploreTags: string[] = [];
   exploreGrouped: { tag: string; posts: any[] }[] = [];
+  isReportModalOpen = false;
+  reportTargetType: ReportTargetType = 'post';
+  reportTarget: any = null;
+  reportDescription = '';
 
   ngOnInit() {
     // Subscribe once to realtime comment events; handlers filter by postId.
@@ -316,6 +322,64 @@ export class PostDetailComponent implements OnInit, OnDestroy {
       alert('Đã sao chép liên kết bài viết vào bộ nhớ tạm!');
     }).catch(err => {
       console.error('Không thể sao chép liên kết:', err);
+    });
+  }
+
+  openPostReportModal(event?: Event) {
+    event?.stopPropagation();
+    if (!this.checkLogin()) return;
+
+    this.reportTargetType = 'post';
+    this.reportTarget = this.post;
+    this.reportDescription = '';
+    this.isReportModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  openCommentReportModal(comment: any, event?: Event) {
+    event?.stopPropagation();
+    if (!this.checkLogin()) return;
+
+    this.reportTargetType = 'comment';
+    this.reportTarget = comment;
+    this.reportDescription = '';
+    this.activeCommentMenuId = null;
+    this.isReportModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeReportModal() {
+    this.isReportModalOpen = false;
+    this.reportTarget = null;
+    this.reportDescription = '';
+    this.cdr.detectChanges();
+  }
+
+  submitReport() {
+    const description = this.reportDescription.trim();
+    if (!description) {
+      alert('Vui lòng mô tả nội dung vi phạm.');
+      return;
+    }
+    if (!this.reportTarget?.id) {
+      alert('Không xác định được nội dung cần báo cáo.');
+      return;
+    }
+
+    const context = this.reportTargetType === 'post'
+      ? `Bài đăng: ${this.reportTarget.title || this.reportTarget.id}`
+      : `Bình luận trong bài: ${this.post?.title || this.postId}`;
+
+    this.reportService.createReport(this.reportTargetType, this.reportTarget.id, [context, description].join('\n')).subscribe({
+      next: () => {
+        alert(this.reportTargetType === 'post'
+          ? 'Cảm ơn bạn! Báo cáo bài đăng đã được gửi để xem xét.'
+          : 'Cảm ơn bạn! Báo cáo bình luận đã được gửi để xem xét.');
+        this.closeReportModal();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể gửi báo cáo. Vui lòng thử lại sau.');
+      }
     });
   }
 

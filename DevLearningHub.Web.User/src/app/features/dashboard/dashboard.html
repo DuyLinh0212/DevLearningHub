@@ -28,6 +28,64 @@
 }
 </section>
 
+<!-- Problem Bank Progress -->
+<section class="bank-stats-section">
+  <div class="bank-stats-heading">
+    <div>
+      <h2>Bộ Ngân Hàng Bài Tập Code</h2>
+      <p class="section-subtitle">Tiến độ luyện tập của bạn trong các ngân hàng bài tập</p>
+    </div>
+    <a routerLink="/code" class="btn-see-all"><i class="bi bi-arrow-right"></i> Xem tất cả</a>
+  </div>
+
+  @if (banksLoading) {
+    <div class="bank-loading"><div class="spinner-circle-sm"></div> Đang tải...</div>
+  } @else if (problemBanks.length === 0) {
+    <div class="bank-empty">
+      <i class="bi bi-collection"></i>
+      <p>Chưa có ngân hàng bài tập nào. <a routerLink="/code">Khám phá ngay!</a></p>
+    </div>
+  } @else {
+    <div class="bank-cards-row">
+      @for (bank of problemBanks.slice(0, 4); track bank.id) {
+        <a class="bank-stat-card" [routerLink]="['/code']" [queryParams]="{ bankId: bank.id }">
+          <div class="bank-card-top">
+            <div class="bank-card-info">
+              <span class="bank-card-title">{{ bank.title }}</span>
+              <span class="bank-card-meta">
+                <i class="bi bi-collection"></i> {{ bank.problemCount }} bài
+                @if (bank.avgRating > 0) {
+                  &nbsp;· <i class="bi bi-star-fill" style="color:#ffb800;font-size:0.7rem"></i> {{ bank.avgRating.toFixed(1) }}
+                }
+              </span>
+            </div>
+            <div class="bank-card-percent">
+              {{ getBankProgressPercent(bank).toFixed(0) }}%
+            </div>
+          </div>
+
+          <div class="bank-progress-track">
+            <div class="bank-progress-fill"
+                 [style.width.%]="getBankProgressPercent(bank)"
+                 [class.full]="getBankProgressPercent(bank) >= 100">
+            </div>
+          </div>
+
+          <div class="bank-card-foot">
+            <span class="bank-solved">
+              <i class="bi bi-check-circle-fill"></i>
+              {{ bank.progress?.solvedProblems ?? 0 }}/{{ bank.problemCount }} đã giải
+            </span>
+            @if (!bank.isPublic) {
+              <span class="bank-private-badge"><i class="bi bi-lock-fill"></i> Riêng tư</span>
+            }
+          </div>
+        </a>
+      }
+    </div>
+  }
+</section>
+
 <!-- Middle: Quiz Stats + Recommendations | Leaderboard -->
 <div class="middle-layout">
 <div class="dashboard-left-col">

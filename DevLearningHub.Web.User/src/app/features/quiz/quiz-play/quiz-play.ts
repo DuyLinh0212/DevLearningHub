@@ -2,12 +2,14 @@ import { Component, inject, OnInit, OnDestroy, signal, computed, ChangeDetectorR
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ReportService } from '../../../core/services/report.service';
 
 @Component({
   selector: 'app-quiz-play',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './quiz-play.html',
   styleUrl: './quiz-play.css'
 })
@@ -17,11 +19,12 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private reportService = inject(ReportService);
 
   sessionId: string = '';
   quizId: string = '';
   quizTitle: string = '';
-  
+
   quizMode: string = 'practice';
   questionLimit: number = 0;
 
@@ -29,9 +32,11 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   originalTotalQuestions: number = 0; // Tổng câu gốc của bộ đề (không bị limit bởi thi thử)
   questions: any[] = [];
   currentQuestionIndex = 0;
-  
+
   isConfirmModalOpen = false;
   isExitModalOpen = false;
+  isReportModalOpen = false;
+  reportDescription = '';
   noQuestionsError = false;
 
   selectedAnswers: (any | null)[] = [];
@@ -45,7 +50,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
 
   formattedTime = computed(() => {
     if (this.quizMode === 'practice') {
-      return '∞'; 
+      return '∞';
     }
     const time = this.timeLeft();
     const minutes = Math.floor(time / 60);
@@ -57,7 +62,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.quizId = this.route.snapshot.paramMap.get('id') || '';
     this.quizMode = this.route.snapshot.queryParamMap.get('mode') || 'practice';
     this.questionLimit = Number(this.route.snapshot.queryParamMap.get('limit') || 0);
-    
+
     if (!this.quizId) {
       this.router.navigate(['/quiz-bank']);
       return;
@@ -82,7 +87,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
 
   initializeQuizSession() {
     console.log(`=== PHÒNG THI: KHỞI TẠO PHIÊN VỚI CHẾ ĐỘ = ${this.quizMode.toUpperCase()} ===`);
-    
+
     this.quizService.startQuizSession(this.quizId).subscribe({
       next: (res) => {
         const target = res?.data || res;
@@ -120,9 +125,9 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
           text: q.content || q.text || 'Nội dung câu hỏi đang được mã hóa...',
           level: q.level || 'Beginner',
           points: q.points || 10,
-          options: (q.options || []).map((o: any) => ({ 
-            id: o.id, 
-            content: o.content || o.text 
+          options: (q.options || []).map((o: any) => ({
+            id: o.id,
+            content: o.content || o.text
           }))
         }));
 
@@ -131,14 +136,14 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
         this.originalTotalQuestions = (target.questions?.length || this.totalQuestions);
         this.selectedAnswers = new Array(this.totalQuestions).fill(null);
         this.bookmarkedQuestions = new Array(this.totalQuestions).fill(false);
-        
+
         if (this.quizMode === 'exam') {
           this.startAntiCheatTimer(absoluteEndTime);
         } else {
           console.log('Chế độ Luyện tập: Hủy bỏ giới hạn đồng hồ đếm ngược.');
           sessionStorage.removeItem(sessionEndTimeKey); // Dọn sạch rác bộ nhớ phòng hờ
         }
-        
+
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -158,7 +163,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     const updateTimer = () => {
       const now = Date.now();
       const distance = Math.max(0, Math.floor((absoluteEndTime - now) / 1000));
-      
+
       this.timeLeft.set(distance);
       this.cdr.detectChanges();
 
@@ -181,15 +186,36 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  toggleBookmark() { 
-    this.bookmarkedQuestions[this.currentQuestionIndex] = !this.bookmarkedQuestions[this.currentQuestionIndex]; 
+  toggleBookmark() {
+    this.bookmarkedQuestions[this.currentQuestionIndex] = !this.bookmarkedQuestions[this.currentQuestionIndex];
   }
-  
+
   openConfirmModal() { this.isConfirmModalOpen = true; }
   closeConfirmModal() { this.isConfirmModalOpen = false; }
   openExitModal() { this.isExitModalOpen = true; }
   closeExitModal() { this.isExitModalOpen = false; }
-  
+  openReportModal() { this.isReportModalOpen = true; }
+  closeReportModal() { this.isReportModalOpen = false; this.reportDescription = ''; }
+  submitReport() {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const targetId = currentQuestion?.id;
+    const description = this.reportDescription.trim();
+
+    if (!description) { alert('Vui lòng mô tả lỗi bạn gặp phải.'); return; }
+    if (!targetId) { alert('Không xác định được câu hỏi cần báo lỗi.'); return; }
+
+    const enrichedDescription = [
+      `Bộ đề: ${this.quizTitle || this.quizId}`,
+      `Câu hỏi số: ${this.currentQuestionIndex + 1}`,
+      description
+    ].join('\n');
+
+    this.reportService.createReport('quiz_question', targetId, enrichedDescription).subscribe({
+      next: () => { alert('Cảm ơn bạn! Báo cáo đã được gửi đến người tạo bộ đề để xem xét.'); this.closeReportModal(); },
+      error: (err) => { alert(err?.error?.message || 'Không thể gửi báo cáo. Vui lòng thử lại sau.'); }
+    });
+  }
+
   confirmExit() {
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.router.navigate(['/quiz-bank']);
@@ -243,7 +269,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   get bookmarkedCount(): number { return this.bookmarkedQuestions.filter(b => b).length; }
   get completionPercentage(): number { return this.questions.length === 0 ? 0 : Math.round((this.answeredCount / this.questions.length) * 100); }
   getOptionClass(optionId: string): string { const cur = this.selectedAnswers[this.currentQuestionIndex]; return cur && cur.optionId === optionId ? 'selected' : ''; }
-  
+
   selectQuestion(index: number) { this.currentQuestionIndex = index; }
   prevQuestion() { if (this.currentQuestionIndex > 0) this.currentQuestionIndex--; }
   nextQuestion() { if (this.currentQuestionIndex < this.questions.length - 1) this.currentQuestionIndex++; }
@@ -251,7 +277,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   @HostListener('document:keydown', ['$event'])
   onKeyboardNav(event: KeyboardEvent) {
     // Không bắt phím khi modal đang mở, hoặc user đang nhập vào ô input/textarea
-    if (this.isConfirmModalOpen || this.isExitModalOpen) return;
+    if (this.isConfirmModalOpen || this.isExitModalOpen || this.isReportModalOpen) return;
     const tag = (event.target as HTMLElement)?.tagName?.toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
@@ -265,8 +291,8 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     }
   }
-  
-  ngOnDestroy() { 
-    if (this.timerInterval) clearInterval(this.timerInterval); 
+
+  ngOnDestroy() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
   }
 }

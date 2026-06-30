@@ -582,8 +582,10 @@ public class PostsController : ControllerBase
         // Notify everyone viewing this post that a new comment/reply arrived.
         await _commentHub.Clients.Group(CommentHub.PostGroup(comment.PostId)).CommentCreated(response);
 
-        // When this is a reply, send a personal notification to the author of the
-        // parent comment (skipped automatically if they replied to themselves).
+        // Notify the people directly affected by the new comment/reply. NotifyAsync
+        // skips self-notifications, and the HashSet prevents duplicate recipients.
+        var notifiedUserIds = new HashSet<Guid>();
+
         if (comment.ParentId.HasValue)
         {
             var parentAuthorId = await _db.Comments
@@ -600,7 +602,23 @@ public class PostsController : ControllerBase
                     refId: comment.PostId,
                     refType: NotificationRefTypes.Post,
                     actorId: userId);
+                notifiedUserIds.Add(parentAuthorId.Value);
             }
+        }
+
+        if (notifiedUserIds.Add(post.AuthorId))
+        {
+            var message = comment.ParentId.HasValue
+                ? $"{author.FullName ?? author.Username} đã trả lời trong bài viết của bạn."
+                : $"{author.FullName ?? author.Username} đã bình luận trên bài viết của bạn.";
+
+            await _notifications.NotifyAsync(
+                recipientId: post.AuthorId,
+                type: NotificationTypes.PostComment,
+                message: message,
+                refId: comment.PostId,
+                refType: NotificationRefTypes.Post,
+                actorId: userId);
         }
 
         return Ok(ApiResponse<CommentResponse>.Ok(response));

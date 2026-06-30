@@ -1,13 +1,15 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { QuizService } from '../../core/services/quiz.service';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
+import { ProblemBankService, ProblemBankSummary, ProblemBankProgress } from '../../core/services/problem-bank.service';
 
 @Component({
 	selector: 'app-dashboard',
 	standalone: true,
-	imports: [RouterLink],
+	imports: [RouterLink, CommonModule],
 	templateUrl: './dashboard.html',
 	styleUrl: './dashboard.css'
 })
@@ -16,9 +18,13 @@ export class DashboardComponent implements OnInit {
 	private quizService = inject(QuizService);
 	private http = inject(HttpClient);
 	private cdr = inject(ChangeDetectorRef);
+	private problemBankService = inject(ProblemBankService);
 
 	totalRealAttempts = 0;
 	quizzesData: any[] = [];
+
+	problemBanks: (ProblemBankSummary & { progress?: ProblemBankProgress })[] = [];
+	banksLoading = true;
 
 	userXpPoints = 0;
 	totalQuizTaken = 0;
@@ -33,6 +39,7 @@ export class DashboardComponent implements OnInit {
 	circumference = 2 * Math.PI * 34;
 
 	ngOnInit() {
+		this.loadProblemBanks();
 		console.log('=== DASHBOARD: KHỞI ĐỘNG CHUỖI LIÊN HOÀN BỐC TÁCH STATS ===');
 
 		this.quizService.getCurrentUser().subscribe({
@@ -156,6 +163,43 @@ export class DashboardComponent implements OnInit {
 		});
 
 		this.cdr.detectChanges();
+	}
+
+	loadProblemBanks() {
+		const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+		if (!token) { this.banksLoading = false; return; }
+
+		this.problemBankService.getBanks().subscribe({
+			next: (res) => {
+				const data = res?.data || res;
+				const banks: ProblemBankSummary[] = Array.isArray(data) ? data : [];
+				this.problemBanks = banks.map(b => ({ ...b }));
+				this.banksLoading = false;
+				this.cdr.detectChanges();
+
+				// Load progress for each bank in parallel (max 5 to avoid flooding)
+				const slice = this.problemBanks.slice(0, 5);
+				slice.forEach((bank, idx) => {
+					this.problemBankService.getProgress(bank.id).subscribe({
+						next: (pRes) => {
+							const prog: ProblemBankProgress = pRes?.data || pRes;
+							this.problemBanks[idx] = { ...this.problemBanks[idx], progress: prog };
+							this.cdr.detectChanges();
+						},
+						error: () => {}
+					});
+				});
+			},
+			error: () => {
+				this.banksLoading = false;
+				this.cdr.detectChanges();
+			}
+		});
+	}
+
+	getBankProgressPercent(bank: any): number {
+		if (bank.progress) return bank.progress.completionPercent ?? 0;
+		return 0;
 	}
 
 	handleAction(quizId: string) {

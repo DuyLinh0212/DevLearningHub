@@ -8,6 +8,7 @@ public class ProblemSummaryResponse
 {
     public Guid Id { get; set; }
     public Guid TopicId { get; set; }
+    public Guid CreatedBy { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Difficulty { get; set; } = string.Empty;
     public bool IsActive { get; set; }

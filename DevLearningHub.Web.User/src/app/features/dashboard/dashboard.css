@@ -612,3 +612,189 @@
     gap: 8px;
   }
 }
+
+/* =====================================================================
+   PROBLEM BANK STATS SECTION
+   ===================================================================== */
+.bank-stats-section {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 2px;
+}
+
+.bank-stats-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bank-stats-heading h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 4px 0;
+}
+
+.btn-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 7px;
+  background: var(--accent-subtle);
+  border: 1px solid rgba(168,85,247,.25);
+  transition: all 0.18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-see-all:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.bank-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  padding: 20px 0;
+}
+
+.spinner-circle-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(168,85,247,.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.bank-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  padding: 16px 0;
+}
+.bank-empty i { font-size: 1.3rem; color: var(--text-muted-dark); }
+.bank-empty a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+.bank-cards-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.bank-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-nested);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+}
+.bank-stat-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+  transform: translateY(-2px);
+}
+
+.bank-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bank-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bank-card-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-card-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.bank-card-percent {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.bank-progress-track {
+  height: 5px;
+  background: var(--bg-card-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bank-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+  min-width: 2px;
+}
+.bank-progress-fill.full { background: #2cbb5d; }
+
+.bank-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bank-solved {
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bank-solved i { color: #2cbb5d; font-size: 0.72rem; }
+
+.bank-private-badge {
+  font-size: 0.63rem;
+  color: var(--text-muted-dark);
+  background: var(--bg-card-border);
+  padding: 1px 5px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+@media (max-width: 900px) {
+  .bank-cards-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .bank-cards-row { grid-template-columns: 1fr; }
+}

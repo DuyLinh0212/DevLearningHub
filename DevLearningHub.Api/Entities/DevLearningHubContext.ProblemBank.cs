@@ -34,6 +34,7 @@ public partial class DevLearningHubContext
             entity.Property(e => e.IsPublic)
                 .HasDefaultValue(true)
                 .HasColumnName("is_public");
+            entity.Property(e => e.TopicId).HasColumnName("topic_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnName("created_at");
@@ -43,6 +44,11 @@ public partial class DevLearningHubContext
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_problem_banks_user");
+
+            entity.HasOne(d => d.Topic).WithMany()
+                .HasForeignKey(d => d.TopicId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_problem_banks_topic");
         });
 
         modelBuilder.Entity<ProblemBankItem>(entity =>

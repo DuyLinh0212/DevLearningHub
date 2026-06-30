@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from '../../../core/services/theme.service';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
+import { NotificationService, NotificationItem } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-topbar',
@@ -21,15 +22,21 @@ export class TopbarComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private elementRef = inject(ElementRef);
   public mobileMenu = inject(MobileMenuService);
+  public notificationService = inject(NotificationService);
 
   private routeSub?: Subscription;
+  private notifRealtimeSub?: Subscription;
 
   profile = { displayName: '', avatarUrl: '', xpPoints: 0 };
   userPermissions: string[] = [];
   currentUserId = '';
 
+  toastNotif: NotificationItem | null = null;
+  private toastTimer?: ReturnType<typeof setTimeout>;
+
   isSearchOpen = false;
   isProfileOpen = false;
+  isNotifOpen = false;
   searchQuery = '';
   searchLoading = false;
   matchedPages: any[] = [];
@@ -37,7 +44,18 @@ export class TopbarComponent implements OnInit, OnDestroy {
   matchedPosts: any[] = [];
   showSearchResults = false;
 
+  notifications: NotificationItem[] = [];
+  notifLoading = false;
+  notifPage = 1;
+  notifTotalPages = 1;
+
+  showSessionExpiredBanner = false;
+
   private profileUpdateHandler = () => this.loadProfile();
+  private sessionExpiredHandler = () => {
+    this.showSessionExpiredBanner = true;
+    this.cdr.detectChanges();
+  };
 
   readonly navItems = [
     { label: 'Tổng quan',   path: '/dashboard',          icon: 'bi-grid-1x2' },
@@ -67,12 +85,23 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadProfile();
+    this.notificationService.loadUnreadCount();
+    this.notificationService.connectRealtime();
+    this.notifRealtimeSub = this.notificationService.newNotification$.subscribe(notif => {
+      this.showToast(notif);
+      if (this.isNotifOpen) {
+        this.notifications.unshift(notif);
+      }
+      this.cdr.detectChanges();
+    });
     window.addEventListener('profile-updated', this.profileUpdateHandler);
+    window.addEventListener('session-expired', this.sessionExpiredHandler);
     this.routeSub = this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe(() => {
       this.isSearchOpen = false;
       this.isProfileOpen = false;
+      this.isNotifOpen = false;
       this.clearSearch();
       this.mobileMenu.close();
       this.cdr.detectChanges();
@@ -81,7 +110,25 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.routeSub?.unsubscribe();
+    this.notifRealtimeSub?.unsubscribe();
+    clearTimeout(this.toastTimer);
     window.removeEventListener('profile-updated', this.profileUpdateHandler);
+    window.removeEventListener('session-expired', this.sessionExpiredHandler);
+  }
+
+  showToast(notif: NotificationItem) {
+    this.toastNotif = notif;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      this.toastNotif = null;
+      this.cdr.detectChanges();
+    }, 5000);
+  }
+
+  dismissToast() {
+    clearTimeout(this.toastTimer);
+    this.toastNotif = null;
+    this.cdr.detectChanges();
   }
 
   private loadProfile() {
@@ -120,7 +167,92 @@ export class TopbarComponent implements OnInit, OnDestroy {
   toggleProfile() {
     this.isProfileOpen = !this.isProfileOpen;
     this.isSearchOpen = false;
+    this.isNotifOpen = false;
     this.cdr.detectChanges();
+  }
+
+  toggleNotif() {
+    this.isNotifOpen = !this.isNotifOpen;
+    this.isProfileOpen = false;
+    this.isSearchOpen = false;
+    if (this.isNotifOpen) {
+      this.loadNotifications();
+    }
+    this.cdr.detectChanges();
+  }
+
+  loadNotifications() {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return;
+    this.notifLoading = true;
+    this.cdr.detectChanges();
+    this.notificationService.getNotifications(1, 20).subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        this.notifications = data?.items || [];
+        this.notifTotalPages = data?.totalPages ?? 1;
+        this.notifPage = 1;
+        const unread = data?.unreadCount ?? 0;
+        this.notificationService.unreadCount.set(unread);
+        this.notifLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.notifLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  markNotifRead(notif: NotificationItem, event: Event) {
+    event.stopPropagation();
+    if (notif.isRead) return;
+    this.notificationService.markAsRead(notif.id).subscribe({
+      next: () => {
+        notif.isRead = true;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  markAllNotifRead() {
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.isRead = true);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deleteNotif(notif: NotificationItem, event: Event) {
+    event.stopPropagation();
+    this.notificationService.deleteNotification(notif.id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter(n => n.id !== notif.id);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getNotifIcon(type: string): string {
+    switch ((type || '').toLowerCase()) {
+      case 'comment': return 'bi-chat-left-text';
+      case 'like': return 'bi-heart-fill';
+      case 'follow': return 'bi-person-plus-fill';
+      case 'submission': return 'bi-code-slash';
+      case 'achievement': return 'bi-trophy-fill';
+      default: return 'bi-bell-fill';
+    }
+  }
+
+  getRelativeTime(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'vừa xong';
+    if (mins < 60) return `${mins} phút trước`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} giờ trước`;
+    return `${Math.floor(hrs / 24)} ngày trước`;
   }
 
   onSearchInput(event: Event) {
@@ -186,6 +318,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (!this.elementRef.nativeElement.contains(e.target)) {
       if (this.isSearchOpen) { this.isSearchOpen = false; this.clearSearch(); }
       if (this.isProfileOpen) { this.isProfileOpen = false; }
+      if (this.isNotifOpen) { this.isNotifOpen = false; }
       this.cdr.detectChanges();
     }
   }

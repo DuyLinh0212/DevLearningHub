@@ -51,6 +51,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     { name: 'Quản lý Chủ đề', path: '/admin/topics', icon: 'bi bi-tags-fill' },
     { name: 'Quản lý Tag', path: '/admin/tags', icon: 'bi bi-tag-fill' },
     { name: 'Quản lý Bài viết', path: '/admin/posts', icon: 'bi bi-newspaper' },
+    { name: 'Phản hồi từ User', path: '/admin/reports', icon: 'bi bi-flag-fill' },
     { name: 'Quản lý Người dùng', path: '/admin/users', icon: 'bi bi-people-fill' },
     { name: 'Quản lý Moderator', path: '/admin/moderators', icon: 'bi bi-person-badge' },
     { name: 'Dashboard Moderator', path: '/admin/moderator-dashboard', icon: 'bi bi-speedometer2' },
@@ -222,6 +223,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       if (p.path === '/admin/topics') return this.hasPermission('topic:edit');
       if (p.path === '/admin/tags') return this.hasPermission('tag:edit');
       if (p.path === '/admin/posts') return this.hasPermission('post:hide_any') || this.hasPermission('post:edit_any') || this.hasPermission('post:delete_any');
+      if (p.path === '/admin/reports') return this.hasPermission('post:hide_any') || this.hasPermission('post:delete_any');
       if (p.path === '/admin/audit-logs') return this.hasPermission('audit:view');
       if (p.path === '/admin/users') return this.hasPermission('user:view_all');
       if (p.path === '/admin/moderators') return this.hasRole('Admin');

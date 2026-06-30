@@ -45,6 +45,10 @@ public partial class DevLearningHubContext : DbContext
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
+    public virtual DbSet<Report> Reports { get; set; }
+
+    public virtual DbSet<ReportType> ReportTypes { get; set; }
+
     public virtual DbSet<Roadmap> Roadmaps { get; set; }
 
     public virtual DbSet<RoadmapTopic> RoadmapTopics { get; set; }
@@ -561,6 +565,64 @@ public partial class DevLearningHubContext : DbContext
                 .HasConstraintName("FK_refresh_tokens_user");
         });
 
+        modelBuilder.Entity<ReportType>(entity =>
+        {
+            entity.ToTable("report_types");
+
+            entity.HasIndex(e => e.Name, "UQ_report_types_name").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.ToTable("reports");
+
+            entity.HasIndex(e => e.ReportTypeId, "idx_reports_type");
+            entity.HasIndex(e => e.ReporterId, "idx_reports_reporter");
+            entity.HasIndex(e => e.TargetId, "idx_reports_target");
+            entity.HasIndex(e => e.Status, "idx_reports_status");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("id");
+            entity.Property(e => e.ReportTypeId).HasColumnName("report_type_id");
+            entity.Property(e => e.ReporterId).HasColumnName("reporter_id");
+            entity.Property(e => e.TargetId).HasColumnName("target_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ResolvedAt).HasColumnName("resolved_at");
+            entity.Property(e => e.ResolvedBy).HasColumnName("resolved_by");
+
+            entity.HasOne(d => d.ReportType).WithMany(p => p.Reports)
+                .HasForeignKey(d => d.ReportTypeId)
+                .HasConstraintName("FK_reports_type");
+
+            entity.HasOne(d => d.Reporter).WithMany()
+                .HasForeignKey(d => d.ReporterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_reporter");
+
+            entity.HasOne(d => d.Resolver).WithMany()
+                .HasForeignKey(d => d.ResolvedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_resolver");
+        });
+
         modelBuilder.Entity<Roadmap>(entity =>
         {
             entity.ToTable("roadmaps");
@@ -802,6 +864,10 @@ public partial class DevLearningHubContext : DbContext
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("id");
             entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
+entity.Property(e => e.BannerUrl).HasColumnName("banner_url");
+entity.Property(e => e.Bio).HasColumnName("bio");
+entity.Property(e => e.BannerUrl).HasColumnName("banner_url");
+entity.Property(e => e.Bio).HasColumnName("bio");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnName("created_at");

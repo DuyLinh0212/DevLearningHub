@@ -73,10 +73,10 @@
   100% { opacity: 0.4; transform: scale(1.1); }
 }
 .auth-brand-logo {
-  width: 220px; /* Bạn có thể tăng giảm thông số này cho vừa mắt */
+  width: 200px; /* Bạn có thể tăng giảm thông số này cho vừa mắt */
   height: auto;
   object-fit: contain;
-  margin-bottom: -20px;
+  margin-bottom: -40px;
   mix-blend-mode: screen;
 }
 /* ---- Centered glass card ---- */

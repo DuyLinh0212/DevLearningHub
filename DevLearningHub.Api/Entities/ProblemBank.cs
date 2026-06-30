@@ -16,11 +16,15 @@ public partial class ProblemBank
 
     public bool IsPublic { get; set; }
 
+    public Guid? TopicId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
     public virtual User CreatedByNavigation { get; set; } = null!;
+
+    public virtual Topic? Topic { get; set; }
 
     public virtual ICollection<ProblemBankItem> Items { get; set; } = new List<ProblemBankItem>();
 

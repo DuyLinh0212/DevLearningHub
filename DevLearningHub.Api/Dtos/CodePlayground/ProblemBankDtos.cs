@@ -19,6 +19,7 @@ public class CreateProblemBankRequest
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsPublic { get; set; } = true;
+    public Guid? TopicId { get; set; }
 }
 
 public class UpdateProblemBankRequest
@@ -26,6 +27,7 @@ public class UpdateProblemBankRequest
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsPublic { get; set; } = true;
+    public Guid? TopicId { get; set; }
 }
 
 public class AddProblemToBankRequest
@@ -49,6 +51,8 @@ public class ProblemBankResponse
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsPublic { get; set; }
+    public Guid? TopicId { get; set; }
+    public string? TopicName { get; set; }
     public ProblemBankUserSummary Creator { get; set; } = new();
     public int ProblemCount { get; set; }
     public int LikeCount { get; set; }

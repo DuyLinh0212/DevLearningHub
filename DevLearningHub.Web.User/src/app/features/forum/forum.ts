@@ -3,6 +3,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../core/services/forum.service';
+import { ReportService } from '../../core/services/report.service';
 
 @Component({
   selector: 'app-forum',
@@ -13,6 +14,7 @@ import { ForumService } from '../../core/services/forum.service';
 })
 export class ForumComponent implements OnInit {
   private forumService = inject(ForumService);
+  private reportService = inject(ReportService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
@@ -33,6 +35,9 @@ export class ForumComponent implements OnInit {
   
   loading: boolean = false;
   tagsLoading: boolean = false;
+  isReportModalOpen: boolean = false;
+  reportDescription: string = '';
+  reportingPost: any = null;
 
   ngOnInit() {
     // Lắng nghe queryParams để hỗ trợ quay lại/đi tiếp bằng browser history
@@ -262,6 +267,61 @@ export class ForumComponent implements OnInit {
     }).catch(err => {
       console.error('Không thể sao chép liên kết:', err);
     });
+  }
+
+  openReportModal(post: any, event: Event) {
+    event.stopPropagation();
+    if (!this.checkLoginForReport()) return;
+
+    this.reportingPost = post;
+    this.reportDescription = '';
+    this.isReportModalOpen = true;
+    this.activePostMenuId = null;
+    this.cdr.detectChanges();
+  }
+
+  closeReportModal() {
+    this.isReportModalOpen = false;
+    this.reportDescription = '';
+    this.reportingPost = null;
+    this.cdr.detectChanges();
+  }
+
+  submitReport() {
+    const description = this.reportDescription.trim();
+    if (!description) {
+      alert('Vui lòng mô tả nội dung vi phạm.');
+      return;
+    }
+    if (!this.reportingPost?.id) {
+      alert('Không xác định được bài đăng cần báo cáo.');
+      return;
+    }
+
+    const enrichedDescription = [
+      `Bài đăng: ${this.reportingPost.title || this.reportingPost.id}`,
+      description
+    ].join('\n');
+
+    this.reportService.createReport('post', this.reportingPost.id, enrichedDescription).subscribe({
+      next: () => {
+        alert('Cảm ơn bạn! Báo cáo bài đăng đã được gửi để xem xét.');
+        this.closeReportModal();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể gửi báo cáo. Vui lòng thử lại sau.');
+      }
+    });
+  }
+
+  private checkLoginForReport(): boolean {
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để báo cáo nội dung vi phạm.');
+      this.router.navigate(['/login']);
+      return false;
+    }
+    return true;
   }
 
   toggleBookmark(post: any, event: Event) {

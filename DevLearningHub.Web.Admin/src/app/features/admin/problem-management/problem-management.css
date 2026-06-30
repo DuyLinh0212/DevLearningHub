@@ -81,6 +81,10 @@
   background: #181818 !important;
   color: #d4d4d4 !important;
 }
+html.light-theme .code-font {
+  background: #f4f4f5 !important;
+  color: #27272a !important;
+}
 
 .admin-textarea-field {
   width: 100%;
@@ -121,6 +125,36 @@
   color: #fff;
   border-color: transparent;
 }
+
+/* ---- Admin PM Tabs ---- */
+.admin-pm-tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--bg-nested);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 9px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.admin-pm-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.81rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.admin-pm-tab:hover { color: var(--text-main); background: rgba(255,255,255,.04); }
+.admin-pm-tab.active { background: var(--color-purple); color: #fff; }
 
 /* Problem Library Section styling */
 .problem-library-section {

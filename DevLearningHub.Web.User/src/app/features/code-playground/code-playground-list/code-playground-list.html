@@ -11,148 +11,373 @@
       <h1 class="cp-page-title">Bài tập Code</h1>
     </div>
     <div class="cp-header-right">
-      <div class="cp-stats-row">
-        <span class="cp-stat"><strong>{{ solvedCount }}</strong> / {{ totalCount }}</span>
-        <span class="cp-stat-label">đã giải</span>
-        <div class="cp-progress-bar">
-          <div class="cp-progress-fill" [style.width.%]="solvedPercent"></div>
+      @if (activeTab === 'problems') {
+        <div class="cp-stats-row">
+          <span class="cp-stat"><strong>{{ solvedCount }}</strong> / {{ totalCount }}</span>
+          <span class="cp-stat-label">đã giải</span>
+          <div class="cp-progress-bar">
+            <div class="cp-progress-fill" [style.width.%]="solvedPercent"></div>
+          </div>
+          <span class="cp-percent">{{ solvedPercent }}%</span>
         </div>
-        <span class="cp-percent">{{ solvedPercent }}%</span>
-      </div>
-      <button class="btn-create-problem" (click)="openCreateModal()">
-        <i class="bi bi-plus-circle-fill"></i> Tạo bài tập
-      </button>
+        @if (hasPermission('problem:create')) {
+          <button class="btn-create-problem" (click)="openCreateModal()">
+            <i class="bi bi-plus-circle-fill"></i> Tạo bài tập
+          </button>
+        }
+      }
+      @if (activeTab === 'banks') {
+        <button class="btn-create-problem" (click)="openCreateBankModal()">
+          <i class="bi bi-collection-fill"></i> Tạo ngân hàng
+        </button>
+      }
     </div>
   </header>
 
-  <!-- Main layout: topic sidebar + problems panel -->
-  <div class="cp-layout">
+  <!-- Tab switcher -->
+  <div class="cp-tabs">
+    <button class="cp-tab" [class.active]="activeTab === 'banks'" (click)="activeTab = 'banks'">
+      <i class="bi bi-collection"></i> Ngân hàng bài tập
+    </button>
+    <button class="cp-tab" [class.active]="activeTab === 'problems'" (click)="activeTab = 'problems'">
+      <i class="bi bi-list-task"></i> Bài tập lập trình
+    </button>
+  </div>
 
-    <!-- Topic sidebar -->
-    <aside class="cp-topic-sidebar">
-      <div class="sidebar-section-label">Chủ đề</div>
+  <!-- ============================================================
+       BANKS TAB
+       ============================================================ -->
+  @if (activeTab === 'banks') {
+    <div class="banks-section">
 
-      <button class="topic-nav-item" [class.active]="selectedTopicId === ''" (click)="selectTopic('')">
-        <span class="topic-nav-name">Tất cả</span>
-        <span class="topic-nav-count">{{ problems.length }}</span>
-      </button>
-
-      @for (t of topics; track t.id) {
-        <button
-          class="topic-nav-item"
-          [class.active]="selectedTopicId === t.id"
-          (click)="selectTopic(t.id)"
-        >
-          <span class="topic-hash">#</span>
-          <span class="topic-nav-name">{{ t.name }}</span>
-          <span class="topic-nav-count">{{ getCountForTopic(t.id) }}</span>
-        </button>
-      }
-    </aside>
-
-    <!-- Problems panel -->
-    <div class="cp-problems-panel">
-
-      <!-- Panel header: title + search + filter -->
-      <div class="panel-header">
-        <div class="panel-title-row">
-          <h2 class="panel-topic-title">{{ selectedTopicName }}</h2>
-          <span class="panel-problem-count">{{ filteredProblems.length }} bài tập</span>
+      <!-- Banks filter bar -->
+      <div class="banks-filter-bar">
+        <div class="search-wrap">
+          <i class="bi bi-search"></i>
+          <input type="text" [(ngModel)]="bankSearchText" placeholder="Tìm ngân hàng..." />
         </div>
-        <div class="panel-controls">
-          <div class="search-wrap">
-            <i class="bi bi-search"></i>
-            <input
-              type="text"
-              [(ngModel)]="searchText"
-              placeholder="Tìm bài tập..."
-            />
-          </div>
-          <div class="select-wrap">
-            <select [(ngModel)]="selectedDifficulty">
-              <option value="">Tất cả độ khó</option>
-              <option value="easy">Dễ</option>
-              <option value="medium">Trung bình</option>
-              <option value="hard">Khó</option>
-            </select>
-          </div>
+        <div class="select-wrap">
+          <select [(ngModel)]="bankMinRating">
+            <option [value]="0">Tất cả đánh giá</option>
+            <option [value]="3">≥ 3 sao</option>
+            <option [value]="4">≥ 4 sao</option>
+            <option [value]="5">5 sao</option>
+          </select>
         </div>
+        <span class="bank-count-label">{{ filteredBanks.length }} ngân hàng</span>
       </div>
 
-      <!-- Problem list body -->
-      <div class="problems-list-body">
-        @if (isLoading) {
-          <div class="loading-state">
-            <div class="spinner-circle"></div>
-            <p>Đang tải bài tập...</p>
+      <!-- Banks topic filter pills (same style as problems tab) -->
+      @if (topics.length > 0) {
+        <div class="topic-pills-row">
+          <button class="topic-pill" [class.active]="!bankSelectedTopicId" (click)="selectBankTopic('')">
+            Tất cả <span class="pill-count">{{ banks.length }}</span>
+          </button>
+          @for (t of topics; track t.id) {
+            @if (getBankCountForTopic(t.id) > 0) {
+              <button class="topic-pill" [class.active]="bankSelectedTopicId === t.id" (click)="selectBankTopic(t.id)">
+                {{ t.name }} <span class="pill-count">{{ getBankCountForTopic(t.id) }}</span>
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <!-- Banks grid -->
+      @if (banksLoading) {
+        <div class="loading-state">
+          <div class="spinner-circle"></div>
+          <p>Đang tải ngân hàng bài tập...</p>
+        </div>
+      } @else if (filteredBanks.length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-collection"></i>
+          <h3>Chưa có ngân hàng nào</h3>
+          <p>Hãy tạo ngân hàng bài tập đầu tiên!</p>
+          <button class="btn-clear" (click)="openCreateBankModal()">
+            <i class="bi bi-plus-circle"></i> Tạo ngay
+          </button>
+        </div>
+      } @else {
+        <div class="banks-grid">
+          @for (bank of filteredBanks; track bank.id) {
+            <div class="bank-card" (click)="openBankDetail(bank)">
+
+              <!-- My bank badge -->
+              @if (isMyBank(bank)) {
+                <span class="bank-mine-badge"><i class="bi bi-person-fill"></i> Của tôi</span>
+              }
+
+              <!-- Visibility badge -->
+              @if (!bank.isPublic) {
+                <span class="bank-private-badge"><i class="bi bi-lock-fill"></i> Riêng tư</span>
+              }
+
+              <div class="bank-card-body">
+                <h3 class="bank-card-title">{{ bank.title }}</h3>
+                @if (bank.description) {
+                  <p class="bank-card-desc">{{ bank.description }}</p>
+                }
+              </div>
+
+              <!-- Stats row -->
+              <div class="bank-card-stats">
+                <span class="bank-stat-item">
+                  <i class="bi bi-collection"></i> {{ bank.problemCount }} bài
+                </span>
+                <span class="bank-stat-item">
+                  <i class="bi bi-heart-fill like-icon"></i> {{ bank.likeCount }}
+                </span>
+                <span class="bank-stat-item rating-stat">
+                  @for (s of getStars(bank.avgRating); track s) {
+                    <i class="bi" [class.bi-star-fill]="s <= bank.avgRating" [class.bi-star]="s > bank.avgRating"></i>
+                  }
+                  <span>{{ bank.avgRating.toFixed(1) }}</span>
+                  <span class="rating-count">({{ bank.ratingCount }})</span>
+                </span>
+              </div>
+
+              <!-- Creator -->
+              <div class="bank-card-creator">
+                <img [src]="bank.creator?.avatarUrl || 'assets/images/default-avatar.svg'" class="creator-avatar" />
+                <span>{{ bank.creator?.fullName || bank.creator?.username }}</span>
+              </div>
+
+              <!-- Actions -->
+              <div class="bank-card-actions" (click)="$event.stopPropagation()">
+                <button class="btn-bank-like" [class.liked]="bank.myLiked" (click)="toggleLike(bank, $event)" title="Thích">
+                  <i class="bi" [class.bi-heart-fill]="bank.myLiked" [class.bi-heart]="!bank.myLiked"></i>
+                </button>
+
+                @if (isMyBank(bank)) {
+                  <button class="btn-bank-edit" (click)="openCreateBankModal(bank); $event.stopPropagation()" title="Chỉnh sửa">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn-bank-add-prob" (click)="openAddProblemModal(bank.id, $event)" title="Thêm bài tập">
+                    <i class="bi bi-plus-circle"></i>
+                  </button>
+                  <button class="btn-bank-del" (click)="deleteBank(bank, $event)" title="Xóa">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ============================================================
+       PROBLEMS TAB
+       ============================================================ -->
+  @if (activeTab === 'problems') {
+    <div class="cp-layout">
+
+      <!-- Topic sidebar -->
+      <aside class="cp-topic-sidebar">
+        <div class="sidebar-section-label">Chủ đề</div>
+        <button class="topic-nav-item" [class.active]="selectedTopicId === ''" (click)="selectTopic('')">
+          <span class="topic-nav-name">Tất cả</span>
+          <span class="topic-nav-count">{{ problems.length }}</span>
+        </button>
+        @for (t of topics; track t.id) {
+          <button class="topic-nav-item" [class.active]="selectedTopicId === t.id" (click)="selectTopic(t.id)">
+            <span class="topic-hash">#</span>
+            <span class="topic-nav-name">{{ t.name }}</span>
+            <span class="topic-nav-count">{{ getCountForTopic(t.id) }}</span>
+          </button>
+        }
+      </aside>
+
+      <!-- Problems panel -->
+      <div class="cp-problems-panel">
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <h2 class="panel-topic-title">{{ selectedTopicName }}</h2>
+            <span class="panel-problem-count">{{ filteredProblems.length }} bài tập</span>
           </div>
-        } @else if (filteredProblems.length === 0) {
-          <div class="empty-state">
-            <i class="bi bi-code-slash"></i>
-            <h3>Chưa có bài tập nào</h3>
-            <p>Thử đổi bộ lọc hoặc tạo bài tập mới.</p>
-            <button class="btn-clear" (click)="searchText = ''; selectedDifficulty = ''">
-              Xóa bộ lọc
-            </button>
+          <div class="panel-controls">
+            <div class="search-wrap">
+              <i class="bi bi-search"></i>
+              <input type="text" [(ngModel)]="searchText" placeholder="Tìm bài tập..." />
+            </div>
+            <div class="select-wrap">
+              <select [(ngModel)]="selectedDifficulty">
+                <option value="">Tất cả độ khó</option>
+                <option value="easy">Dễ</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Khó</option>
+              </select>
+            </div>
           </div>
-        } @else {
-          <div class="problem-table">
-            <!-- Table header -->
-            <div class="problem-table-head">
-              <span class="col-st"></span>
-              <span class="col-ttl">Bài tập</span>
-              <span class="col-dif">Độ khó</span>
-              <span class="col-tc">Test cases</span>
-              <span class="col-act"></span>
+        </div>
+
+        <div class="problems-list-body">
+          @if (isLoading) {
+            <div class="loading-state">
+              <div class="spinner-circle"></div>
+              <p>Đang tải bài tập...</p>
+            </div>
+          } @else if (filteredProblems.length === 0) {
+            <div class="empty-state">
+              <i class="bi bi-code-slash"></i>
+              <h3>Chưa có bài tập nào</h3>
+              <p>Thử đổi bộ lọc hoặc tạo bài tập mới.</p>
+              <button class="btn-clear" (click)="searchText = ''; selectedDifficulty = ''">Xóa bộ lọc</button>
+            </div>
+          } @else {
+            <div class="problem-table">
+              <div class="problem-table-head">
+                <span class="col-st"></span>
+                <span class="col-ttl">Bài tập</span>
+                <span class="col-dif">Độ khó</span>
+                <span class="col-tc">Test cases</span>
+                <span class="col-act"></span>
+              </div>
+              @for (p of filteredProblems; track p.id; let idx = $index) {
+                <div class="problem-row" [class.solved]="isSolved(p.id)">
+                  <div class="col-st">
+                    @if (isSolved(p.id)) {
+                      <i class="bi bi-check-circle-fill solved-icon"></i>
+                    } @else {
+                      <i class="bi bi-circle unsolved-icon"></i>
+                    }
+                  </div>
+                  <div class="col-ttl">
+                    <a [routerLink]="['/code', p.id]" class="problem-title-link">
+                      <span class="problem-idx">{{ idx + 1 }}.</span> {{ p.title }}
+                    </a>
+                    @if (p.tags.length > 0) {
+                      <div class="tag-row">
+                        @for (tag of p.tags.slice(0, 3); track tag) {
+                          <span class="tag-chip">{{ tag }}</span>
+                        }
+                        @if (p.tags.length > 3) {
+                          <span class="tag-chip more">+{{ p.tags.length - 3 }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="col-dif">
+                    <span class="diff-text" [ngClass]="getDifficultyClass(p.difficulty)">
+                      {{ getDifficultyLabel(p.difficulty) }}
+                    </span>
+                  </div>
+                  <div class="col-tc">
+                    <span class="tc-count">{{ p.testCaseCount }}</span>
+                  </div>
+                  <div class="col-act">
+                    @if (canEditProblem(p)) {
+                      <button class="btn-edit-prob" (click)="openEditModal(p); $event.stopPropagation()" title="Sửa bài tập" [disabled]="isLoadingEdit">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    <a [routerLink]="['/code', p.id]" class="btn-code">
+                      Code <i class="bi bi-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================
+       BANK DETAIL MODAL
+       ============================================================ -->
+  @if (showBankDetailModal) {
+    <div class="modal-overlay" (click)="closeBankDetail()">
+      <div class="modal-create modal-bank-detail" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title"><i class="bi bi-collection"></i>
+              {{ selectedBank?.title || 'Đang tải...' }}
+            </h2>
+            @if (selectedBank && selectedBank.description) {
+              <p class="modal-sub">{{ selectedBank.description }}</p>
+            }
+          </div>
+          <button class="modal-close" (click)="closeBankDetail()"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        @if (bankDetailLoading) {
+          <div class="modal-body" style="text-align:center;padding:40px">
+            <div class="spinner-circle" style="margin:0 auto"></div>
+          </div>
+        } @else if (selectedBank) {
+          <div class="modal-body">
+            <!-- Bank meta -->
+            <div class="bank-detail-meta">
+              <span><i class="bi bi-collection"></i> {{ selectedBank.problemCount }} bài tập</span>
+              <span><i class="bi bi-heart-fill" style="color:#ef4444"></i> {{ selectedBank.likeCount }}</span>
+              <span>
+                <i class="bi bi-star-fill" style="color:#ffb800"></i>
+                {{ selectedBank.avgRating.toFixed(1) }} ({{ selectedBank.ratingCount }} đánh giá)
+              </span>
+              <span>
+                <i class="bi bi-person"></i>
+                {{ selectedBank.creator.fullName || selectedBank.creator.username }}
+              </span>
             </div>
 
-            <!-- Problem rows -->
-            @for (p of filteredProblems; track p.id; let idx = $index) {
-              <div class="problem-row" [class.solved]="isSolved(p.id)">
+            <!-- Problems list in bank -->
+            @if (selectedBank.problems.length === 0) {
+              <div class="empty-state" style="padding:32px 0">
+                <i class="bi bi-inbox"></i>
+                <h3>Ngân hàng chưa có bài tập</h3>
+                @if (isMyBank(selectedBank) || true) {
+                  <button class="btn-clear" (click)="openAddProblemModal(selectedBank.id, $event)">
+                    <i class="bi bi-plus-circle"></i> Thêm bài tập
+                  </button>
+                }
+              </div>
+            } @else {
+              <div class="bank-detail-prob-list">
+                @if (isMyBank(selectedBank)) {
+                  <div style="text-align:right;margin-bottom:10px">
+                    <button class="btn-add-to-bank-inline" (click)="openAddProblemModal(selectedBank.id, $event)">
+                      <i class="bi bi-plus-circle"></i> Thêm bài tập
+                    </button>
+                  </div>
+                }
+                @for (item of selectedBank.problems; track item.problemId; let idx = $index) {
+                  <div class="bank-detail-prob-row">
+                    <span class="prob-order">{{ idx + 1 }}.</span>
+                    <a [routerLink]="['/code', item.problemId]" class="prob-title-link">{{ item.title }}</a>
+                    <span class="diff-text" [ngClass]="getDifficultyClass(item.difficulty)">
+                      {{ getDifficultyLabel(item.difficulty) }}
+                    </span>
+                    @if (isMyBank(selectedBank)) {
+                      <button class="btn-remove-from-bank" (click)="removeProblemFromBank(item.problemId)" title="Xóa khỏi ngân hàng">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
 
-                <!-- Status icon -->
-                <div class="col-st">
-                  @if (isSolved(p.id)) {
-                    <i class="bi bi-check-circle-fill solved-icon"></i>
-                  } @else {
-                    <i class="bi bi-circle unsolved-icon"></i>
+            <!-- Rate bank -->
+            @if (!isMyBank(selectedBank)) {
+              <div class="bank-rate-section">
+                <span class="bank-rate-label">Đánh giá ngân hàng:</span>
+                <div class="star-rate-row">
+                  @for (s of getStars(5); track s) {
+                    <i class="bi star-rate"
+                       [class.bi-star-fill]="s <= (selectedBank.myRating || 0) || s <= ratingHover"
+                       [class.bi-star]="s > (selectedBank.myRating || 0) && s > ratingHover"
+                       (mouseenter)="ratingHover = s"
+                       (mouseleave)="ratingHover = 0"
+                       (click)="submitRating(selectedBank, s)">
+                    </i>
                   }
-                </div>
-
-                <!-- Title + tags -->
-                <div class="col-ttl">
-                  <a [routerLink]="['/code', p.id]" class="problem-title-link">
-                    <span class="problem-idx">{{ idx + 1 }}.</span> {{ p.title }}
-                  </a>
-                  @if (p.tags.length > 0) {
-                    <div class="tag-row">
-                      @for (tag of p.tags.slice(0, 3); track tag) {
-                        <span class="tag-chip">{{ tag }}</span>
-                      }
-                      @if (p.tags.length > 3) {
-                        <span class="tag-chip more">+{{ p.tags.length - 3 }}</span>
-                      }
-                    </div>
+                  @if (selectedBank.myRating) {
+                    <span class="my-rating-label">Bạn đã đánh giá {{ selectedBank.myRating }} sao</span>
                   }
-                </div>
-
-                <!-- Difficulty -->
-                <div class="col-dif">
-                  <span class="diff-text" [ngClass]="getDifficultyClass(p.difficulty)">
-                    {{ getDifficultyLabel(p.difficulty) }}
-                  </span>
-                </div>
-
-                <!-- Test case count -->
-                <div class="col-tc">
-                  <span class="tc-count">{{ p.testCaseCount }}</span>
-                </div>
-
-                <!-- Action -->
-                <div class="col-act">
-                  <a [routerLink]="['/code', p.id]" class="btn-code">
-                    Code <i class="bi bi-arrow-right"></i>
-                  </a>
                 </div>
               </div>
             }
@@ -160,40 +385,139 @@
         }
       </div>
     </div>
-  </div>
+  }
 
   <!-- ============================================================
-       CREATE PROBLEM MODAL
+       ADD PROBLEM TO BANK MODAL
+       ============================================================ -->
+  @if (showAddProblemModal) {
+    <div class="modal-overlay" (click)="closeAddProblemModal()">
+      <div class="modal-create modal-add-prob" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title"><i class="bi bi-plus-circle"></i> Thêm bài tập vào ngân hàng</h2>
+          <button class="modal-close" (click)="closeAddProblemModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="search-wrap" style="max-width:100%;margin-bottom:14px">
+            <i class="bi bi-search"></i>
+            <input type="text" [(ngModel)]="addProblemSearch" placeholder="Tìm bài tập..." />
+          </div>
+          <div class="add-prob-list">
+            @for (p of filteredAddProblems; track p.id) {
+              <div class="add-prob-row">
+                <div class="add-prob-info">
+                  <span class="add-prob-title">{{ p.title }}</span>
+                  <span class="diff-text" [ngClass]="getDifficultyClass(p.difficulty)">{{ getDifficultyLabel(p.difficulty) }}</span>
+                </div>
+                @if (isProblemInBank(p.id)) {
+                  <span class="prob-in-bank"><i class="bi bi-check-circle-fill"></i> Đã có</span>
+                } @else {
+                  <button class="btn-add-prob-item" [disabled]="addProblemLoading" (click)="addProblemToBank(p)">
+                    <i class="bi bi-plus"></i> Thêm
+                  </button>
+                }
+              </div>
+            }
+            @if (filteredAddProblems.length === 0) {
+              <div class="empty-state" style="padding:24px 0">
+                <i class="bi bi-search"></i>
+                <p>Không tìm thấy bài tập</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================
+       CREATE / EDIT BANK MODAL
+       ============================================================ -->
+  @if (showCreateBankModal) {
+    <div class="modal-overlay" (click)="closeCreateBankModal()">
+      <div class="modal-create modal-bank-form" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title">
+              <i class="bi bi-collection-fill"></i>
+              {{ editingBankId ? 'Chỉnh sửa ngân hàng' : 'Tạo ngân hàng mới' }}
+            </h2>
+            <p class="modal-sub">Tổng hợp bài tập Code theo chủ đề hoặc mục tiêu luyện tập</p>
+          </div>
+          <button class="modal-close" (click)="closeCreateBankModal()" [disabled]="isSavingBank">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body" style="max-width:540px">
+          <div class="form-group">
+            <label class="form-label">Tên ngân hàng <span class="required">*</span></label>
+            <input type="text" class="form-input" [(ngModel)]="bankForm.title"
+                   placeholder="VD: Thuật toán sắp xếp, Dynamic Programming..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chủ đề</label>
+            <select class="form-input" [(ngModel)]="bankForm.topicId">
+              <option value="">-- Không chọn chủ đề --</option>
+              @for (t of topics; track t.id) {
+                <option [value]="t.id">{{ t.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mô tả</label>
+            <textarea class="form-textarea" [(ngModel)]="bankForm.description" rows="3"
+                      placeholder="Mô tả ngắn về ngân hàng bài tập này..."></textarea>
+          </div>
+          <div class="form-group form-check-group">
+            <label class="switch-label">
+              <input type="checkbox" [(ngModel)]="bankForm.isPublic" />
+              <span class="switch-text">Công khai</span>
+            </label>
+            <span class="form-hint">Cho phép mọi người xem và luyện tập ngân hàng này</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeCreateBankModal()" [disabled]="isSavingBank">Hủy</button>
+          <button class="btn-save" (click)="saveBankForm()"
+                  [disabled]="isSavingBank || !bankForm.title.trim()">
+            @if (isSavingBank) {
+              <span class="spinner-sm"></span> Đang lưu...
+            } @else {
+              <i class="bi bi-check-circle-fill"></i>
+              {{ editingBankId ? 'Cập nhật' : 'Tạo ngân hàng' }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================
+       CREATE PROBLEM MODAL (existing)
        ============================================================ -->
   @if (showCreateModal) {
     <div class="modal-overlay" (click)="closeCreateModal()">
       <div class="modal-create" (click)="$event.stopPropagation()">
-
-        <!-- Modal header -->
         <div class="modal-header">
           <div>
-            <h2 class="modal-title"><i class="bi bi-code-slash"></i> Tạo bài tập mới</h2>
-            <p class="modal-sub">Đóng góp bài luyện tập cho cộng đồng học lập trình</p>
+            <h2 class="modal-title">
+              <i class="bi bi-code-slash"></i>
+              {{ isEditMode ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới' }}
+            </h2>
+            <p class="modal-sub">{{ isEditMode ? 'Cập nhật thông tin bài tập của bạn' : 'Đóng góp bài luyện tập cho cộng đồng học lập trình' }}</p>
           </div>
           <button class="modal-close" (click)="closeCreateModal()" [disabled]="isSaving">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
-
         <div class="modal-body">
           <div class="modal-grid">
-
-            <!-- LEFT: Basic info + description -->
             <div class="modal-col-left">
-
-              <!-- Title -->
               <div class="form-group">
                 <label class="form-label">Tên bài tập <span class="required">*</span></label>
                 <input type="text" class="form-input" [(ngModel)]="form.title"
                        placeholder="VD: Two Sum, Fibonacci, Reverse String..." />
               </div>
-
-              <!-- Difficulty + Topic row -->
               <div class="form-row-2">
                 <div class="form-group">
                   <label class="form-label">Độ khó <span class="required">*</span></label>
@@ -213,17 +537,13 @@
                   </select>
                 </div>
               </div>
-
-              <!-- Tags -->
               <div class="form-group">
                 <label class="form-label">Tags</label>
                 <div class="tag-input-row">
                   <input type="text" class="form-input" [(ngModel)]="tagInput"
                          placeholder="Nhập tag, nhấn Enter để thêm..."
                          (keydown.enter)="addTag(); $event.preventDefault()" />
-                  <button class="btn-add-tag" (click)="addTag()" type="button">
-                    <i class="bi bi-plus"></i>
-                  </button>
+                  <button class="btn-add-tag" (click)="addTag()" type="button"><i class="bi bi-plus"></i></button>
                 </div>
                 @if (form.tags.length > 0) {
                   <div class="tag-list">
@@ -236,8 +556,6 @@
                   </div>
                 }
               </div>
-
-              <!-- Published toggle -->
               <div class="form-group form-check-group">
                 <label class="switch-label">
                   <input type="checkbox" [(ngModel)]="form.isPublished" />
@@ -245,92 +563,49 @@
                 </label>
                 <span class="form-hint">Bài tập sẽ hiển thị công khai với mọi người</span>
               </div>
-
-              <!-- Description -->
               <div class="form-group form-group-grow">
-                <label class="form-label">
-                  Mô tả bài tập
-                  <span class="hint-inline">(Hỗ trợ Markdown)</span>
-                </label>
+                <label class="form-label">Mô tả bài tập <span class="hint-inline">(Hỗ trợ Markdown)</span></label>
                 <textarea class="form-textarea form-textarea-md" [(ngModel)]="form.description"
-                          placeholder="## Mô tả&#10;&#10;Viết mô tả bài toán tại đây...&#10;&#10;**Ví dụ:**&#10;&#10;```&#10;Input: [2,7,11,15], target = 9&#10;Output: [0,1]&#10;```"></textarea>
+                          placeholder="## Mô tả&#10;&#10;Viết mô tả bài toán tại đây..."></textarea>
               </div>
             </div>
-
-            <!-- RIGHT: Starter code + Test cases -->
             <div class="modal-col-right">
-
-              <!-- Starter code with language tabs -->
               <div class="form-group form-group-grow">
                 <label class="form-label">Starter Code</label>
                 <div class="lang-tabs">
-                  <button class="lang-tab" type="button"
-                          [class.active]="selectedLangTab === 'javascript'"
-                          (click)="selectedLangTab = 'javascript'">JS</button>
-                  <button class="lang-tab" type="button"
-                          [class.active]="selectedLangTab === 'python'"
-                          (click)="selectedLangTab = 'python'">Python</button>
-                  <button class="lang-tab" type="button"
-                          [class.active]="selectedLangTab === 'java'"
-                          (click)="selectedLangTab = 'java'">Java</button>
-                  <button class="lang-tab" type="button"
-                          [class.active]="selectedLangTab === 'cpp'"
-                          (click)="selectedLangTab = 'cpp'">C++</button>
+                  <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'javascript'" (click)="selectedLangTab = 'javascript'">JS</button>
+                  <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'python'" (click)="selectedLangTab = 'python'">Python</button>
+                  <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'java'" (click)="selectedLangTab = 'java'">Java</button>
+                  <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'cpp'" (click)="selectedLangTab = 'cpp'">C++</button>
                 </div>
-                @if (selectedLangTab === 'javascript') {
-                  <textarea class="form-textarea form-textarea-code"
-                            [(ngModel)]="form.starterCode.javascript"></textarea>
-                }
-                @if (selectedLangTab === 'python') {
-                  <textarea class="form-textarea form-textarea-code"
-                            [(ngModel)]="form.starterCode.python"></textarea>
-                }
-                @if (selectedLangTab === 'java') {
-                  <textarea class="form-textarea form-textarea-code"
-                            [(ngModel)]="form.starterCode.java"></textarea>
-                }
-                @if (selectedLangTab === 'cpp') {
-                  <textarea class="form-textarea form-textarea-code"
-                            [(ngModel)]="form.starterCode.cpp"></textarea>
-                }
+                @if (selectedLangTab === 'javascript') { <textarea class="form-textarea form-textarea-code" [(ngModel)]="form.starterCode.javascript"></textarea> }
+                @if (selectedLangTab === 'python')     { <textarea class="form-textarea form-textarea-code" [(ngModel)]="form.starterCode.python"></textarea> }
+                @if (selectedLangTab === 'java')       { <textarea class="form-textarea form-textarea-code" [(ngModel)]="form.starterCode.java"></textarea> }
+                @if (selectedLangTab === 'cpp')        { <textarea class="form-textarea form-textarea-code" [(ngModel)]="form.starterCode.cpp"></textarea> }
               </div>
-
-              <!-- Test cases -->
               <div class="form-group">
                 <div class="form-label-row">
                   <label class="form-label">Test Cases</label>
-                  <button class="btn-add-tc" type="button" (click)="addTestCase()">
-                    <i class="bi bi-plus"></i> Thêm
-                  </button>
+                  <button class="btn-add-tc" type="button" (click)="addTestCase()"><i class="bi bi-plus"></i> Thêm</button>
                 </div>
-
                 <div class="tc-list">
                   @for (tc of form.testCases; track $index; let i = $index) {
                     <div class="tc-item">
                       <div class="tc-item-head">
                         <span class="tc-num">TC {{ i + 1 }}</span>
-                        <label class="tc-hidden-check">
-                          <input type="checkbox" [(ngModel)]="tc.isHidden" />
-                          Ẩn (Hidden)
-                        </label>
+                        <label class="tc-hidden-check"><input type="checkbox" [(ngModel)]="tc.isHidden" /> Ẩn</label>
                         @if (form.testCases.length > 1) {
-                          <button class="tc-remove" type="button" (click)="removeTestCase(i)">
-                            <i class="bi bi-trash3"></i>
-                          </button>
+                          <button class="tc-remove" type="button" (click)="removeTestCase(i)"><i class="bi bi-trash3"></i></button>
                         }
                       </div>
                       <div class="tc-fields">
                         <div class="tc-field">
                           <label>Input</label>
-                          <textarea class="tc-textarea"
-                                    [(ngModel)]="tc.input"
-                                    placeholder="Dữ liệu đầu vào..."></textarea>
+                          <textarea class="tc-textarea" [(ngModel)]="tc.input" placeholder="Dữ liệu đầu vào..."></textarea>
                         </div>
                         <div class="tc-field">
                           <label>Expected Output</label>
-                          <textarea class="tc-textarea tc-expected"
-                                    [(ngModel)]="tc.expectedOutput"
-                                    placeholder="Kết quả mong đợi..."></textarea>
+                          <textarea class="tc-textarea tc-expected" [(ngModel)]="tc.expectedOutput" placeholder="Kết quả mong đợi..."></textarea>
                         </div>
                       </div>
                     </div>
@@ -340,20 +615,12 @@
             </div>
           </div>
         </div>
-
-        <!-- Modal footer -->
         <div class="modal-footer">
-          <button class="btn-cancel" type="button" (click)="closeCreateModal()" [disabled]="isSaving">
-            Hủy
-          </button>
-          <button class="btn-save" type="button"
-                  (click)="createProblem()"
+          <button class="btn-cancel" type="button" (click)="closeCreateModal()" [disabled]="isSaving">Hủy</button>
+          <button class="btn-save" type="button" (click)="createProblem()"
                   [disabled]="isSaving || !form.title.trim() || !form.topicId">
-            @if (isSaving) {
-              <span class="spinner-sm"></span> Đang tạo...
-            } @else {
-              <i class="bi bi-check-circle-fill"></i> Tạo bài tập
-            }
+            @if (isSaving) { <span class="spinner-sm"></span> {{ isEditMode ? 'Đang lưu...' : 'Đang tạo...' }} }
+            @else { <i class="bi bi-check-circle-fill"></i> {{ isEditMode ? 'Lưu thay đổi' : 'Tạo bài tập' }} }
           </button>
         </div>
       </div>

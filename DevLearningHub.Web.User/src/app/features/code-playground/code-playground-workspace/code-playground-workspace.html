@@ -20,6 +20,9 @@
     </div>
 
     <div class="header-actions">
+      <button (click)="openReportModal()" class="btn-action-header btn-report" title="Báo lỗi bài code này">
+        <i class="bi bi-flag-fill"></i> Báo lỗi
+      </button>
       <!-- Run & Submit -->
       <button (click)="runCode()" [disabled]="isExecuting" class="btn-action-header btn-run">
         <i class="bi bi-play-fill"></i> Run
@@ -650,3 +653,33 @@
     </div>
   }
 </div>
+
+@if (isReportModalOpen) {
+  <div class="report-modal-overlay" (click)="closeReportModal()">
+    <div class="report-modal" (click)="$event.stopPropagation()">
+      <div class="report-modal-header">
+        <div>
+          <h3><i class="bi bi-flag-fill"></i> Báo lỗi bài code</h3>
+          <p>Mô tả lỗi đề bài, test case, dữ liệu mẫu hoặc nội dung chưa rõ để người tạo bài có thể kiểm tra.</p>
+        </div>
+        <button type="button" class="report-modal-close" (click)="closeReportModal()" aria-label="Đóng">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <textarea
+        [(ngModel)]="reportDescription"
+        rows="5"
+        class="report-textarea"
+        placeholder="Ví dụ: Sample output thứ 2 khác với mô tả đề bài..."
+      ></textarea>
+
+      <div class="report-modal-actions">
+        <button type="button" class="report-btn-cancel" (click)="closeReportModal()">Hủy</button>
+        <button type="button" class="report-btn-submit" (click)="submitReport()">
+          <i class="bi bi-send-fill"></i> Gửi báo cáo
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -67,6 +67,10 @@ public class UserProfileResponse
 
     public string? AvatarUrl { get; set; }
 
+    public string? BannerUrl { get; set; }
+
+    public string? Bio { get; set; }
+
     public int XpPoints { get; set; }
 
     // Active role names assigned to the user.

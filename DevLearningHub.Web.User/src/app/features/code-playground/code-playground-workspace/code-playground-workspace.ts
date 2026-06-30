@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CodeService, ProblemDetail, SubmissionSummary, SubmissionDetail } from '../../../core/services/code.service';
 import { ForumService } from '../../../core/services/forum.service';
-import { HttpClient } from '@angular/common/http';
+import { ReportService } from '../../../core/services/report.service';
 
 interface LanguageOption {
   id: number;
@@ -66,6 +66,7 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private sanitizer = inject(DomSanitizer);
   private forumService = inject(ForumService);
+  private reportService = inject(ReportService);
 
   problemId = '';
   problem: ProblemDetail | null = null;
@@ -127,6 +128,10 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
 
   streakCount = 3;
   dccCompleted = false;
+
+  // Report state
+  isReportModalOpen = false;
+  reportDescription = '';
 
   // Stdin & Execution states
   stdinInput = '';
@@ -456,6 +461,40 @@ int main() {
       this.closeSubmissionDetail();
       this.activeLeftTab = 'description';
     }
+  }
+
+  openReportModal() {
+    this.isReportModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeReportModal() {
+    this.isReportModalOpen = false;
+    this.reportDescription = '';
+    this.cdr.detectChanges();
+  }
+
+  submitReport() {
+    const description = this.reportDescription.trim();
+    if (!description) {
+      alert('Vui lòng mô tả lỗi bạn gặp phải.');
+      return;
+    }
+
+    const enrichedDescription = [
+      `Bài code: ${this.problem?.title || this.problemId}`,
+      description
+    ].join('\n');
+
+    this.reportService.createReport('problem', this.problemId, enrichedDescription).subscribe({
+      next: () => {
+        alert('Cảm ơn bạn! Báo cáo đã được gửi đến người tạo bài code để xem xét.');
+        this.closeReportModal();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể gửi báo cáo. Vui lòng thử lại sau.');
+      }
+    });
   }
 
   getDifficultyClass(diff: string): string {

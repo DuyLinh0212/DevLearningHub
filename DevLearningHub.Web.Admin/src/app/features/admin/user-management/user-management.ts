@@ -274,19 +274,19 @@ export class UserManagementComponent implements OnInit {
     if (role !== 'User') {
       this.http.put(`/api/admin/users/${userId}/role`, { role }).subscribe({
         next: () => {
-          alert(`Táº¡o tÃ i khoáº£n thÃ nh cÃ´ng vá»›i quyá» n ${role}!`);
+          alert(`Tạo tài khoản thành công với quyền ${role}!`);
           this.closeCreateModal();
           this.loadUsers();
         },
         error: (err) => {
-          console.error('Lá»—i phÃ¢n quyá» n sau Ä‘Äƒng kÃ½:', err);
-          alert('Ä Ã£ táº¡o tÃ i khoáº£n thÃ nh cÃ´ng nhÆ°ng gáº·p lá»—i phÃ¢n quyá» n. Báº¡n hÃ£y phÃ¢n quyá» n thá»§ cÃ´ng trong danh sÃ¡ch!');
+          console.error('Lỗi phân quyền sau đăng ký:', err);
+          alert('Đã tạo tài khoản thành công nhưng gặp lỗi phân quyền. Bạn hãy phân quyền thủ công trong danh sách!');
           this.closeCreateModal();
           this.loadUsers();
         }
       });
     } else {
-      alert('Táº¡o tÃ i khoáº£n há» c viÃªn (User) thÃ nh cÃ´ng!');
+      alert('Tạo tài khoản học viên (User) thành công!');
       this.closeCreateModal();
       this.loadUsers();
     }
@@ -295,16 +295,17 @@ export class UserManagementComponent implements OnInit {
   // Lock / Unlock
   toggleLock(user: any) {
     this.selectedUser = user;
+
     if (user.isLocked) {
-      if (confirm(`Báº¡n cÃ³ cháº¯c muá»‘n má»Ÿ khÃ³a tÃ i khoáº£n ${user.username}?`)) {
+      if (confirm(`Bạn có chắc muốn mở khóa tài khoản ${user.username}?`)) {
         this.http.patch<any>(`/api/admin/users/${user.id}/unlock`, {}).subscribe({
           next: () => {
-            alert('Má»Ÿ khÃ³a tÃ i khoáº£n thÃ nh cÃ´ng!');
+            alert('Mở khóa tài khoản thành công!');
             this.loadUsers();
           },
           error: (err) => {
-            console.error('Lá»—i má»Ÿ khÃ³a:', err);
-            alert('KhÃ´ng thá»ƒ má»Ÿ khÃ³a tÃ i khoáº£n!');
+            console.error('Lỗi mở khóa:', err);
+            alert('Không thể mở khóa tài khoản!');
           }
         });
       }
@@ -323,28 +324,29 @@ export class UserManagementComponent implements OnInit {
 
   confirmLock() {
     if (!this.selectedUser) return;
-    const reason = this.lockForm.reason.trim() || 'Vi pháº¡m chÃ­nh sÃ¡ch';
+
+    const reason = this.lockForm.reason.trim() || 'Vi phạm chính sách';
 
     this.http.patch<any>(`/api/admin/users/${this.selectedUser.id}/lock`, { reason }).subscribe({
       next: () => {
         // Force logout: delete refresh tokens so the user is immediately logged out.
         this.http.post(`/api/admin/users/${this.selectedUser.id}/management/logout`, {}).subscribe({
           next: () => {
-            alert('Khóa tài khoản và đá người dùng thành công!');
+            alert('Khóa tài khoản và đăng xuất người dùng thành công!');
             this.closeLockModal();
             this.loadUsers();
           },
           error: (err) => {
-            console.error('Lỗi logout người dùng:', err);
-            alert('Khóa tài khoản thành công, nhưng không thể đá người dùng ngay!');
+            console.error('Lỗi đăng xuất người dùng:', err);
+            alert('Khóa tài khoản thành công nhưng không thể đăng xuất người dùng ngay!');
             this.closeLockModal();
             this.loadUsers();
           }
         });
       },
       error: (err) => {
-        console.error('Lá»—i khÃ³a tÃ i khoáº£n:', err);
-        alert('KhÃ´ng thá»ƒ khÃ³a tÃ i khoáº£n!');
+        console.error('Lỗi khóa tài khoản:', err);
+        alert('Không thể khóa tài khoản!');
       }
     });
   }
@@ -358,7 +360,7 @@ export class UserManagementComponent implements OnInit {
     this.permissionModules = [];
 
     forkJoin({
-      catalog: this.http.get<any>("/api/admin/permissions"),
+      catalog: this.http.get<any>('/api/admin/permissions'),
       userPerms: this.http.get<any>(`/api/admin/users/${user.id}/permissions`)
     }).subscribe({
       next: ({ catalog, userPerms }) => {
@@ -368,17 +370,24 @@ export class UserManagementComponent implements OnInit {
         this.permissionModules = Array.isArray(catData) ? catData : [];
         this.userPermissions = permsData;
 
-        const stateMap: Record<string, "inherit" | "grant" | "deny"> = {};
+        const stateMap: Record<string, 'inherit' | 'grant' | 'deny'> = {};
+
         for (const mod of this.permissionModules) {
           for (const p of mod.permissions) {
-            stateMap[p.name] = "inherit";
+            stateMap[p.name] = 'inherit';
           }
         }
 
         if (permsData) {
           const { grants = [], denies = [] } = permsData;
-          for (const name of grants) { stateMap[name] = "grant"; }
-          for (const name of denies) { stateMap[name] = "deny"; }
+
+          for (const name of grants) {
+            stateMap[name] = 'grant';
+          }
+
+          for (const name of denies) {
+            stateMap[name] = 'deny';
+          }
         }
 
         this.permissionStateMap = stateMap;
@@ -386,8 +395,8 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error("Lá»—i táº£i quyá» n chi tiáº¿t:", err);
-        alert("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch quyá» n.");
+        console.error('Lỗi tải quyền chi tiết:', err);
+        alert('Không thể tải danh sách quyền.');
         this.closePermissionModal();
       }
     });
@@ -403,20 +412,27 @@ export class UserManagementComponent implements OnInit {
 
   savePermissions() {
     if (!this.selectedUser) return;
-    this.isPermissionSaving = true;
-    const allItems = Object.entries(this.permissionStateMap)
-      .map(([permission, state]) => ({ permission, state }));
 
-    this.http.put<any>(`/api/admin/users/${this.selectedUser.id}/permissions`, { items: allItems }).subscribe({
+    this.isPermissionSaving = true;
+
+    const allItems = Object.entries(this.permissionStateMap).map(([permission, state]) => ({
+      permission,
+      state
+    }));
+
+    this.http.put<any>(
+      `/api/admin/users/${this.selectedUser.id}/permissions`,
+      { items: allItems }
+    ).subscribe({
       next: () => {
         this.isPermissionSaving = false;
-        alert("Ä Ã£ cáº­p nháº­t phÃ¢n quyá» n. Quyá» n má»›i cÃ³ hiá»‡u lá»±c sau khi user Ä‘Äƒng nháº­p láº¡i.");
+        alert('Đã cập nhật phân quyền. Quyền mới sẽ có hiệu lực sau khi người dùng đăng nhập lại.');
         this.closePermissionModal();
       },
       error: (err) => {
         this.isPermissionSaving = false;
-        console.error("Lá»—i lÆ°u quyá» n:", err);
-        alert("KhÃ´ng thá»ƒ lÆ°u phÃ¢n quyá» n.");
+        console.error('Lỗi lưu phân quyền:', err);
+        alert('Không thể lưu phân quyền.');
       }
     });
   }

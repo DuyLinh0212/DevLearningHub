@@ -11,6 +11,8 @@ namespace DevLearningHub.Api.Services;
 public static class NotificationTypes
 {
     public const string CommentReply = "comment_reply";
+    public const string PostComment = "post_comment";
+    public const string ContentReported = "content_reported";
     public const string PostDeleted = "post_deleted";
     public const string CommentDeleted = "comment_deleted";
     public const string QuizDeleted = "quiz_deleted";
@@ -21,6 +23,7 @@ public static class NotificationRefTypes
 {
     public const string Post = "post";
     public const string Comment = "comment";
+    public const string Question = "question";
     public const string QuizSet = "quiz_set";
     public const string Problem = "problem";
 }

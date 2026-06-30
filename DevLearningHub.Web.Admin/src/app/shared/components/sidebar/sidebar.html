@@ -171,6 +171,11 @@
         <i class="bi bi-newspaper"></i><span>Quản lý Bài viết</span>
       </a>
     }
+    @if (hasPermission('post:hide_any') || hasPermission('post:delete_any')) {
+      <a routerLink="/admin/reports" routerLinkActive="active" class="menu-item">
+        <i class="bi bi-flag-fill"></i><span>Phản hồi từ User</span>
+      </a>
+    }
 
     @if (hasRole('Admin') || hasPermission('audit:view')) {
       <div class="menu-heading">HẠ TẦNG</div>

@@ -76,6 +76,8 @@ public class ProblemBanksController : ControllerBase
                 Title = b.Title,
                 Description = b.Description,
                 IsPublic = b.IsPublic,
+                TopicId = b.TopicId,
+                TopicName = b.Topic != null ? b.Topic.Name : null,
                 Creator = new ProblemBankUserSummary
                 {
                     Id = b.CreatedByNavigation.Id,
@@ -144,6 +146,7 @@ public class ProblemBanksController : ControllerBase
             Title = title,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             IsPublic = request.IsPublic,
+            TopicId = request.TopicId,
             CreatedAt = DateTime.Now
         };
 
@@ -183,6 +186,7 @@ public class ProblemBanksController : ControllerBase
         bank.Title = title;
         bank.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         bank.IsPublic = request.IsPublic;
+        bank.TopicId = request.TopicId;
         bank.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
@@ -239,10 +243,18 @@ public class ProblemBanksController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
 
-        var problemExists = await _db.Problems.AnyAsync(p => p.Id == request.ProblemId);
-        if (!problemExists)
+        var problem = await _db.Problems.FirstOrDefaultAsync(p => p.Id == request.ProblemId);
+        if (problem == null)
         {
             return NotFound(ApiResponse<object>.Fail("Problem not found."));
+        }
+
+        // Only bank owner (or those with problem:edit) may add problems they didn't create.
+        var canEditAny = await _permissions.HasPermissionAsync(userId, "problem:edit");
+        if (!canEditAny && problem.CreatedBy != userId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse<object>.Fail("Bạn chỉ có thể thêm bài tập do chính mình tạo vào ngân hàng."));
         }
 
         var alreadyLinked = await _db.ProblemBankItems
@@ -651,6 +663,8 @@ public class ProblemBanksController : ControllerBase
             Title = b.Title,
             Description = b.Description,
             IsPublic = b.IsPublic,
+            TopicId = b.TopicId,
+            TopicName = b.Topic != null ? b.Topic.Name : null,
             Creator = new ProblemBankUserSummary
             {
                 Id = b.CreatedByNavigation.Id,

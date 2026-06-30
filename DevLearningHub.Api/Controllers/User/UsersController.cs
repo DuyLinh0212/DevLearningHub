@@ -64,6 +64,8 @@ public class UsersController : ControllerBase
             Email = user.Email,
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
+            BannerUrl = user.BannerUrl,
+            Bio = user.Bio,
             XpPoints = user.XpPoints,
             Roles = roles,
             Permissions = permissions
@@ -95,6 +97,8 @@ public class UsersController : ControllerBase
 
         user.FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim();
         user.AvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
+        user.BannerUrl = string.IsNullOrWhiteSpace(request.BannerUrl) ? null : request.BannerUrl.Trim();
+        user.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : request.Bio.Trim()[..Math.Min(request.Bio.Trim().Length, 500)];
         user.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -180,6 +184,8 @@ public class UsersController : ControllerBase
             Email = user.Email,
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
+            BannerUrl = user.BannerUrl,
+            Bio = user.Bio,
             XpPoints = user.XpPoints,
             Roles = roles,
             Permissions = new List<string>()
@@ -325,6 +331,8 @@ public class UsersController : ControllerBase
             Email = user.Email,
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
+            BannerUrl = user.BannerUrl,
+            Bio = user.Bio,
             XpPoints = user.XpPoints,
             Roles = user.UserRoleUsers
                 .Where(ur => ur.Role.IsActive)
@@ -346,6 +354,10 @@ public class UpdateProfileRequest
     public string? FullName { get; set; }
 
     public string? AvatarUrl { get; set; }
+
+    public string? BannerUrl { get; set; }
+
+    public string? Bio { get; set; }
 }
 
 public class UserStatsResponse

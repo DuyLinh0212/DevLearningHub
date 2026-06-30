@@ -1,10 +1,12 @@
 import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CodeService, ProblemSummary } from '../../../core/services/code.service';
+import { ProblemBankService, ProblemBankSummary, ProblemBankDetail } from '../../../core/services/problem-bank.service';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-code-playground-list',
@@ -15,27 +17,56 @@ import { forkJoin } from 'rxjs';
 })
 export class CodePlaygroundListComponent implements OnInit {
   private codeService = inject(CodeService);
+  private bankService = inject(ProblemBankService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
+  // ---- Tab state ----
+  activeTab: 'banks' | 'problems' = 'banks';
+
+  // ---- Problems tab ----
   problems: ProblemSummary[] = [];
   topics: any[] = [];
   completedProblemIds = new Set<string>();
   isLoading = true;
-
   searchText = '';
   selectedDifficulty = '';
   selectedTopicId = '';
-
   solvedCount = 0;
   totalCount = 0;
 
-  // Create problem modal state
+  // ---- Banks tab ----
+  banks: ProblemBankSummary[] = [];
+  banksLoading = true;
+  bankSearchText = '';
+  bankMinRating = 0;
+  bankSelectedTopicId = '';
+  currentUserId = '';
+
+  // ---- Bank detail / manage ----
+  selectedBank: ProblemBankDetail | null = null;
+  bankDetailLoading = false;
+  showBankDetailModal = false;
+
+  // ---- Add Problem to Bank modal ----
+  showAddProblemModal = false;
+  addProblemBankId = '';
+  addProblemSearch = '';
+  addProblemLoading = false;
+
+  // ---- Create Bank modal ----
+  showCreateBankModal = false;
+  isSavingBank = false;
+  bankForm = { title: '', description: '', isPublic: true, topicId: '' };
+  editingBankId = '';
+
+  // ---- Create Problem modal (existing) ----
   showCreateModal = false;
   isSaving = false;
   selectedLangTab: 'javascript' | 'python' | 'java' | 'cpp' = 'javascript';
   tagInput = '';
-
   form = {
     title: '',
     description: '',
@@ -51,6 +82,17 @@ export class CodePlaygroundListComponent implements OnInit {
     },
     testCases: [] as { input: string; expectedOutput: string; isHidden: boolean }[]
   };
+
+  // ---- User permissions ----
+  userPermissions: string[] = [];
+
+  // ---- Edit problem ----
+  isEditMode = false;
+  editingProblemId = '';
+  isLoadingEdit = false;
+
+  // ---- Rating state ----
+  ratingHover = 0;
 
   get solvedPercent(): number {
     if (this.totalCount === 0) return 0;
@@ -69,6 +111,29 @@ export class CodePlaygroundListComponent implements OnInit {
         p.topicId.toLowerCase() === this.selectedTopicId.toLowerCase();
       return matchSearch && matchDiff && matchTopic;
     });
+  }
+
+  get filteredBanks(): ProblemBankSummary[] {
+    const search = this.bankSearchText.trim().toLowerCase();
+    return this.banks.filter(b => {
+      const matchSearch = !search || b.title.toLowerCase().includes(search) ||
+        (b.description || '').toLowerCase().includes(search);
+      const matchRating = this.bankMinRating === 0 || b.avgRating >= this.bankMinRating;
+      const matchTopic = !this.bankSelectedTopicId ||
+        (b.topicId || '').toLowerCase() === this.bankSelectedTopicId.toLowerCase();
+      return matchSearch && matchRating && matchTopic;
+    });
+  }
+
+  selectBankTopic(topicId: string) {
+    this.bankSelectedTopicId = topicId;
+    this.cdr.detectChanges();
+  }
+
+  getBankCountForTopic(topicId: string): number {
+    return this.banks.filter(b =>
+      (b.topicId || '').toLowerCase() === topicId.toLowerCase()
+    ).length;
   }
 
   get selectedTopicName(): string {
@@ -90,13 +155,46 @@ export class CodePlaygroundListComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadCurrentUser();
     this.loadData();
+    this.loadBanks();
+
+    // Support ?bankId= query param to open bank directly
+    this.route.queryParams.subscribe(params => {
+      if (params['bankId']) {
+        this.activeTab = 'banks';
+        this.cdr.detectChanges();
+      }
+    });
   }
+
+  hasPermission(perm: string): boolean {
+    return this.userPermissions.includes(perm);
+  }
+
+  canEditProblem(problem: ProblemSummary): boolean {
+    return this.isMyProblem(problem) || this.hasPermission('problem:edit');
+  }
+
+  private loadCurrentUser() {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return;
+    this.http.get<any>('/api/users/me').subscribe({
+      next: (res) => {
+        const u = res?.data || res;
+        this.currentUserId = (u?.id || '').toLowerCase();
+        this.userPermissions = Array.isArray(u?.permissions) ? u.permissions : [];
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  // ---- Problems tab ----
 
   loadData() {
     this.isLoading = true;
     this.cdr.detectChanges();
-
     forkJoin({
       problems: this.codeService.getProblems(),
       topics: this.http.get<any>('/api/topics'),
@@ -107,7 +205,6 @@ export class CodePlaygroundListComponent implements OnInit {
         this.topics = Array.isArray(topicsData) ? topicsData : [];
         this.problems = problems || [];
         this.totalCount = this.problems.length;
-
         this.completedProblemIds.clear();
         (submissions || []).forEach((s: any) => {
           if ((s.verdict || '').toLowerCase() === 'accepted') {
@@ -132,10 +229,7 @@ export class CodePlaygroundListComponent implements OnInit {
             this.isLoading = false;
             this.cdr.detectChanges();
           },
-          error: () => {
-            this.isLoading = false;
-            this.cdr.detectChanges();
-          }
+          error: () => { this.isLoading = false; this.cdr.detectChanges(); }
         });
       }
     });
@@ -148,6 +242,10 @@ export class CodePlaygroundListComponent implements OnInit {
 
   isSolved(problemId: string): boolean {
     return this.completedProblemIds.has(problemId.toLowerCase());
+  }
+
+  isMyProblem(problem: ProblemSummary): boolean {
+    return (problem.createdBy || '').toLowerCase() === this.currentUserId;
   }
 
   getDifficultyClass(diff: string): string {
@@ -171,9 +269,220 @@ export class CodePlaygroundListComponent implements OnInit {
     return topic ? topic.name : 'Khác';
   }
 
-  // ---- Create Problem Modal ----
+  // ---- Banks tab ----
+
+  loadBanks() {
+    this.banksLoading = true;
+    this.bankService.getBanks().subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        this.banks = Array.isArray(data) ? data : [];
+        this.banksLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.banksLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isMyBank(bank: ProblemBankSummary): boolean {
+    return (bank.creator?.id || '').toLowerCase() === this.currentUserId;
+  }
+
+  getStars(rating: number): number[] {
+    return [1, 2, 3, 4, 5];
+  }
+
+  toggleLike(bank: ProblemBankSummary, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.bankService.toggleLike(bank.id).subscribe({
+      next: (res) => {
+        const d = res?.data || res;
+        bank.myLiked = d.liked;
+        bank.likeCount = d.likeCount;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  openBankDetail(bank: ProblemBankSummary) {
+    this.bankDetailLoading = true;
+    this.showBankDetailModal = true;
+    this.selectedBank = null;
+    this.cdr.detectChanges();
+    this.bankService.getBank(bank.id).pipe(
+      finalize(() => {
+        this.bankDetailLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (res) => {
+        const data = res?.data ?? res;
+        this.selectedBank = data && typeof data === 'object' ? data : null;
+        if (!this.selectedBank) this.showBankDetailModal = false;
+      },
+      error: () => {
+        this.showBankDetailModal = false;
+      }
+    });
+  }
+
+  closeBankDetail() {
+    this.showBankDetailModal = false;
+    this.selectedBank = null;
+    this.cdr.detectChanges();
+  }
+
+  removeProblemFromBank(problemId: string) {
+    if (!this.selectedBank) return;
+    if (!confirm('Xóa bài tập này khỏi ngân hàng?')) return;
+    this.bankService.removeProblem(this.selectedBank.id, problemId).subscribe({
+      next: () => {
+        if (this.selectedBank) {
+          this.selectedBank.problems = this.selectedBank.problems.filter(p => p.problemId !== problemId);
+          this.selectedBank.problemCount = this.selectedBank.problems.length;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  openAddProblemModal(bankId: string, event: Event) {
+    event.stopPropagation();
+    this.addProblemBankId = bankId;
+    this.addProblemSearch = '';
+    this.showAddProblemModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeAddProblemModal() {
+    this.showAddProblemModal = false;
+    this.cdr.detectChanges();
+  }
+
+  get filteredAddProblems(): ProblemSummary[] {
+    const search = this.addProblemSearch.trim().toLowerCase();
+    const myProblems = this.problems.filter(p => this.isMyProblem(p));
+    if (!search) return myProblems.slice(0, 20);
+    return myProblems.filter(p => p.title.toLowerCase().includes(search)).slice(0, 20);
+  }
+
+  isProblemInBank(problemId: string): boolean {
+    return this.selectedBank?.problems?.some(p => p.problemId === problemId) ?? false;
+  }
+
+  addProblemToBank(problem: ProblemSummary) {
+    if (!this.addProblemBankId) return;
+    this.addProblemLoading = true;
+    this.bankService.addProblem(this.addProblemBankId, problem.id).subscribe({
+      next: () => {
+        this.addProblemLoading = false;
+        this.showAddProblemModal = false;
+        // Refresh bank detail if open
+        if (this.selectedBank && this.selectedBank.id === this.addProblemBankId) {
+          this.openBankDetail(this.selectedBank);
+        }
+        this.loadBanks();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.addProblemLoading = false;
+        alert(err?.error?.message || 'Không thể thêm bài tập.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deleteBank(bank: ProblemBankSummary, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!confirm(`Xóa ngân hàng "${bank.title}"?`)) return;
+    this.bankService.deleteBank(bank.id).subscribe({
+      next: () => {
+        this.banks = this.banks.filter(b => b.id !== bank.id);
+        this.cdr.detectChanges();
+      },
+      error: () => alert('Không thể xóa ngân hàng.')
+    });
+  }
+
+  // ---- Create / Edit Bank modal ----
+
+  openCreateBankModal(bank?: ProblemBankSummary) {
+    if (bank) {
+      this.editingBankId = bank.id;
+      this.bankForm = { title: bank.title, description: bank.description || '', isPublic: bank.isPublic, topicId: bank.topicId || '' };
+    } else {
+      this.editingBankId = '';
+      this.bankForm = { title: '', description: '', isPublic: true, topicId: '' };
+    }
+    this.showCreateBankModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCreateBankModal() {
+    if (this.isSavingBank) return;
+    this.showCreateBankModal = false;
+    this.cdr.detectChanges();
+  }
+
+  saveBankForm() {
+    if (!this.bankForm.title.trim()) { alert('Vui lòng nhập tên ngân hàng.'); return; }
+    this.isSavingBank = true;
+    this.cdr.detectChanges();
+
+    const payload = {
+      title: this.bankForm.title.trim(),
+      description: this.bankForm.description.trim() || undefined,
+      isPublic: this.bankForm.isPublic,
+      topicId: this.bankForm.topicId || null
+    };
+
+    const req = this.editingBankId
+      ? this.bankService.updateBank(this.editingBankId, payload)
+      : this.bankService.createBank(payload);
+
+    req.pipe(
+      finalize(() => {
+        this.isSavingBank = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.showCreateBankModal = false;
+        this.loadBanks();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể lưu ngân hàng.');
+      }
+    });
+  }
+
+  // ---- Rate bank ----
+
+  submitRating(bank: ProblemBankSummary, rating: number) {
+    this.bankService.rateBank(bank.id, rating).subscribe({
+      next: (res) => {
+        const d = res?.data || res;
+        bank.myRating = rating;
+        bank.avgRating = d.avgRating ?? bank.avgRating;
+        bank.ratingCount = d.ratingCount ?? bank.ratingCount;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  // ---- Create Problem modal (existing) ----
 
   openCreateModal() {
+    this.isEditMode = false;
+    this.editingProblemId = '';
     this.form = {
       title: '',
       description: '',
@@ -195,9 +504,70 @@ export class CodePlaygroundListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  openEditModal(problem: ProblemSummary) {
+    this.isLoadingEdit = true;
+    this.cdr.detectChanges();
+    this.http.get<any>(`/api/problems/${problem.id}`).subscribe({
+      next: (res) => {
+        const detail = res?.data || res;
+        let sc = { javascript: '', python: '', java: '', cpp: '' };
+        if (detail.starterCode) {
+          try { sc = { ...sc, ...JSON.parse(detail.starterCode) }; }
+          catch { sc.javascript = detail.starterCode; }
+        }
+        this.isEditMode = true;
+        this.editingProblemId = problem.id;
+        this.form = {
+          title: detail.title || '',
+          description: detail.description || '',
+          difficulty: detail.difficulty || 'easy',
+          topicId: detail.topicId || '',
+          isPublished: detail.isActive || false,
+          tags: detail.tags || [],
+          starterCode: sc,
+          testCases: [{ input: '', expectedOutput: '', isHidden: false }]
+        };
+        this.tagInput = '';
+        this.selectedLangTab = 'javascript';
+        this.loadTestCasesForEdit(problem.id);
+        this.isLoadingEdit = false;
+        this.showCreateModal = true;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingEdit = false;
+        alert('Không thể tải chi tiết bài tập để chỉnh sửa.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private loadTestCasesForEdit(problemId: string) {
+    this.http.get<any>(`/api/problems/${problemId}/test-cases`).subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        const testCases = Array.isArray(data) ? data : [];
+        if (testCases.length > 0) {
+          this.form.testCases = testCases.map((tc: any) => ({
+            input: tc.input || '',
+            expectedOutput: tc.expectedOutput || '',
+            isHidden: tc.isHidden || false
+          }));
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải test cases khi chỉnh sửa:', err);
+        // Keep default empty test case if load fails
+      }
+    });
+  }
+
   closeCreateModal() {
     if (this.isSaving) return;
     this.showCreateModal = false;
+    this.isEditMode = false;
+    this.editingProblemId = '';
     this.cdr.detectChanges();
   }
 
@@ -223,31 +593,37 @@ export class CodePlaygroundListComponent implements OnInit {
   }
 
   createProblem() {
-    if (!this.form.title.trim()) {
-      alert('Vui lòng nhập tên bài tập.');
-      return;
-    }
-    if (!this.form.topicId) {
-      alert('Vui lòng chọn chủ đề cho bài tập.');
-      return;
-    }
+    if (!this.form.title.trim()) { alert('Vui lòng nhập tên bài tập.'); return; }
+    if (!this.form.topicId) { alert('Vui lòng chọn chủ đề cho bài tập.'); return; }
 
     this.isSaving = true;
     this.cdr.detectChanges();
 
-    // starterCode là object {js, python, java, cpp} → serialize thành string để API chấp nhận
     const payload = {
       topicId: this.form.topicId,
       title: this.form.title.trim(),
       description: this.form.description.trim(),
       difficulty: this.form.difficulty,
       starterCode: JSON.stringify(this.form.starterCode),
+      isActive: this.form.isPublished,
       tagIds: [] as string[]
     };
 
+    if (this.isEditMode && this.editingProblemId) {
+      this.http.put(`/api/problems/${this.editingProblemId}`, payload).subscribe({
+        next: () => this.finishCreate(),
+        error: (err) => {
+          this.isSaving = false;
+          const msg = err?.error?.message || err?.error?.title || 'Không thể cập nhật bài tập.';
+          alert(msg);
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
     this.http.post('/api/problems', payload, { observe: 'response' }).subscribe({
       next: (res) => {
-        // Lấy ID bài tập mới từ Location header: /api/problems/{newGuid}
         const location: string = res.headers?.get('Location') || '';
         const parts = location.split('/');
         const newId = parts[parts.length - 1] || null;
@@ -274,7 +650,7 @@ export class CodePlaygroundListComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving = false;
-        const msg = err?.error?.message || err?.error?.title || 'Không thể tạo bài tập. Vui lòng thử lại.';
+        const msg = err?.error?.message || err?.error?.title || 'Không thể tạo bài tập.';
         alert(msg);
         this.cdr.detectChanges();
       }
@@ -284,12 +660,17 @@ export class CodePlaygroundListComponent implements OnInit {
   private finishCreate() {
     this.isSaving = false;
     this.showCreateModal = false;
+    this.isEditMode = false;
+    this.editingProblemId = '';
     this.loadData();
     this.cdr.detectChanges();
   }
 
   @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.showCreateModal && !this.isSaving) this.closeCreateModal();
+    if (this.showBankDetailModal) { this.closeBankDetail(); return; }
+    if (this.showAddProblemModal) { this.closeAddProblemModal(); return; }
+    if (this.showCreateBankModal && !this.isSavingBank) { this.closeCreateBankModal(); return; }
+    if (this.showCreateModal && !this.isSaving) { this.closeCreateModal(); }
   }
 }

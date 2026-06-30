@@ -35,12 +35,13 @@ public class ProblemsController : ControllerBase
 			{
 				Id = p.Id,
 				TopicId = p.TopicId,
+				CreatedBy = p.CreatedBy,
 				Title = p.Title,
 				Difficulty = p.Difficulty,
 				IsActive = p.IsActive,
 				CreatedAt = p.CreatedAt,
 				TestCaseCount = p.TestCases.Count,
-				Tags = p.Tags.Select(t => t.Name).ToList() // Giả định Tag có thuộc tính Name
+				Tags = p.Tags.Select(t => t.Name).ToList()
 			}).ToListAsync();
 
 		return Ok(problems);

@@ -1,34 +1,63 @@
 
 
     <header class="content-header">
-      <div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="filterProblems()" placeholder="Tìm bài tập theo tên...">
-      </div>
-      <div class="admin-header-actions">
-        <!-- Topic Filter -->
-        <select [(ngModel)]="selectedTopicId" (change)="filterProblems()" class="admin-top-select">
-          <option value="">Tất cả chủ đề</option>
-          @for (t of topics; track t.id) {
-            <option [value]="t.id">{{ t.name }}</option>
-          }
-        </select>
-        
-        <!-- Difficulty Filter -->
-        <select [(ngModel)]="selectedDifficulty" (change)="filterProblems()" class="admin-top-select">
-          <option value="">Tất cả độ khó</option>
-          <option value="easy">Dễ</option>
-          <option value="medium">Trung bình</option>
-          <option value="hard">Khó</option>
-        </select>
-
-        <button class="btn-admin-act purple" (click)="openModal()">
-          <i class="bi bi-plus-circle-fill"></i> Tạo bài tập mới
+      <!-- Tab switcher -->
+      <div class="admin-pm-tabs">
+        <button class="admin-pm-tab" [class.active]="activeTab === 'problems'" (click)="activeTab = 'problems'">
+          <i class="bi bi-list-task"></i> Bài tập
+        </button>
+        <button class="admin-pm-tab" [class.active]="activeTab === 'banks'" (click)="activeTab = 'banks'">
+          <i class="bi bi-collection"></i> Ngân hàng
         </button>
       </div>
+
+      @if (activeTab === 'problems') {
+        <div class="top-search">
+          <i class="bi bi-search"></i>
+          <input type="text" [(ngModel)]="searchText" (input)="filterProblems()" placeholder="Tìm bài tập theo tên...">
+        </div>
+        <div class="admin-header-actions">
+          <select [(ngModel)]="selectedTopicId" (change)="filterProblems()" class="admin-top-select">
+            <option value="">Tất cả chủ đề</option>
+            @for (t of topics; track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select>
+          <select [(ngModel)]="selectedDifficulty" (change)="filterProblems()" class="admin-top-select">
+            <option value="">Tất cả độ khó</option>
+            <option value="easy">Dễ</option>
+            <option value="medium">Trung bình</option>
+            <option value="hard">Khó</option>
+          </select>
+          <button class="btn-admin-act purple" (click)="openModal()">
+            <i class="bi bi-plus-circle-fill"></i> Tạo bài tập mới
+          </button>
+        </div>
+      }
+
+      @if (activeTab === 'banks') {
+        <div class="top-search">
+          <i class="bi bi-search"></i>
+          <input type="text" [(ngModel)]="bankSearchText" (input)="filterBanks()" placeholder="Tìm ngân hàng...">
+        </div>
+        <div class="admin-header-actions">
+          <select [(ngModel)]="bankMinRating" (change)="filterBanks()" class="admin-top-select">
+            <option [value]="0">Tất cả đánh giá</option>
+            <option [value]="3">≥ 3 sao</option>
+            <option [value]="4">≥ 4 sao</option>
+            <option [value]="5">5 sao</option>
+          </select>
+          <button class="btn-admin-act purple" (click)="openBankModal()">
+            <i class="bi bi-collection-fill"></i> Tạo ngân hàng
+          </button>
+        </div>
+      }
     </header>
 
     <div class="dashboard-scroll-body">
+
+      <!-- ============ PROBLEMS TAB ============ -->
+      @if (activeTab === 'problems') {
       <section class="welcome-section">
         <h1>Quản Lý Bài Tập Lập Trình (Sandbox problems)</h1>
         <p>Thêm, sửa đổi hoặc xóa các thử thách viết code và thiết lập bộ Test Cases chấm điểm tự động cho học viên.</p>
@@ -93,10 +122,157 @@
           </table>
         </div>
       }
-    </div>
-  
+      } <!-- end @if problems tab -->
 
-  <!-- Create/Edit Modal -->
+      <!-- ============ BANKS TAB ============ -->
+      @if (activeTab === 'banks') {
+      <section class="welcome-section">
+        <h1>Quản Lý Ngân Hàng Bài Tập Code</h1>
+        <p>Tạo, chỉnh sửa hoặc xóa các bộ ngân hàng bài tập. Mỗi ngân hàng có thể chứa nhiều bài tập và được đánh giá bởi người dùng.</p>
+      </section>
+
+      @if (banksLoading) {
+        <div class="empty-state-box">
+          <i class="bi bi-arrow-repeat spin-animation"></i>
+          <h3>Đang tải ngân hàng...</h3>
+        </div>
+      } @else if (filteredBanks.length === 0) {
+        <div class="empty-state-box">
+          <i class="bi bi-collection"></i>
+          <h3>Chưa có ngân hàng nào</h3>
+          <p>Hãy tạo ngân hàng bài tập đầu tiên.</p>
+        </div>
+      } @else {
+        <div class="admin-table-responsive-wrapper">
+          <table class="admin-management-table">
+            <thead>
+              <tr>
+                <th>Tên ngân hàng</th>
+                <th>Bài tập</th>
+                <th>Đánh giá</th>
+                <th>Lượt thích</th>
+                <th>Tác giả</th>
+                <th>Trạng thái</th>
+                <th style="text-align:right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of filteredBanks; track b.id) {
+                <tr>
+                  <td>
+                    <strong style="color:var(--text-main);font-size:0.95rem;">{{ b.title }}</strong>
+                    @if (b.description) {
+                      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">{{ b.description }}</div>
+                    }
+                  </td>
+                  <td><span class="testcases-count-badge"><i class="bi bi-collection"></i> {{ b.problemCount }}</span></td>
+                  <td>
+                    <span style="display:flex;align-items:center;gap:4px;font-size:0.82rem;">
+                      <i class="bi bi-star-fill" style="color:#ffb800;font-size:0.75rem"></i>
+                      {{ (b.avgRating || 0).toFixed(1) }}
+                      <span style="color:var(--text-muted);font-size:0.72rem">({{ b.ratingCount }})</span>
+                    </span>
+                  </td>
+                  <td><span style="font-size:0.84rem;color:var(--text-muted)"><i class="bi bi-heart-fill" style="color:#ef4444;font-size:0.75rem"></i> {{ b.likeCount }}</span></td>
+                  <td><span style="font-size:0.82rem;color:var(--text-muted)">{{ b.creator?.fullName || b.creator?.username }}</span></td>
+                  <td>
+                    @if (b.isPublic) {
+                      <span class="topic-badge" style="background:rgba(44,187,93,.12);color:#2cbb5d;border-color:rgba(44,187,93,.3)"><i class="bi bi-globe"></i> Công khai</span>
+                    } @else {
+                      <span class="topic-badge" style="background:var(--bg-nested);color:var(--text-muted)"><i class="bi bi-lock-fill"></i> Riêng tư</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button (click)="openBankDetail(b)" class="btn-tbl-icon-view" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
+                      <button (click)="openBankModal(b)" class="btn-tbl-icon-edit" title="Chỉnh sửa"><i class="bi bi-pencil-square"></i></button>
+                      <button (click)="deleteBank(b.id)" class="btn-tbl-icon-delete" title="Xóa ngân hàng"><i class="bi bi-trash3-fill"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      } <!-- end @if banks tab -->
+
+    </div>
+
+
+  <!-- Bank Detail Modal -->
+  @if (showBankDetailModal) {
+  <div class="modal-overlay" (click)="closeBankDetail()">
+    <div class="modal-box admin-large-modal" style="width:680px;max-width:95%" (click)="$event.stopPropagation()">
+      <h3><i class="bi bi-collection" style="color:var(--color-purple);margin-right:8px;"></i>
+        {{ selectedBank?.title || 'Đang tải...' }}
+      </h3>
+      @if (bankDetailLoading) {
+        <div style="text-align:center;padding:40px"><i class="bi bi-arrow-repeat spin-animation" style="font-size:2rem"></i></div>
+      } @else if (selectedBank) {
+        <div style="display:flex;flex-wrap:wrap;gap:14px;padding:12px 0;font-size:0.8rem;color:var(--text-muted);margin:12px 0">
+          <span><i class="bi bi-collection"></i> {{ selectedBank.problemCount }} bài tập</span>
+          <span><i class="bi bi-heart-fill" style="color:#ef4444"></i> {{ selectedBank.likeCount }}</span>
+          <span><i class="bi bi-star-fill" style="color:#ffb800"></i> {{ (selectedBank.avgRating||0).toFixed(1) }} ({{ selectedBank.ratingCount }} đánh giá)</span>
+          <span><i class="bi bi-person"></i> {{ selectedBank.creator?.fullName || selectedBank.creator?.username }}</span>
+        </div>
+
+        @if (selectedBank.problems?.length === 0) {
+          <p style="color:var(--text-muted);text-align:center;padding:24px 0">Ngân hàng chưa có bài tập.</p>
+        } @else {
+          <div style="border:1px solid var(--bg-card-border);border-radius:9px;overflow:hidden;max-height:360px;overflow-y:auto">
+            @for (item of selectedBank.problems; track item.problemId; let idx = $index) {
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bg-card-border)">
+                <span style="font-size:0.72rem;color:var(--text-muted);width:24px">{{ idx+1 }}.</span>
+                <a [routerLink]="['/admin/problems', item.problemId, 'test-cases']" style="flex:1;font-size:0.84rem;font-weight:600;color:var(--text-main);text-decoration:none">{{ item.title }}</a>
+                <span class="diff-badge" [ngClass]="getDifficultyClassBank(item.difficulty)">{{ getDifficultyLabelBank(item.difficulty) }}</span>
+                <button (click)="removeProblemFromBank(selectedBank.id, item.problemId)" style="width:26px;height:26px;border-radius:6px;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:0.85rem" title="Xóa khỏi ngân hàng">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      }
+      <div class="modal-actions-row" style="margin-top:20px">
+        <button class="btn-modal-cancel" (click)="closeBankDetail()">Đóng</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Create/Edit Bank Modal -->
+  @if (isBankModalOpen) {
+  <div class="modal-overlay">
+    <div class="modal-box" style="width:500px;max-width:95%">
+      <h3><i class="bi bi-collection-fill" style="color:var(--color-purple);margin-right:8px;"></i>
+        {{ editingBankId ? 'Chỉnh sửa ngân hàng' : 'Tạo ngân hàng mới' }}
+      </h3>
+      <div class="admin-modal-form-body" style="margin-top:16px">
+        <div class="input-field-group">
+          <label>Tên ngân hàng <span class="text-danger">*</span></label>
+          <input type="text" [(ngModel)]="bankForm.title" placeholder="VD: Thuật toán sắp xếp, DP cơ bản...">
+        </div>
+        <div class="input-field-group" style="margin-top:14px">
+          <label>Mô tả</label>
+          <textarea [(ngModel)]="bankForm.description" rows="3" class="admin-textarea-field" placeholder="Mô tả ngắn về ngân hàng bài tập này..."></textarea>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+          <input type="checkbox" [(ngModel)]="bankForm.isPublic" id="bankPublic" style="accent-color:var(--color-purple)">
+          <label for="bankPublic" style="font-size:0.85rem;cursor:pointer">Công khai (mọi người có thể xem)</label>
+        </div>
+      </div>
+      <div class="modal-actions-row" style="margin-top:24px">
+        <button class="btn-modal-cancel" (click)="closeBankModal()" [disabled]="isSavingBank">Hủy</button>
+        <button class="btn-modal-confirm purple" (click)="saveBankForm()" [disabled]="isSavingBank || !bankForm.title.trim()">
+          {{ isSavingBank ? 'Đang lưu...' : (editingBankId ? 'Cập nhật' : 'Tạo ngân hàng') }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Create/Edit Problem Modal -->
   @if (isModalOpen) {
   <div class="modal-overlay">
     <div class="modal-box admin-large-modal" style="width: 800px; max-width: 95%;">

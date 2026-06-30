@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface ProblemSummary {
   id: string;
   topicId: string;
+  createdBy: string;
   title: string;
   difficulty: string;
   isActive: boolean;
@@ -113,5 +115,11 @@ export class CodeService {
 
   getSubmissionDetail(id: string): Observable<SubmissionDetail> {
     return this.http.get<SubmissionDetail>(`/api/submissions/${id}`);
+  }
+
+  reportProblem(problemId: string, description: string): Observable<any> {
+    return this.http.post<any>(`/api/problems/${problemId}/report`, { description }).pipe(
+      map(res => res?.data || res)
+    );
   }
 }

@@ -4,6 +4,9 @@
   </a>
 
   <div class="header-actions">
+    <button class="btn-action-report" (click)="openPostReportModal($event)">
+      <i class="bi bi-flag"></i> Báo cáo
+    </button>
     @if (canEditPost()) {
       <button class="btn-action-outline" [routerLink]="['/forum/edit', post?.id]">
         <i class="bi bi-pencil"></i> Sửa bài
@@ -120,6 +123,9 @@
               <span class="lc-metric-chip"><i class="bi bi-eye"></i> {{ post.viewCount | number }}</span>
             </div>
             <div class="lc-action-right">
+              <button class="lc-icon-action report-icon-action" (click)="openPostReportModal($event)" title="Báo cáo bài đăng vi phạm">
+                <i class="bi bi-flag"></i>
+              </button>
               <button class="lc-icon-action" (click)="sharePost()" title="Chia sẻ" style="padding: 6px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-nested); background: none; color: var(--text-muted); cursor: pointer;">
                 <i class="bi bi-share"></i>
               </button>
@@ -299,6 +305,9 @@
                   <button class="dropdown-item" (click)="toggleReplyForm(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
                     <i class="bi bi-reply"></i> Trả lời
                   </button>
+                  <button class="dropdown-item" (click)="openCommentReportModal(comment, $event)" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: #f59e0b; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <i class="bi bi-flag"></i> Báo cáo
+                  </button>
                   
                   <!-- Sửa -->
                   @if (canEditComment(comment)) {
@@ -335,6 +344,7 @@
           } @else {
             <!-- Text actions -->
             <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
+            <button class="lc-link-action warn" (click)="openCommentReportModal(comment, $event)"><i class="bi bi-flag"></i> Báo cáo</button>
             @if (canEditComment(comment)) {
               <button class="lc-link-action" (click)="startEditComment(comment)"><i class="bi bi-pencil"></i> Sửa</button>
             }
@@ -452,6 +462,9 @@
               </span>
             </div>
             <div class="lc-action-right">
+              <button class="lc-icon-action" (click)="openPostReportModal($event)" style="padding: 6px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--bg-card-border); background: var(--bg-card); color: #f59e0b; cursor: pointer;" title="Báo cáo">
+                <i class="bi bi-flag"></i>
+              </button>
               <button class="lc-icon-action" (click)="sharePost()" style="padding: 6px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--bg-card-border); background: var(--bg-card); color: var(--text-muted); cursor: pointer;" title="Chia sẻ">
                 <i class="bi bi-share"></i>
               </button>
@@ -494,5 +507,42 @@
         </div>
       }
     </aside>
+  </div>
+}
+
+@if (isReportModalOpen) {
+  <div class="report-modal-overlay" (click)="closeReportModal()">
+    <div class="report-modal" (click)="$event.stopPropagation()">
+      <div class="report-modal-header">
+        <div>
+          <h3>
+            <i class="bi bi-flag-fill"></i>
+            {{ reportTargetType === 'post' ? 'Báo cáo bài đăng vi phạm' : 'Báo cáo bình luận vi phạm' }}
+          </h3>
+          <p>
+            {{ reportTargetType === 'post'
+              ? (reportTarget?.title || 'Bài đăng này')
+              : 'Bình luận trong bài: ' + (post?.title || '') }}
+          </p>
+        </div>
+        <button type="button" class="report-modal-close" (click)="closeReportModal()" aria-label="Đóng">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <textarea
+        [(ngModel)]="reportDescription"
+        rows="5"
+        class="report-textarea"
+        placeholder="Mô tả lý do báo cáo: spam, xúc phạm, nội dung không phù hợp..."
+      ></textarea>
+
+      <div class="report-modal-actions">
+        <button type="button" class="report-btn-cancel" (click)="closeReportModal()">Hủy</button>
+        <button type="button" class="report-btn-submit" (click)="submitReport()">
+          <i class="bi bi-send-fill"></i> Gửi báo cáo
+        </button>
+      </div>
+    </div>
   </div>
 }

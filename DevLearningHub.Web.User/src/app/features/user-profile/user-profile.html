@@ -27,11 +27,15 @@
     <!-- PROFILE CARD SECTION (Facebook/LeetCode Style) -->
     <div class="profile-card-container">
       <div class="profile-card">
-        <div class="profile-header-bg"></div>
-        
+        <div class="profile-header-bg"
+             [style.background-image]="user.bannerUrl ? 'url(' + user.bannerUrl + ')' : null"
+             [style.background-size]="user.bannerUrl ? 'cover' : null"
+             [style.background-position]="user.bannerUrl ? 'center' : null">
+        </div>
+
         <div class="profile-content">
           <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="profile-avatar" (error)="onAvatarError($event)">
-          
+
           <div class="profile-info">
             <div class="profile-name-row">
               <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
@@ -44,9 +48,14 @@
                   <i class="bi bi-person-badge"></i> Moderator
                 </span>
               }
+              @if (isOwnProfile) {
+                <button class="btn-edit-profile" (click)="openEditModal()" title="Chỉnh sửa hồ sơ">
+                  <i class="bi bi-pencil-square"></i> Chỉnh sửa
+                </button>
+              }
             </div>
             <p class="profile-username">@{{ user.username }}</p>
-            <p class="profile-bio">{{ user.bio || 'Thành viên Dev Learning Hub' }}</p>
+            <p class="profile-bio">{{ user.bio }}</p>
           </div>
         </div>
       </div>
@@ -150,3 +159,64 @@
     </div>
   }
 </div>
+
+<!-- ============================================================
+     EDIT PROFILE MODAL
+     ============================================================ -->
+@if (showEditModal) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-edit-profile" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="bi bi-person-gear"></i> Chỉnh sửa hồ sơ</h2>
+        <button class="modal-close-btn" (click)="closeEditModal()" [disabled]="isSavingProfile">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body-edit">
+        <div class="form-group-edit">
+          <label>Tên hiển thị</label>
+          <input type="text" class="edit-input" [(ngModel)]="editForm.fullName"
+                 placeholder="Nhập tên hiển thị..." maxlength="100" />
+        </div>
+        <div class="form-group-edit">
+          <label>Giới thiệu bản thân</label>
+          <textarea class="edit-textarea" [(ngModel)]="editForm.bio" rows="3"
+                    placeholder="Mô tả ngắn về bạn..." maxlength="500"></textarea>
+          <span class="char-count">{{ editForm.bio.length }}/500</span>
+        </div>
+        <div class="form-group-edit">
+          <label>Ảnh đại diện</label>
+          <div class="avatar-upload-row">
+            <img [src]="editForm.avatarUrl || user?.avatarUrl || 'assets/images/default-avatar.svg'"
+                 class="preview-avatar" alt="avatar preview" />
+            <div class="avatar-upload-actions">
+              <label class="btn-upload-avatar" [class.disabled]="isUploadingAvatar">
+                <i class="bi bi-upload"></i>
+                {{ isUploadingAvatar ? 'Đang tải...' : 'Chọn ảnh' }}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                       style="display:none" (change)="onAvatarFileChange($event)"
+                       [disabled]="isUploadingAvatar" />
+              </label>
+              <span class="upload-hint">JPG, PNG, WEBP, GIF · Tối đa 5MB</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group-edit">
+          <label>URL ảnh nền hồ sơ</label>
+          <input type="url" class="edit-input" [(ngModel)]="editForm.bannerUrl"
+                 placeholder="https://..." />
+          @if (editForm.bannerUrl) {
+            <div class="preview-banner" [style.background-image]="'url(' + editForm.bannerUrl + ')'"></div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer-edit">
+        <button class="btn-cancel-edit" (click)="closeEditModal()" [disabled]="isSavingProfile">Hủy</button>
+        <button class="btn-save-edit" (click)="saveProfile()" [disabled]="isSavingProfile">
+          @if (isSavingProfile) { <span class="spinner-sm"></span> Đang lưu... }
+          @else { <i class="bi bi-check-circle-fill"></i> Lưu thay đổi }
+        </button>
+      </div>
+    </div>
+  </div>
+}

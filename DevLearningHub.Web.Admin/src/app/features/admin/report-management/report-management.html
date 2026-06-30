@@ -1,0 +1,115 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="bi bi-flag-fill"></i> Phản hồi từ User</h1>
+      <p class="page-subtitle">Quản lý báo cáo nội dung từ người dùng</p>
+    </div>
+    <span class="total-badge">{{ totalCount }} báo cáo</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <select class="filter-select" [(ngModel)]="filterStatus" (change)="applyFilter()">
+      <option value="">Tất cả trạng thái</option>
+      <option value="pending">Chờ xử lý</option>
+      <option value="reviewed">Đã xem</option>
+      <option value="resolved">Đã giải quyết</option>
+      <option value="dismissed">Bác bỏ</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterType" (change)="applyFilter()">
+      <option value="">Tất cả loại</option>
+      @for (t of reportTypes; track t.id) {
+        <option [value]="t.name">{{ getTypeLabel(t.name) }}</option>
+      }
+    </select>
+    <button class="btn-refresh" (click)="applyFilter()">
+      <i class="bi bi-arrow-clockwise"></i> Làm mới
+    </button>
+  </div>
+
+  <!-- Table -->
+  @if (isLoading) {
+    <div class="loading-state"><i class="bi bi-arrow-repeat spin"></i> Đang tải...</div>
+  } @else if (reports.length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-flag"></i>
+      <p>Không có báo cáo nào</p>
+    </div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Loại</th>
+            <th>Người báo cáo</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th>Ngày gửi</th>
+            <th>Xử lý bởi</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of reports; track r.id) {
+            <tr [class.row-resolved]="r.status === 'resolved' || r.status === 'dismissed'">
+              <td>
+                <span class="type-badge">{{ getTypeLabel(r.typeName) }}</span>
+              </td>
+              <td>
+                <div class="reporter-cell">
+                  @if (r.reporterAvatarUrl) {
+                    <img [src]="r.reporterAvatarUrl" class="reporter-avatar" alt="avatar" />
+                  } @else {
+                    <div class="reporter-avatar-placeholder"><i class="bi bi-person"></i></div>
+                  }
+                  <span>{{ r.reporterUsername }}</span>
+                </div>
+              </td>
+              <td class="desc-cell">
+                <span title="{{ r.description }}">{{ r.description?.slice(0, 80) || '(Không có mô tả)' }}{{ r.description?.length > 80 ? '...' : '' }}</span>
+              </td>
+              <td>
+                <span class="status-badge {{ getStatusClass(r.status) }}">{{ getStatusLabel(r.status) }}</span>
+              </td>
+              <td class="date-cell">{{ formatDate(r.createdAt) }}</td>
+              <td class="date-cell">{{ r.resolvedByUsername || '—' }}</td>
+              <td>
+                @if (resolvingId === r.id) {
+                  <div class="resolve-inline">
+                    <select class="resolve-select" [(ngModel)]="resolveStatus">
+                      <option value="reviewed">Đã xem</option>
+                      <option value="resolved">Giải quyết</option>
+                      <option value="dismissed">Bác bỏ</option>
+                    </select>
+                    <button class="btn-confirm" (click)="confirmResolve(r.id)"><i class="bi bi-check-lg"></i></button>
+                    <button class="btn-cancel" (click)="cancelResolve()"><i class="bi bi-x-lg"></i></button>
+                  </div>
+                } @else {
+                  <button class="btn-action" (click)="startResolve(r.id, r.status)"
+                          [disabled]="r.status === 'resolved' || r.status === 'dismissed'">
+                    <i class="bi bi-pencil-square"></i> Xử lý
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button class="page-btn" (click)="goPage(currentPage - 1)" [disabled]="currentPage <= 1">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        @for (p of pageNumbers; track p) {
+          <button class="page-btn" [class.active]="p === currentPage" (click)="goPage(p)">{{ p }}</button>
+        }
+        <button class="page-btn" (click)="goPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    }
+  }
+</div>

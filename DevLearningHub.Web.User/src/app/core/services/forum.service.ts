@@ -137,4 +137,17 @@ export class ForumService {
       map(res => res?.data || res)
     );
   }
+
+  // --- REPORTS ---
+  reportPost(postId: string, description: string): Observable<any> {
+    return this.http.post<any>(`${this.postsUrl}/${postId}/report`, { description }).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  reportComment(commentId: string, description: string): Observable<any> {
+    return this.http.post<any>(`${this.commentsUrl}/${commentId}/report`, { description }).pipe(
+      map(res => res?.data || res)
+    );
+  }
 }
