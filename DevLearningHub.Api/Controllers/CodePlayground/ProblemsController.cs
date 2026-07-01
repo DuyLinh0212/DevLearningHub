@@ -120,16 +120,31 @@ public class ProblemsController : ControllerBase
 		_context.Problems.Add(problem);
 		await _context.SaveChangesAsync();
 
-		return CreatedAtAction(nameof(GetProblem), new { id = problem.Id }, null);
+		var response = new ProblemDetailResponse
+		{
+			Id = problem.Id,
+			TopicId = problem.TopicId,
+			CreatedBy = problem.CreatedBy,
+			Title = problem.Title,
+			Description = problem.Description,
+			Difficulty = problem.Difficulty,
+			StarterCode = problem.StarterCode,
+			IsActive = problem.IsActive,
+			CreatedAt = problem.CreatedAt,
+			Tags = problem.Tags.Select(t => t.Name).ToList()
+		};
+
+		return CreatedAtAction(nameof(GetProblem), new { id = problem.Id }, response);
 	}
 
     // 38. PUT /api/problems/{id} (Admin + Moderator)
     [HttpPut("problems/{id:guid}")]
-    [HasPermission("problem:edit")]
+    [Authorize]
     public async Task<IActionResult> UpdateProblem(Guid id, [FromBody] UpdateProblemRequest request)
 	{
 		var problem = await _context.Problems.FindAsync(id);
 		if (problem == null) return NotFound();
+		if (!CanManageProblem(problem)) return Forbid();
 
 		problem.TopicId = request.TopicId;
 		problem.Title = request.Title;
@@ -193,11 +208,14 @@ public class ProblemsController : ControllerBase
 
 	// 41. POST /api/problems/{id}/test-cases (Admin + Moderator)
 	[HttpPost("problems/{id:guid}/test-cases")]
-    [HasPermission("problem:create")]
+    [Authorize]
     public async Task<IActionResult> AddTestCase(Guid id, [FromBody] CreateTestCaseRequest request)
 	{
-		var problemExists = await _context.Problems.AnyAsync(p => p.Id == id);
+		var problem = await _context.Problems.FindAsync(id);
+		var problemExists = problem != null;
 		if (!problemExists) return NotFound("Không tìm thấy bài tập tương ứng.");
+
+		if (!CanManageProblem(problem!) && !User.HasPermission("problem:create")) return Forbid();
 
 		var testCase = new TestCase
 		{
@@ -211,16 +229,27 @@ public class ProblemsController : ControllerBase
 
 		_context.TestCases.Add(testCase);
 		await _context.SaveChangesAsync();
-		return Ok(testCase);
+		return Ok(new TestCaseResponse
+		{
+			Id = testCase.Id,
+			ProblemId = testCase.ProblemId,
+			Input = testCase.Input,
+			ExpectedOutput = testCase.ExpectedOutput,
+			IsHidden = testCase.IsHidden,
+			OrderIndex = testCase.OrderIndex
+		});
 	}
 
 	// 42. PUT /api/test-cases/{id} (Admin + Moderator)
 	[HttpPut("test-cases/{id:guid}")]
-    [HasPermission("problem:edit")]
+    [Authorize]
     public async Task<IActionResult> UpdateTestCase(Guid id, [FromBody] UpdateTestCaseRequest request)
 	{
-		var testCase = await _context.TestCases.FindAsync(id);
+		var testCase = await _context.TestCases
+			.Include(tc => tc.Problem)
+			.FirstOrDefaultAsync(tc => tc.Id == id);
 		if (testCase == null) return NotFound();
+		if (!CanManageProblem(testCase.Problem)) return Forbid();
 
 		testCase.Input = request.Input;
 		testCase.ExpectedOutput = request.ExpectedOutput;
@@ -233,14 +262,23 @@ public class ProblemsController : ControllerBase
 
 	// 43. DELETE /api/test-cases/{id} (Admin + Moderator)
 	[HttpDelete("test-cases/{id:guid}")]
-    [HasPermission("problem:edit")]
+    [Authorize]
     public async Task<IActionResult> DeleteTestCase(Guid id)
 	{
-		var testCase = await _context.TestCases.FindAsync(id);
+		var testCase = await _context.TestCases
+			.Include(tc => tc.Problem)
+			.FirstOrDefaultAsync(tc => tc.Id == id);
 		if (testCase == null) return NotFound();
+		if (!CanManageProblem(testCase.Problem)) return Forbid();
 
 		_context.TestCases.Remove(testCase);
 		await _context.SaveChangesAsync();
 		return NoContent();
+	}
+
+	private bool CanManageProblem(Problem problem)
+	{
+		return User.HasPermission("problem:edit")
+			|| (User.TryGetUserId(out var userId) && problem.CreatedBy == userId);
 	}
 }

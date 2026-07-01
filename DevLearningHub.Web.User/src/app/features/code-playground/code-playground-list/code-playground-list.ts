@@ -8,6 +8,13 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
+type ProblemFormTestCase = {
+  id?: string;
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+};
+
 @Component({
   selector: 'app-code-playground-list',
   standalone: true,
@@ -80,7 +87,7 @@ export class CodePlaygroundListComponent implements OnInit {
       java: 'import java.util.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        \n    }\n}\n',
       cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n'
     },
-    testCases: [] as { input: string; expectedOutput: string; isHidden: boolean }[]
+    testCases: [] as ProblemFormTestCase[]
   };
 
   // ---- User permissions ----
@@ -549,6 +556,7 @@ export class CodePlaygroundListComponent implements OnInit {
         const testCases = Array.isArray(data) ? data : [];
         if (testCases.length > 0) {
           this.form.testCases = testCases.map((tc: any) => ({
+            id: tc.id,
             input: tc.input || '',
             expectedOutput: tc.expectedOutput || '',
             isHidden: tc.isHidden || false
@@ -609,9 +617,11 @@ export class CodePlaygroundListComponent implements OnInit {
       tagIds: [] as string[]
     };
 
+    const validTestCases = this.getValidTestCases();
+
     if (this.isEditMode && this.editingProblemId) {
       this.http.put(`/api/problems/${this.editingProblemId}`, payload).subscribe({
-        next: () => this.finishCreate(),
+        next: () => this.syncTestCases(this.editingProblemId, validTestCases),
         error: (err) => {
           this.isSaving = false;
           const msg = err?.error?.message || err?.error?.title || 'Không thể cập nhật bài tập.';
@@ -624,26 +634,10 @@ export class CodePlaygroundListComponent implements OnInit {
 
     this.http.post('/api/problems', payload, { observe: 'response' }).subscribe({
       next: (res) => {
-        const location: string = res.headers?.get('Location') || '';
-        const parts = location.split('/');
-        const newId = parts[parts.length - 1] || null;
-
-        const validTestCases = this.form.testCases
-          .filter(tc => tc.input.trim() || tc.expectedOutput.trim());
+        const newId = this.extractProblemId(res);
 
         if (newId && validTestCases.length > 0) {
-          const tcRequests = validTestCases.map((tc, i) =>
-            this.http.post(`/api/problems/${newId}/test-cases`, {
-              input: tc.input,
-              expectedOutput: tc.expectedOutput,
-              isHidden: tc.isHidden,
-              orderIndex: i
-            })
-          );
-          forkJoin(tcRequests).subscribe({
-            next: () => this.finishCreate(),
-            error: () => this.finishCreate()
-          });
+          this.syncTestCases(newId, validTestCases);
         } else {
           this.finishCreate();
         }
@@ -655,6 +649,69 @@ export class CodePlaygroundListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private getValidTestCases(): ProblemFormTestCase[] {
+    return this.form.testCases
+      .map(tc => ({
+        ...tc,
+        input: tc.input.trim(),
+        expectedOutput: tc.expectedOutput.trim()
+      }))
+      .filter(tc => tc.input || tc.expectedOutput);
+  }
+
+  private extractProblemId(res: any): string | null {
+    const body = res?.body?.data || res?.body;
+    const bodyId = body?.id || body?.problemId;
+    if (bodyId) return bodyId;
+
+    const location: string = res?.headers?.get('Location') || '';
+    const parts = location.split('/').filter(Boolean);
+    return parts.length > 0 ? parts[parts.length - 1] : null;
+  }
+
+  private syncTestCases(problemId: string, testCases: ProblemFormTestCase[]) {
+    this.http.get<any>(`/api/problems/${problemId}/test-cases`).subscribe({
+      next: (res) => {
+        const existing = Array.isArray(res?.data || res) ? (res?.data || res) : [];
+        const keptIds = new Set(testCases.filter(tc => tc.id).map(tc => tc.id!.toLowerCase()));
+        const requests = [
+          ...testCases.map((tc, i) => {
+            const payload = {
+              input: tc.input,
+              expectedOutput: tc.expectedOutput,
+              isHidden: tc.isHidden,
+              orderIndex: i
+            };
+            return tc.id
+              ? this.http.put(`/api/test-cases/${tc.id}`, payload)
+              : this.http.post(`/api/problems/${problemId}/test-cases`, payload);
+          }),
+          ...existing
+            .filter((tc: any) => tc.id && !keptIds.has(tc.id.toLowerCase()))
+            .map((tc: any) => this.http.delete(`/api/test-cases/${tc.id}`))
+        ];
+
+        if (requests.length === 0) {
+          this.finishCreate();
+          return;
+        }
+
+        forkJoin(requests).subscribe({
+          next: () => this.finishCreate(),
+          error: (err) => this.handleSaveError(err, 'Không thể lưu test cases.')
+        });
+      },
+      error: (err) => this.handleSaveError(err, 'Không thể tải test cases hiện tại để cập nhật.')
+    });
+  }
+
+  private handleSaveError(err: any, fallback: string) {
+    this.isSaving = false;
+    const msg = err?.error?.message || err?.error?.title || fallback;
+    alert(msg);
+    this.cdr.detectChanges();
   }
 
   private finishCreate() {

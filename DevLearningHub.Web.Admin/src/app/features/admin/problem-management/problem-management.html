@@ -217,6 +217,19 @@
           <span><i class="bi bi-person"></i> {{ selectedBank.creator?.fullName || selectedBank.creator?.username }}</span>
         </div>
 
+        <div class="bank-add-problem-row">
+          <select class="admin-top-select bank-add-problem-select" [(ngModel)]="selectedProblemToAddId" [disabled]="isAddingProblemToBank">
+            <option value="">Chọn bài tập để thêm vào bộ đề</option>
+            @for (p of getAvailableProblemsForSelectedBank(); track p.id) {
+              <option [value]="p.id">{{ p.title }} - {{ getDifficultyLabelBank(p.difficulty) }}</option>
+            }
+          </select>
+          <button class="btn-admin-act purple" (click)="addSelectedProblemToBank()" [disabled]="!selectedProblemToAddId || isAddingProblemToBank">
+            <i class="bi bi-plus-circle"></i>
+            {{ isAddingProblemToBank ? 'Đang thêm...' : 'Thêm bài tập' }}
+          </button>
+        </div>
+
         @if (selectedBank.problems?.length === 0) {
           <p style="color:var(--text-muted);text-align:center;padding:24px 0">Ngân hàng chưa có bài tập.</p>
         } @else {

@@ -203,6 +203,16 @@
         </div>
         <div class="form-group-edit">
           <label>URL ảnh nền hồ sơ</label>
+          <div class="banner-upload-row">
+            <label class="btn-upload-avatar" [class.disabled]="isUploadingBanner">
+              <i class="bi bi-upload"></i>
+              {{ isUploadingBanner ? 'Dang tai...' : 'Chon anh nen' }}
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                     style="display:none" (change)="onBannerFileChange($event)"
+                     [disabled]="isUploadingBanner" />
+            </label>
+            <span class="upload-hint">JPG, PNG, WEBP, GIF - Toi da 5MB</span>
+          </div>
           <input type="url" class="edit-input" [(ngModel)]="editForm.bannerUrl"
                  placeholder="https://..." />
           @if (editForm.bannerUrl) {
@@ -211,8 +221,8 @@
         </div>
       </div>
       <div class="modal-footer-edit">
-        <button class="btn-cancel-edit" (click)="closeEditModal()" [disabled]="isSavingProfile">Hủy</button>
-        <button class="btn-save-edit" (click)="saveProfile()" [disabled]="isSavingProfile">
+        <button class="btn-cancel-edit" (click)="closeEditModal()" [disabled]="isSavingProfile || isUploadingAvatar || isUploadingBanner">Hủy</button>
+        <button class="btn-save-edit" (click)="saveProfile()" [disabled]="isSavingProfile || isUploadingAvatar || isUploadingBanner">
           @if (isSavingProfile) { <span class="spinner-sm"></span> Đang lưu... }
           @else { <i class="bi bi-check-circle-fill"></i> Lưu thay đổi }
         </button>

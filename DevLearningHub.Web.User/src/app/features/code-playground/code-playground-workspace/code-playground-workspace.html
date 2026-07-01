@@ -85,6 +85,10 @@
                     <i class="bi" [class.bi-hand-thumbs-down-fill]="isDisliked" [class.bi-hand-thumbs-down]="!isDisliked"></i>
                     <span>{{ dislikes }}</span>
                   </button>
+                  <button class="btn-rate btn-inline-report" (click)="openReportModal()" title="Báo lỗi bài code này">
+                    <i class="bi bi-flag-fill"></i>
+                    <span>Báo lỗi</span>
+                  </button>
                 </div>
               </div>
               <div class="desc-meta-row">

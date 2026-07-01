@@ -41,6 +41,7 @@ public class ProblemBanksController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<ProblemBankResponse>>>> GetBanks([FromQuery] Guid? createdBy = null)
     {
         var hasUser = User.TryGetUserId(out var userId);
+        var canManageAny = hasUser && await CanManageProblemBanksAsync(userId);
 
         var query = _db.ProblemBanks.AsNoTracking();
         if (createdBy.HasValue)
@@ -48,8 +49,8 @@ public class ProblemBanksController : ControllerBase
             query = query.Where(b => b.CreatedBy == createdBy.Value);
         }
 
-        // Visibility: public banks for everyone; private banks only for their owner.
-        query = query.Where(b => b.IsPublic || (hasUser && b.CreatedBy == userId));
+        // Visibility: public banks for everyone; private banks only for their owner or code-problem managers.
+        query = query.Where(b => b.IsPublic || (hasUser && b.CreatedBy == userId) || canManageAny);
 
         var banks = await query
             .OrderByDescending(b => b.CreatedAt)
@@ -66,6 +67,7 @@ public class ProblemBanksController : ControllerBase
     {
         var hasUser = User.TryGetUserId(out var userId);
         var viewerId = hasUser ? userId : Guid.Empty;
+        var canManageAny = hasUser && await CanManageProblemBanksAsync(userId);
 
         var bank = await _db.ProblemBanks
             .AsNoTracking()
@@ -114,8 +116,8 @@ public class ProblemBanksController : ControllerBase
             return NotFound(ApiResponse<ProblemBankDetailResponse>.Fail("Problem bank not found."));
         }
 
-        // Hide someone else's private bank.
-        if (!bank.IsPublic && bank.Creator.Id != viewerId)
+        // Hide someone else's private bank unless the viewer can manage code problems.
+        if (!bank.IsPublic && bank.Creator.Id != viewerId && !canManageAny)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ProblemBankDetailResponse>.Fail("This problem bank is private."));
         }
@@ -249,8 +251,8 @@ public class ProblemBanksController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Problem not found."));
         }
 
-        // Only bank owner (or those with problem:edit) may add problems they didn't create.
-        var canEditAny = await _permissions.HasPermissionAsync(userId, "problem:edit");
+        // Only bank owner, Admin, or those with problem:edit may add problems they didn't create.
+        var canEditAny = await CanManageProblemBanksAsync(userId);
         if (!canEditAny && problem.CreatedBy != userId)
         {
             return StatusCode(StatusCodes.Status403Forbidden,
@@ -638,7 +640,12 @@ public class ProblemBanksController : ControllerBase
     // Owner of the bank, or anyone holding the problem:edit permission (Admin/Moderator).
     private async Task<bool> CanManageAsync(ProblemBank bank, Guid userId)
     {
-        return bank.CreatedBy == userId || await _permissions.HasPermissionAsync(userId, "problem:edit");
+        return bank.CreatedBy == userId || await CanManageProblemBanksAsync(userId);
+    }
+
+    private async Task<bool> CanManageProblemBanksAsync(Guid userId)
+    {
+        return User.IsInRole("Admin") || await _permissions.HasPermissionAsync(userId, "problem:edit");
     }
 
     // Best-attempt accuracy for one submission, as a 0-100 percentage. Null when

@@ -116,7 +116,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadAvatar(
-        IFormFile? file,
+        [FromForm] IFormFile? file,
         [FromServices] CloudinaryService cloudinaryService)
     {
         if (!User.TryGetUserId(out var userId))
@@ -149,6 +149,51 @@ public class UsersController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user), "Avatar updated."));
+    }
+
+    /// <summary>
+    /// Upload and save the current user's profile banner using Cloudinary.
+    /// </summary>
+    [HttpPost("me/banner")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadBanner(
+        [FromForm] IFormFile? file,
+        [FromServices] CloudinaryService cloudinaryService)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<UserProfileResponse>.Fail("Unauthorized."));
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<UserProfileResponse>.Fail("Please choose an image file."));
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return NotFound(ApiResponse<UserProfileResponse>.Fail("User not found."));
+        }
+
+        try
+        {
+            var uploadResult = await cloudinaryService.UploadBannerAsync(userId, file);
+            user.BannerUrl = uploadResult.Url;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse<UserProfileResponse>.Fail(ex.Message));
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user), "Banner updated."));
     }
 
     /// <summary>

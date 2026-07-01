@@ -207,6 +207,18 @@
   color: #f43f5e;
 }
 
+.btn-question-report {
+  border-color: rgba(245, 158, 11, 0.45);
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.btn-question-report:hover {
+  border-color: rgba(245, 158, 11, 0.7);
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
 .badge-level {
   margin-left: auto;
   background-color: var(--bg-nested);

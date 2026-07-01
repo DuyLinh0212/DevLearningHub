@@ -1,3 +1,4 @@
+using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
@@ -74,7 +75,7 @@ public class ReportsController : ControllerBase
         _db.Reports.Add(report);
         await _db.SaveChangesAsync();
 
-        await NotifyReportedContentOwnerAsync(type.Name, request.TargetId, userId);
+        await NotifyReportRecipientsAsync(type.Name, request.TargetId, report.Id, userId);
 
         return Ok(ApiResponse<object>.Ok(new { id = report.Id }, "Báo cáo đã được gửi thành công."));
     }
@@ -177,6 +178,17 @@ public class ReportsController : ControllerBase
             || await _permissions.HasPermissionAsync(userId, "post:delete_any");
     }
 
+    private async Task NotifyReportRecipientsAsync(string typeName, Guid targetId, Guid reportId, Guid reporterId)
+    {
+        if (typeName is "problem" or "quiz_question")
+        {
+            await NotifyReportedContentOwnerAsync(typeName, targetId, reporterId);
+            return;
+        }
+
+        await NotifyAdminsAsync(typeName, reportId, reporterId);
+    }
+
     private async Task NotifyReportedContentOwnerAsync(string typeName, Guid targetId, Guid reporterId)
     {
         var target = await ResolveReportTargetAsync(typeName, targetId);
@@ -201,6 +213,43 @@ public class ReportsController : ControllerBase
             refId: targetId,
             refType: target.RefType,
             actorId: reporterId);
+    }
+
+    private async Task NotifyAdminsAsync(string typeName, Guid reportId, Guid reporterId)
+    {
+        var adminIds = await _db.UserRoles
+            .AsNoTracking()
+            .Where(ur =>
+                ur.Role.IsActive &&
+                ur.Role.Name == AppRoles.Admin &&
+                ur.User.IsActive &&
+                !ur.User.IsLocked)
+            .Select(ur => ur.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        if (adminIds.Count == 0)
+        {
+            return;
+        }
+
+        var label = typeName switch
+        {
+            "post" => "bài viết",
+            "comment" => "bình luận",
+            _ => "nội dung"
+        };
+
+        foreach (var adminId in adminIds)
+        {
+            await _notifications.NotifyAsync(
+                recipientId: adminId,
+                type: NotificationTypes.ContentReported,
+                message: $"Có báo cáo mới về {label}. Vui lòng kiểm tra trong trang quản trị.",
+                refId: reportId,
+                refType: NotificationRefTypes.Report,
+                actorId: reporterId);
+        }
     }
 
     private async Task<(Guid? OwnerId, string? RefType)> ResolveReportTargetAsync(string typeName, Guid targetId)

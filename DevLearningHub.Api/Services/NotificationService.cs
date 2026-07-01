@@ -23,6 +23,7 @@ public static class NotificationRefTypes
 {
     public const string Post = "post";
     public const string Comment = "comment";
+    public const string Report = "report";
     public const string Question = "question";
     public const string QuizSet = "quiz_set";
     public const string Problem = "problem";

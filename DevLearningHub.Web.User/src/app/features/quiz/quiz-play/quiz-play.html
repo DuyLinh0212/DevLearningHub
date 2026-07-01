@@ -21,9 +21,6 @@
   <div class="user-room-identity">
     <img [src]="userAvatar" alt="User Avatar">
     <span>{{ userFullName }}</span>
-    <button class="btn-badge-action" style="margin-left: 8px; font-size: 0.75rem; padding: 3px 10px;" (click)="openReportModal()" title="Báo cáo lỗi bộ đề">
-      <i class="bi bi-flag-fill"></i> Báo lỗi
-    </button>
   </div>
 </header>
 
@@ -49,6 +46,9 @@
         <button class="btn-badge-action" [class.is-bookmarked]="bookmarkedQuestions[currentQuestionIndex]" (click)="toggleBookmark()">
           <i class="bi" [class.bi-flag-fill]="bookmarkedQuestions[currentQuestionIndex]" [class.bi-flag]="!bookmarkedQuestions[currentQuestionIndex]"></i>
           {{ bookmarkedQuestions[currentQuestionIndex] ? 'Đã đánh dấu' : 'Đánh dấu' }}
+        </button>
+        <button class="btn-badge-action btn-question-report" (click)="openReportModal()" title="Báo cáo lỗi câu hỏi này">
+          <i class="bi bi-flag-fill"></i> Báo cáo câu hỏi
         </button>
         <span class="badge-level">{{ questions[currentQuestionIndex].level }}</span>
       </div>
@@ -162,8 +162,8 @@
 @if (isReportModalOpen) {
 <div class="modal-overlay" (click)="closeReportModal()">
   <div class="modal-box" (click)="$event.stopPropagation()">
-    <h3><i class="bi bi-flag-fill text-warning"></i> Báo cáo lỗi bộ đề</h3>
-    <p>Mô tả lỗi hoặc vấn đề bạn gặp phải với bộ đề này. Đội ngũ quản trị sẽ xem xét và khắc phục.</p>
+    <h3><i class="bi bi-flag-fill text-warning"></i> Báo cáo lỗi câu hỏi</h3>
+    <p>Mô tả lỗi hoặc vấn đề bạn gặp phải với câu hỏi hiện tại. Báo cáo sẽ gửi đến người tạo câu hỏi để xem xét.</p>
     <textarea [(ngModel)]="reportDescription" rows="4" class="lc-comment-textarea" style="width:100%;box-sizing:border-box;background:var(--bg-nested);border:1px solid var(--border-nested);border-radius:8px;padding:12px;color:var(--text-main);font-size:0.875rem;resize:vertical;margin-bottom:16px;" placeholder="Ví dụ: Câu hỏi số 3 có đáp án đúng bị thiếu..."></textarea>
     <div class="modal-actions-row">
       <button class="btn-modal-cancel" (click)="closeReportModal()">Hủy</button>

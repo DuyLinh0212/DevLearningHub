@@ -8,6 +8,8 @@ namespace DevLearningHub.Test.Factories;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databaseName = $"DevLearningHub_Test_Db_{Guid.NewGuid()}";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -24,7 +26,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<DevLearningHubContext>(options =>
             {
-                options.UseInMemoryDatabase("DevLearningHub_Test_Db");
+                options.UseInMemoryDatabase(_databaseName);
             });
 
             using var scope = services.BuildServiceProvider().CreateScope();

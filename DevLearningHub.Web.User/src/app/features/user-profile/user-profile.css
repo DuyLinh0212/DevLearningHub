@@ -395,6 +395,13 @@
   gap: 14px;
 }
 
+.banner-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .avatar-upload-actions {
   display: flex;
   flex-direction: column;

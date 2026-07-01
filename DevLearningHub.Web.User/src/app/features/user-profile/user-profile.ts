@@ -35,6 +35,7 @@ export class UserProfileComponent implements OnInit {
   showEditModal = false;
   isSavingProfile = false;
   isUploadingAvatar = false;
+  isUploadingBanner = false;
   editForm = { fullName: '', bio: '', avatarUrl: '', bannerUrl: '' };
 
   ngOnInit() {
@@ -169,12 +170,14 @@ export class UserProfileComponent implements OnInit {
   }
 
   closeEditModal() {
-    if (this.isSavingProfile) return;
+    if (this.isSavingProfile || this.isUploadingAvatar || this.isUploadingBanner) return;
     this.showEditModal = false;
     this.cdr.detectChanges();
   }
 
   saveProfile() {
+    if (this.isUploadingAvatar || this.isUploadingBanner) return;
+
     this.isSavingProfile = true;
     this.cdr.detectChanges();
 
@@ -237,6 +240,41 @@ export class UserProfileComponent implements OnInit {
       },
       error: (err) => {
         alert(err?.error?.message || 'Không thể tải ảnh lên.');
+      }
+    });
+    input.value = '';
+  }
+
+  onBannerFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Anh khong duoc vuot qua 5MB.');
+      input.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.isUploadingBanner = true;
+    this.cdr.detectChanges();
+
+    this.http.post<any>('/api/users/me/banner', formData).pipe(
+      finalize(() => { this.isUploadingBanner = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (res) => {
+        const u = res?.data || res;
+        const newUrl = u?.bannerUrl || '';
+        this.editForm = { ...this.editForm, bannerUrl: newUrl };
+        if (this.user) this.user.bannerUrl = newUrl;
+        window.dispatchEvent(new Event('profile-updated'));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Khong the tai anh nen len.');
       }
     });
     input.value = '';

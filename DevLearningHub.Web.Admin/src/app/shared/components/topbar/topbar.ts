@@ -7,6 +7,16 @@ import { filter } from 'rxjs/operators';
 import { ThemeService } from '../../../core/services/theme.service';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
+interface NotificationItem {
+  id: string;
+  type: string;
+  message: string;
+  refId: string | null;
+  refType: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-topbar',
   standalone: true,
@@ -31,6 +41,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
 
   isSearchOpen = false;
   isProfileOpen = false;
+  isNotifOpen = false;
   activeDropdown: string | null = null;
   searchQuery = '';
   searchLoading = false;
@@ -39,6 +50,9 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
   matchedUsers: any[] = [];
   matchedProblems: any[] = [];
   showSearchResults = false;
+  notifications: NotificationItem[] = [];
+  notifLoading = false;
+  unreadCount = 0;
 
   private profileUpdateHandler = () => this.loadProfile();
 
@@ -69,12 +83,14 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadProfile();
+    this.loadUnreadCount();
     window.addEventListener('profile-updated', this.profileUpdateHandler);
     this.routeSub = this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe(() => {
       this.isSearchOpen = false;
       this.isProfileOpen = false;
+      this.isNotifOpen = false;
       this.clearSearch();
       this.mobileMenu.close();
       this.cdr.detectChanges();
@@ -109,6 +125,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
   toggleSearch() {
     this.isSearchOpen = !this.isSearchOpen;
     this.isProfileOpen = false;
+    this.isNotifOpen = false;
     if (this.isSearchOpen) {
       setTimeout(() => {
         const el = document.getElementById('admin-topbar-search-input');
@@ -123,7 +140,106 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
   toggleProfile() {
     this.isProfileOpen = !this.isProfileOpen;
     this.isSearchOpen = false;
+    this.isNotifOpen = false;
     this.cdr.detectChanges();
+  }
+
+  toggleNotif() {
+    this.isNotifOpen = !this.isNotifOpen;
+    this.isProfileOpen = false;
+    this.isSearchOpen = false;
+    this.activeDropdown = null;
+    if (this.isNotifOpen) {
+      this.loadNotifications();
+    }
+    this.cdr.detectChanges();
+  }
+
+  loadUnreadCount() {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return;
+    this.http.get<any>('/api/notifications/unread-count').subscribe({
+      next: (res) => {
+        this.unreadCount = res?.data?.unreadCount ?? res?.unreadCount ?? 0;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  loadNotifications() {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return;
+    this.notifLoading = true;
+    this.http.get<any>('/api/notifications', {
+      params: { page: '1', pageSize: '20', unreadOnly: 'false' }
+    }).subscribe({
+      next: (res) => {
+        const data = res?.data || res;
+        this.notifications = data?.items || [];
+        this.unreadCount = data?.unreadCount ?? 0;
+        this.notifLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.notifLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  markNotifRead(notif: NotificationItem, event: Event) {
+    event.stopPropagation();
+    if (notif.isRead) return;
+    this.http.post<any>(`/api/notifications/${notif.id}/read`, {}).subscribe({
+      next: (res) => {
+        notif.isRead = true;
+        this.unreadCount = res?.data?.unreadCount ?? Math.max(0, this.unreadCount - 1);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  markAllNotifRead() {
+    this.http.post<any>('/api/notifications/read-all', {}).subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.isRead = true);
+        this.unreadCount = 0;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deleteNotif(notif: NotificationItem, event: Event) {
+    event.stopPropagation();
+    this.http.delete<any>(`/api/notifications/${notif.id}`).subscribe({
+      next: (res) => {
+        this.notifications = this.notifications.filter(n => n.id !== notif.id);
+        this.unreadCount = res?.data?.unreadCount ?? this.unreadCount;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getNotifIcon(type: string): string {
+    switch ((type || '').toLowerCase()) {
+      case 'content_reported': return 'bi-flag-fill';
+      case 'post_deleted': return 'bi-trash-fill';
+      case 'comment_deleted': return 'bi-chat-left-text-fill';
+      case 'quiz_deleted': return 'bi-patch-question-fill';
+      case 'problem_deleted': return 'bi-code-slash';
+      default: return 'bi-bell-fill';
+    }
+  }
+
+  getRelativeTime(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'vua xong';
+    if (mins < 60) return `${mins} phut truoc`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} gio truoc`;
+    return `${Math.floor(hrs / 24)} ngay truoc`;
   }
 
   onSearchInput(event: Event) {
@@ -197,6 +313,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
       this.activeDropdown = dropdownName;
       this.isProfileOpen = false;
       this.isSearchOpen = false;
+      this.isNotifOpen = false;
     }
     this.cdr.detectChanges();
   }
@@ -206,6 +323,7 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
     if (!this.elementRef.nativeElement.contains(e.target)) {
       if (this.isSearchOpen) { this.isSearchOpen = false; this.clearSearch(); }
       if (this.isProfileOpen) { this.isProfileOpen = false; }
+      if (this.isNotifOpen) { this.isNotifOpen = false; }
       this.activeDropdown = null;
       this.cdr.detectChanges();
     }

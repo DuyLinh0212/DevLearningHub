@@ -156,6 +156,18 @@ html.light-theme .code-font {
 .admin-pm-tab:hover { color: var(--text-main); background: rgba(255,255,255,.04); }
 .admin-pm-tab.active { background: var(--color-purple); color: #fff; }
 
+.bank-add-problem-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.bank-add-problem-select {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Problem Library Section styling */
 .problem-library-section {
   border: 1px dashed rgba(168, 85, 247, 0.45);

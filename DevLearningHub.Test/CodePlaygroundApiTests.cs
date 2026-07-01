@@ -7,6 +7,7 @@ using DevLearningHub.Test.Factories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -122,8 +123,8 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
     public async Task SubmitCode_ShouldSaveAndReturnVerdict_WhenValidSubmission()
     {
         // Arrange
-        await SeedDatabaseAsync();
         var client = CreateConfiguredClient();
+        await SeedDatabaseAsync();
         var request = new CodeSubmitRequest { ProblemId = _testProblemId, Code = "some code", LanguageId = 54 };
 
         // Giả lập kết quả trả về từ Judge0 cho 2 Test Case đã seed
@@ -145,9 +146,191 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<CodeSubmitResponse>();
         Assert.NotNull(result);
-        Assert.Equal("Accepted", result.Verdict);
+        Assert.Equal("accepted", result.Verdict, ignoreCase: true);
         Assert.Equal(2, result.PassedCases);
         Assert.Equal(2, result.TotalCases);
+    }
+
+    [Fact]
+    public async Task CreateProblem_ShouldReturnCreatedProblemBody_WithId()
+    {
+        // Arrange
+        await SeedDatabaseAsync();
+        var client = CreateConfiguredClient();
+        var request = new CreateProblemRequest
+        {
+            TopicId = Guid.NewGuid(),
+            Title = "Bài mới",
+            Description = "Mô tả bài mới",
+            Difficulty = "easy",
+            StarterCode = "print('hello')"
+        };
+
+        // Act
+        client.DefaultRequestHeaders.Add("X-Test-Role", "User");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", _testUserId.ToString());
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "problem:create");
+        var response = await client.PostAsJsonAsync("/api/problems", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ProblemDetailResponse>();
+        Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.Equal(request.Title, result.Title);
+    }
+
+    [Fact]
+    public async Task ProblemOwner_ShouldUpdateProblemAndTestCase_WithoutEditPermission()
+    {
+        // Arrange
+        var client = CreateConfiguredClient();
+        client.DefaultRequestHeaders.Add("X-Test-Role", "User");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", _testUserId.ToString());
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "problem:create");
+
+        var createProblem = new CreateProblemRequest
+        {
+            TopicId = Guid.NewGuid(),
+            Title = "Bài chủ sở hữu",
+            Description = "Mô tả",
+            Difficulty = "easy"
+        };
+        var createProblemResponse = await client.PostAsJsonAsync("/api/problems", createProblem);
+        createProblemResponse.EnsureSuccessStatusCode();
+        var createdProblem = await createProblemResponse.Content.ReadFromJsonAsync<ProblemDetailResponse>();
+        Assert.NotNull(createdProblem);
+
+        var createTestCase = new CreateTestCaseRequest
+        {
+            Input = "1 2",
+            ExpectedOutput = "3",
+            IsHidden = false,
+            OrderIndex = 0
+        };
+        var createTestCaseResponse = await client.PostAsJsonAsync($"/api/problems/{createdProblem.Id}/test-cases", createTestCase);
+        createTestCaseResponse.EnsureSuccessStatusCode();
+        var createdTestCase = await createTestCaseResponse.Content.ReadFromJsonAsync<TestCaseResponse>();
+        Assert.NotNull(createdTestCase);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Permissions");
+
+        var updateProblem = new UpdateProblemRequest
+        {
+            TopicId = Guid.NewGuid(),
+            Title = "Tính tổng đã sửa",
+            Description = "Mô tả đã sửa",
+            Difficulty = "medium",
+            StarterCode = "updated",
+            IsActive = true
+        };
+
+        // Act
+        var updateTestCase = new UpdateTestCaseRequest
+        {
+            Input = "2 3",
+            ExpectedOutput = "5",
+            IsHidden = createdTestCase.IsHidden,
+            OrderIndex = createdTestCase.OrderIndex
+        };
+        var problemResponse = await client.PutAsJsonAsync($"/api/problems/{createdProblem.Id}", updateProblem);
+        var testCaseResponse = await client.PutAsJsonAsync($"/api/test-cases/{createdTestCase.Id}", updateTestCase);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, problemResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, testCaseResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProblemManager_ShouldViewPrivateProblemBanksAndAddProblems()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var privateBankId = Guid.NewGuid();
+        var addProblemId = Guid.NewGuid();
+        var topicId = Guid.NewGuid();
+        var client = CreateConfiguredClient();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+
+            db.Users.AddRange(
+                new User
+                {
+                    Id = ownerId,
+                    Username = "owner",
+                    Email = "owner@test.local",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new User
+                {
+                    Id = adminId,
+                    Username = "admin",
+                    Email = "admin@test.local",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+
+            db.Topics.Add(new Topic
+            {
+                Id = topicId,
+                Name = "Code",
+                Slug = "code",
+                IsActive = true
+            });
+
+            db.ProblemBanks.Add(new ProblemBank
+            {
+                Id = privateBankId,
+                CreatedBy = ownerId,
+                Title = "Private bank",
+                Description = "Owner private bank",
+                IsPublic = false,
+                TopicId = topicId,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            db.Problems.Add(new Problem
+            {
+                Id = addProblemId,
+                TopicId = topicId,
+                CreatedBy = ownerId,
+                Title = "Problem to add",
+                Description = "Description",
+                Difficulty = "easy",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Admin");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", adminId.ToString());
+
+        // Act
+        var listResponse = await client.GetAsync("/api/problem-banks");
+        var detailResponse = await client.GetAsync($"/api/problem-banks/{privateBankId}");
+        var addResponse = await client.PostAsJsonAsync($"/api/problem-banks/{privateBankId}/problems", new AddProblemToBankRequest
+        {
+            ProblemId = addProblemId
+        });
+
+        // Assert
+        listResponse.EnsureSuccessStatusCode();
+        detailResponse.EnsureSuccessStatusCode();
+        addResponse.EnsureSuccessStatusCode();
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+        Assert.True(await verifyDb.ProblemBankItems.AnyAsync(i => i.BankId == privateBankId && i.ProblemId == addProblemId));
     }
 
     [Fact]

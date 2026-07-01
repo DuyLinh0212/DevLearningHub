@@ -211,7 +211,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     ].join('\n');
 
     this.reportService.createReport('quiz_question', targetId, enrichedDescription).subscribe({
-      next: () => { alert('Cảm ơn bạn! Báo cáo đã được gửi đến người tạo bộ đề để xem xét.'); this.closeReportModal(); },
+      next: () => { alert('Cảm ơn bạn! Báo cáo đã được gửi đến người tạo câu hỏi để xem xét.'); this.closeReportModal(); },
       error: (err) => { alert(err?.error?.message || 'Không thể gửi báo cáo. Vui lòng thử lại sau.'); }
     });
   }

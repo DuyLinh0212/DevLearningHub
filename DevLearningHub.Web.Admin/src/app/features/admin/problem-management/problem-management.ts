@@ -575,6 +575,8 @@ export class ProblemManagementComponent implements OnInit {
   showBankDetailModal = false;
   selectedBank: any = null;
   bankDetailLoading = false;
+  selectedProblemToAddId = '';
+  isAddingProblemToBank = false;
 
   // Form State
   isModalOpen = false;
@@ -824,6 +826,7 @@ export class ProblemManagementComponent implements OnInit {
     this.bankDetailLoading = true;
     this.showBankDetailModal = true;
     this.selectedBank = null;
+    this.selectedProblemToAddId = '';
     this.cdr.detectChanges();
     this.http.get<any>(`/api/problem-banks/${bank.id}`).pipe(
       finalize(() => {
@@ -843,6 +846,7 @@ export class ProblemManagementComponent implements OnInit {
   closeBankDetail() {
     this.showBankDetailModal = false;
     this.selectedBank = null;
+    this.selectedProblemToAddId = '';
     this.cdr.detectChanges();
   }
 
@@ -911,6 +915,39 @@ export class ProblemManagementComponent implements OnInit {
         }
       },
       error: () => {}
+    });
+  }
+
+  getAvailableProblemsForSelectedBank(): any[] {
+    if (!this.selectedBank) return [];
+    const existingIds = new Set(
+      (this.selectedBank.problems || []).map((p: any) => String(p.problemId).toLowerCase())
+    );
+    return this.problems.filter(p => p?.id && p.isActive !== false && !existingIds.has(String(p.id).toLowerCase()));
+  }
+
+  addSelectedProblemToBank() {
+    if (!this.selectedBank || !this.selectedProblemToAddId || this.isAddingProblemToBank) return;
+
+    const bankId = this.selectedBank.id;
+    const payload = { problemId: this.selectedProblemToAddId };
+    this.isAddingProblemToBank = true;
+    this.cdr.detectChanges();
+
+    this.http.post<any>(`/api/problem-banks/${bankId}/problems`, payload).pipe(
+      finalize(() => {
+        this.isAddingProblemToBank = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.selectedProblemToAddId = '';
+        this.loadBanks();
+        this.openBankDetail({ id: bankId });
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Không thể thêm bài tập vào ngân hàng.');
+      }
     });
   }
 

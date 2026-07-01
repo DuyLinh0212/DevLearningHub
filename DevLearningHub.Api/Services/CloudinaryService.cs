@@ -55,6 +55,40 @@ public class CloudinaryService
 
     #endregion
 
+    #region Banner
+
+    public async Task<(string Url, string PublicId)> UploadBannerAsync(
+        Guid userId,
+        IFormFile file)
+    {
+        ValidateImage(file);
+
+        await using var stream = file.OpenReadStream();
+
+        var uploadParams = new ImageUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+
+            Folder = "devlearninghub/banners",
+
+            PublicId = $"banner_{userId}",
+
+            Overwrite = true
+        };
+
+        var result = await _cloudinary.UploadAsync(uploadParams);
+
+        if (result.Error != null)
+            throw new Exception(result.Error.Message);
+
+        return (
+            result.SecureUrl.ToString(),
+            result.PublicId
+        );
+    }
+
+    #endregion
+
     #region Post
 
     public async Task<(string Url, string PublicId)> UploadPostImageAsync(

@@ -12,6 +12,10 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -139,6 +143,23 @@ builder.Services.AddScoped<IJudge0Service, Judge0Service>();
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        await context.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            message = app.Environment.IsDevelopment()
+                ? feature?.Error.GetBaseException().Message ?? feature?.Error.Message ?? "Internal server error."
+                : "Internal server error."
+        });
+    });
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

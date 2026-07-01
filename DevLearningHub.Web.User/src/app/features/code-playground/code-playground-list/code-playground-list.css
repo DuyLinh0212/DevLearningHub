@@ -1219,6 +1219,26 @@ html.light-theme .problem-row:hover {
 
 .bank-card-body { display: flex; flex-direction: column; gap: 5px; }
 
+.bank-topic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  max-width: calc(100% - 64px);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(168, 85, 247, 0.24);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bank-topic-badge i {
+  font-size: 0.62rem;
+}
+
 .bank-card-title {
   font-size: 0.92rem;
   font-weight: 700;

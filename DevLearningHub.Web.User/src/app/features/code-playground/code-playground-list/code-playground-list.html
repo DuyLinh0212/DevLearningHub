@@ -114,6 +114,11 @@
               }
 
               <div class="bank-card-body">
+                @if (bank.topicName) {
+                  <span class="bank-topic-badge">
+                    <i class="bi bi-bookmark-fill"></i> {{ bank.topicName }}
+                  </span>
+                }
                 <h3 class="bank-card-title">{{ bank.title }}</h3>
                 @if (bank.description) {
                   <p class="bank-card-desc">{{ bank.description }}</p>
