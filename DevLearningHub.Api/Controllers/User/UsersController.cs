@@ -99,7 +99,7 @@ public class UsersController : ControllerBase
         user.AvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
         user.BannerUrl = string.IsNullOrWhiteSpace(request.BannerUrl) ? null : request.BannerUrl.Trim();
         user.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : request.Bio.Trim()[..Math.Min(request.Bio.Trim().Length, 500)];
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
 
@@ -116,7 +116,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadAvatar(
-        [FromForm] IFormFile? file,
+        IFormFile? file,
         [FromServices] CloudinaryService cloudinaryService)
     {
         if (!User.TryGetUserId(out var userId))
@@ -145,7 +145,7 @@ public class UsersController : ControllerBase
             return BadRequest(ApiResponse<UserProfileResponse>.Fail(ex.Message));
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user), "Avatar updated."));
@@ -161,7 +161,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<UserProfileResponse>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserProfileResponse>>> UploadBanner(
-        [FromForm] IFormFile? file,
+        IFormFile? file,
         [FromServices] CloudinaryService cloudinaryService)
     {
         if (!User.TryGetUserId(out var userId))
@@ -190,7 +190,7 @@ public class UsersController : ControllerBase
             return BadRequest(ApiResponse<UserProfileResponse>.Fail(ex.Message));
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<UserProfileResponse>.Ok(MapProfile(user), "Banner updated."));

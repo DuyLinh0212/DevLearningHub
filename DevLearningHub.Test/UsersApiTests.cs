@@ -301,8 +301,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 Name = "Admin",
                 Description = "Administrator",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             db.Roles.Add(role);
@@ -316,7 +316,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
             {
                 UserId = userId,
                 RoleId = role.Id,
-                AssignedAt = DateTime.UtcNow
+                AssignedAt = DateTime.Now
             });
 
             await db.SaveChangesAsync();
@@ -338,8 +338,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 TotalQuestions = 4,
                 TimeTakenSeconds = 60,
                 Status = "completed",
-                StartedAt = DateTime.UtcNow.AddMinutes(-10),
-                EndedAt = DateTime.UtcNow.AddMinutes(-9)
+                StartedAt = DateTime.Now.AddMinutes(-10),
+                EndedAt = DateTime.Now.AddMinutes(-9)
             },
             new QuizSession
             {
@@ -350,8 +350,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 TotalQuestions = 8,
                 TimeTakenSeconds = 120,
                 Status = "completed",
-                StartedAt = DateTime.UtcNow.AddMinutes(-8),
-                EndedAt = DateTime.UtcNow.AddMinutes(-6)
+                StartedAt = DateTime.Now.AddMinutes(-8),
+                EndedAt = DateTime.Now.AddMinutes(-6)
             },
             new QuizSession
             {
@@ -361,7 +361,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 Score = null,
                 TotalQuestions = 4,
                 Status = "in_progress",
-                StartedAt = DateTime.UtcNow
+                StartedAt = DateTime.Now
             });
 
         await db.SaveChangesAsync();
@@ -385,8 +385,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 Score = 200,
                 TotalQuestions = 200,
                 Status = "completed",
-                StartedAt = DateTime.UtcNow.AddMinutes(-2),
-                EndedAt = DateTime.UtcNow.AddMinutes(-1)
+                StartedAt = DateTime.Now.AddMinutes(-2),
+                EndedAt = DateTime.Now.AddMinutes(-1)
             });
             await db.SaveChangesAsync();
             return existing.Id;
@@ -402,8 +402,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
             XpPoints = 0,
             IsActive = true,
             IsLocked = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         db.Users.Add(user);
@@ -415,8 +415,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
             Score = 200,
             TotalQuestions = 200,
             Status = "completed",
-            StartedAt = DateTime.UtcNow.AddMinutes(-2),
-            EndedAt = DateTime.UtcNow.AddMinutes(-1)
+            StartedAt = DateTime.Now.AddMinutes(-2),
+            EndedAt = DateTime.Now.AddMinutes(-1)
         });
         await db.SaveChangesAsync();
 

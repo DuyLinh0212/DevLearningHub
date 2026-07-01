@@ -355,7 +355,7 @@ public class QuizSessionApiTests : IClassFixture<CustomWebApplicationFactory>
 
         var topicId = Guid.NewGuid();
         var quizSetId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         db.Topics.Add(new Topic
         {

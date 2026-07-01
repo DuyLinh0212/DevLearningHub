@@ -11,6 +11,8 @@ export interface NotificationItem {
   refType: string | null;
   isRead: boolean;
   createdAt: string;
+  reporterName?: string | null;
+  reportDescription?: string | null;
 }
 
 export interface NotificationListResponse {
@@ -67,7 +69,9 @@ export class NotificationService {
           refId: notif.refId ?? null,
           refType: notif.refType ?? null,
           isRead: notif.isRead ?? false,
-          createdAt: notif.createdAt
+          createdAt: notif.createdAt,
+          reporterName: notif.reporterName ?? null,
+          reportDescription: notif.reportDescription ?? null
         };
         this.newNotification$.next(item);
         // Bump badge without waiting for UnreadCountChanged
@@ -115,6 +119,12 @@ export class NotificationService {
 
   markAllAsRead(): Observable<any> {
     return this.http.post<any>('/api/notifications/read-all', {}).pipe(
+      tap(() => this.unreadCount.set(0))
+    );
+  }
+
+  clearAllNotifications(): Observable<any> {
+    return this.http.delete<any>('/api/notifications/clear-all').pipe(
       tap(() => this.unreadCount.set(0))
     );
   }

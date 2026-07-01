@@ -170,15 +170,15 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             Name = AppRoles.Admin,
             Description = "Administrator",
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         });
 
         db.UserRoles.Add(new UserRole
         {
             UserId = _adminId,
             RoleId = _adminRoleId,
-            AssignedAt = DateTime.UtcNow
+            AssignedAt = DateTime.Now
         });
 
         await db.SaveChangesAsync();
@@ -210,7 +210,7 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             Description = "Problem description",
             Difficulty = "easy",
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         });
         await db.SaveChangesAsync();
     }
@@ -227,7 +227,7 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             Content = "Question",
             Level = "easy",
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         });
         await db.SaveChangesAsync();
     }
@@ -242,8 +242,8 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             AuthorId = ownerId,
             Title = "Post",
             BodyMarkdown = "Body",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         });
         await db.SaveChangesAsync();
     }
@@ -259,8 +259,8 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             FullName = name,
             IsActive = true,
             IsLocked = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
     }
 }

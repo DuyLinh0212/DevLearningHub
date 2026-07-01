@@ -2,6 +2,7 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Notifications;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,10 +21,12 @@ public class NotificationsController : ControllerBase
     private const int MaxPageSize = 100;
 
     private readonly DevLearningHubContext _db;
+    private readonly ILogger<NotificationsController> _logger;
 
-    public NotificationsController(DevLearningHubContext db)
+    public NotificationsController(DevLearningHubContext db, ILogger<NotificationsController> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -66,6 +69,16 @@ public class NotificationsController : ControllerBase
             })
             .ToListAsync();
 
+        try
+        {
+            await EnrichReportNotificationsAsync(items, userId);
+        }
+        catch (Exception ex)
+        {
+            // Enrichment must never break the notifications list.
+            _logger.LogWarning(ex, "Failed to enrich report notifications for user {UserId}.", userId);
+        }
+
         var result = new NotificationListResponse
         {
             Items = items,
@@ -77,6 +90,75 @@ public class NotificationsController : ControllerBase
         };
 
         return Ok(ApiResponse<NotificationListResponse>.Ok(result));
+    }
+
+    private async Task EnrichReportNotificationsAsync(List<NotificationResponse> items, Guid userId)
+    {
+        var reportNotifications = items
+            .Where(n => n.Type == NotificationTypes.ContentReported && n.RefId.HasValue)
+            .ToList();
+
+        if (reportNotifications.Count == 0)
+        {
+            return;
+        }
+
+        var reportIds = reportNotifications
+            .Where(n => n.RefType == NotificationRefTypes.Report)
+            .Select(n => n.RefId!.Value)
+            .ToHashSet();
+
+        var targetIds = reportNotifications
+            .Where(n => n.RefType != NotificationRefTypes.Report)
+            .Select(n => n.RefId!.Value)
+            .ToHashSet();
+
+        var reportDetails = await _db.Reports
+            .AsNoTracking()
+            .Include(r => r.Reporter)
+            .Include(r => r.ReportType)
+            .Where(r =>
+                reportIds.Contains(r.Id) ||
+                (targetIds.Contains(r.TargetId) && r.RecipientId == userId))
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                r.Id,
+                r.TargetId,
+                TypeName = r.ReportType.Name,
+                r.Description,
+                ReporterName = r.Reporter.FullName ?? r.Reporter.Username
+            })
+            .ToListAsync();
+
+        foreach (var notification in reportNotifications)
+        {
+            var report = notification.RefType == NotificationRefTypes.Report
+                ? reportDetails.FirstOrDefault(r => r.Id == notification.RefId)
+                : reportDetails.FirstOrDefault(r =>
+                    r.TargetId == notification.RefId &&
+                    ReportTypeMatchesNotificationRef(r.TypeName, notification.RefType));
+
+            if (report == null)
+            {
+                continue;
+            }
+
+            notification.ReporterName = report.ReporterName;
+            notification.ReportDescription = report.Description;
+        }
+    }
+
+    private static bool ReportTypeMatchesNotificationRef(string typeName, string? refType)
+    {
+        return (typeName, refType) switch
+        {
+            ("problem", NotificationRefTypes.Problem) => true,
+            ("quiz_question", NotificationRefTypes.Question) => true,
+            ("post", NotificationRefTypes.Post) => true,
+            ("comment", NotificationRefTypes.Comment) => true,
+            _ => false
+        };
     }
 
     [HttpGet("unread-count")]
@@ -141,6 +223,28 @@ public class NotificationsController : ControllerBase
         }
 
         return Ok(ApiResponse<object>.Ok(new { updated = unread.Count, unreadCount = 0 }));
+    }
+
+    [HttpDelete("clear-all")]
+    // Remove every notification from the current user's list.
+    public async Task<ActionResult<ApiResponse<object>>> ClearAll()
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+        }
+
+        var notifications = await _db.Notifications
+            .Where(n => n.UserId == userId)
+            .ToListAsync();
+
+        if (notifications.Count > 0)
+        {
+            _db.Notifications.RemoveRange(notifications);
+            await _db.SaveChangesAsync();
+        }
+
+        return Ok(ApiResponse<object>.Ok(new { deleted = notifications.Count, unreadCount = 0 }));
     }
 
     [HttpDelete("{id:guid}")]

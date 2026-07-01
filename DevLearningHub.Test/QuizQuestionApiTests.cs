@@ -553,7 +553,7 @@ public class QuizQuestionApiTests : IClassFixture<CustomWebApplicationFactory>
             Level = level,
             Explanation = $"Explanation for {content}",
             IsActive = isActive,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         db.Questions.Add(question);

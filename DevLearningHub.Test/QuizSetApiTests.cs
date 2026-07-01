@@ -539,7 +539,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             Level = "beginner",
             Explanation = $"Explanation for {content}",
             IsActive = isActive,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         db.Questions.Add(question);
@@ -582,7 +582,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             IsPublic = isPublic,
             TopicId = null,
             Level = "beginner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         db.QuizSets.Add(quizSet);
@@ -605,7 +605,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             TotalQuestions = 1,
             TimeTakenSeconds = null,
             Status = "in_progress",
-            StartedAt = DateTime.UtcNow
+            StartedAt = DateTime.Now
         });
 
         await db.SaveChangesAsync();

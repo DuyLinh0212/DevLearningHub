@@ -66,16 +66,17 @@ public class ReportsController : ControllerBase
             Id = Guid.NewGuid(),
             ReportTypeId = request.ReportTypeId,
             ReporterId = userId,
+            RecipientId = await ResolveReportRecipientIdAsync(type.Name, request.TargetId),
             TargetId = request.TargetId,
             Description = request.Description?.Trim()[..Math.Min(request.Description.Trim().Length, 2000)],
             Status = "pending",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         _db.Reports.Add(report);
         await _db.SaveChangesAsync();
 
-        await NotifyReportRecipientsAsync(type.Name, request.TargetId, report.Id, userId);
+        await NotifyReportRecipientsAsync(type.Name, request.TargetId, report.Id, userId, report.RecipientId);
 
         return Ok(ApiResponse<object>.Ok(new { id = report.Id }, "Báo cáo đã được gửi thành công."));
     }
@@ -123,6 +124,7 @@ public class ReportsController : ControllerBase
                 TypeName = r.ReportType.Name,
                 TypeDescription = r.ReportType.Description,
                 ReporterId = r.ReporterId,
+                RecipientId = r.RecipientId,
                 ReporterUsername = r.Reporter.Username,
                 ReporterAvatarUrl = r.Reporter.AvatarUrl,
                 TargetId = r.TargetId,
@@ -164,7 +166,7 @@ public class ReportsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Báo cáo không tồn tại."));
 
         report.Status = request.Status;
-        report.ResolvedAt = DateTime.UtcNow;
+        report.ResolvedAt = DateTime.Now;
         report.ResolvedBy = moderatorId;
 
         await _db.SaveChangesAsync();
@@ -178,21 +180,42 @@ public class ReportsController : ControllerBase
             || await _permissions.HasPermissionAsync(userId, "post:delete_any");
     }
 
-    private async Task NotifyReportRecipientsAsync(string typeName, Guid targetId, Guid reportId, Guid reporterId)
+    private async Task<Guid?> ResolveReportRecipientIdAsync(string typeName, Guid targetId)
     {
         if (typeName is "problem" or "quiz_question")
         {
-            await NotifyReportedContentOwnerAsync(typeName, targetId, reporterId);
+            var target = await ResolveReportTargetAsync(typeName, targetId);
+            return target.OwnerId;
+        }
+
+        return await _db.UserRoles
+            .AsNoTracking()
+            .Where(ur =>
+                ur.Role.IsActive &&
+                ur.Role.Name == AppRoles.Admin &&
+                ur.User.IsActive &&
+                !ur.User.IsLocked)
+            .OrderBy(ur => ur.User.Username)
+            .Select(ur => (Guid?)ur.UserId)
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task NotifyReportRecipientsAsync(string typeName, Guid targetId, Guid reportId, Guid reporterId, Guid? recipientId)
+    {
+        if (typeName is "problem" or "quiz_question")
+        {
+            await NotifyReportedContentOwnerAsync(typeName, targetId, reporterId, recipientId);
             return;
         }
 
         await NotifyAdminsAsync(typeName, reportId, reporterId);
     }
 
-    private async Task NotifyReportedContentOwnerAsync(string typeName, Guid targetId, Guid reporterId)
+    private async Task NotifyReportedContentOwnerAsync(string typeName, Guid targetId, Guid reporterId, Guid? recipientId)
     {
         var target = await ResolveReportTargetAsync(typeName, targetId);
-        if (target.OwnerId == null)
+        var ownerId = recipientId ?? target.OwnerId;
+        if (ownerId == null)
         {
             return;
         }
@@ -207,7 +230,7 @@ public class ReportsController : ControllerBase
         };
 
         await _notifications.NotifyAsync(
-            recipientId: target.OwnerId.Value,
+            recipientId: ownerId.Value,
             type: NotificationTypes.ContentReported,
             message: message,
             refId: targetId,
@@ -314,6 +337,8 @@ public class ReportResponse
     public string? TypeDescription { get; set; }
 
     public Guid ReporterId { get; set; }
+
+    public Guid? RecipientId { get; set; }
 
     public string ReporterUsername { get; set; } = null!;
 

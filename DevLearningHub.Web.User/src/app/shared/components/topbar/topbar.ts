@@ -45,7 +45,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   showSearchResults = false;
 
   notifications: NotificationItem[] = [];
+  selectedNotif: NotificationItem | null = null;
   notifLoading = false;
+  notifError = false;
   notifPage = 1;
   notifTotalPages = 1;
 
@@ -90,7 +92,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.notifRealtimeSub = this.notificationService.newNotification$.subscribe(notif => {
       this.showToast(notif);
       if (this.isNotifOpen) {
-        this.notifications.unshift(notif);
+        this.notifications = [
+          notif,
+          ...this.notifications.filter(existing => existing.id !== notif.id)
+        ];
       }
       this.cdr.detectChanges();
     });
@@ -102,6 +107,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
       this.isSearchOpen = false;
       this.isProfileOpen = false;
       this.isNotifOpen = false;
+      this.selectedNotif = null;
       this.clearSearch();
       this.mobileMenu.close();
       this.cdr.detectChanges();
@@ -176,6 +182,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.isProfileOpen = false;
     this.isSearchOpen = false;
     if (this.isNotifOpen) {
+      this.selectedNotif = null;
       this.loadNotifications();
     }
     this.cdr.detectChanges();
@@ -185,11 +192,13 @@ export class TopbarComponent implements OnInit, OnDestroy {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
     if (!token) return;
     this.notifLoading = true;
+    this.notifError = false;
     this.cdr.detectChanges();
     this.notificationService.getNotifications(1, 20).subscribe({
       next: (res) => {
         const data = res?.data || res;
         this.notifications = data?.items || [];
+        this.selectedNotif = null;
         this.notifTotalPages = data?.totalPages ?? 1;
         this.notifPage = 1;
         const unread = data?.unreadCount ?? 0;
@@ -197,8 +206,11 @@ export class TopbarComponent implements OnInit, OnDestroy {
         this.notifLoading = false;
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
+        console.error('[Topbar] Failed to load notifications:', err);
+        this.notifications = [];
         this.notifLoading = false;
+        this.notifError = true;
         this.cdr.detectChanges();
       }
     });
@@ -215,10 +227,37 @@ export class TopbarComponent implements OnInit, OnDestroy {
     });
   }
 
+  openNotifDetail(notif: NotificationItem, event?: Event) {
+    event?.stopPropagation();
+    this.selectedNotif = this.selectedNotif?.id === notif.id ? null : notif;
+
+    if (!notif.isRead) {
+      this.notificationService.markAsRead(notif.id).subscribe({
+        next: () => {
+          notif.isRead = true;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  openNotifTarget(notif: NotificationItem, event: Event) {
+    event.stopPropagation();
+    const commands = this.getNotifRoute(notif);
+    if (!commands) return;
+
+    this.isNotifOpen = false;
+    this.selectedNotif = null;
+    this.router.navigate(commands);
+  }
+
   markAllNotifRead() {
     this.notificationService.markAllAsRead().subscribe({
       next: () => {
-        this.notifications.forEach(n => n.isRead = true);
+        this.notifications = this.notifications.map(n => ({ ...n, isRead: true }));
+        this.selectedNotif = null;
         this.cdr.detectChanges();
       }
     });
@@ -237,11 +276,40 @@ export class TopbarComponent implements OnInit, OnDestroy {
   getNotifIcon(type: string): string {
     switch ((type || '').toLowerCase()) {
       case 'comment': return 'bi-chat-left-text';
+      case 'comment_reply': return 'bi-chat-left-text';
+      case 'post_comment': return 'bi-chat-left-text';
+      case 'content_reported': return 'bi-flag-fill';
+      case 'post_deleted': return 'bi-trash-fill';
+      case 'comment_deleted': return 'bi-trash-fill';
+      case 'quiz_deleted': return 'bi-journal-x';
+      case 'problem_deleted': return 'bi-code-square';
       case 'like': return 'bi-heart-fill';
       case 'follow': return 'bi-person-plus-fill';
       case 'submission': return 'bi-code-slash';
       case 'achievement': return 'bi-trophy-fill';
       default: return 'bi-bell-fill';
+    }
+  }
+
+  canOpenNotifTarget(notif: NotificationItem): boolean {
+    return !!this.getNotifRoute(notif);
+  }
+
+  private getNotifRoute(notif: NotificationItem): any[] | null {
+    if (!notif.refId || !notif.refType) return null;
+
+    switch (notif.refType.toLowerCase()) {
+      case 'post':
+      case 'comment':
+        return ['/forum/post', notif.refId];
+      case 'problem':
+        return ['/code', notif.refId];
+      case 'quiz_set':
+        return ['/quiz', notif.refId];
+      case 'question':
+        return ['/quiz-create'];
+      default:
+        return null;
     }
   }
 

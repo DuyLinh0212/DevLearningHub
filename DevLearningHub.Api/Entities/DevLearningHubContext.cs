@@ -588,6 +588,7 @@ public partial class DevLearningHubContext : DbContext
 
             entity.HasIndex(e => e.ReportTypeId, "idx_reports_type");
             entity.HasIndex(e => e.ReporterId, "idx_reports_reporter");
+            entity.HasIndex(e => e.RecipientId, "idx_reports_recipient");
             entity.HasIndex(e => e.TargetId, "idx_reports_target");
             entity.HasIndex(e => e.Status, "idx_reports_status");
 
@@ -596,6 +597,7 @@ public partial class DevLearningHubContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.ReportTypeId).HasColumnName("report_type_id");
             entity.Property(e => e.ReporterId).HasColumnName("reporter_id");
+            entity.Property(e => e.RecipientId).HasColumnName("recipient_id");
             entity.Property(e => e.TargetId).HasColumnName("target_id");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Status)
@@ -616,6 +618,11 @@ public partial class DevLearningHubContext : DbContext
                 .HasForeignKey(d => d.ReporterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_reports_reporter");
+
+            entity.HasOne(d => d.Recipient).WithMany()
+                .HasForeignKey(d => d.RecipientId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_recipient");
 
             entity.HasOne(d => d.Resolver).WithMany()
                 .HasForeignKey(d => d.ResolvedBy)

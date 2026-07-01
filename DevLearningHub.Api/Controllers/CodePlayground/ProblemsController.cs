@@ -104,7 +104,7 @@ public class ProblemsController : ControllerBase
 			Difficulty = request.Difficulty,
 			StarterCode = request.StarterCode,
 			IsActive = true,
-			CreatedAt = DateTime.UtcNow
+			CreatedAt = DateTime.Now
 		};
 
 		// Map tags nếu có

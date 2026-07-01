@@ -82,7 +82,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
             Description = "Cho 2 số nguyên A và B. Tính A + B",
             Difficulty = "easy",
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
         db.Problems.Add(problem);
 
@@ -265,8 +265,8 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                     Username = "owner",
                     Email = "owner@test.local",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 },
                 new User
                 {
@@ -274,8 +274,8 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                     Username = "admin",
                     Email = "admin@test.local",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 });
 
             db.Topics.Add(new Topic
@@ -294,7 +294,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                 Description = "Owner private bank",
                 IsPublic = false,
                 TopicId = topicId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             db.Problems.Add(new Problem
@@ -306,7 +306,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                 Description = "Description",
                 Difficulty = "easy",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await db.SaveChangesAsync();

@@ -330,8 +330,8 @@ public class ForumApiTests : IClassFixture<CustomWebApplicationFactory>
             Downvotes = 0,
             ViewCount = 0,
             IsHidden = isHidden,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         if (tagId.HasValue)
@@ -366,8 +366,8 @@ public class ForumApiTests : IClassFixture<CustomWebApplicationFactory>
             Downvotes = 0,
             IsAccepted = false,
             IsHidden = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         db.Comments.Add(comment);

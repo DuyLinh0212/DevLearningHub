@@ -22,6 +22,10 @@ public class NotificationResponse
     public bool IsRead { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public string? ReporterName { get; set; }
+
+    public string? ReportDescription { get; set; }
 }
 
 // Paged list of notifications plus the live unread count for the bell badge.

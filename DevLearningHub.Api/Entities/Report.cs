@@ -11,6 +11,8 @@ public partial class Report
 
     public Guid ReporterId { get; set; }
 
+    public Guid? RecipientId { get; set; }
+
     public Guid TargetId { get; set; }
 
     public string? Description { get; set; }
@@ -26,6 +28,8 @@ public partial class Report
     public virtual ReportType ReportType { get; set; } = null!;
 
     public virtual User Reporter { get; set; } = null!;
+
+    public virtual User? Recipient { get; set; }
 
     public virtual User? Resolver { get; set; }
 }

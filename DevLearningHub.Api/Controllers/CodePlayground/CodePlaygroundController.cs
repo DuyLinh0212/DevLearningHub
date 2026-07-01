@@ -82,7 +82,7 @@ public class CodePlaygroundController : ControllerBase
             Code = request.Code,
             Language = languageName,
             LanguageId = langEntity?.Id,
-            SubmittedAt = DateTime.UtcNow,
+            SubmittedAt = DateTime.Now,
             // Sẽ update chi tiết lỗi tổng quan ở bước duyệt kết quả dưới đây
             Verdict = "accepted",
             PassedCases = 0,
