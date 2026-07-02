@@ -571,10 +571,23 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
 
+        var owner = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = $"seed_quiz_owner_{Guid.NewGuid():N}",
+            Email = $"seed_quiz_owner_{Guid.NewGuid():N}@test.local",
+            PasswordHash = "not-used-in-this-test",
+            FullName = $"Owner for {title}",
+            IsActive = true,
+            IsLocked = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+
         var quizSet = new QuizSet
         {
             Id = Guid.NewGuid(),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = owner.Id,
             Title = title,
             Description = $"Description for {title}",
             Mode = "practice",
@@ -585,6 +598,8 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             CreatedAt = DateTime.Now
         };
 
+        // QuizSet list project sang CreatedByNavigation, nên dữ liệu seed phải có owner hợp lệ.
+        db.Users.Add(owner);
         db.QuizSets.Add(quizSet);
         await db.SaveChangesAsync();
 
