@@ -23,6 +23,27 @@ export class LoginComponent {
   isLoading = false;
   showPassword = false;
 
+  popupMessage = '';
+  popupTitle = '';
+  popupType = 'info';
+
+  onForgotPassword(event: Event) {
+    event.preventDefault();
+    this.showPopup('Quên mật khẩu', 'Vui lòng liên hệ quản lý hệ thống hoặc bộ phận CNTT để được cấp lại mật khẩu truy cập cổng Quản trị!', 'info');
+  }
+
+  showPopup(title: string, message: string, type: 'success' | 'error' | 'info') {
+    this.popupTitle = title;
+    this.popupMessage = message;
+    this.popupType = type;
+    this.cdr.detectChanges();
+  }
+
+  closePopup() {
+    this.popupMessage = '';
+    this.cdr.detectChanges();
+  }
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
@@ -75,8 +96,6 @@ export class LoginComponent {
               this.cdr.detectChanges();
               return;
             }
-
-            alert('Đăng nhập thành công!');
             const roles = Array.isArray(roleClaim)
               ? roleClaim.map((r: string) => r.toLowerCase())
               : [ (roleClaim || '').toLowerCase() ];

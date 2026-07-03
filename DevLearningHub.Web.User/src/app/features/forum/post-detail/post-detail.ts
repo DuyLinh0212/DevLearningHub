@@ -329,6 +329,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     event?.stopPropagation();
     if (!this.checkLogin()) return;
 
+    const authorId = (this.post?.author?.id || this.post?.authorId || this.post?.createdBy || '').toString().toLowerCase();
+    if (authorId === this.currentUserId) {
+      alert('Bạn không thể báo cáo bài viết của chính mình!');
+      return;
+    }
+
     this.reportTargetType = 'post';
     this.reportTarget = this.post;
     this.reportDescription = '';
@@ -339,6 +345,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   openCommentReportModal(comment: any, event?: Event) {
     event?.stopPropagation();
     if (!this.checkLogin()) return;
+
+    const authorId = (comment?.author?.id || comment?.authorId || comment?.createdBy || '').toString().toLowerCase();
+    if (authorId === this.currentUserId) {
+      alert('Bạn không thể báo cáo bình luận của chính mình!');
+      return;
+    }
 
     this.reportTargetType = 'comment';
     this.reportTarget = comment;
@@ -596,8 +608,14 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   isPostAuthor(): boolean {
     if (!this.post || !this.currentUserId) return false;
-    const postAuthorId = (this.post.author.id || '').toString().toLowerCase();
+    const postAuthorId = (this.post.author?.id || this.post.authorId || this.post.createdBy || '').toString().toLowerCase();
     return postAuthorId === this.currentUserId;
+  }
+
+  isCommentAuthor(comment: any): boolean {
+    if (!comment || !this.currentUserId) return false;
+    const commentAuthorId = (comment.author?.id || comment.authorId || comment.createdBy || '').toString().toLowerCase();
+    return commentAuthorId === this.currentUserId;
   }
 
   canEditPost(): boolean {

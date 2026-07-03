@@ -1,4 +1,4 @@
-<header class="content-header">
+﻿<header class="content-header">
       <div class="top-breadcrumb">
         <a routerLink="/quiz-bank">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Tạo Đề ôn luyện</span>
       </div>
@@ -128,7 +128,7 @@
           <p>Thêm mới, nhập nội dung câu hỏi và thiết lập đáp án chính xác cho bộ đề: <strong class="text-purple">{{ quizMeta.title }}</strong></p>
         </div>
         <div class="header-action-buttons">
-          <button class="btn-secondary-action" type="button" (click)="openImportModal()">
+          <button class="btn-secondary-action btn-import-purple" type="button" (click)="openImportModal()">
             <i class="bi bi-upload"></i> Import đề
           </button>
           <button class="btn-secondary-action spacing-right-btn" [disabled]="isSaving" (click)="saveDraft()">
@@ -285,6 +285,9 @@
         </div>
 
         <div class="import-modal-footer">
+          <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('xlsx')">
+            <i class="bi bi-file-earmark-excel"></i> Mẫu Excel
+          </button>
           <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('csv')">
             <i class="bi bi-file-earmark-spreadsheet"></i> Mẫu CSV
           </button>
@@ -353,3 +356,6 @@
     </div>
   </div>
   }
+
+
+

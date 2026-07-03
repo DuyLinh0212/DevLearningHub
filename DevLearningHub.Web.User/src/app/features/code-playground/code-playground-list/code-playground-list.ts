@@ -90,6 +90,13 @@ export class CodePlaygroundListComponent implements OnInit {
     testCases: [] as ProblemFormTestCase[]
   };
 
+
+  get availableTagOptions(): string[] {
+    const defaults = ['Algorithm', 'Data Structure', 'String', 'Array', 'Recursion', 'Math', 'Sorting', 'Graph', 'Tree', 'Dynamic Programming'];
+    const fromProblems = this.problems.flatMap((p: any) => Array.isArray(p.tags) ? p.tags : []);
+    const fromTopics = this.topics.map((t: any) => t.name).filter(Boolean);
+    return Array.from(new Set([...defaults, ...fromTopics, ...fromProblems].map((x: any) => String(x).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }
   // ---- User permissions ----
   userPermissions: string[] = [];
 
@@ -421,6 +428,12 @@ export class CodePlaygroundListComponent implements OnInit {
   // ---- Create / Edit Bank modal ----
 
   openCreateBankModal(bank?: ProblemBankSummary) {
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để thực hiện thao tác này!');
+      this.router.navigate(['/login']);
+      return;
+    }
     if (bank) {
       this.editingBankId = bank.id;
       this.bankForm = { title: bank.title, description: bank.description || '', isPublic: bank.isPublic, topicId: bank.topicId || '' };
@@ -488,6 +501,12 @@ export class CodePlaygroundListComponent implements OnInit {
   // ---- Create Problem modal (existing) ----
 
   openCreateModal() {
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để thực hiện thao tác này!');
+      this.router.navigate(['/login']);
+      return;
+    }
     this.isEditMode = false;
     this.editingProblemId = '';
     this.form = {
@@ -731,3 +750,4 @@ export class CodePlaygroundListComponent implements OnInit {
     if (this.showCreateModal && !this.isSaving) { this.closeCreateModal(); }
   }
 }
+

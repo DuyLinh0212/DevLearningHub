@@ -25,8 +25,9 @@
    ===================================================================== */
 .cp-container {
   padding: 22px 24px;
-  max-width: 1300px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   color: var(--text-main);
   background: var(--bg-dashboard);
   box-sizing: border-box;
@@ -797,6 +798,23 @@ html.light-theme .problem-row:hover {
 
 .form-check-group { gap: 4px; }
 
+/* Responsive: collapse sidebar and stack layout on smaller screens */
+@media (max-width: 1000px) {
+  .cp-layout { flex-direction: column; gap: 12px; }
+  .cp-topic-sidebar { width: 100%; position: relative; top: auto; box-shadow: none; }
+  .cp-problems-panel { min-height: 0; }
+  .cp-header { padding: 12px 10px; }
+  .cp-header-right { gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .cp-container { padding: 12px; }
+  .cp-page-title { font-size: 1.15rem; }
+  .search-wrap { max-width: 100%; }
+  .panel-header { padding: 12px; }
+  .modal-grid { grid-template-columns: 1fr; }
+}
+
 .switch-label {
   display: flex;
   align-items: center;
@@ -822,24 +840,45 @@ html.light-theme .problem-row:hover {
 .tag-input-row .form-input { flex: 1; }
 
 .btn-add-tag {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--bg-card-border);
-  background: var(--bg-nested);
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.08);
+  color: #c084fc;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
   flex-shrink: 0;
-  transition: all 0.15s;
-  font-size: 1rem;
 }
 
 .btn-add-tag:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(168, 85, 247, 0.16);
+  border-color: #a855f7;
+  color: #c084fc;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.25);
+}
+
+.tag-select-dropdown {
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--bg-card-border);
+  background: var(--bg-nested);
+  color: var(--text-main);
+  padding: 0 12px;
+  outline: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.tag-select-dropdown:focus {
+  border-color: var(--accent, #a855f7);
 }
 
 .tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
@@ -1530,4 +1569,19 @@ html.light-theme .problem-row:hover {
   border-radius: 10px;
   min-width: 18px;
   text-align: center;
+}
+
+/* Tag dropdown */
+.tag-input-row .form-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-add-tag:disabled,
+.btn-add-tag:disabled:hover {
+  opacity: .45;
+  cursor: not-allowed;
+  border-color: var(--bg-card-border);
+  color: var(--text-muted);
+  background: var(--bg-nested);
 }

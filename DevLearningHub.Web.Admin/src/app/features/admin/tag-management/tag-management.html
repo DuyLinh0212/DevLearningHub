@@ -1,11 +1,18 @@
 
 
     <header class="content-header">
-<div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="filterTags()" placeholder="Tìm kiếm tag theo tên hoặc slug...">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Tag</span>
       </div>
-      <div class="admin-header-actions">
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterTags()" placeholder="Tìm kiếm tag theo tên hoặc slug..." style="width: 100% !important;">
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act purple" (click)="openTagModal()">
           <i class="bi bi-tag-fill"></i> Tạo tag mới
         </button>
@@ -13,13 +20,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Quản Lý Tag Diễn Đàn</h1>
-        <p>Chuẩn hóa hệ thống nhãn phân loại nội dung cộng đồng. Mỗi tag có tên, slug định danh và màu nhận diện riêng.</p>
-        @if (!isLoading) {
-          <p class="tag-total-stat">{{ tags.length }} tag đang hoạt động trong hệ thống</p>
-        }
-      </section>
 
       @if (isLoading) {
         <div class="empty-state-box-tag">

@@ -1,11 +1,18 @@
 
 
     <header class="content-header">
-<div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tiêu đề, tác giả, nhãn (tags)...">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Bài viết</span>
       </div>
-      <div class="admin-header-actions">
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tiêu đề, tác giả, nhãn (tags)..." style="width: 100% !important;">
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act" style="background: rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);" (click)="toggleShowHidden()">
           <i class="bi" [class.bi-eye-slash-fill]="!showHidden" [class.bi-eye-fill]="showHidden"></i>
           {{ showHidden ? 'Ẩn bài đã hide' : 'Hiện cả bài đã hide' }}
@@ -14,10 +21,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Quản Lý Bài Viết Diễn Đàn</h1>
-        <p>Kiểm duyệt nội dung cộng đồng — ẩn/hiện bài vi phạm, theo dõi thống kê tương tác và xóa nội dung không phù hợp.</p>
-      </section>
 
       <div class="post-filter-bar">
         <select [(ngModel)]="filterStatus" (change)="onStatusFilterChange()">
@@ -127,28 +130,32 @@
               <div class="post-divider"></div>
 
               <!-- Actions bar -->
-              <div class="post-card-actions">
-                <button class="action-btn" routerLink="/admin/posts/{{ post.id }}">
-                  <i class="bi bi-eye"></i>
-                  <span>Xem chi tiết</span>
-                </button>
-                @if (!post.isHidden) {
-                  <button class="action-btn action-btn-moderate" (click)="openModerateModal(post, true)">
-                    <i class="bi bi-eye-slash"></i>
-                    <span>Ẩn bài</span>
-                  </button>
-                } @else {
-                  <button class="action-btn action-btn-moderate" (click)="moderatePost(post.id, false, '')">
-                    <i class="bi bi-eye"></i>
-                    <span>Hiện bài</span>
-                  </button>
-                }
-                <button class="action-btn action-btn-delete" (click)="deletePost(post.id)">
-                  <i class="bi bi-trash3"></i>
-                  <span>Xóa</span>
-                </button>
-              </div>
-            </article>
+               <div class="post-card-actions">
+                 <button class="action-btn" routerLink="/admin/posts/{{ post.id }}">
+                   <i class="bi bi-eye"></i>
+                   <span>Xem chi tiết</span>
+                 </button>
+                  @if (hasPermission('post:hide_any') || hasPermission('post:hide')) {
+                    @if (!post.isHidden) {
+                      <button class="action-btn action-btn-moderate" (click)="openModerateModal(post, true)">
+                        <i class="bi bi-eye-slash"></i>
+                        <span>Ẩn bài</span>
+                      </button>
+                    } @else {
+                      <button class="action-btn action-btn-moderate" (click)="moderatePost(post.id, false, '')">
+                        <i class="bi bi-eye"></i>
+                        <span>Hiện bài</span>
+                      </button>
+                    }
+                  }
+                  @if (hasPermission('post:delete_any') || hasPermission('post:delete')) {
+                    <button class="action-btn action-btn-delete" (click)="deletePost(post.id)">
+                      <i class="bi bi-trash3"></i>
+                      <span>Xóa</span>
+                    </button>
+                  }
+                </div>
+             </article>
           }
         </div>
 

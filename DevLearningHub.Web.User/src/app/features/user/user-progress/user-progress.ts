@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ElementRef, ViewChild, ChangeDetectorRef, effect } from '@angular/core';
+﻿import { Component, OnInit, inject, ElementRef, ViewChild, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProgressService } from '../../../core/services/progress.service';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -34,6 +34,10 @@ export class UserProgressComponent implements OnInit {
   chart: any;
   progressData: any[] = [];
   overallAccuracy: number = 0;
+  strongestTopic: any = null;
+  weakestTopic: any = null;
+  masteredCount: number = 0;
+  totalAttemptsSum: number = 0;
 
   ngOnInit() {
     this.loadProgress();
@@ -105,11 +109,26 @@ export class UserProgressComponent implements OnInit {
   calculateOverallStats() {
     if (!this.progressData || this.progressData.length === 0) {
       this.overallAccuracy = 0;
+      this.strongestTopic = null;
+      this.weakestTopic = null;
+      this.masteredCount = 0;
+      this.totalAttemptsSum = 0;
       return;
     }
     const total = this.progressData.reduce((sum, item) => sum + (item.totalQuestions || 0), 0);
     const correct = this.progressData.reduce((sum, item) => sum + (item.correctAnswers || 0), 0);
     this.overallAccuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    // Chủ đề mạnh nhất / yếu nhất để đánh giá năng lực trực quan hơn radar đơn thuần
+    const sortedByAccuracy = [...this.progressData].sort((a, b) => b.accuracy - a.accuracy);
+    this.strongestTopic = sortedByAccuracy[0] || null;
+    this.weakestTopic = sortedByAccuracy[sortedByAccuracy.length - 1] || null;
+
+    // Số chủ đề đã đạt mức thông thạo (>= 80%)
+    this.masteredCount = this.progressData.filter(item => item.accuracy >= 80).length;
+
+    // Tổng số lượt luyện tập trên toàn bộ chủ đề
+    this.totalAttemptsSum = this.progressData.reduce((sum, item) => sum + (item.totalAttempts || 0), 0);
   }
 
   initRadarChart() {

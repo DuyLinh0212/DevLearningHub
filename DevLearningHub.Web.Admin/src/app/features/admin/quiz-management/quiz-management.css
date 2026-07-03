@@ -1254,3 +1254,158 @@
     width: 100% !important;
   }
 }
+
+/* quiz-kebab-flicker-fix: stabilize 3-dot menu hover/click area */
+.btn-more-options-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: auto !important;
+  padding: 2px 0 8px 8px !important;
+  z-index: 80 !important;
+}
+
+.btn-more-options {
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.btn-more-options:hover,
+.btn-more-options:focus,
+.btn-more-options:active {
+  transform: none !important;
+}
+
+.btn-more-options i { pointer-events: none !important; }
+
+.btn-more-options-wrapper .quiz-options-dropdown {
+  top: calc(100% - 6px) !important;
+  right: 0 !important;
+  margin-top: 0 !important;
+  animation: none !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+}
+
+.btn-more-options-wrapper .quiz-options-dropdown::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+/* quiz-kebab-cursor-flicker-final */
+.btn-more-options-wrapper,
+.btn-more-options-wrapper *,
+.btn-more-options,
+.btn-more-options i {
+  cursor: pointer !important;
+}
+
+.btn-more-options-wrapper::before,
+.btn-more-options-wrapper::after,
+.btn-more-options-wrapper .quiz-options-dropdown::before,
+.btn-more-options-wrapper .quiz-options-dropdown::after {
+  display: none !important;
+  content: none !important;
+}
+
+.btn-more-options-wrapper {
+  padding: 0 !important;
+  width: 34px !important;
+  height: 34px !important;
+  overflow: visible !important;
+}
+
+.btn-more-options {
+  position: relative !important;
+  z-index: 1001 !important;
+  margin: 0 !important;
+  background-clip: padding-box !important;
+}
+
+.btn-more-options-wrapper .quiz-options-dropdown {
+  top: 38px !important;
+  right: 0 !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+
+.btn-more-options-wrapper .quiz-options-dropdown,
+.btn-more-options-wrapper .quiz-options-dropdown * {
+  pointer-events: auto !important;
+}
+
+.btn-more-options-wrapper .quiz-options-dropdown .dropdown-item {
+  cursor: pointer !important;
+}
+/* quiz-set-config-no-jump-final: card hover transform caused cursor hand/arrow flicker on kebab */
+.quiz-set-config-card,
+.quiz-set-config-card:hover,
+.quiz-set-config-card:focus-within {
+  transform: none !important;
+}
+
+.quiz-set-menu-anchor {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  margin-left: auto !important;
+  overflow: visible !important;
+  cursor: default !important;
+  z-index: 2000 !important;
+}
+
+.quiz-set-kebab-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transform: none !important;
+  transition: background-color .15s ease, color .15s ease !important;
+  position: relative !important;
+  z-index: 2001 !important;
+}
+
+.quiz-set-kebab-btn:hover,
+.quiz-set-kebab-btn:focus,
+.quiz-set-kebab-btn:active {
+  background: var(--bg-nested) !important;
+  color: var(--text-main) !important;
+  transform: none !important;
+  cursor: pointer !important;
+}
+
+.quiz-set-kebab-btn i {
+  pointer-events: none !important;
+  cursor: pointer !important;
+}
+
+.quiz-set-menu-anchor .quiz-options-dropdown {
+  top: 36px !important;
+  right: 0 !important;
+  margin: 0 !important;
+  animation: none !important;
+  z-index: 3000 !important;
+}

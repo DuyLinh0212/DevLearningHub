@@ -16,7 +16,7 @@
   position: relative;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow-y: auto;
   background-color: #08080c;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;

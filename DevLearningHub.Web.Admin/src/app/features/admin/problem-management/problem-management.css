@@ -177,3 +177,15 @@ html.light-theme .code-font {
   margin-bottom: 20px;
   box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.02);
 }
+/* admin sync: problem bank/code toolbar overflow fixes */
+:host, .dashboard-scroll-body, .problem-library-section { min-width:0; max-width:100%; overflow-x:hidden; box-sizing:border-box; }
+.admin-pm-tabs { display:flex; flex-wrap:wrap; gap:8px; max-width:100%; overflow:visible; }
+.admin-pm-tab { flex:0 1 auto; max-width:100%; }
+.admin-pm-tab.active { background:var(--accent,#06b6d4); color:#fff; }
+.bank-add-problem-row { flex-wrap:wrap; align-items:stretch; width:100%; max-width:100%; }
+.bank-add-problem-select { flex:1 1 260px; min-width:220px; max-width:100%; }
+.bank-add-problem-row .btn-action, .bank-add-problem-row button { flex:0 0 auto; }
+.inline-filter, .filter-row, .admin-filter-row { flex-wrap:wrap !important; max-width:100%; }
+.search-input, .admin-search-input, .inline-filter input[type='text'], .filter-row input[type='text'] { min-width:240px !important; flex:1 1 280px !important; }
+.filter-select, .admin-top-select, .inline-filter select, .filter-row select { min-width:180px !important; flex:0 1 220px !important; }
+@media (max-width:640px){ .bank-add-problem-select,.search-input,.admin-search-input,.filter-select,.admin-top-select,.inline-filter input[type='text'],.filter-row input[type='text'],.inline-filter select,.filter-row select{min-width:0 !important;width:100% !important;flex-basis:100% !important}.bank-add-problem-row .btn-action,.bank-add-problem-row button{width:100%;justify-content:center} }

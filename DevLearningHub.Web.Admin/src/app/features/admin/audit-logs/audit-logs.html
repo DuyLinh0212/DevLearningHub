@@ -1,8 +1,13 @@
 
 
     <header class="content-header">
-<div class="top-search" style="visibility:hidden;"></div>
-      <div class="admin-header-actions">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Nhật ký</span>
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act" (click)="loadLogs()">
           <i class="bi bi-arrow-clockwise"></i> Làm mới
         </button>
@@ -10,10 +15,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Nhật Ký Hệ Thống (Audit Log)</h1>
-        <p>Theo dõi hành động của người dùng: ai làm gì, khi nào, trên đối tượng nào.</p>
-      </section>
 
       <div class="post-filter-bar">
         <select [(ngModel)]="filterAction" (change)="onFilterChange()">

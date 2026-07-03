@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -59,64 +59,90 @@ export class QuizCreateComponent implements OnInit {
   questions: any[] = [this.createEmptyQuestion()];
 
   ngOnInit() {
-    this.loadTopics();
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để tạo đề thi!');
+      this.router.navigate(['/login']);
+      return;
+    }
 
-    this.route.queryParams.subscribe(params => {
-      if (!params['id']) {
-        return;
-      }
-
-      this.editingQuizId = params['id'];
-      console.log(`=== ADMIN_CREATE: TIẾN HÀNH TẢI DỮ LIỆU ĐỀ CŨ ĐỂ SỬA, ID: ${this.editingQuizId} ===`);
-      
-      this.quizService.getQuiz(this.editingQuizId!).subscribe({
-        next: (res: any) => {
-          const target = res?.data || res;
-          if (!target) return;
-
-          console.log('=== DỮ LIỆU BỘ ĐỀ CHI TIẾT ĐỂ EDIT TỪ API ===', target);
-          const rawMode = target.mode || '';
-          
-          const dbLevel = (target.level || 'intermediate').toString().toLowerCase().trim();
-          let uiLevel = 'medium';
-          if (dbLevel === 'beginner') {
-            uiLevel = 'beginner';
-          } else if (dbLevel === 'advanced' || dbLevel === 'hard') {
-            uiLevel = 'hard';
-          } else {
-            uiLevel = 'medium'; 
-          }
-
-          this.quizMeta = {
-            title: target.title || '',
-            desc: target.description || target.desc || '',
-            topicId: target.topicId || this.quizMeta.topicId || this.topics[0]?.id || '',
-            level: uiLevel,
-            duration: target.timeLimitSeconds ? Math.floor(target.timeLimitSeconds / 60) : 15,
-            passRate: target.passRate || 70,
-            shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
-            instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
-            allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true
-          };
-
-          const rawQuestions = target.questions || [];
-          if (rawQuestions.length > 0) {
-            this.questions = rawQuestions.map((question: any) => ({
-              id: question.id,
-              points: question.points || 10,
-              type: question.type || 'single',
-              text: question.text || question.content || '',
-              options: [...(question.options || [])],
-              correctIndex: question.correctIndex ?? 0,
-              explanation: question.explanation || ''
-            }));
-          }
-          this.cdr.detectChanges();
-        },
-        error: (err: any) => {
-          this.saveError = this.getApiError(err);
+    this.http.get<any>('/api/users/me').subscribe({
+      next: (res) => {
+        const user = res?.data || res;
+        const perms = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
+        const hasPermission = perms.includes('quiz:create') || perms.includes('quiz:edit') || perms.includes('system.full_control');
+        
+        if (!hasPermission) {
+          alert('Bạn không có quyền tạo bộ đề thi!');
+          this.router.navigate(['/quiz-bank']);
+          return;
         }
-      });
+
+        // Proceed with loading topics and editing values
+        this.loadTopics();
+
+        this.route.queryParams.subscribe(params => {
+          if (!params['id']) {
+            return;
+          }
+
+          this.editingQuizId = params['id'];
+          console.log(`=== ADMIN_CREATE: TIẾN HÀNH TẢI DỮ LIỆU ĐỀ CŨ ĐỂ SỬA, ID: ${this.editingQuizId} ===`);
+          
+          this.quizService.getQuiz(this.editingQuizId!).subscribe({
+            next: (res: any) => {
+              const target = res?.data || res;
+              if (!target) return;
+
+              console.log('=== DỮ LIỆU BỘ ĐỀ CHI TIẾT ĐỂ EDIT TỪ API ===', target);
+              const rawMode = target.mode || '';
+              
+              const dbLevel = (target.level || 'intermediate').toString().toLowerCase().trim();
+              let uiLevel = 'medium';
+              if (dbLevel === 'beginner') {
+                uiLevel = 'beginner';
+              } else if (dbLevel === 'advanced' || dbLevel === 'hard') {
+                uiLevel = 'hard';
+              } else {
+                uiLevel = 'medium'; 
+              }
+
+              this.quizMeta = {
+                title: target.title || '',
+                desc: target.description || target.desc || '',
+                topicId: target.topicId || this.quizMeta.topicId || this.topics[0]?.id || '',
+                level: uiLevel,
+                duration: target.timeLimitSeconds ? Math.floor(target.timeLimitSeconds / 60) : 15,
+                passRate: target.passRate || 70,
+                shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
+                instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
+                allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true
+              };
+
+              const rawQuestions = target.questions || [];
+              if (rawQuestions.length > 0) {
+                this.questions = rawQuestions.map((question: any) => ({
+                  id: question.id,
+                  points: question.points || 10,
+                  type: question.type || 'single',
+                  text: question.text || question.content || '',
+                  options: [...(question.options || [])],
+                  correctIndex: question.correctIndex ?? 0,
+                  explanation: question.explanation || ''
+                }));
+              }
+              this.cdr.detectChanges();
+            },
+            error: (err: any) => {
+              this.saveError = this.getApiError(err);
+            }
+          });
+        });
+      },
+      error: () => {
+        alert('Không thể xác thực quyền truy cập.');
+        this.router.navigate(['/quiz-bank']);
+      }
     });
   }
 
@@ -281,7 +307,15 @@ export class QuizCreateComponent implements OnInit {
     this.onQuestionFileSelected({ target: input } as unknown as Event);
   }
 
-  downloadImportTemplate(format: 'csv' | 'json') {
+  downloadImportTemplate(format: 'csv' | 'json' | 'xlsx') {
+    if (format === 'xlsx') {
+      const rows = [{ 'Nội dung câu hỏi': 'Ví dụ: HTML là gì?', 'Đáp án A': 'Ngôn ngữ đánh dấu', 'Đáp án B': 'Cơ sở dữ liệu', 'Đáp án C': 'Hệ điều hành', 'Đáp án D': 'Trình biên dịch', 'Đáp án đúng': 'A', 'Giải thích': 'HTML dùng để đánh dấu cấu trúc trang web.', 'Điểm số': 10 }];
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
+      XLSX.writeFile(workbook, 'quiz-import-template.xlsx');
+      return;
+    }
     const href = format === 'csv' ? this.importTemplateCsv : this.importTemplateJson;
     const link = document.createElement('a');
     link.href = href;
@@ -609,3 +643,4 @@ export class QuizCreateComponent implements OnInit {
     return 'Dễ';
   }
 }
+

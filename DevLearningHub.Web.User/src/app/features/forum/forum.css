@@ -671,3 +671,200 @@
     height: 36px;
   }
 }
+
+/* Create post CTA */
+.content-header .btn-create {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent, #a855f7);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+}
+
+.content-header .btn-create:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+}
+
+.content-header .btn-create:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .content-header .btn-create {
+    width: 100%;
+    min-height: 42px;
+  }
+}
+
+/* Extra mobile tweaks to ensure card stacking and readable layout */
+@media (max-width: 768px) {
+  .social-post-card { display: flex; flex-direction: column; gap: 10px; }
+  .post-card-header { align-items: flex-start; gap: 8px; }
+  .post-card-body { display: block; }
+  .post-image-container { width: 100%; max-height: 260px; overflow: hidden; }
+  .post-detail-image { width: 100%; height: auto; object-fit: cover; }
+  .post-card-metrics { display: flex; gap: 10px; flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .post-card-header { position: relative; }
+  .post-more-btn { position: absolute; right: 8px; top: 8px; }
+  .post-excerpt { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .post-tags { gap: 6px; }
+}
+
+@media (max-width: 420px) {
+  .post-card-metrics { font-size: 0.8rem; gap: 6px; }
+  .post-detail-image { max-height: 220px; object-fit: cover; }
+  .post-card-actions .action-btn span { display: none; }
+  .post-card-actions .action-btn i { font-size: 1.05rem; }
+}
+
+/* === Forum mobile responsive hardening === */
+.posts-column,
+.sidebar-column,
+.social-post-card,
+.filter-bar {
+  min-width: 0;
+}
+
+.post-card-header .author-meta-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.post-card-header .author-name,
+.post-card-header .post-date,
+.post-title,
+.post-excerpt {
+  overflow-wrap: anywhere;
+}
+
+.post-detail-image {
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 992px) {
+  .forum-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sidebar-column {
+    order: 2;
+  }
+
+  .sidebar-tags-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .welcome-section {
+    padding: 18px 16px;
+  }
+
+  .welcome-section h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .welcome-section p {
+    font-size: 0.88rem;
+  }
+
+  .filter-bar {
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .sort-selector span {
+    width: 100%;
+  }
+
+  .sort-btn,
+  .forum-filter-select {
+    flex: 1 1 auto;
+    min-height: 34px;
+  }
+
+  .post-card-header {
+    padding-right: 38px;
+  }
+
+  .post-options-dropdown {
+    position: fixed;
+    right: 12px;
+    top: auto;
+    min-width: min(260px, calc(100vw - 24px));
+  }
+
+  .post-image-container {
+    margin-inline: -2px;
+    max-height: none;
+  }
+
+  .post-detail-image {
+    width: 100%;
+    max-height: 260px;
+    padding: 4px;
+    object-fit: contain;
+  }
+
+  .post-card-metrics {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    line-height: 1.35;
+  }
+
+  .post-card-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pagination-container {
+    margin-top: 22px;
+  }
+
+  .page-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .num-btn {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 420px) {
+  .social-post-card {
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .post-card-actions {
+    gap: 4px;
+  }
+
+  .action-btn {
+    min-height: 36px;
+  }
+}

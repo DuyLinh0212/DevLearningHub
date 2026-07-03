@@ -1,11 +1,18 @@
 
 
     <header class="content-header">
-<div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm tên đăng nhập, email, họ tên...">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Moderator</span>
       </div>
-      <div class="admin-header-actions">
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm tên đăng nhập, email, họ tên..." style="width: 100% !important;">
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act purple" (click)="openPromoteModal()">
           <i class="bi bi-person-up"></i> Thăng cấp Moderator
         </button>
@@ -13,10 +20,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Quản Lý Moderator</h1>
-        <p>Phân quyền chi tiết cho nhóm Kiểm duyệt viên (Moderator). Chỉ hiển thị các quyền liên quan đến kiểm duyệt bài viết và bình luận.</p>
-      </section>
 
       <div class="post-filter-bar">
         <span class="post-count-info">{{ moderators.length }} Moderator</span>

@@ -1,11 +1,18 @@
 
     
     <header class="content-header">
-<div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="filterTopics()" placeholder="Tìm kiếm danh mục chủ đề học tập...">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Chủ đề</span>
       </div>
-      <div class="admin-header-actions">
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="filterTopics()" placeholder="Tìm kiếm danh mục chủ đề học tập..." style="width: 100% !important;">
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act purple" (click)="openTopicModal()">
           <i class="bi bi-tags-fill"></i> Tạo chủ đề mới
         </button>
@@ -13,10 +20,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Quản Trị Danh Mục Chủ Đề</h1>
-        <p>Phân loại nền tảng công nghệ, gán biểu tượng nhận diện vĩ mô làm lõi cây phân phối Lộ trình và Bộ đề thi.</p>
-      </section>
 
       <div class="topic-grid">
         @for (t of filteredTopics; track t.id) {

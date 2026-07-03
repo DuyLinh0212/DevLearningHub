@@ -211,3 +211,99 @@ router-outlet { display: none !important; }
   width: 0 !important;
   height: 0 !important;
 }
+
+/* =====================================================================
+   RESPONSIVE PATCHES - USER PAGES
+   ===================================================================== */
+* { box-sizing: border-box; }
+img, video, canvas, svg { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+
+@media (max-width: 992px) {
+  .dashboard-scroll-body {
+    padding-left: min(20px, 4vw);
+    padding-right: min(20px, 4vw);
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content > * {
+    min-width: 0;
+  }
+
+  .content-header {
+    height: auto;
+    min-height: 56px;
+    padding: 10px 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .content-header > * {
+    min-width: 0;
+  }
+
+  .top-breadcrumb {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    line-height: 1.45;
+  }
+
+  .dashboard-scroll-body {
+    height: auto;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  .modal-overlay,
+  .report-modal-overlay {
+    padding: 14px !important;
+  }
+
+  .modal-box,
+  .report-modal {
+    width: min(100%, 96vw) !important;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  .table-responsive,
+  .leaderboard-card,
+  .quiz-table,
+  .settings-card,
+  .profile-card {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .header-action-buttons,
+  .import-action-group,
+  .import-modal-footer {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .header-action-buttons > button,
+  .import-action-group > button {
+    flex: 1 1 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header {
+    padding: 10px 12px;
+  }
+
+  .dashboard-scroll-body {
+    padding: 12px;
+  }
+
+  .top-breadcrumb {
+    font-size: .76rem;
+  }
+
+  .content-header button,
+  .content-header a.btn-create {
+    min-height: 40px;
+  }
+}

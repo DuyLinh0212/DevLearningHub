@@ -1,4 +1,4 @@
-@if (showSessionExpiredBanner) {
+﻿@if (showSessionExpiredBanner) {
   <div class="session-expired-banner">
     <i class="bi bi-shield-exclamation"></i>
     <span>Phiên làm việc đã hết hạn. Đang chuyển đến trang đăng nhập...</span>
@@ -12,7 +12,7 @@
     </button>
 
     <!-- Logo -->
-    <a routerLink="/dashboard" class="topbar-logo">
+    <a routerLink="/landing" class="topbar-logo">
       <img [src]="themeService.isDarkMode() ? 'assets/images/logo2.png' : 'assets/images/logo.png'" alt="Logo" class="logo-img" />
       <span class="logo-text">Dev<span class="logo-accent">Hub</span></span>
     </a>
@@ -232,3 +232,4 @@
     <button class="notif-toast-close" (click)="dismissToast()"><i class="bi bi-x"></i></button>
   </div>
 }
+

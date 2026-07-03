@@ -61,6 +61,17 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   parsedQuestions: any[] = [];
   topicsMap: Record<string, string> = {};
 
+  private readonly importTemplateCsv = 'assets/templates/quiz-import-template.csv';
+  private readonly importTemplateJson = 'assets/templates/quiz-import-template.json';
+
+  downloadImportTemplate(format: 'csv' | 'json') {
+    const href = format === 'csv' ? this.importTemplateCsv : this.importTemplateJson;
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = href.split('/').pop() || `quiz-import-template.${format}`;
+    link.click();
+  }
+
   quizSetForm = {
     title: '',
     desc: '',
@@ -73,6 +84,48 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     questionIds: [] as any[],
     allowedCopy: false
   };
+
+  popupMessage = '';
+  popupTitle = '';
+
+  showPopup(title: string, message: string) {
+    this.popupTitle = title;
+    this.popupMessage = message;
+    this.cdr.detectChanges();
+  }
+
+  closePopup() {
+    this.popupMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  hasPermission(permission: string): boolean {
+    if (!permission) return false;
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return false;
+    try {
+      const payloadPart = token.split('.')[1];
+      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      
+      // Admin role = full control
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim)
+        ? roleClaim.map((r: string) => r.toLowerCase())
+        : [(roleClaim || '').toLowerCase()];
+      if (roles.includes('admin')) return true;
+
+      // Check 'permission' claims
+      const permClaim = decoded['permission'];
+      const permList: string[] = Array.isArray(permClaim)
+        ? permClaim
+        : (permClaim ? [permClaim] : []);
+
+      return permList.some(p => p.toLowerCase() === permission.toLowerCase()) ||
+             permList.some(p => p.toLowerCase() === 'system.full_control');
+    } catch (e) {
+      return false;
+    }
+  }
 
   // Chuẩn hóa giá trị level: hỗ trợ cả tên cũ (medium/hard) lẫn tên mới từ API (intermediate/advanced)
   private normalizeLevel(level: string): string {
@@ -233,6 +286,12 @@ loadQuizSets() {
   }
 
   openQuestionModal(question: any = null) {
+    const requiredPermission = question ? 'quiz:edit' : 'quiz:create';
+    if (!this.hasPermission(requiredPermission) && !this.hasPermission('quiz:edit')) {
+      this.showPopup('Từ chối truy cập', 'Bạn không có quyền thêm mới hoặc chỉnh sửa câu hỏi trắc nghiệm!');
+      return;
+    }
+
     if (question) {
       this.isEditingQuestion = true;
       this.editingQuestionId = question.id;
@@ -382,6 +441,12 @@ toggleQuizSetStatus(set: any) {
   }
 
   openQuizSetModal(quizSet: any = null) {
+    const requiredPermission = quizSet ? 'quiz:edit' : 'quiz:create';
+    if (!this.hasPermission(requiredPermission) && !this.hasPermission('quiz:edit')) {
+      this.showPopup('Từ chối truy cập', 'Bạn không có quyền tạo mới hoặc chỉnh sửa bộ đề thi!');
+      return;
+    }
+
     if (quizSet) {
       this.isEditingQuizSet = true;
       this.editingQuizSetId = quizSet.id;

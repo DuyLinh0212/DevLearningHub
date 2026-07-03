@@ -1,67 +1,72 @@
 
 
     <header class="content-header">
-      <!-- Tab switcher -->
-      <div class="admin-pm-tabs">
-        <button class="admin-pm-tab" [class.active]="activeTab === 'problems'" (click)="activeTab = 'problems'">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Bài code</span>
+      </div>
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        @if (activeTab === 'problems') {
+          <input type="text" [(ngModel)]="searchText" (input)="filterProblems()" placeholder="Tìm bài tập theo tên..." style="width: 100% !important;">
+        } @else {
+          <input type="text" [(ngModel)]="bankSearchText" (input)="filterBanks()" placeholder="Tìm ngân hàng..." style="width: 100% !important;">
+        }
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
+        @if (activeTab === 'problems') {
+          <button class="btn-admin-act purple" (click)="openModal()">
+            <i class="bi bi-plus-circle-fill"></i> Tạo bài tập mới
+          </button>
+        } @else {
+          <button class="btn-admin-act purple" (click)="openBankModal()">
+            <i class="bi bi-collection-fill"></i> Tạo ngân hàng mới
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="dashboard-scroll-body">
+      <!-- Tabs Switcher (like quiz management) -->
+      <div class="admin-tab-switcher-bar">
+        <button class="tab-switch-btn" [class.is-active]="activeTab === 'problems'" (click)="activeTab = 'problems'">
           <i class="bi bi-list-task"></i> Bài tập
         </button>
-        <button class="admin-pm-tab" [class.active]="activeTab === 'banks'" (click)="activeTab = 'banks'">
+        <button class="tab-switch-btn" [class.is-active]="activeTab === 'banks'" (click)="activeTab = 'banks'">
           <i class="bi bi-collection"></i> Ngân hàng
         </button>
       </div>
 
-      @if (activeTab === 'problems') {
-        <div class="top-search">
-          <i class="bi bi-search"></i>
-          <input type="text" [(ngModel)]="searchText" (input)="filterProblems()" placeholder="Tìm bài tập theo tên...">
-        </div>
-        <div class="admin-header-actions">
-          <select [(ngModel)]="selectedTopicId" (change)="filterProblems()" class="admin-top-select">
+      <!-- Filters Row -->
+      <div class="admin-filters-bar" style="display: flex; gap: 12px; margin-top: 16px; margin-bottom: 16px; align-items: center; justify-content: flex-start;">
+        @if (activeTab === 'problems') {
+          <select [(ngModel)]="selectedTopicId" (change)="filterProblems()" class="admin-top-select" style="min-width: 180px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; color: var(--text-main); font-size: 0.85rem; outline: none; cursor: pointer;">
             <option value="">Tất cả chủ đề</option>
             @for (t of topics; track t.id) {
               <option [value]="t.id">{{ t.name }}</option>
             }
           </select>
-          <select [(ngModel)]="selectedDifficulty" (change)="filterProblems()" class="admin-top-select">
+          <select [(ngModel)]="selectedDifficulty" (change)="filterProblems()" class="admin-top-select" style="min-width: 150px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; color: var(--text-main); font-size: 0.85rem; outline: none; cursor: pointer;">
             <option value="">Tất cả độ khó</option>
             <option value="easy">Dễ</option>
             <option value="medium">Trung bình</option>
             <option value="hard">Khó</option>
           </select>
-          <button class="btn-admin-act purple" (click)="openModal()">
-            <i class="bi bi-plus-circle-fill"></i> Tạo bài tập mới
-          </button>
-        </div>
-      }
-
-      @if (activeTab === 'banks') {
-        <div class="top-search">
-          <i class="bi bi-search"></i>
-          <input type="text" [(ngModel)]="bankSearchText" (input)="filterBanks()" placeholder="Tìm ngân hàng...">
-        </div>
-        <div class="admin-header-actions">
-          <select [(ngModel)]="bankMinRating" (change)="filterBanks()" class="admin-top-select">
+        } @else {
+          <select [(ngModel)]="bankMinRating" (change)="filterBanks()" class="admin-top-select" style="min-width: 180px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; color: var(--text-main); font-size: 0.85rem; outline: none; cursor: pointer;">
             <option [value]="0">Tất cả đánh giá</option>
             <option [value]="3">≥ 3 sao</option>
             <option [value]="4">≥ 4 sao</option>
             <option [value]="5">5 sao</option>
           </select>
-          <button class="btn-admin-act purple" (click)="openBankModal()">
-            <i class="bi bi-collection-fill"></i> Tạo ngân hàng
-          </button>
-        </div>
-      }
-    </header>
-
-    <div class="dashboard-scroll-body">
+        }
+      </div>
 
       <!-- ============ PROBLEMS TAB ============ -->
       @if (activeTab === 'problems') {
-      <section class="welcome-section">
-        <h1>Quản Lý Bài Tập Lập Trình (Sandbox problems)</h1>
-        <p>Thêm, sửa đổi hoặc xóa các thử thách viết code và thiết lập bộ Test Cases chấm điểm tự động cho học viên.</p>
-      </section>
 
       @if (isLoading && problems.length === 0) {
         <div class="empty-state-box">

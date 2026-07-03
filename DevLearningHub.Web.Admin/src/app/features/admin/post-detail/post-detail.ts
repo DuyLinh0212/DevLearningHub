@@ -75,7 +75,10 @@ export class AdminPostDetailComponent implements OnInit {
                                     this.currentUserRoles.includes('admin');
         this.canModeratePosts = this.currentUserRoles.includes('admin') ||
                                 this.currentUserRoles.includes('moderator') ||
-                                user.permissions?.includes('post:delete');
+                                user.permissions?.includes('post:delete') ||
+                                user.permissions?.includes('post:delete_any') ||
+                                user.permissions?.includes('post:hide') ||
+                                user.permissions?.includes('post:hide_any');
         this.cdr.detectChanges();
       },
       error: (err) => {

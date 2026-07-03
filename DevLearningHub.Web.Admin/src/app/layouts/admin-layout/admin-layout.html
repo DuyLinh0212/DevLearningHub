@@ -1,9 +1,9 @@
-<!-- Left nav sidebar -->
-<app-sidebar></app-sidebar>
+<!-- Top Navigation Bar (full width, same rhythm as user layout) -->
+<app-topbar></app-topbar>
 
-<!-- Right body: topbar + page content -->
-<div class="admin-body">
-  <app-topbar></app-topbar>
+<!-- Body: Sidebar + Content -->
+<div class="layout-body">
+  <app-sidebar></app-sidebar>
   <main class="main-content">
     <router-outlet></router-outlet>
   </main>

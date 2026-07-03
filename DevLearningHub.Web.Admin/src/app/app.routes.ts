@@ -22,12 +22,10 @@ import { SettingsComponent } from './features/settings/settings';
 import { DashboardComponent } from './features/dashboard/dashboard';
 import { adminGuard } from './core/guards/admin.guard';
 import { permissionGuard } from './core/guards/permission.guard';
-
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'landing', component: LandingComponent },
-  // ── Tất cả routes cần layout Admin (topbar + sidebar) ──────────────────
   {
     path: '',
     component: AdminLayoutComponent,

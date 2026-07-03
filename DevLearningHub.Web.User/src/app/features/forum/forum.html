@@ -2,7 +2,7 @@
   <div class="top-breadcrumb">
     <a routerLink="/forum">Cộng đồng</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Diễn đàn thảo luận</span>
   </div>
-  <button class="btn-create" routerLink="/forum/create">
+  <button class="btn-create" (click)="onCreatePostClick()">
     <i class="bi bi-pencil-square"></i> Tạo bài viết
   </button>
 </header>
@@ -74,6 +74,22 @@
                 <button class="dropdown-item report-item" (click)="openReportModal(post, $event)">
                   <i class="bi bi-flag"></i> Báo cáo vi phạm
                 </button>
+                @if (post.author?.id === currentUserId) {
+                <button class="dropdown-item" (click)="editPost(post.id, $event)">
+                  <i class="bi bi-pencil-square"></i> Chỉnh sửa bài viết
+                </button>
+                }
+                @if (post.author?.id === currentUserId || hasPermission('post:hide_any') || hasPermission('post:hide')) {
+                <button class="dropdown-item" (click)="toggleHidePost(post, $event)">
+                  <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
+                  {{ post.isHidden ? 'Hiện bài viết' : 'Ẩn bài viết' }}
+                </button>
+                }
+                @if (post.author?.id === currentUserId || hasPermission('post:delete_any')) {
+                <button class="dropdown-item danger-item" (click)="deletePost(post.id, $event); activePostMenuId = null" style="color: #ef4444;">
+                  <i class="bi bi-trash3"></i> Xóa bài viết
+                </button>
+                }
                 <!-- Ẩn nút Bookmark do BE chưa có API lưu trữ -->
                 @if (false) {
                 <button class="dropdown-item" (click)="toggleBookmark(post, $event); activePostMenuId = null">

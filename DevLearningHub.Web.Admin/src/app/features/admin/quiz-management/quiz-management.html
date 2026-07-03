@@ -1,9 +1,15 @@
 
 
     <header class="content-header">
-<div class="top-search">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Bộ đề</span>
+      </div>
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
         <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm câu hỏi, bộ đề...">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm câu hỏi, bộ đề..." style="width: 100% !important;">
         @if (searchTerm.trim()) {
           <span class="search-result-badge">
             {{ currentSubTab === 'bank' ? filteredQuestions.length : filteredQuizSets.length }} kết quả
@@ -11,7 +17,7 @@
         }
       </div>
 
-      <div class="admin-header-actions">
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act blue" (click)="openImportModal()">
           <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
         </button>
@@ -29,11 +35,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-
-      <section class="welcome-section">
-        <h1>Quản Trị Phân Hệ Trắc Nghiệm</h1>
-        <p>Biên soạn ngân hàng câu hỏi cốt lõi, phê duyệt nội dung đóng góp và cấu hình phân phối bộ đề thi trắc nghiệm cộng đồng</p>
-      </section>
 
       <div class="admin-tab-switcher-bar">
         <button class="tab-switch-btn" [class.is-active]="currentSubTab === 'bank'" (click)="switchSubTab('bank')">
@@ -120,14 +121,14 @@
       @if (currentSubTab === 'sets') {
       <div class="quiz-grid-list" style="margin-top: 20px;">
         @for (set of filteredQuizSets; track set.id) {
-        <div class="quiz-card-item" [style.opacity]="set.statusClass === 'public' ? '1' : '0.6'">
+        <div class="quiz-card-item quiz-set-config-card" [style.opacity]="set.statusClass === 'public' ? '1' : '0.6'">
           <div class="card-header-line" style="display: flex; align-items: center; width: 100%;">
             <span class="status-badge" [class.public]="set.statusClass === 'public'" [class.draft]="set.statusClass !== 'public'">
               {{ set.status }}
             </span>
             
-            <div class="btn-more-options-wrapper" style="position: relative; display: inline-block; margin-left: auto;">
-              <button class="btn-more-options" (click)="toggleQuizSetMenu(set.id, $event); $event.stopPropagation()" title="Tùy chọn bộ đề">
+            <div class="quiz-set-menu-anchor" style="position: relative; display: inline-flex; margin-left: auto;">
+              <button class="quiz-set-kebab-btn" type="button" (click)="toggleQuizSetMenu(set.id, $event); $event.stopPropagation()" title="Tùy chọn bộ đề">
                 <i class="bi bi-three-dots-vertical"></i>
               </button>
               @if (activeQuizSetMenuId === set.id) {
@@ -160,9 +161,6 @@
             <span><i class="bi bi-bar-chart"></i> {{ getLevelName(set.level) }}</span>
             <span><i class="bi bi-clock"></i> {{ set.duration }} phút</span>
             <span><i class="bi bi-database-check"></i> {{ set.questionsCount }} câu</span>
-            @if (set.allowedCopy) {
-              <span style="color: #a855f7; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-copy"></i> Sao chép OK</span>
-            }
           </div>
 
           <div class="card-actions-row" style="display: flex; gap: 8px; width: 100%;">
@@ -385,6 +383,16 @@
       <div class="import-guide-section" style="margin-top: 16px; padding: 16px; background: var(--bg-nested); border-radius: 8px; border: 1px solid var(--border-nested);">
         <h4 style="margin: 0 0 12px 0; font-size: 0.9rem; color: var(--text-main);">Hướng dẫn định dạng tệp:</h4>
         
+        <div class="download-templates-section" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--border-nested); display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">Tải tệp mẫu:</span>
+          <button type="button" class="btn-secondary-action" (click)="downloadImportTemplate('csv')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); cursor: pointer;">
+            <i class="bi bi-file-earmark-excel"></i> Excel/CSV mẫu (.csv)
+          </button>
+          <button type="button" class="btn-secondary-action" (click)="downloadImportTemplate('json')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); cursor: pointer;">
+            <i class="bi bi-filetype-json"></i> JSON mẫu (.json)
+          </button>
+        </div>
+        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div>
             <strong style="color: #a855f7; font-size: 0.85rem;">📊 Excel (.xlsx, .xls)</strong>
@@ -532,5 +540,21 @@
     </div>
   </div>
   }
+
+<!-- Custom Popup Modal -->
+@if (popupMessage) {
+  <div class="custom-popup-overlay" (click)="closePopup()" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 99999;">
+    <div class="custom-popup-box" (click)="$event.stopPropagation()" style="background: #16161a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; width: min(400px, 90vw); padding: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; gap: 16px;">
+      <div class="popup-icon" style="width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+      <div class="popup-content">
+        <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ popupTitle || 'Thông báo' }}</h3>
+        <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5;">{{ popupMessage }}</p>
+      </div>
+      <button class="popup-close-btn" (click)="closePopup()" style="background: #fff; color: #000; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; width: 100%;">Đóng</button>
+    </div>
+  </div>
+}
 
 

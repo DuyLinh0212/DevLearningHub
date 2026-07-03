@@ -41,6 +41,34 @@ export class UserManagementComponent implements OnInit {
 
   users: any[] = [];
   searchText = '';
+
+  hasPermission(permission: string): boolean {
+    if (!permission) return false;
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) return false;
+    try {
+      const payloadPart = token.split('.')[1];
+      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      
+      // Admin role = full control
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim)
+        ? roleClaim.map((r: string) => r.toLowerCase())
+        : [(roleClaim || '').toLowerCase()];
+      if (roles.includes('admin')) return true;
+
+      // Check 'permission' claims
+      const permClaim = decoded['permission'];
+      const permList: string[] = Array.isArray(permClaim)
+        ? permClaim
+        : (permClaim ? [permClaim] : []);
+
+      return permList.some(p => p.toLowerCase() === permission.toLowerCase()) ||
+             permList.some(p => p.toLowerCase() === 'system.full_control');
+    } catch (e) {
+      return false;
+    }
+  }
   filterRole = 'all';
   filterStatus = 'all';
   isLoading = false;

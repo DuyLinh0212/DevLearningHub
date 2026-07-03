@@ -47,7 +47,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     { name: 'Bảng điều phối', path: '/admin', icon: 'bi bi-speedometer2' },
     { name: 'Quản lý Đề thi', path: '/admin/quiz', icon: 'bi bi-database-fill' },
     { name: 'Quản lý Bài tập', path: '/admin/problems', icon: 'bi bi-cpu-fill' },
-    { name: 'Quản lý Lộ trình', path: '/admin/roadmap', icon: 'bi bi-bezier2' },
     { name: 'Quản lý Chủ đề', path: '/admin/topics', icon: 'bi bi-tags-fill' },
     { name: 'Quản lý Tag', path: '/admin/tags', icon: 'bi bi-tag-fill' },
     { name: 'Quản lý Bài viết', path: '/admin/posts', icon: 'bi bi-newspaper' },
@@ -103,29 +102,47 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  private parsedToken: any = null;
+  private parsedTokenString: string = '';
+
+  private getParsedToken(): any {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    if (!token) {
+      this.parsedToken = null;
+      this.parsedTokenString = '';
+      return null;
+    }
+    if (token === this.parsedTokenString && this.parsedToken) {
+      return this.parsedToken;
+    }
+    try {
+      const payloadPart = token.split('.')[1];
+      this.parsedToken = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      this.parsedTokenString = token;
+      return this.parsedToken;
+    } catch (e) {
+      console.error('Error decoding token in sidebar:', e);
+      this.parsedToken = null;
+      this.parsedTokenString = '';
+      return null;
+    }
+  }
+
   hasRole(role: string): boolean {
     if (!role) return false;
     const target = role.toLowerCase();
 
-    // First: check from token (fast, always available after login)
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-    if (token) {
-      try {
-        const payloadPart = token.split('.')[1];
-        const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
-        const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-        const roles = Array.isArray(roleClaim)
-          ? roleClaim.map((r: string) => r.toLowerCase())
-          : [roleClaim?.toLowerCase()];
-        if (roles.some(r => r === target)) {
-          return true;
-        }
-      } catch (e) {
-        console.error('Error decoding token in hasRole:', e);
+    const decoded = this.getParsedToken();
+    if (decoded) {
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim)
+        ? roleClaim.map((r: string) => r.toLowerCase())
+        : [roleClaim?.toLowerCase()];
+      if (roles.some(r => r === target)) {
+        return true;
       }
     }
 
-    // Fallback: check from profile (after API load)
     return this.profile.roles?.some(r => r.toLowerCase() === target) || false;
   }
 
@@ -133,39 +150,28 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!permission) return false;
     const target = permission.toLowerCase();
 
-    // Check from profile permissions (loaded from API - most accurate)
     if (this.profile.permissions?.some(p => p.toLowerCase() === target)) {
       return true;
     }
 
-    // Fallback: check token directly
-    // JWT stores permissions as multiple 'permission' claims (singular key)
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-    if (!token) return false;
+    const decoded = this.getParsedToken();
+    if (!decoded) return false;
 
-    try {
-      const payloadPart = token.split('.')[1];
-      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+    // Admin role = full control
+    const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+    const roles = Array.isArray(roleClaim)
+      ? roleClaim.map((r: string) => r.toLowerCase())
+      : [(roleClaim || '').toLowerCase()];
+    if (roles.includes('admin')) return true;
 
-      // Admin role = full control
-      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      const roles = Array.isArray(roleClaim)
-        ? roleClaim.map((r: string) => r.toLowerCase())
-        : [(roleClaim || '').toLowerCase()];
-      if (roles.includes('admin')) return true;
+    // Read 'permission' claims
+    const permClaim = decoded['permission'];
+    const permList: string[] = Array.isArray(permClaim)
+      ? permClaim
+      : (permClaim ? [permClaim] : []);
 
-      // Read 'permission' claims (singular, not 'permissions')
-      const permClaim = decoded['permission'];
-      const permList: string[] = Array.isArray(permClaim)
-        ? permClaim
-        : (permClaim ? [permClaim] : []);
-
-      return permList.some(p => p.toLowerCase() === target) ||
-             permList.some(p => p.toLowerCase() === 'system.full_control');
-    } catch (e) {
-      console.error('Error checking permission:', e);
-    }
-    return false;
+    return permList.some(p => p.toLowerCase() === target) ||
+           permList.some(p => p.toLowerCase() === 'system.full_control');
   }
 
   loadUserProfile() {
@@ -219,7 +225,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       if (p.path === '/admin') return this.hasRole('Admin');
       if (p.path === '/admin/quiz') return this.hasPermission('quiz:edit');
       if (p.path === '/admin/problems') return this.hasPermission('quiz:edit');
-      if (p.path === '/admin/roadmap') return this.hasPermission('roadmap:edit');
       if (p.path === '/admin/topics') return this.hasPermission('topic:edit');
       if (p.path === '/admin/tags') return this.hasPermission('tag:edit');
       if (p.path === '/admin/posts') return this.hasPermission('post:hide_any') || this.hasPermission('post:edit_any') || this.hasPermission('post:delete_any');

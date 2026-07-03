@@ -1,38 +1,41 @@
-<!-- Nav -->
-<nav class="sidebar-menu" aria-label="Sidebar navigation">
-  <div class="menu-section-label">Học tập</div>
+<aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
+  <button class="btn-sidebar-close-mobile" (click)="toggleMobileSidebar()" aria-label="Đóng menu">
+    <i class="bi bi-x-lg"></i>
+  </button>
 
-  <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="menu-item">
-    <i class="bi bi-grid-1x2"></i><span>Tổng quan</span>
-  </a>
-  <a routerLink="/quiz-bank" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-collection"></i><span>Thư viện đề</span>
-  </a>
-  <a routerLink="/roadmap" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-bezier2"></i><span>Lộ trình học</span>
-  </a>
-  <a routerLink="/dashboard/progress" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-bar-chart-line-fill"></i><span>Năng lực</span>
-  </a>
-  <a routerLink="/code" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-code-slash"></i><span>Code</span>
-  </a>
-  <div class="menu-section-divider"></div>
-  <div class="menu-section-label">Cộng đồng</div>
-  <a routerLink="/forum" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-people"></i><span>Diễn đàn</span>
-  </a>
-  <a routerLink="/leaderboard" routerLinkActive="active" class="menu-item">
-    <i class="bi bi-trophy"></i><span>Bảng xếp hạng</span>
-  </a>
+  <!-- Nav -->
+  <nav class="sidebar-menu" aria-label="Sidebar navigation">
+    <div class="menu-section-label">Học tập</div>
 
-  @if (hasPermission('user:view_all')) {
-    <div class="menu-section-divider"></div>
-    <a routerLink="/moderator/users" routerLinkActive="active" class="menu-item" style="color: var(--xp);">
-      <i class="bi bi-shield-check"></i><span>Kiểm duyệt</span>
+    <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="menu-item">
+      <i class="bi bi-grid-1x2"></i><span>Tổng quan</span>
     </a>
-  }
-</nav>
+    <a routerLink="/quiz-bank" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-collection"></i><span>Thư viện đề</span>
+    </a>
+    <a routerLink="/dashboard/progress" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-bar-chart-line-fill"></i><span>Năng lực</span>
+    </a>
+    <a routerLink="/code" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-code-slash"></i><span>Code</span>
+    </a>
+    <div class="menu-section-divider"></div>
+    <div class="menu-section-label">Cộng đồng</div>
+    <a routerLink="/forum" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-people"></i><span>Diễn đàn</span>
+    </a>
+    <a routerLink="/leaderboard" routerLinkActive="active" class="menu-item">
+      <i class="bi bi-trophy"></i><span>Bảng xếp hạng</span>
+    </a>
+
+    @if (hasPermission('user:view_all')) {
+      <div class="menu-section-divider"></div>
+      <a routerLink="/moderator/users" routerLinkActive="active" class="menu-item" style="color: var(--xp);">
+        <i class="bi bi-shield-check"></i><span>Kiểm duyệt</span>
+      </a>
+    }
+  </nav>
+</aside>
 
 @if (isMobileOpen) {
   <div class="sidebar-mobile-overlay" (click)="toggleMobileSidebar()"></div>

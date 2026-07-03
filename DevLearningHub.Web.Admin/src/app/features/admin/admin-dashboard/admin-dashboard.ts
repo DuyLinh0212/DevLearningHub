@@ -1,14 +1,14 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
@@ -26,15 +26,15 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   recentUsers: any[] = [];
-  recentLogs: any[] = [];
-  hasLogsError = false;
+  recentPosts: any[] = [];
+  recentProblems: any[] = [];
 
   get adminStats() {
     return [
-      { title: 'Tổng số thành viên', value: this.statsData.users.toLocaleString(), icon: 'bi-people-fill', color: 'purple' },
-      { title: 'Tổng số bài tập', value: this.statsData.problems.toLocaleString(), icon: 'bi-cpu-fill', color: 'blue' },
-      { title: 'Tổng số đề thi', value: this.statsData.quizSets.toLocaleString(), icon: 'bi-database-fill', color: 'green' },
-      { title: 'Tổng số chủ đề', value: this.statsData.topics.toLocaleString(), icon: 'bi-tags-fill', color: 'orange' }
+      { title: 'Thành viên', value: this.statsData.users.toLocaleString(), unit: 'người dùng', icon: 'bi-people', color: 'cyan', link: '/admin/users' },
+      { title: 'Bài tập code', value: this.statsData.problems.toLocaleString(), unit: 'bài', icon: 'bi-code-slash', color: 'blue', link: '/admin/problems' },
+      { title: 'Bộ đề quiz', value: this.statsData.quizSets.toLocaleString(), unit: 'bộ', icon: 'bi-collection', color: 'emerald', link: '/admin/quiz' },
+      { title: 'Chủ đề', value: this.statsData.topics.toLocaleString(), unit: 'tag', icon: 'bi-tags', color: 'amber', link: '/admin/topics' }
     ];
   }
 
@@ -95,18 +95,20 @@ export class AdminDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi lấy stats User:', err);
+        console.error('Lá»—i láº¥y stats User:', err);
       }
     });
 
     // 2. Fetch Problems
     this.http.get<any[]>('/api/problems').subscribe({
       next: (res: any[]) => {
-        this.statsData.problems = res?.length || 0;
+        const list = Array.isArray(res) ? res : [];
+        this.statsData.problems = list.length || 0;
+        this.recentProblems = [...list].sort((a: any, b: any) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()).slice(0, 5);
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi lấy stats Problems:', err);
+        console.error('Lá»—i láº¥y stats Problems:', err);
       }
     });
 
@@ -117,7 +119,7 @@ export class AdminDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi lấy stats Quiz Sets:', err);
+        console.error('Lá»—i láº¥y stats Quiz Sets:', err);
       }
     });
 
@@ -128,22 +130,21 @@ export class AdminDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi lấy stats Topics:', err);
+        console.error('Lá»—i láº¥y stats Topics:', err);
       }
     });
 
-    // 5. Fetch Recent Audit Logs
-    this.http.get<any>('/api/admin/audit-logs?pageSize=5').subscribe({
+    // 5. Fetch Recent Posts
+    this.http.get<any>('/api/posts?page=1&pageSize=5').subscribe({
       next: (res: any) => {
-        const responseData = res?.data;
-        this.recentLogs = responseData?.items || [];
-        this.hasLogsError = false;
+        const data = res?.data;
+        this.recentPosts = data?.items || data || res?.items || [];
+        if (!Array.isArray(this.recentPosts)) this.recentPosts = [];
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi lấy stats Audit Logs:', err);
-        this.hasLogsError = true;
-        this.recentLogs = [];
+        console.error('Lỗi lấy bài viết gần đây:', err);
+        this.recentPosts = [];
         this.cdr.detectChanges();
       }
     });
@@ -159,3 +160,4 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 }
+

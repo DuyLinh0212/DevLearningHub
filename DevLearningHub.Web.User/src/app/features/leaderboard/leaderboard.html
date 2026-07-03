@@ -5,24 +5,13 @@
     <span style="font-weight: 700; color: #c084fc;">Bảng xếp hạng</span>
   </div>
   @if (highlightUser?.id) {
-    <button class="btn-create" (click)="viewMyProfile()">
+    <button class="btn-create leaderboard-profile-btn" (click)="viewMyProfile()">
       <i class="bi bi-person-circle"></i> Xem hồ sơ của tôi
     </button>
   }
 </header>
 
 <div class="dashboard-scroll-body leaderboard-page">
-  <section class="leaderboard-hero-banner">
-    <div class="hero-copy">
-      <h1>Bảng xếp hạng học viên</h1>
-      <p>Chạm vào một người bất kỳ để xem hồ sơ, XP, điểm trung bình và hành trình học tập của họ.</p>
-    </div>
-    <div class="hero-metric">
-      <div class="hero-metric-number">{{ leaderboard.length }}</div>
-      <div class="hero-metric-label">người trong BXH</div>
-    </div>
-  </section>
-
   @if (isLoading) {
     <div class="leaderboard-state-card">
       <i class="bi bi-arrow-repeat spin-animation"></i>
@@ -35,25 +24,68 @@
       <p>Hệ thống chưa trả về bảng xếp hạng hoặc chưa có học viên nào được ghi nhận.</p>
     </div>
   } @else {
-    <section class="podium-section">
-      <div class="podium-card second" [class.clickable]="podium[1]" (click)="openUser(podium[1])">
-        <span class="podium-rank">#2</span>
-        <img [src]="podium[1]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
-        <strong>{{ podium[1]?.name || 'Đang cập nhật' }}</strong>
-        <p>{{ podium[1]?.xp || 0 }} XP</p>
-      </div>
-      <div class="podium-card first" [class.clickable]="podium[0]" (click)="openUser(podium[0])">
-        <span class="podium-rank crown">#1</span>
-        <img [src]="podium[0]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
-        <strong>{{ podium[0]?.name || 'Đang cập nhật' }}</strong>
-        <p>{{ podium[0]?.xp || 0 }} XP</p>
-      </div>
-      <div class="podium-card third" [class.clickable]="podium[2]" (click)="openUser(podium[2])">
-        <span class="podium-rank">#3</span>
-        <img [src]="podium[2]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar">
-        <strong>{{ podium[2]?.name || 'Đang cập nhật' }}</strong>
-        <p>{{ podium[2]?.xp || 0 }} XP</p>
-      </div>
+    <section class="podium-section-new" style="display: flex; justify-content: center; align-items: flex-end; gap: 24px; padding: 40px 0; margin-bottom: 30px;">
+      <!-- Rank 2 (Left) -->
+      @if (podium[1]) {
+        <div class="podium-user-wrapper" (click)="openUser(podium[1])" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 140px;">
+          <div class="avatar-ring-wrapper" style="position: relative; margin-bottom: 8px;">
+            <!-- Wreath ring -->
+            <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 4px solid #ccd1d9; border-radius: 50%; box-shadow: 0 0 12px rgba(204,209,217,0.4);"></div>
+            <img [src]="podium[1]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; display: block;" (error)="onAvatarError($event)">
+            <!-- Medal tag -->
+            <span style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); background: #ccd1d9; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">#2</span>
+          </div>
+          <strong style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 2px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ podium[1]?.name }}</strong>
+          <span style="font-size: 0.78rem; color: #a1a1aa; font-weight: 700; margin-bottom: 12px;">{{ podium[1]?.xp }} XP</span>
+          
+          <!-- Column 2 -->
+          <div style="width: 100px; height: 110px; background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.08); border-bottom: none; border-radius: 12px 12px 0 0; display: flex; justify-content: center; align-items: center; box-shadow: var(--shadow-soft);">
+            <span style="font-size: 2rem; font-weight: 900; color: rgba(204,209,217,0.25);">2</span>
+          </div>
+        </div>
+      }
+
+      <!-- Rank 1 (Middle) -->
+      @if (podium[0]) {
+        <div class="podium-user-wrapper" (click)="openUser(podium[0])" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 150px; transform: translateY(-20px);">
+          <div class="avatar-ring-wrapper" style="position: relative; margin-bottom: 8px;">
+            <!-- Crown icon -->
+            <div style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 2;">👑</div>
+            <!-- Wreath ring -->
+            <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 4px solid #ffcc00; border-radius: 50%; box-shadow: 0 0 16px rgba(255,204,0,0.6);"></div>
+            <img [src]="podium[0]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; display: block;" (error)="onAvatarError($event)">
+            <!-- Medal tag -->
+            <span style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">#1</span>
+          </div>
+          <strong style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 2px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ podium[0]?.name }}</strong>
+          <span style="font-size: 0.8rem; color: #ffcc00; font-weight: 700; margin-bottom: 12px;">{{ podium[0]?.xp }} XP</span>
+          
+          <!-- Column 1 -->
+          <div style="width: 110px; height: 150px; background: linear-gradient(180deg, rgba(255,204,0,0.12) 0%, rgba(255,204,0,0.02) 100%); border: 1px solid rgba(255,204,0,0.2); border-bottom: none; border-radius: 12px 12px 0 0; display: flex; justify-content: center; align-items: center; box-shadow: var(--shadow-soft);">
+            <span style="font-size: 2.5rem; font-weight: 900; color: rgba(255,204,0,0.25);">1</span>
+          </div>
+        </div>
+      }
+
+      <!-- Rank 3 (Right) -->
+      @if (podium[2]) {
+        <div class="podium-user-wrapper" (click)="openUser(podium[2])" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 140px;">
+          <div class="avatar-ring-wrapper" style="position: relative; margin-bottom: 8px;">
+            <!-- Wreath ring -->
+            <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 4px solid #da8c4f; border-radius: 50%; box-shadow: 0 0 12px rgba(218,140,79,0.4);"></div>
+            <img [src]="podium[2]?.avatar || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; display: block;" (error)="onAvatarError($event)">
+            <!-- Medal tag -->
+            <span style="position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); background: #da8c4f; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">#3</span>
+          </div>
+          <strong style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 2px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ podium[2]?.name }}</strong>
+          <span style="font-size: 0.78rem; color: #a1a1aa; font-weight: 700; margin-bottom: 12px;">{{ podium[2]?.xp }} XP</span>
+          
+          <!-- Column 3 -->
+          <div style="width: 100px; height: 85px; background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.08); border-bottom: none; border-radius: 12px 12px 0 0; display: flex; justify-content: center; align-items: center; box-shadow: var(--shadow-soft);">
+            <span style="font-size: 1.8rem; font-weight: 900; color: rgba(218,140,79,0.25);">3</span>
+          </div>
+        </div>
+      }
     </section>
 
     <section class="leaderboard-card">

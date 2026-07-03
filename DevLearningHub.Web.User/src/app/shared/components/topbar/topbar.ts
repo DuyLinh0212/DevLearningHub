@@ -61,18 +61,14 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   readonly navItems = [
     { label: 'Tổng quan',   path: '/dashboard',          icon: 'bi-grid-1x2' },
-    { label: 'Quiz',        path: '/quiz-bank',          icon: 'bi-collection' },
-    { label: 'Lộ trình',   path: '/roadmap',            icon: 'bi-bezier2' },
-    { label: 'Diễn đàn',   path: '/forum',              icon: 'bi-people' },
+    { label: 'Quiz',        path: '/quiz-bank',          icon: 'bi-collection' },    { label: 'Diễn đàn',   path: '/forum',              icon: 'bi-people' },
     { label: 'Code',        path: '/code',               icon: 'bi-code-slash' },
     { label: 'Bảng xếp hạng', path: '/leaderboard',    icon: 'bi-trophy' },
   ];
 
   readonly pagesList = [
     { name: 'Tổng quan',       path: '/dashboard',       icon: 'bi bi-grid-1x2' },
-    { name: 'Kho Bộ đề',       path: '/quiz-bank',       icon: 'bi bi-collection' },
-    { name: 'Lộ trình học',    path: '/roadmap',         icon: 'bi bi-bezier2' },
-    { name: 'Phân tích năng lực', path: '/dashboard/progress', icon: 'bi bi-bar-chart-line-fill' },
+    { name: 'Kho Bộ đề',       path: '/quiz-bank',       icon: 'bi bi-collection' },    { name: 'Phân tích năng lực', path: '/dashboard/progress', icon: 'bi bi-bar-chart-line-fill' },
     { name: 'Code',             path: '/code',            icon: 'bi bi-code-slash' },
     { name: 'Diễn đàn',        path: '/forum',           icon: 'bi bi-people' },
     { name: 'Bảng xếp hạng',   path: '/leaderboard',    icon: 'bi bi-trophy' },

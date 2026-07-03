@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -17,6 +17,7 @@ export class QuizBankComponent implements OnInit {
   private route = inject(ActivatedRoute);
   public cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
+  private router = inject(Router);
 
   quizzes: any[] = [];
   topics: any[] = [];
@@ -25,6 +26,7 @@ export class QuizBankComponent implements OnInit {
   selectedTopicId: string = '';
   selectedDifficulty: string = '';
   currentUserId: string = '';
+  currentUserPermissions: string[] = [];
   activeQuizMenuId: string | null = null;
 
   // Calendar properties
@@ -120,6 +122,7 @@ export class QuizBankComponent implements OnInit {
         const user = res?.data || res;
         if (user) {
           this.currentUserId = (user.id || user.Id || user.userId || user.sub || '').toString().toLowerCase();
+          this.currentUserPermissions = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
         }
         this.loadTopicsAndQuizzes();
       },
@@ -128,6 +131,27 @@ export class QuizBankComponent implements OnInit {
         this.loadTopicsAndQuizzes();
       }
     });
+  }
+
+  hasPermission(permission: string): boolean {
+    const target = (permission || '').toLowerCase();
+    return this.currentUserPermissions.includes(target)
+      || this.currentUserPermissions.includes('system.full_control');
+  }
+
+  onCreateQuizClick() {
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
+    if (!hasToken) {
+      alert('Vui lòng đăng nhập để tạo bộ đề!');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (this.hasPermission('quiz:create') || this.hasPermission('quiz:edit')) {
+      this.router.navigate(['/quiz-create']);
+    } else {
+      alert('Bạn không có quyền tạo bộ đề thi!');
+    }
   }
 
   loadTopicsAndQuizzes() {

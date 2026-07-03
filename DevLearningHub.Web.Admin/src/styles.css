@@ -1,61 +1,75 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 :root {
-  --bg-main: #09090b;
-  --bg-sidebar: #121214;
-  --bg-card: #121214;
-  --bg-card-border: #1f1f23;
-  --bg-nested: #161619;
-  --border-nested: #232327;
-  --input-bg: #1a1a1e;
-  --input-border: #27272a;
-  --text-main: #ffffff;
+  /* Backgrounds */
+  --bg-main: #0c0c0f;
+  --bg-sidebar: #111114;
+  --bg-card: #16161a;
+  --bg-card-border: #23232a;
+  --bg-nested: #1a1a1f;
+  --border-nested: #27272e;
+
+  /* Inputs */
+  --input-bg: #1a1a1f;
+  --input-border: #2d2d35;
+
+  /* Text */
+  --text-main: #f4f4f5;
   --text-muted: #a1a1aa;
-  --text-muted-dark: #71717a;
+  --text-muted-dark: #63636b;
   --nav-link-color: #9ca3af;
+
+  /* Buttons */
   --btn-white-bg: #ffffff;
   --btn-white-text: #000000;
-  --footer-bg: #020204;
-  --footer-border: #1f1f23;
-  
-  /* Quy chuẩn bo góc và đệm mới */
-  --radius-lg: 12px;
-  --radius-md: 8px;
+
+  /* Accent — Electric cyan */
+  --accent: #06b6d4;
+  --accent-subtle: rgba(6, 182, 212, 0.1);
+  --accent-border: rgba(6, 182, 212, 0.3);
+  --accent-glow: rgba(6, 182, 212, 0.15);
+
+  /* XP / Gamification — Amber */
+  --xp: #f59e0b;
+  --xp-subtle: rgba(245, 158, 11, 0.12);
+  --xp-glow: rgba(245, 158, 11, 0.2);
+
+  /* Layout */
+  --topbar-height: 52px;
+  --sidebar-width: 200px;
+
+  /* Radii & Shadows */
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-sm: 6px;
-  --padding-lg: 24px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
-  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.12);
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-hover-cyan: 0 8px 28px rgba(6, 182, 212, 0.12);
+  --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.08);
 }
 
 html.light-theme {
-  --bg-main: #f4f4f5;
+  --bg-main: #f8f9fb;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-border: #e4e4e7;
-  --bg-nested: #fafafa;
-  --border-nested: #e4e4e7;
+  --bg-card-border: #e4e6eb;
+  --bg-nested: #f1f2f5;
+  --border-nested: #e0e2e7;
   --input-bg: #ffffff;
-  --input-border: #d4d4d8;
-  --text-main: #09090b;
-  --text-muted: #4b5563;
-  --text-muted-dark: #71717a;
+  --input-border: #d4d6dc;
+  --text-main: #0f0f14;
+  --text-muted: #5a5a66;
+  --text-muted-dark: #8a8a96;
   --nav-link-color: #4b5563;
   --btn-white-bg: #111827;
   --btn-white-text: #ffffff;
-  --footer-bg: #f3f4f6;
-  --footer-border: #e5e7eb;
-  
-  /* Quy chuẩn bo góc và đệm light-theme */
-  --radius-lg: 12px;
-  --radius-md: 8px;
-  --radius-sm: 6px;
-  --padding-lg: 24px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.03);
-  --shadow-hover-purple: 0 10px 25px rgba(168, 85, 247, 0.08);
+  --accent: #0891b2;
+  --accent-subtle: rgba(8, 145, 178, 0.07);
+  --accent-border: rgba(8, 145, 178, 0.22);
+  --accent-glow: rgba(8, 145, 178, 0.06);
 }
 
 body {
@@ -221,7 +235,7 @@ select option {
   min-height: 250px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Prevent dropdown menu from being clipped */
   box-shadow: var(--shadow-soft);
   box-sizing: border-box;
 }
@@ -396,6 +410,10 @@ select option {
   transition: background 0.2s, color 0.2s;
   width: 32px;
   height: 32px;
+}
+
+.btn-more-options i {
+  pointer-events: none; /* Prevents target-switching flickering on hover */
 }
 
 .btn-more-options:hover {

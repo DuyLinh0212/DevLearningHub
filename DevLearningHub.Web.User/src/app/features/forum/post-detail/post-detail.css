@@ -1127,3 +1127,263 @@
   .lc-post-title { font-size: 1.15rem; }
   .lc-article-card { padding: 16px; }
 }
+
+/* Additional stacking behavior for smaller viewports */
+@media (max-width: 960px) {
+  .lc-post-layout { flex-direction: column; }
+  .lc-post-main { border-right: none; padding: 16px; }
+  .lc-explore-sidebar { display: block !important; width: 100%; padding: 12px 10px; border-top: 1px solid var(--border-nested); margin-top: 8px; }
+  .lc-explore-sidebar::-webkit-scrollbar { display: none; }
+}
+
+@media (max-width: 480px) {
+  .lc-post-title { font-size: 1.05rem; }
+  .lc-author-avatar { width: 36px; height: 36px; }
+  .lc-write-box { flex-direction: column; gap: 8px; }
+  .lc-write-actions { padding: 8px; }
+  .lc-post-image { max-height: 240px; }
+}
+
+@media (max-width: 420px) {
+  .lc-author-row { gap: 8px; }
+  .lc-author-info { min-width: 0; }
+  .lc-tags-inline { gap: 6px; }
+  .lc-post-body { font-size: 0.92rem; }
+  .lc-post-image { max-height: 200px; }
+  .lc-write-actions { justify-content: stretch; }
+}
+
+/* Styles for mobile actions menu added in template */
+.mobile-actions-details { display: none; }
+.mobile-actions-details summary {
+  list-style: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+}
+.mobile-actions-details summary:focus { outline: none; box-shadow: 0 0 0 4px rgba(168,85,247,0.06); }
+.mobile-actions-details .mobile-actions-list { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.mobile-actions-details .mobile-actions-list button { justify-content: flex-start; padding: 8px 12px; }
+
+@media (max-width: 560px) {
+  .mobile-actions-details { display: inline-block; margin-left: 8px; }
+  .header-actions { display: none; }
+}
+
+/* === Post detail mobile responsive hardening === */
+.lc-post-layout,
+.lc-post-main,
+.lc-article-card,
+.lc-comments-section,
+.lc-comment-body-col,
+.lc-explore-sidebar {
+  min-width: 0;
+}
+
+.lc-post-title,
+.lc-post-body,
+.lc-comment-text,
+.lc-explore-item-title,
+.fb-lightbox-post-title,
+.fb-lightbox-post-excerpt {
+  overflow-wrap: anywhere;
+}
+
+.lc-post-body pre,
+.lc-comment-text pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lc-post-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 960px) {
+  :host {
+    overflow: visible;
+  }
+
+  .lc-post-layout {
+    min-height: auto;
+  }
+
+  .lc-post-main {
+    overflow: visible;
+  }
+
+  .lc-explore-sidebar {
+    max-height: none;
+    overflow: visible;
+    background: transparent;
+  }
+}
+
+@media (max-width: 640px) {
+  .lc-post-main {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .lc-article-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .lc-author-row {
+    align-items: flex-start;
+  }
+
+  .lc-tags-inline {
+    width: 100%;
+  }
+
+  .lc-post-title {
+    font-size: 1.12rem;
+    line-height: 1.35;
+  }
+
+  .lc-post-body {
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .lc-post-image-wrap {
+    margin-inline: -4px;
+  }
+
+  .lc-post-image {
+    max-height: 300px;
+    object-fit: contain;
+    background: var(--bg-nested);
+  }
+
+  .lc-action-bar,
+  .lc-action-left,
+  .lc-action-right {
+    width: 100%;
+  }
+
+  .lc-action-left {
+    flex-wrap: wrap;
+  }
+
+  .lc-action-right {
+    justify-content: flex-end;
+  }
+
+  .lc-write-box {
+    flex-direction: row;
+  }
+
+  .lc-write-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .lc-comment-layout {
+    gap: 8px;
+  }
+
+  .lc-comment-node.is-reply {
+    padding-left: 0;
+  }
+
+  .lc-replies-wrap {
+    margin-left: 10px;
+    padding-left: 8px;
+  }
+
+  .lc-comment-footer {
+    gap: 2px;
+  }
+
+  .lc-link-action {
+    padding: 4px 6px;
+  }
+
+  .report-modal-overlay {
+    padding: 12px;
+  }
+
+  .report-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .report-btn-cancel,
+  .report-btn-submit {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .image-lightbox-overlay.fb-lightbox {
+    grid-template-rows: minmax(0, 52vh) minmax(0, 48vh);
+  }
+
+  .fb-close-btn {
+    width: 42px;
+    height: 42px;
+    top: 10px;
+    left: 10px;
+  }
+
+  .fb-zoom-toolbar {
+    top: 10px;
+    gap: 6px;
+    padding: 8px;
+    max-width: calc(100vw - 72px);
+  }
+
+  .fb-zoom-toolbar input[type="range"] {
+    width: 90px;
+  }
+
+  .fb-lightbox-side {
+    height: 48vh;
+  }
+
+  .fb-post-mini-header,
+  .fb-lightbox-side-body,
+  .fb-lightbox-comments {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .fb-lightbox-comment-box {
+    padding: 10px 12px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .lc-post-main {
+    padding: 10px;
+  }
+
+  .lc-author-info {
+    flex-basis: calc(100% - 48px);
+  }
+
+  .lc-vote-btn,
+  .lc-metric-chip,
+  .lc-icon-action {
+    font-size: 0.78rem;
+  }
+
+  .lc-comment-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .lc-comment-head {
+    gap: 4px;
+  }
+}

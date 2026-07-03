@@ -1,14 +1,19 @@
-<div class="page-container">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title"><i class="bi bi-flag-fill"></i> Phản hồi từ User</h1>
-      <p class="page-subtitle">Quản lý báo cáo nội dung từ người dùng</p>
-    </div>
-    <span class="total-badge">{{ totalCount }} báo cáo</span>
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/admin">Quản trị</a>
+    <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+    <span>Báo cáo</span>
   </div>
 
-  <!-- Filters -->
-  <div class="filter-row">
+  <div class="admin-header-actions" style="margin-left: auto;">
+    <span class="total-badge" style="padding: 5px 12px; border-radius: 999px; color: var(--accent,#06b6d4); background: rgba(6,182,212,.10); border: 1px solid rgba(6,182,212,.24); font-size: .78rem; font-weight: 800; white-space: nowrap;">
+      {{ totalCount }} báo cáo
+    </span>
+  </div>
+</header>
+
+<div class="dashboard-scroll-body" style="padding: 20px 24px; box-sizing: border-box; width: 100%; overflow-x: hidden;">
+  <div class="filter-row" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 14px; padding: 14px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 12px; box-shadow: var(--shadow-soft);">
     <select class="filter-select" [(ngModel)]="filterStatus" (change)="applyFilter()">
       <option value="">Tất cả trạng thái</option>
       <option value="pending">Chờ xử lý</option>
@@ -27,7 +32,6 @@
     </button>
   </div>
 
-  <!-- Table -->
   @if (isLoading) {
     <div class="loading-state"><i class="bi bi-arrow-repeat spin"></i> Đang tải...</div>
   } @else if (reports.length === 0) {
@@ -52,9 +56,7 @@
         <tbody>
           @for (r of reports; track r.id) {
             <tr [class.row-resolved]="r.status === 'resolved' || r.status === 'dismissed'">
-              <td>
-                <span class="type-badge">{{ getTypeLabel(r.typeName) }}</span>
-              </td>
+              <td><span class="type-badge">{{ getTypeLabel(r.typeName) }}</span></td>
               <td>
                 <div class="reporter-cell">
                   @if (r.reporterAvatarUrl) {
@@ -68,9 +70,7 @@
               <td class="desc-cell">
                 <span title="{{ r.description }}">{{ r.description?.slice(0, 80) || '(Không có mô tả)' }}{{ r.description?.length > 80 ? '...' : '' }}</span>
               </td>
-              <td>
-                <span class="status-badge {{ getStatusClass(r.status) }}">{{ getStatusLabel(r.status) }}</span>
-              </td>
+              <td><span class="status-badge {{ getStatusClass(r.status) }}">{{ getStatusLabel(r.status) }}</span></td>
               <td class="date-cell">{{ formatDate(r.createdAt) }}</td>
               <td class="date-cell">{{ r.resolvedByUsername || '—' }}</td>
               <td>
@@ -85,8 +85,7 @@
                     <button class="btn-cancel" (click)="cancelResolve()"><i class="bi bi-x-lg"></i></button>
                   </div>
                 } @else {
-                  <button class="btn-action" (click)="startResolve(r.id, r.status)"
-                          [disabled]="r.status === 'resolved' || r.status === 'dismissed'">
+                  <button class="btn-action" (click)="startResolve(r.id, r.status)" [disabled]="r.status === 'resolved' || r.status === 'dismissed'">
                     <i class="bi bi-pencil-square"></i> Xử lý
                   </button>
                 }
@@ -97,18 +96,13 @@
       </table>
     </div>
 
-    <!-- Pagination -->
     @if (totalPages > 1) {
       <div class="pagination">
-        <button class="page-btn" (click)="goPage(currentPage - 1)" [disabled]="currentPage <= 1">
-          <i class="bi bi-chevron-left"></i>
-        </button>
+        <button class="page-btn" (click)="goPage(currentPage - 1)" [disabled]="currentPage <= 1"><i class="bi bi-chevron-left"></i></button>
         @for (p of pageNumbers; track p) {
           <button class="page-btn" [class.active]="p === currentPage" (click)="goPage(p)">{{ p }}</button>
         }
-        <button class="page-btn" (click)="goPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
-          <i class="bi bi-chevron-right"></i>
-        </button>
+        <button class="page-btn" (click)="goPage(currentPage + 1)" [disabled]="currentPage >= totalPages"><i class="bi bi-chevron-right"></i></button>
       </div>
     }
   }

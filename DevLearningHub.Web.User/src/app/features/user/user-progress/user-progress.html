@@ -1,72 +1,116 @@
-<header class="content-header">
-  <div class="top-breadcrumb">
-    <a routerLink="/dashboard">Báo cáo</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Phân tích năng lực</span>
-  </div>
-</header>
-
-<div class="dashboard-scroll-body">
-  <section class="welcome-section">
-    <h1>Phân tích kết quả học tập</h1>
-    <p>Thống kê chi tiết hiệu suất làm bài trắc nghiệm và đánh giá mức độ thông thạo kiến thức lập trình của bạn.</p>
-  </section>
+<div class="dashboard-scroll-body competency-page">
+  <header class="content-header cp-header">
+    <div class="cp-header-left">
+      <div class="top-breadcrumb">
+        <a routerLink="/dashboard">Học tập</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>Phân tích năng lực</span>
+      </div>
+      <h1 class="cp-page-title">Phân tích năng lực</h1>
+    </div>
+    <a class="btn-create" routerLink="/quiz-bank">
+      <i class="bi bi-collection"></i> Luyện thêm
+    </a>
+  </header>
 
   @if (progressData.length > 0) {
-  <div class="analytics-layout">
-    
-    <div class="stats-left">
-      <div class="progress-card">
-        <h3>Tỷ lệ chính xác tổng thể</h3>
-        <div class="ana-progress-container">
-          <div class="ana-progress-track">
-            <div class="ana-progress-fill" [style.width.%]="overallAccuracy"></div>
-          </div>
-          <span class="ana-progress-number">{{ overallAccuracy }}%</span>
+  <div class="cp-layout-row">
+    <main class="cp-main-col">
+      <section class="cp-overview-card">
+        <div class="cp-overview-copy">
+          <span class="cp-eyebrow">Learning analytics</span>
+          <h2>{{ overallAccuracy }}% độ chính xác tổng thể</h2>
+          <p>Dựa trên {{ totalAttemptsSum }} lượt luyện tập và {{ progressData.length }} danh mục kiến thức đã ghi nhận.</p>
         </div>
-      </div>
+        <div class="cp-meter-wrap">
+          <div class="cp-meter-ring" [style.--score.%]="overallAccuracy">
+            <span>{{ overallAccuracy }}%</span>
+          </div>
+          <small>{{ masteredCount }}/{{ progressData.length }} chủ đề thông thạo</small>
+        </div>
+      </section>
 
-      <div class="topics-list-card">
-        <h3>Chi tiết năng lực theo danh mục</h3>
-        
-        <div class="analytics-items-vertical-list">
+      <section class="cp-summary-grid">
+        <div class="cp-stat-card blue">
+          <i class="bi bi-bullseye"></i>
+          <span>Chính xác chung</span>
+          <strong>{{ overallAccuracy }}%</strong>
+        </div>
+        <div class="cp-stat-card green">
+          <i class="bi bi-patch-check-fill"></i>
+          <span>Đã thông thạo</span>
+          <strong>{{ masteredCount }}/{{ progressData.length }}</strong>
+        </div>
+        <div class="cp-stat-card purple">
+          <i class="bi bi-graph-up-arrow"></i>
+          <span>Mạnh nhất</span>
+          <strong>{{ strongestTopic?.topicName || 'Chưa có' }}</strong>
+          <small>{{ strongestTopic?.accuracy || 0 }}% chính xác</small>
+        </div>
+        <div class="cp-stat-card rose">
+          <i class="bi bi-graph-down-arrow"></i>
+          <span>Cần cải thiện</span>
+          <strong>{{ weakestTopic?.topicName || 'Chưa có' }}</strong>
+          <small>{{ weakestTopic?.accuracy || 0 }}% chính xác</small>
+        </div>
+      </section>
+
+      <section class="cp-table-card">
+        <div class="cp-card-head">
+          <div>
+            <h3>Chi tiết theo danh mục</h3>
+            <p>Theo dõi độ thông thạo từng mảng kiến thức.</p>
+          </div>
+        </div>
+
+        <div class="cp-topic-list">
           @for (item of progressData; track item.topicId) {
-          <div class="topic-progress-item">
-            <div class="item-left-text">
-              <p class="topic-title">{{ item.topicName }}</p>
-              <div class="topic-meta-sub-row">
-                <span><i class="bi bi-collection"></i> Đã làm: {{ item.totalQuestions }} câu ({{ item.totalAttempts }} lượt)</span>
-                <span>• Kỷ lục: {{ item.bestScore }} điểm</span>
-              </div>
+          <div class="cp-topic-row">
+            <div class="cp-topic-main">
+              <span class="cp-topic-name">{{ item.topicName }}</span>
+              <span class="cp-topic-meta">
+                <i class="bi bi-collection"></i> {{ item.totalQuestions }} câu
+                <b>·</b> {{ item.totalAttempts }} lượt
+                <b>·</b> Kỷ lục {{ item.bestScore }} điểm
+              </span>
             </div>
-            <div class="item-right-badge">
-              <span class="topic-score-badge">Mức độ thông thạo: {{ item.accuracy }}%</span>
-              <p class="last-date-text">Gần nhất: {{ item.lastPracticed }}</p>
+            <div class="cp-topic-score">
+              <strong>{{ item.accuracy }}%</strong>
+              <div class="cp-topic-bar"><span [style.width.%]="item.accuracy"></span></div>
+              <small>Gần nhất: {{ item.lastPracticed }}</small>
             </div>
           </div>
           }
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <div class="chart-right">
-      <h3><i class="bi bi-radar"></i> Biểu đồ radar năng lực</h3>
-      <div class="chart-canvas-container">
-        <canvas #radarCanvas></canvas>
-      </div>
-    </div>
+    <aside class="cp-side-col">
+      <section class="cp-radar-card">
+        <div class="cp-card-head">
+          <div>
+            <h3><i class="bi bi-radar"></i> Radar năng lực</h3>
+            <p>Biểu đồ mức thông thạo theo chủ đề.</p>
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas #radarCanvas></canvas>
+        </div>
+      </section>
 
+      <section class="cp-insight-card">
+        <h4><i class="bi bi-lightbulb"></i> Gợi ý tiếp theo</h4>
+        <p>Tập trung ôn lại <strong>{{ weakestTopic?.topicName || 'chủ đề còn yếu' }}</strong> trước, sau đó làm thêm 1–2 đề cùng nhóm để tăng độ ổn định.</p>
+        <a routerLink="/quiz-bank">Mở kho đề <i class="bi bi-arrow-right"></i></a>
+      </section>
+    </aside>
   </div>
   } @else {
-    <div class="empty-state-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); margin: 40px auto 0 auto; text-align: center; max-width: 680px; box-shadow: var(--shadow-soft);">
-       <div class="empty-icon-glow" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(168, 85, 247, 0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-         <i class="bi bi-graph-up-arrow" style="font-size: 2.2rem; color: #a855f7;"></i>
-       </div>
-       <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; font-family: 'Inter', sans-serif;">Chưa có dữ liệu phân tích năng lực</h3>
-       <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 500px; line-height: 1.6; margin-bottom: 32px; font-family: 'Inter', sans-serif;">
-         Hệ thống chưa ghi nhận kết quả bài thi chính thức nào từ cơ sở dữ liệu. Hãy tham gia ôn luyện hoặc thi thử ngay tại Thư viện đề để kích hoạt tính năng phân tích biểu đồ năng lực!
-       </p>
-       <a routerLink="/quiz-bank" class="btn-go-to-library" style="background: linear-gradient(to right, #6d28d9, #be123c); color: white; text-decoration: none; padding: 12px 32px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.95rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(109, 40, 217, 0.25);">
-         Vào Thư viện đề <i class="bi bi-arrow-right" style="margin-left: 4px;"></i>
-       </a>
-    </div>
+  <section class="cp-empty-card">
+    <i class="bi bi-graph-up-arrow"></i>
+    <h3>Chưa có dữ liệu phân tích năng lực</h3>
+    <p>Làm một bài trắc nghiệm để hệ thống tạo báo cáo radar và gợi ý ôn tập.</p>
+    <a routerLink="/quiz-bank" class="btn-create">Vào Thư viện đề <i class="bi bi-arrow-right"></i></a>
+  </section>
   }
 </div>

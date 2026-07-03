@@ -1,11 +1,16 @@
 <header class="content-header">
-  <a class="btn-back" routerLink="/admin/posts">
-    <i class="bi bi-arrow-left"></i> Quản lý bài viết
-  </a>
-  <div class="header-actions">
+  <div class="top-breadcrumb">
+    <a routerLink="/admin">Quản trị</a>
+    <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+    <a routerLink="/admin/posts">Bài viết</a>
+    <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+    <span>Chi tiết bài viết</span>
+  </div>
+
+  <div class="admin-header-actions" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
     @if (post) {
       @if (canModeratePosts) {
-        <button class="btn-action-moderate" (click)="toggleModeratePost()">
+        <button class="btn-action-moderate" (click)="toggleModeratePost()" style="margin-right: 8px;">
           <i class="bi" [class.bi-eye-slash]="!post.isHidden" [class.bi-eye]="post.isHidden"></i>
           {{ post.isHidden ? 'Bỏ ẩn bài viết' : 'Ẩn bài viết' }}
         </button>

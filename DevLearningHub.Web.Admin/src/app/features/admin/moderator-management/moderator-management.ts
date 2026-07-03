@@ -55,7 +55,7 @@ export class ModeratorManagementComponent implements OnInit {
   private readonly moderationPermissions = [
     'comment:hide',
     'comment:delete',
-    'post:hide',
+    'post:hide_any',
     'post:edit_any',
     'post:delete_any'
   ];

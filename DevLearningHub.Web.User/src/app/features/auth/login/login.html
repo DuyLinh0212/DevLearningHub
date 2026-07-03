@@ -59,6 +59,9 @@
             </button>
           </div>
         </div>
+        <div class="forgot-password-link" style="text-align: right; margin-top: 6px; margin-bottom: 12px;">
+          <a (click)="onForgotPassword($event)" style="font-size: 0.8rem; color: #c084fc; text-decoration: none; cursor: pointer; transition: color 0.2s;">Quên mật khẩu?</a>
+        </div>
 
         <button type="submit" class="btn-submit" [disabled]="isLoading">
           {{ isLoading ? 'Đang đăng nhập...' : 'ĐĂNG NHẬP' }}
@@ -69,3 +72,25 @@
     </div>
   </div>
 </div>
+
+<!-- Custom Popup Modal -->
+@if (popupMessage) {
+  <div class="custom-popup-overlay" (click)="closePopup()">
+    <div class="custom-popup-box" (click)="$event.stopPropagation()">
+      <div class="popup-icon" [class]="popupType">
+        @if (popupType === 'success') {
+          <i class="bi bi-check-circle-fill"></i>
+        } @else if (popupType === 'error') {
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        } @else {
+          <i class="bi bi-info-circle-fill"></i>
+        }
+      </div>
+      <div class="popup-content">
+        <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ popupTitle || 'Thông báo' }}</h3>
+        <p style="margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5;">{{ popupMessage }}</p>
+      </div>
+      <button class="popup-close-btn" (click)="closePopup()">Đóng</button>
+    </div>
+  </div>
+}

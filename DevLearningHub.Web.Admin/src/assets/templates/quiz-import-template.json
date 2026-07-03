@@ -1,0 +1,18 @@
+{
+  "questions": [
+    {
+      "text": "C# là ngôn ngữ lập trình thuộc loại nào?",
+      "points": 10,
+      "options": ["Biên dịch", "Thông dịch", "Tạo bảng tính", "Thiết kế giao diện"],
+      "correctIndex": 0,
+      "explanation": "C# là ngôn ngữ lập trình được biên dịch."
+    },
+    {
+      "text": "HTML viết tắt của cụm từ nào?",
+      "points": 10,
+      "options": ["HyperText Markup Language", "HighText Machine Language", "HyperTool Multi Language", "Home Tool Markup Language"],
+      "correctIndex": 0,
+      "explanation": "HTML là HyperText Markup Language."
+    }
+  ]
+}

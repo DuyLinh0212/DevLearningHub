@@ -1,232 +1,71 @@
 <aside class="sidebar" [class.is-mobile-open]="isMobileOpen">
+  <button class="btn-sidebar-close-mobile" (click)="toggleMobileSidebar()" aria-label="Đóng menu">
+    <i class="bi bi-x-lg"></i>
+  </button>
 
-  <!-- Brand header -->
-  <div class="sidebar-brand">
-    <div class="brand-info">
-      <img src="assets/images/logo.png" alt="Logo" class="brand-logo-img" />
-      <div class="brand-text">
-        <h2>Dev-Learning<span class="brand-accent">Hub</span></h2>
-        <span class="brand-badge">
-          <i class="bi bi-shield-fill"></i>
-          {{ hasRole('Admin') ? 'Admin Panel' : 'Mod Panel' }}
-        </span>
-      </div>
-    </div>
-    <button class="btn-sidebar-close-mobile" (click)="toggleMobileSidebar()">
-      <i class="bi bi-x-lg"></i>
-    </button>
-  </div>
-
-  <!-- Profile mini card -->
-  <div class="sidebar-profile-card">
-    <img
-      [src]="profile.avatarUrl || 'assets/images/default-avatar.svg'"
-      [alt]="profile.displayName"
-      class="sp-avatar"
-    />
-    <div class="sp-info">
-      <strong class="sp-name">{{ profile.displayName || 'Quản trị viên' }}</strong>
-      <span class="sp-role">
-        <i class="bi bi-circle-fill sp-dot"></i>
-        {{ hasRole('Admin') ? 'Admin' : 'Moderator' }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Global search -->
-  <div class="sidebar-search">
-    <div class="search-box">
-      <i class="bi bi-search"></i>
-      <input
-        type="text"
-        placeholder="Tìm kiếm..."
-        [value]="searchQuery"
-        (input)="onSearchInput($event)"
-        autocomplete="off"
-      />
-      @if (searchQuery) {
-        <button class="btn-clear-search" (click)="clearSearch()">
-          <i class="bi bi-x"></i>
-        </button>
-      }
-    </div>
-
-    @if (showSearchResults || searchLoading) {
-      <div class="global-search-results">
-        @if (searchLoading) {
-          <div class="search-loading">
-            <i class="bi bi-arrow-repeat spin"></i> Đang tìm...
-          </div>
-        }
-
-        @if (!searchLoading && matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedUsers.length === 0 && matchedProblems.length === 0) {
-          <div class="no-search-results">
-            <i class="bi bi-search"></i>
-            Không có kết quả
-          </div>
-        }
-
-        @if (matchedPages.length > 0) {
-          <div class="search-category">
-            <div class="category-header">Chức năng</div>
-            @for (p of matchedPages; track p.path) {
-              <a [routerLink]="p.path" class="search-result-item" (click)="clearSearch()">
-                <i [class]="p.icon"></i>
-                <div class="result-meta">
-                  <span class="result-title">{{ p.name }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-
-        @if (matchedProblems.length > 0) {
-          <div class="search-category">
-            <div class="category-header">Bài tập code</div>
-            @for (p of matchedProblems; track p.id) {
-              <a routerLink="/admin/problems" class="search-result-item" (click)="clearSearch()">
-                <i class="bi bi-cpu-fill"></i>
-                <div class="result-meta">
-                  <span class="result-title">{{ p.title }}</span>
-                  <span class="result-desc">{{ p.difficulty }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-
-        @if (matchedQuizzes.length > 0) {
-          <div class="search-category">
-            <div class="category-header">Đề thi</div>
-            @for (q of matchedQuizzes; track q.id) {
-              <a routerLink="/admin/quiz" class="search-result-item" (click)="clearSearch()">
-                <i class="bi bi-database-fill"></i>
-                <div class="result-meta">
-                  <span class="result-title">{{ q.title }}</span>
-                  <span class="result-desc">{{ q.description || 'Không có mô tả' }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-
-        @if (matchedUsers.length > 0) {
-          <div class="search-category">
-            <div class="category-header">Người dùng</div>
-            @for (u of matchedUsers; track u.id) {
-              <a routerLink="/admin/users" class="search-result-item" (click)="clearSearch()">
-                <i class="bi bi-person-fill"></i>
-                <div class="result-meta">
-                  <span class="result-title">{{ u.fullName || u.username }}</span>
-                  <span class="result-desc">{{ u.email }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-      </div>
-    }
-  </div>
-
-  <!-- Nav menu -->
-  <nav class="sidebar-menu">
-
-    @if (hasRole('Admin') || hasPermission('quiz:edit') || hasPermission('roadmap:edit') || hasPermission('topic:edit')) {
-      <div class="menu-heading">ĐIỀU PHỐI</div>
-    }
+  <nav class="sidebar-menu" aria-label="Admin navigation">
+    <div class="menu-heading">Điều phối</div>
     @if (hasRole('Admin')) {
       <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
-        <i class="bi bi-speedometer2"></i><span>Bảng điều phối</span>
+        <i class="bi bi-grid-1x2"></i><span>Tổng quan</span>
       </a>
     }
     @if (hasPermission('quiz:edit')) {
       <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-database-fill"></i><span>Quản lý Đề thi</span>
+        <i class="bi bi-collection"></i><span>Bộ đề</span>
       </a>
       <a routerLink="/admin/problems" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-cpu-fill"></i><span>Quản lý Bài tập</span>
-      </a>
-    }
-    @if (hasPermission('roadmap:edit')) {
-      <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-bezier2"></i><span>Quản lý Lộ trình</span>
+        <i class="bi bi-code-slash"></i><span>Bài code</span>
       </a>
     }
     @if (hasPermission('topic:edit')) {
       <a routerLink="/admin/topics" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-tags-fill"></i><span>Quản lý Chủ đề</span>
+        <i class="bi bi-tags"></i><span>Chủ đề</span>
       </a>
     }
 
-    @if (hasPermission('tag:edit') || hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
-      <div class="menu-heading">CỘNG ĐỒNG</div>
-    }
+    <div class="menu-section-divider"></div>
+    <div class="menu-heading">Cộng đồng</div>
     @if (hasPermission('tag:edit')) {
       <a routerLink="/admin/tags" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-tag-fill"></i><span>Quản lý Tag</span>
+        <i class="bi bi-tag"></i><span>Tag</span>
       </a>
     }
-    @if (hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
+    @if (hasPermission('post:hide') || hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
       <a routerLink="/admin/posts" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-newspaper"></i><span>Quản lý Bài viết</span>
+        <i class="bi bi-people"></i><span>Bài viết</span>
       </a>
-    }
-    @if (hasPermission('post:hide_any') || hasPermission('post:delete_any')) {
       <a routerLink="/admin/reports" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-flag-fill"></i><span>Phản hồi từ User</span>
+        <i class="bi bi-flag"></i><span>Báo cáo</span>
       </a>
     }
 
-    @if (hasRole('Admin') || hasPermission('audit:view')) {
-      <div class="menu-heading">HẠ TẦNG</div>
-    }
-    @if (hasRole('Admin')) {
-      <a class="menu-item menu-item-disabled">
-        <i class="bi bi-cpu-fill"></i><span>Sandbox Engine</span>
-        <span class="soon-badge">Sắp ra mắt</span>
-      </a>
-    }
-    @if (hasPermission('audit:view')) {
-      <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-terminal-fill"></i><span>Logs hệ thống</span>
-      </a>
-    }
-
-    <div class="menu-heading">HỆ THỐNG</div>
+    <div class="menu-section-divider"></div>
+    <div class="menu-heading">Hệ thống</div>
     @if (hasPermission('user:view_all')) {
       <a routerLink="/admin/users" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-people-fill"></i><span>Quản lý Người dùng</span>
+        <i class="bi bi-person-lines-fill"></i><span>Người dùng</span>
       </a>
     }
     @if (hasRole('Admin')) {
       <a routerLink="/admin/moderators" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-person-badge"></i><span>Quản lý Moderator</span>
+        <i class="bi bi-shield-check"></i><span>Moderator</span>
       </a>
     }
-    @if (hasRole('Moderator') && !hasRole('Admin')) {
+    @if (hasRole('Moderator')) {
       <a routerLink="/admin/moderator-dashboard" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-speedometer2"></i><span>Dashboard Moderator</span>
+        <i class="bi bi-speedometer2"></i><span>Moderator</span>
       </a>
     }
-
-  </nav>
-
-  <!-- Footer -->
-  <div class="sidebar-footer">
+    @if (hasPermission('audit:view')) {
+      <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
+        <i class="bi bi-terminal"></i><span>Nhật ký</span>
+      </a>
+    }
     <a routerLink="/settings" routerLinkActive="active" class="menu-item">
       <i class="bi bi-gear"></i><span>Cài đặt</span>
     </a>
-    <button (click)="themeService.toggleTheme()" class="menu-item theme-toggle-btn">
-      <i class="bi"
-         [class.bi-moon-stars-fill]="!themeService.isDarkMode()"
-         [class.bi-sun-fill]="themeService.isDarkMode()"></i>
-      <span>{{ themeService.isDarkMode() ? 'Giao diện sáng' : 'Giao diện tối' }}</span>
-    </button>
-    <button (click)="logout()" class="menu-item logout">
-      <i class="bi bi-box-arrow-left"></i><span>Đăng xuất</span>
-    </button>
-  </div>
-
+  </nav>
 </aside>
 
 @if (isMobileOpen) {

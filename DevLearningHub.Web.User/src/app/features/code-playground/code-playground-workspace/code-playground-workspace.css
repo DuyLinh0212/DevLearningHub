@@ -1686,3 +1686,36 @@
   border: 1px solid #f59e0b;
   color: #111827;
 }
+
+/* Additional responsive adjustments (tablet & mobile) */
+@media (max-width: 900px) {
+  .workspace-header { padding: 0 10px; height: 48px; }
+  .header-left { flex-wrap: wrap; gap: 8px; }
+  .problem-title-header { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+  .panels-grid { grid-template-columns: 1fr; grid-auto-rows: minmax(220px, auto); padding: 8px; gap: 10px; }
+  .panel-left, .panel-right { max-height: calc(100vh - 120px); }
+  .panel-tabs { overflow-x: auto; }
+  .panel-tabs button { flex: 0 0 auto; }
+}
+
+@media (max-width: 480px) {
+  .header-actions { gap: 6px; }
+  .btn-action-header { padding: 6px; font-size: 0.78rem; }
+  .btn-action-header i { margin-right: 0; }
+  .btn-action-header span { display: none; }
+  .panel-scroll-body { padding: 12px; }
+  .description-view h2 { font-size: 1.15rem; }
+  
+  /* Hide non-essential header badges on very small screens */
+  @media (max-width: 420px) {
+    .dcc-badge-header, .streak-flame-header, .diff-badge-header { display: none; }
+    .problem-path, .path-divider { display: none; }
+    .problem-title-header { max-width: 160px; }
+    .title-rating-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .rating-buttons { order: 2; }
+    .title-rating-row h2 { font-size: 1.05rem; }
+  }
+  
+  /* Ensure images inside markdown scale down nicely */
+  .markdown-content img { max-width: 100%; height: auto; border-radius: 6px; }
+}

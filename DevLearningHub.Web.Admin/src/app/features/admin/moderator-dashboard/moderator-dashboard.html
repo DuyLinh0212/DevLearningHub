@@ -56,18 +56,6 @@
         </div>
       }
 
-      <!-- Total Roadmaps (Roadmap) -->
-      @if (hasPermission('roadmap:edit')) {
-        <div class="stat-card orange">
-          <div class="stat-card-header">
-            <span class="stat-title">Tổng số lộ trình</span>
-            <div class="stat-card-icon"><i class="bi bi-bezier2"></i></div>
-          </div>
-          <div class="stat-card-body">
-            <span class="stat-value">{{ stats.totalRoadmaps }}</span>
-          </div>
-        </div>
-      }
     </section>
 
     <!-- Widgets Grid -->
@@ -176,51 +164,7 @@
         </div>
       }
 
-      <!-- Widget: Roadmap Moderation (Recent Roadmaps list) -->
-      @if (hasPermission('roadmap:edit')) {
-        <div class="card" style="display: flex; flex-direction: column;">
-          <h3 style="padding: 16px 20px; border-bottom: 1px solid var(--bg-card-border); font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-main);">
-            <i class="bi bi-bezier2" style="color: #3b82f6;"></i> Quản lý Lộ trình học tập
-          </h3>
-          <div style="flex: 1; padding: 12px; overflow-y: auto;">
-            @if (recentRoadmaps.length === 0) {
-              <div style="text-align: center; padding: 40px 20px; color: var(--text-muted-dark); font-size: 0.85rem;">
-                Chưa có lộ trình học nào
-              </div>
-            } @else {
-              <div class="table-responsive" style="overflow-x: auto; font-size: 0.82rem;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-main);">
-                  <thead>
-                    <tr style="border-bottom: 1px solid var(--bg-card-border); color: var(--text-muted); font-weight: 600;">
-                      <th style="padding: 8px;">Tiêu đề</th>
-                      <th style="padding: 8px;">Định hướng</th>
-                      <th style="padding: 8px; text-align: right;">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (rm of recentRoadmaps; track rm.id) {
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.02); height: 48px; vertical-align: middle;">
-                        <td style="padding: 8px; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                          {{ rm.title }}
-                        </td>
-                        <td style="padding: 8px; color: var(--text-muted);">{{ rm.targetRole || 'Web Developer' }}</td>
-                        <td style="padding: 8px; text-align: right;">
-                          <a 
-                            [routerLink]="['/admin/roadmap']" 
-                            style="text-decoration: none; border: none; background: var(--bg-nested); color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-block;"
-                          >
-                            Quản lý
-                          </a>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
-        </div>
-      }
+
 
       <!-- Widget: Recent Activities -->
       @if (canViewAuditLogs) {

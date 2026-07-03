@@ -1,91 +1,107 @@
+﻿<header class="content-header admin-dash-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/admin">Quản trị</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>Tổng quan</span>
+  </div>
+  <div class="admin-header-actions">
+    <a class="btn-action cyan" routerLink="/admin/users"><i class="bi bi-people"></i> Người dùng</a>
+    <a class="btn-action ghost" routerLink="/admin/audit-logs"><i class="bi bi-clock-history"></i> Nhật ký</a>
+  </div>
+</header>
 
+<div class="dashboard-scroll-body admin-dashboard-page">
+  <section class="stats-container admin-stats-grid">
+    @for (stat of adminStats; track stat.title) {
+    <a class="stat-card {{ stat.color }}" [routerLink]="stat.link">
+      <div class="stat-card-header">
+        <span class="stat-title">{{ stat.title }}</span>
+        <i class="bi {{ stat.icon }} stat-card-icon"></i>
+      </div>
+      <div class="stat-card-body">
+        <span class="stat-value">{{ stat.value }}</span>
+        @if (stat.unit) { <span class="stat-unit">{{ stat.unit }}</span> }
+      </div>
+    </a>
+    }
+  </section>
 
-    <header class="content-header">
-<div style="flex-grow: 1;"></div>
-    </header>
+  <section class="admin-panel wide-panel">
+    <div class="section-head-row">
+      <div>
+        <h2>Bài viết gần đây</h2>
+        <p class="section-subtitle">Các bài đăng mới nhất trong diễn đàn.</p>
+      </div>
+      <a routerLink="/admin/posts" class="btn-see-all"><i class="bi bi-arrow-right"></i> Xem tất cả</a>
+    </div>
 
-    <div class="dashboard-scroll-body">
-
-      <section class="welcome-section">
-        <h1>Bảng Điều Phối Hệ Thống</h1>
-        <p>Giám sát chỉ số tăng trưởng, điều phối tài nguyên và giữ gìn không gian cộng đồng công nghệ HUIT</p>
-      </section>
-
-      <section class="stats-container">
-        @for (stat of adminStats; track stat.title) {
-        <div class="stat-card {{ stat.color }}">
-          <div class="stat-card-header">
-            <span class="stat-title">{{ stat.title }}</span>
-            <div class="stat-card-icon"><i class="bi {{ stat.icon }}"></i></div>
-          </div>
-          <div class="stat-card-body">
-            <span class="stat-value">{{ stat.value }}</span>
-          </div>
+    <div class="content-list">
+      @for (post of recentPosts; track post.id) {
+      <a class="content-row" [routerLink]="['/admin/posts', post.id]">
+        <div class="content-icon post"><i class="bi bi-chat-left-text"></i></div>
+        <div class="content-main">
+          <h4>{{ post.title || post.heading || 'Bài viết không tiêu đề' }}</h4>
+          <p>{{ post.authorName || post.username || post.createdBy || 'Người dùng' }} · {{ formatDateTime(post.createdAt || post.createdOn) }}</p>
         </div>
-        }
-      </section>
+        @if (post.isHidden || post.hidden) { <span class="state-badge muted">Đã ẩn</span> }
+      </a>
+      } @empty {
+      <div class="admin-empty-state slim"><i class="bi bi-chat-square-text"></i><p>Chưa có bài viết gần đây.</p></div>
+      }
+    </div>
+  </section>
 
-      <div class="middle-layout">
-        <!-- Cột trái: Thành viên mới đăng ký -->
-        <section class="recent-users-box">
-          <h2>Thành viên mới đăng ký</h2>
-          <p class="section-subtitle">Danh sách người dùng đăng ký tài khoản gần đây nhất</p>
-
-          <div class="recent-users-list">
-            @for (user of recentUsers; track user.id) {
-            <div class="recent-user-item">
-              <div class="user-avatar-placeholder" [style.background-image]="'url(' + (user.avatarUrl || 'assets/images/default-avatar.svg') + ')'" style="background-size: cover; background-position: center; width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;"></div>
-              <div class="user-info">
-                <h4>{{ user.fullName || user.username }}</h4>
-                <p>{{ user.email }} • Đăng ký: {{ formatDateTime(user.createdAt) }}</p>
-              </div>
-              <span class="user-status-badge" [class.locked]="user.isLocked" [class.active]="!user.isLocked">
-                {{ user.isLocked ? 'Đã khóa' : 'Hoạt động' }}
-              </span>
-            </div>
-            } @empty {
-            <div class="admin-empty-state">
-              <i class="bi bi-people"></i>
-              <p>Chưa có thành viên nào trong hệ thống.</p>
-            </div>
-            }
-          </div>
-        </section>
-
-        <!-- Cột phải: Nhật ký hoạt động gần đây -->
-        <section class="recent-logs-box">
-          <h2>Nhật ký hoạt động gần đây</h2>
-          <p class="section-subtitle">Theo dõi các hành động quản trị viên và hệ thống theo thời gian thực</p>
-
-          <div class="recent-logs-list">
-            @if (hasLogsError) {
-            <div class="admin-empty-state-error" style="text-align: center; padding: 40px 20px; color: var(--text-muted-dark);">
-              <i class="bi bi-shield-lock-fill" style="color: #ef4444; font-size: 2rem; display: block; margin-bottom: 12px;"></i>
-              <p style="font-size: 0.9rem; margin: 0;">Bạn không có quyền <code>audit:view</code> để xem nhật ký hệ thống.</p>
-            </div>
-            } @else {
-              @for (log of recentLogs; track log.id) {
-              <div class="recent-log-item">
-                <div class="log-info-left">
-                  <span class="log-timestamp">{{ formatDateTime(log.createdAt) }}</span>
-                  <span class="log-actor"><i class="bi bi-person-fill"></i> {{ log.actorUsername || 'System' }}</span>
-                </div>
-                <div class="log-content-right">
-                  <span class="log-action-badge">{{ log.action }}</span>
-                  <p class="log-detail-text" [title]="log.detail || ''">{{ log.detail || 'Không có chi tiết' }}</p>
-                </div>
-              </div>
-              } @empty {
-              <div class="admin-empty-state">
-                <i class="bi bi-terminal"></i>
-                <p>Nhật ký hệ thống trống rỗng.</p>
-              </div>
-              }
-            }
-          </div>
-        </section>
+  <div class="middle-layout admin-middle-layout">
+    <section class="admin-panel">
+      <div class="section-head-row">
+        <div>
+          <h2>Bài tập code mới</h2>
+          <p class="section-subtitle">Những bài tập lập trình vừa được tạo/cập nhật.</p>
+        </div>
+        <a routerLink="/admin/problems" class="btn-see-all"><i class="bi bi-arrow-right"></i> Xem tất cả</a>
       </div>
 
-    </div>
-  
+      <div class="content-list">
+        @for (problem of recentProblems; track problem.id) {
+        <a class="content-row" [routerLink]="['/admin/problems', problem.id, 'test-cases']">
+          <div class="content-icon code"><i class="bi bi-code-slash"></i></div>
+          <div class="content-main">
+            <h4>{{ problem.title || problem.name || 'Bài code' }}</h4>
+            <p>{{ problem.difficulty || 'Chưa phân cấp' }} · {{ formatDateTime(problem.createdAt || problem.updatedAt) }}</p>
+          </div>
+          <span class="state-badge">{{ problem.difficulty || 'Code' }}</span>
+        </a>
+        } @empty {
+        <div class="admin-empty-state slim"><i class="bi bi-code-slash"></i><p>Chưa có bài tập code.</p></div>
+        }
+      </div>
+    </section>
 
+    <section class="admin-panel">
+      <div class="section-head-row">
+        <div>
+          <h2>Thành viên mới đăng ký</h2>
+          <p class="section-subtitle">Tài khoản tạo gần đây nhất.</p>
+        </div>
+        <a routerLink="/admin/users" class="btn-see-all"><i class="bi bi-arrow-right"></i> Xem tất cả</a>
+      </div>
+
+      <div class="recent-users-list">
+        @for (user of recentUsers; track user.id) {
+        <div class="recent-user-item">
+          <img class="admin-user-avatar" [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar">
+          <div class="user-info">
+            <h4>{{ user.fullName || user.username }}</h4>
+            <p>{{ user.email }} · {{ formatDateTime(user.createdAt) }}</p>
+          </div>
+          <span class="user-status-badge" [class.locked]="user.isLocked" [class.active]="!user.isLocked">
+            {{ user.isLocked ? 'Đã khóa' : 'Hoạt động' }}
+          </span>
+        </div>
+        } @empty {
+        <div class="admin-empty-state slim"><i class="bi bi-people"></i><p>Chưa có thành viên nào.</p></div>
+        }
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,10 +1,15 @@
-<header class="topbar">
+﻿<header class="topbar">
 
   <!-- Left: hamburger (mobile) -->
   <div class="topbar-left">
     <button class="btn-hamburger" (click)="mobileMenu.toggle()" aria-label="Menu">
       <i class="bi bi-list"></i>
     </button>
+
+    <a routerLink="/admin" class="topbar-logo">
+      <img [src]="themeService.isDarkMode() ? 'assets/images/logo2.png' : 'assets/images/logo.png'" alt="Logo" class="logo-img" />
+      <span class="logo-text">Dev<span class="logo-accent">Hub</span></span>
+    </a>
   </div>
 
   <!-- Right: controls -->
@@ -23,7 +28,7 @@
 
     <!-- Notifications -->
     <div class="notif-wrap">
-      <button class="icon-btn notif-btn" (click)="toggleNotif()" [class.active]="isNotifOpen" aria-label="Thong bao">
+      <button class="icon-btn notif-btn" (click)="toggleNotif()" [class.active]="isNotifOpen" aria-label="Thông báo">
         <i class="bi bi-bell-fill"></i>
         @if (unreadCount > 0) {
           <span class="notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -33,19 +38,19 @@
       @if (isNotifOpen) {
         <div class="notif-dropdown">
           <div class="notif-header">
-            <strong>Thong bao</strong>
+            <strong>Thông báo</strong>
             @if (unreadCount > 0) {
-              <button type="button" (click)="markAllNotifRead()">Danh dau da doc</button>
+              <button type="button" (click)="markAllNotifRead()">Đánh dấu đã đọc</button>
             }
           </div>
 
           <div class="notif-list">
             @if (notifLoading) {
-              <div class="notif-empty"><i class="bi bi-arrow-repeat spin-anim"></i> Dang tai...</div>
+              <div class="notif-empty"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tải...</div>
             } @else if (notifications.length === 0) {
               <div class="notif-empty">
                 <i class="bi bi-bell-slash"></i>
-                <p>Chua co thong bao nao</p>
+                <p>Chua co Thông báo nao</p>
               </div>
             } @else {
               @for (n of notifications; track n.id) {
@@ -55,7 +60,7 @@
                     <p>{{ n.message }}</p>
                     <span>{{ getRelativeTime(n.createdAt) }}</span>
                   </div>
-                  <button class="notif-delete" type="button" (click)="deleteNotif(n, $event)" title="Xoa">
+                  <button class="notif-delete" type="button" (click)="deleteNotif(n, $event)" title="Xóa">
                     <i class="bi bi-x"></i>
                   </button>
                 </div>
@@ -90,13 +95,9 @@
           </div>
         </a>
         <div class="dropdown-divider"></div>
-        <a routerLink="/settings" class="dropdown-item" (click)="isProfileOpen = false">
-          <i class="bi bi-gear"></i> Cài đặt
-        </a>
+        <a routerLink="/settings" class="dropdown-item" (click)="isProfileOpen = false"><i class="bi bi-gear"></i> Cài đặt</a>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item dropdown-logout" (click)="logout()">
-          <i class="bi bi-box-arrow-left"></i> Đăng xuất
-        </button>
+        <button class="dropdown-item dropdown-logout" (click)="logout()"><i class="bi bi-box-arrow-left"></i> Đăng xuất</button>
       </div>
     }
   </div>
@@ -190,3 +191,6 @@
     <div class="search-backdrop" (click)="toggleSearch()"></div>
   </div>
 }
+
+
+

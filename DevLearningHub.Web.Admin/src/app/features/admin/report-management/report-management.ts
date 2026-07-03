@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -121,10 +121,10 @@ export class ReportManagementComponent implements OnInit {
 
   getStatusClass(status: string): string {
     switch (status) {
-      case 'pending': return 'badge-pending';
-      case 'reviewed': return 'badge-reviewed';
-      case 'resolved': return 'badge-resolved';
-      case 'dismissed': return 'badge-dismissed';
+      case 'pending': return 'Chờ xử lý';
+      case 'reviewed': return 'Đã xem';
+      case 'resolved': return 'Đã giải quyết';
+      case 'dismissed': return 'Bác bỏ';
       default: return '';
     }
   }
@@ -153,3 +153,4 @@ export class ReportManagementComponent implements OnInit {
     return arr;
   }
 }
+

@@ -61,7 +61,6 @@ export class AdminTopbarComponent implements OnInit, OnDestroy {
     { name: 'Dashboard Moderator', path: '/admin/moderator-dashboard', icon: 'bi bi-speedometer2' },
     { name: 'Quản lý Đề thi', path: '/admin/quiz', icon: 'bi bi-database-fill' },
     { name: 'Quản lý Bài tập', path: '/admin/problems', icon: 'bi bi-cpu-fill' },
-    { name: 'Quản lý Lộ trình', path: '/admin/roadmap', icon: 'bi bi-bezier2' },
     { name: 'Quản lý Chủ đề', path: '/admin/topics', icon: 'bi bi-tags-fill' },
     { name: 'Quản lý Tag', path: '/admin/tags', icon: 'bi bi-tag-fill' },
     { name: 'Quản lý Bài viết', path: '/admin/posts', icon: 'bi bi-newspaper' },

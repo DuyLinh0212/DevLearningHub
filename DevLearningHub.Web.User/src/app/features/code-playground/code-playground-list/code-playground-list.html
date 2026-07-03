@@ -544,11 +544,16 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Tags</label>
-                <div class="tag-input-row">
-                  <input type="text" class="form-input" [(ngModel)]="tagInput"
-                         placeholder="Nhập tag, nhấn Enter để thêm..."
-                         (keydown.enter)="addTag(); $event.preventDefault()" />
-                  <button class="btn-add-tag" (click)="addTag()" type="button"><i class="bi bi-plus"></i></button>
+                <div class="tag-input-row" style="display: flex; gap: 8px;">
+                  <select class="tag-select-dropdown" [(ngModel)]="tagInput" style="flex: 1;">
+                    <option value="">-- Chọn tag để thêm --</option>
+                    @for (opt of availableTagOptions; track opt) {
+                      <option [value]="opt" [disabled]="form.tags.includes(opt)">{{ opt }}</option>
+                    }
+                  </select>
+                  <button class="btn-add-tag" (click)="addTag()" [disabled]="!tagInput" type="button">
+                    <i class="bi bi-plus-lg"></i> Thêm
+                  </button>
                 </div>
                 @if (form.tags.length > 0) {
                   <div class="tag-list">
@@ -633,3 +638,5 @@
   }
 
 </div>
+
+

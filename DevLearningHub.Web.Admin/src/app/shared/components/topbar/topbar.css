@@ -1,27 +1,60 @@
-/* =====================================================================
-   ADMIN TOPBAR — Simplified header bar (nav is in sidebar)
+﻿/* =====================================================================
+   ADMIN TOPBAR â€” Simplified header bar (nav is in sidebar)
    ===================================================================== */
 
 .topbar {
-  height: 80px;
+  height: var(--topbar-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 18px 0 14px;
   background: var(--bg-sidebar, #0d0d10);
   border-bottom: 1px solid var(--border-nested, #1e1e24);
   z-index: 100;
-  gap: 8px;
+  gap: 12px;
+  transition: background 0.25s, border-color 0.25s;
 }
 
 /* ---- LEFT ---- */
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(6,182,212,.12));
+}
+
+.logo-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.3px;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.logo-accent {
+  color: var(--accent);
+  font-weight: 800;
+}
 .btn-hamburger {
   display: none;
   background: none;
@@ -100,7 +133,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-nested);
   border-radius: 12px;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px rgba(6,182,212,.06);
   z-index: 9999;
   overflow: hidden;
   animation: dropIn 0.15s ease;
@@ -119,7 +152,7 @@
 .notif-header button {
   border: none;
   background: none;
-  color: #a855f7;
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
@@ -175,8 +208,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(168, 85, 247, 0.14);
-  color: #a855f7;
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .notif-body {
@@ -228,15 +261,15 @@
 .profile-wrap:hover { background: var(--bg-nested); }
 
 .profile-avatar {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(168, 85, 247, 0.4);
+  border: 1.5px solid var(--accent-border);
 }
 
 .profile-name {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-main, #fff);
   max-width: 120px;
@@ -262,7 +295,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-nested);
   border-radius: 12px;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px rgba(6,182,212,.06);
   z-index: 9999;
   overflow: hidden;
   animation: dropIn 0.15s ease;
@@ -291,7 +324,7 @@
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(168, 85, 247, 0.4);
+  border: 1.5px solid var(--accent-border);
   flex-shrink: 0;
 }
 
@@ -299,7 +332,7 @@
 
 .dd-role {
   font-size: 0.75rem;
-  color: #a855f7;
+  color: var(--accent);
   font-weight: 600;
   margin-top: 2px;
   display: flex;
@@ -316,7 +349,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -415,13 +448,15 @@
 
 .search-status {
   padding: 20px 18px;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .search-section { padding: 8px 0; }
@@ -442,7 +477,7 @@
   padding: 9px 18px;
   text-decoration: none;
   color: var(--text-main);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   transition: background 0.12s;
 }
 
@@ -464,8 +499,11 @@
   .profile-name { display: none; }
   .profile-chevron { display: none; }
   .topbar { padding: 0 12px; }
+  .logo-text { display: none; }
+  .logo-img { width: 32px; height: 32px; }
+  
+  
 }
-
 /* =====================================================================
    LIGHT THEME
    ===================================================================== */
@@ -473,3 +511,12 @@ html.light-theme .topbar {
   background: #ffffff;
   border-color: #e5e7eb;
 }
+
+
+
+
+/* dropdown text/font fix */
+.dropdown-item, .dd-name, .dd-role, .profile-name, .notif-header, .notif-body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.profile-dropdown { right: 0; }

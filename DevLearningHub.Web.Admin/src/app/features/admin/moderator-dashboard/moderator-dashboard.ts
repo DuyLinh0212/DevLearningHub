@@ -141,23 +141,7 @@ export class ModeratorDashboardComponent implements OnInit {
       });
     }
 
-    // Load total & recent roadmaps
-    if (this.hasPermission('roadmap:edit')) {
-      this.http.get<any>('/api/roadmaps').subscribe({
-        next: (res: any) => {
-          const list = res?.data || res || [];
-          this.stats.totalRoadmaps = list.length;
-          this.recentRoadmaps = list.slice(0, 5);
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Lỗi tải lộ trình:', err);
-          this.stats.totalRoadmaps = 0;
-          this.recentRoadmaps = [];
-          this.cdr.detectChanges();
-        }
-      });
-    }
+
 
     // Load recent moderation actions
     if (this.canViewAuditLogs) {

@@ -23,6 +23,27 @@ export class LoginComponent {
   isLoading = false;
   showPassword = false;
 
+  popupMessage = '';
+  popupTitle = '';
+  popupType = 'info';
+
+  onForgotPassword(event: Event) {
+    event.preventDefault();
+    this.showPopup('Quên mật khẩu', 'Vui lòng liên hệ Admin của hệ thống để được hỗ trợ cấp lại mật khẩu!', 'info');
+  }
+
+  showPopup(title: string, message: string, type: 'success' | 'error' | 'info') {
+    this.popupTitle = title;
+    this.popupMessage = message;
+    this.popupType = type;
+    this.cdr.detectChanges();
+  }
+
+  closePopup() {
+    this.popupMessage = '';
+    this.cdr.detectChanges();
+  }
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
     this.cdr.detectChanges();
@@ -88,7 +109,6 @@ export class LoginComponent {
               this.cdr.detectChanges();
               return;
             }
-            alert('Đăng nhập thành công!');
             this.router.navigate(['/dashboard']);
           } catch (e) {
             console.error('Lỗi phân tích quyền Token:', e);

@@ -4,9 +4,11 @@
   </a>
 
   <div class="header-actions">
-    <button class="btn-action-report" (click)="openPostReportModal($event)">
-      <i class="bi bi-flag"></i> Báo cáo
-    </button>
+    @if (!isPostAuthor()) {
+      <button class="btn-action-report" (click)="openPostReportModal($event)">
+        <i class="bi bi-flag"></i> Báo cáo
+      </button>
+    }
     @if (canEditPost()) {
       <button class="btn-action-outline" [routerLink]="['/forum/edit', post?.id]">
         <i class="bi bi-pencil"></i> Sửa bài
@@ -24,6 +26,34 @@
       </button>
     }
   </div>
+  
+  <!-- Mobile actions: grouped into a details menu for small screens -->
+  <details class="mobile-actions-details" role="menu">
+    <summary aria-label="Hành động" title="Hành động"> <i class="bi bi-three-dots-vertical"></i> </summary>
+    <div class="mobile-actions-list">
+      @if (!isPostAuthor()) {
+        <button class="btn-action-report" (click)="openPostReportModal($event)">
+          <i class="bi bi-flag"></i> Báo cáo
+        </button>
+      }
+      @if (canEditPost()) {
+        <button class="btn-action-outline" [routerLink]="['/forum/edit', post?.id]">
+          <i class="bi bi-pencil"></i> Sửa bài
+        </button>
+      }
+      @if (canHidePost()) {
+        <button class="btn-action-moderate" (click)="toggleModeratePost()">
+          <i class="bi" [class.bi-eye-slash]="!post?.isHidden" [class.bi-eye]="post?.isHidden"></i>
+          {{ post?.isHidden ? 'Bỏ ẩn' : 'Ẩn bài' }}
+        </button>
+      }
+      @if (canDeletePost()) {
+        <button class="btn-action-danger" (click)="deletePost()">
+          <i class="bi bi-trash"></i> Xóa
+        </button>
+      }
+    </div>
+  </details>
 </header>
 
 <div class="dashboard-scroll-body">
@@ -123,9 +153,11 @@
               <span class="lc-metric-chip"><i class="bi bi-eye"></i> {{ post.viewCount | number }}</span>
             </div>
             <div class="lc-action-right">
-              <button class="lc-icon-action report-icon-action" (click)="openPostReportModal($event)" title="Báo cáo bài đăng vi phạm">
-                <i class="bi bi-flag"></i>
-              </button>
+              @if (!isPostAuthor()) {
+                <button class="lc-icon-action report-icon-action" (click)="openPostReportModal($event)" title="Báo cáo bài đăng vi phạm">
+                  <i class="bi bi-flag"></i>
+                </button>
+              }
               <button class="lc-icon-action" (click)="sharePost()" title="Chia sẻ" style="padding: 6px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-nested); background: none; color: var(--text-muted); cursor: pointer;">
                 <i class="bi bi-share"></i>
               </button>
@@ -281,7 +313,7 @@
         }
 
         <!-- Footer actions -->
-        <div class="lc-comment-footer" style="position: relative; width: 100%; display: flex; align-items: center;">
+        <div class="lc-comment-footer" style="position: relative; width: 100%; display: flex; align-items: center; margin-top: 6px;">
           <!-- Vote -->
           <div class="lc-vote-row">
             <button class="lc-vote-btn sm" [class.active]="comment.myVote === 'up'" (click)="voteComment(comment, 'up')">
@@ -293,84 +325,56 @@
             </button>
           </div>
 
-          @if (isLightbox) {
-            <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
-            <button class="lc-link-action warn" (click)="openCommentReportModal(comment, $event)"><i class="bi bi-flag"></i> Báo cáo</button>
-            <!-- Three dots dropdown menu -->
-            <div class="lc-comment-more-wrap" style="position: relative; margin-left: auto;">
-              <button class="lc-comment-more-btn" (click)="toggleCommentMenu(comment.id, $event)" style="border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 1rem; display: flex; align-items: center;" title="Tùy chọn">
-                <i class="bi bi-three-dots"></i>
-              </button>
-              @if (activeCommentMenuId === comment.id) {
-                <div class="comment-options-dropdown" style="position: absolute; right: 0; bottom: 100%; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px; display: flex; flex-direction: column; padding: 6px 0;">
-                  <!-- Trả lời -->
-                  <button class="dropdown-item" (click)="toggleReplyForm(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <i class="bi bi-reply"></i> Trả lời
-                  </button>
-                  <!-- Sửa -->
-                  @if (canEditComment(comment)) {
-                    <button class="dropdown-item" (click)="startEditComment(comment); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
-                      <i class="bi bi-pencil"></i> Sửa
-                    </button>
-                  }
-
-                  <!-- Ẩn/Hiện -->
-                  @if (canModerateComment()) {
-                    <button class="dropdown-item" (click)="toggleModerateComment(comment); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
-                      <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-                      {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
-                    </button>
-                  }
-
-                  <!-- Xóa -->
-                  @if (canDeleteComment(comment)) {
-                    <button class="dropdown-item" (click)="deleteComment(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: #f43f5e; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
-                      <i class="bi bi-trash"></i> Xóa
-                    </button>
-                  }
-
-                  <!-- Chấp nhận (Best answer) -->
-                  @if (isPostAuthor()) {
-                    <button class="dropdown-item" (click)="acceptComment(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
-                      <i class="bi" [class.bi-check-circle-fill]="comment.isAccepted" [class.bi-check-circle]="!comment.isAccepted"></i>
-                      {{ comment.isAccepted ? 'Hủy tốt nhất' : 'Tốt nhất' }}
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          } @else {
-            <!-- Text actions -->
-            <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
-            <button class="lc-link-action warn" (click)="openCommentReportModal(comment, $event)"><i class="bi bi-flag"></i> Báo cáo</button>
-            @if (canEditComment(comment)) {
-              <button class="lc-link-action" (click)="startEditComment(comment)"><i class="bi bi-pencil"></i> Sửa</button>
-            }
-            @if (canModerateComment()) {
-              <button class="lc-link-action warn" (click)="toggleModerateComment(comment)">
-                <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
-                {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
-              </button>
-            }
-            @if (canDeleteComment(comment)) {
-              <button class="lc-link-action danger" (click)="deleteComment(comment.id)"><i class="bi bi-trash"></i> Xóa</button>
-            }
-
-            <!-- Accept best answer -->
-            @if (comment.isAccepted) {
-              @if (isPostAuthor()) {
-                <button class="lc-link-action accepted active" (click)="acceptComment(comment.id)">
-                  <i class="bi bi-check-circle-fill"></i> Tốt nhất
-                </button>
-              } @else {
-                <span class="lc-link-action accepted"><i class="bi bi-check-circle-fill"></i> Tốt nhất</span>
-              }
-            } @else if (isPostAuthor()) {
-              <button class="lc-link-action" (click)="acceptComment(comment.id)">
-                <i class="bi bi-check-circle"></i> Chấp nhận
-              </button>
-            }
+          <!-- Standard text action links for all views -->
+          <button class="lc-link-action" (click)="toggleReplyForm(comment.id)"><i class="bi bi-reply"></i> Trả lời</button>
+          @if (!isCommentAuthor(comment)) {
+          <button class="lc-link-action warn" (click)="openCommentReportModal(comment, $event)"><i class="bi bi-flag"></i> Báo cáo</button>
           }
+          
+          <!-- Best answer accepted indicator for non-post-author -->
+          @if (comment.isAccepted && !isPostAuthor()) {
+            <span class="lc-link-action accepted"><i class="bi bi-check-circle-fill"></i> Tốt nhất</span>
+          }
+
+          <!-- Three dots dropdown menu for all views -->
+          <div class="lc-comment-more-wrap" style="position: relative; margin-left: auto;">
+            <button class="lc-comment-more-btn" (click)="toggleCommentMenu(comment.id, $event)" style="border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 1rem; display: flex; align-items: center;" title="Tùy chọn">
+              <i class="bi bi-three-dots"></i>
+            </button>
+            @if (activeCommentMenuId === comment.id) {
+              <div class="comment-options-dropdown" style="position: absolute; right: 0; bottom: 100%; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 8px; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px; display: flex; flex-direction: column; padding: 6px 0;">
+                <!-- Sửa -->
+                @if (canEditComment(comment)) {
+                  <button class="dropdown-item" (click)="startEditComment(comment); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <i class="bi bi-pencil"></i> Sửa
+                  </button>
+                }
+
+                <!-- Ẩn/Hiện -->
+                @if (canModerateComment()) {
+                  <button class="dropdown-item" (click)="toggleModerateComment(comment); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
+                    {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
+                  </button>
+                }
+
+                <!-- Xóa -->
+                @if (canDeleteComment(comment)) {
+                  <button class="dropdown-item" (click)="deleteComment(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: #f43f5e; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <i class="bi bi-trash"></i> Xóa
+                  </button>
+                }
+
+                <!-- Chấp nhận (Best answer) -->
+                @if (isPostAuthor()) {
+                  <button class="dropdown-item" (click)="acceptComment(comment.id); activeCommentMenuId = null" style="padding: 8px 12px; background: none; border: none; text-align: left; font-size: 0.82rem; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <i class="bi" [class.bi-check-circle-fill]="comment.isAccepted" [class.bi-check-circle]="!comment.isAccepted"></i>
+                    {{ comment.isAccepted ? 'Hủy tốt nhất' : 'Tốt nhất' }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <!-- Reply form -->
@@ -541,3 +545,6 @@
     </div>
   </div>
 }
+
+
+

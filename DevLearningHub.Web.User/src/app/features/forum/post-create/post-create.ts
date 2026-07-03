@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../../core/services/forum.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-post-create',
@@ -16,6 +17,7 @@ export class PostCreateComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+  private http = inject(HttpClient);
 
   // Form states
   title: string = '';
@@ -46,13 +48,31 @@ export class PostCreateComponent implements OnInit {
       return;
     }
 
-    this.route.params.subscribe(params => {
-      this.postId = params['id'] || '';
-      if (this.postId) {
-        this.isEditMode = true;
-        this.loadPostForEdit();
+    this.http.get<any>('/api/users/me').subscribe({
+      next: (res) => {
+        const user = res?.data || res;
+        const perms = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
+        const hasPermission = perms.includes('post:create') || perms.includes('post:edit') || perms.includes('system.full_control');
+        
+        if (!hasPermission) {
+          alert('Bạn không có quyền đăng bài viết!');
+          this.router.navigate(['/forum']);
+          return;
+        }
+
+        this.route.params.subscribe(params => {
+          this.postId = params['id'] || '';
+          if (this.postId) {
+            this.isEditMode = true;
+            this.loadPostForEdit();
+          }
+          this.loadTags();
+        });
+      },
+      error: () => {
+        alert('Không thể xác thực quyền truy cập.');
+        this.router.navigate(['/forum']);
       }
-      this.loadTags();
     });
   }
 

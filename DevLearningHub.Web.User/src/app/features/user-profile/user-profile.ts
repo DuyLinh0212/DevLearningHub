@@ -7,6 +7,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../core/services/forum.service';
+import { QuizService } from '../../core/services/quiz.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -21,12 +22,16 @@ export class UserProfileComponent implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private forumService = inject(ForumService);
+  private quizService = inject(QuizService);
   private location = inject(Location);
 
   isLoading = true;
   user: any = null;
   stats: any = null;
   posts: any[] = [];
+  quizzes: any[] = [];
+  problems: any[] = [];
+  activeTab: string = 'posts';
   notFound = false;
   returnUrl: string = '/forum';
 
@@ -120,8 +125,26 @@ export class UserProfileComponent implements OnInit {
                 this.cdr.detectChanges();
               }
             },
-            error: () => {} // Bỏ qua lỗi, giữ dữ liệu cũ
+            error: () => {}
           });
+        });
+
+        // Tải bộ đề thi của người dùng này
+        this.quizService.getAllQuizzes(true).subscribe({
+          next: (quizSets) => {
+            this.quizzes = (quizSets || []).filter(q => this.compareIds(q.createdBy, id));
+            this.cdr.detectChanges();
+          }
+        });
+
+        // Tải bài tập code của người dùng này
+        this.http.get<any>('/api/problems').subscribe({
+          next: (problemsRes) => {
+            const data = problemsRes?.data || problemsRes;
+            const list = Array.isArray(data) ? data : [];
+            this.problems = list.filter((p: any) => this.compareIds(p.createdBy, id));
+            this.cdr.detectChanges();
+          }
         });
         
         this.isLoading = false;
@@ -137,6 +160,11 @@ export class UserProfileComponent implements OnInit {
 
   viewPost(postId: string) {
     this.router.navigate(['/forum/post', postId]);
+  }
+
+  compareIds(id1: any, id2: any): boolean {
+    if (!id1 || !id2) return false;
+    return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
   }
 
   formatRelativeTime(dateString: string): string {

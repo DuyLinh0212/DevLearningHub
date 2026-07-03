@@ -28,9 +28,8 @@
     <div class="profile-card-container">
       <div class="profile-card">
         <div class="profile-header-bg"
-             [style.background-image]="user.bannerUrl ? 'url(' + user.bannerUrl + ')' : null"
-             [style.background-size]="user.bannerUrl ? 'cover' : null"
-             [style.background-position]="user.bannerUrl ? 'center' : null">
+             [style.background-image]="'url(' + (user.bannerUrl || 'assets/images/coder-banner.png') + ')'"
+             style="background-size: cover; background-position: center;">
         </div>
 
         <div class="profile-content">
@@ -63,65 +62,142 @@
 
     <!-- POSTS SECTION -->
     <div class="profile-posts-section">
-      <h2 class="section-title">Bài viết gần đây</h2>
+      <div class="forum-layout profile-layout">
+        <div class="posts-column profile-main-column">
+          <!-- Tab switcher buttons -->
+          <div class="profile-tabs-row" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--bg-card-border); padding-bottom: 1px;">
+            <button class="profile-tab-btn" [class.active]="activeTab === 'posts'" (click)="activeTab = 'posts'" style="background: transparent; border: none; color: var(--text-muted); padding: 10px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; position: relative; transition: color 0.2s;" [style.color]="activeTab === 'posts' ? 'var(--accent)' : ''">
+              Bài viết gần đây
+              @if (activeTab === 'posts') {
+                <span style="position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px;"></span>
+              }
+            </button>
+            <button class="profile-tab-btn" [class.active]="activeTab === 'quizzes'" (click)="activeTab = 'quizzes'" style="background: transparent; border: none; color: var(--text-muted); padding: 10px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; position: relative; transition: color 0.2s;" [style.color]="activeTab === 'quizzes' ? 'var(--accent)' : ''">
+              Bộ đề đã tạo
+              @if (activeTab === 'quizzes') {
+                <span style="position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px;"></span>
+              }
+            </button>
+            <button class="profile-tab-btn" [class.active]="activeTab === 'problems'" (click)="activeTab = 'problems'" style="background: transparent; border: none; color: var(--text-muted); padding: 10px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; position: relative; transition: color 0.2s;" [style.color]="activeTab === 'problems' ? 'var(--accent)' : ''">
+              Bộ code đã tạo
+              @if (activeTab === 'problems') {
+                <span style="position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px;"></span>
+              }
+            </button>
+          </div>
 
-    <div class="forum-layout profile-layout">
-      <div class="posts-column profile-main-column">
-        <div class="posts-list">
-          @if (posts.length === 0) {
-            <div class="empty-state-card">
-              <i class="bi bi-chat-right-text-fill"></i>
-              <h3>Chưa có bài viết nào</h3>
-              <p>Người dùng này chưa đăng bài viết nào trên diễn đàn.</p>
-            </div>
-          } @else {
-            @for (post of posts; track post.id) {
-              <div class="social-post-card" (click)="viewPost(post.id)">
-                <div class="post-card-header">
-                  <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
-                  <div class="author-meta-text">
-                    <span class="author-name">{{ user.fullName || user.username }}</span>
-                    <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
-                  </div>
+          <div class="posts-list">
+            <!-- TAB 1: POSTS -->
+            @if (activeTab === 'posts') {
+              @if (posts.length === 0) {
+                <div class="empty-state-card">
+                  <i class="bi bi-chat-right-text-fill"></i>
+                  <h3>Chưa có bài viết nào</h3>
+                  <p>Người dùng này chưa đăng bài viết nào trên diễn đàn.</p>
                 </div>
-
-                <div class="post-card-body">
-                  <div class="post-card-text">
-                    <h3 class="post-title">{{ post.title }}</h3>
-                    @if (post.imageUrl) {
-                      <div class="post-image-container">
-                        <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+              } @else {
+                @for (post of posts; track post.id) {
+                  <div class="social-post-card" (click)="viewPost(post.id)" style="cursor: pointer;">
+                    <div class="post-card-header">
+                      <img [src]="user.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" class="author-avatar" (error)="onAvatarError($event)">
+                      <div class="author-meta-text">
+                        <span class="author-name">{{ user.fullName || user.username }}</span>
+                        <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
                       </div>
-                    }
-                    <p class="post-excerpt">{{ post.bodyMarkdown?.slice(0, 180) || '' }}{{ post.bodyMarkdown?.length > 180 ? '...' : '' }}</p>
-                  </div>
-                </div>
+                    </div>
 
-                <div class="post-tags">
-                  @for (tag of post.tags; track tag.id) {
-                    <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
+                    <div class="post-card-body">
+                      <div class="post-card-text">
+                        <h3 class="post-title">{{ post.title }}</h3>
+                        @if (post.imageUrl) {
+                          <div class="post-image-container">
+                            <img [src]="post.imageUrl" alt="Post Image" class="post-detail-image">
+                          </div>
+                        }
+                        <p class="post-excerpt">{{ post.bodyMarkdown?.slice(0, 180) || '' }}{{ post.bodyMarkdown?.length > 180 ? '...' : '' }}</p>
+                      </div>
+                    </div>
+
+                    <div class="post-tags">
+                      @for (tag of post.tags; track tag.id) {
+                        <span class="post-tag-badge" [style.border-color]="tag.colorHex" [style.color]="tag.colorHex">#{{ tag.name }}</span>
+                      }
+                    </div>
+
+                    <div class="post-card-metrics">
+                      <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i>{{ post.upvotes || 0 }} lượt thích</span>
+                      <span class="comments-count">{{ post.commentCount || 0 }} bình luận &nbsp;•&nbsp; {{ post.viewCount || 0 }} lượt xem</span>
+                    </div>
+
+                    <div class="post-divider"></div>
+
+                    <div class="post-card-actions" (click)="$event.stopPropagation()">
+                      <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="vote(post, 'up')">
+                        <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i><span>Thích</span>
+                      </button>
+                      <button class="action-btn" (click)="viewPost(post.id)"><i class="bi bi-chat-right-text"></i><span>Bình luận</span></button>
+                    </div>
+                  </div>
+                }
+              }
+            }
+
+            <!-- TAB 2: QUIZZES -->
+            @if (activeTab === 'quizzes') {
+              @if (quizzes.length === 0) {
+                <div class="empty-state-card" style="padding: 40px; text-align: center;">
+                  <i class="bi bi-folder-x" style="font-size: 2.5rem; display: block; margin-bottom: 12px; color: var(--text-muted-dark);"></i>
+                  <h3>Chưa tạo bộ đề nào</h3>
+                  <p>Người dùng này chưa tạo bộ đề thi trắc nghiệm nào.</p>
+                </div>
+              } @else {
+                <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                  @for (quiz of quizzes; track quiz.id) {
+                    <div class="quiz-card" style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="status-badge" style="background: rgba(34, 197, 94, 0.12); color: #22c55e; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;" [style.color]="quiz.statusClass === 'public' ? '#22c55e' : '#f97316'" [style.background]="quiz.statusClass === 'public' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(249, 115, 22, 0.12)'">
+                          {{ quiz.statusClass === 'public' ? 'Đã phát hành' : 'Bản nháp' }}
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">{{ quiz.duration }} phút • {{ quiz.questions }} câu hỏi</span>
+                      </div>
+                      <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);">
+                        <a [routerLink]="['/quiz', quiz.id]" style="color: inherit; text-decoration: none;">{{ quiz.title }}</a>
+                      </h3>
+                      <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">{{ quiz.desc }}</p>
+                    </div>
                   }
                 </div>
-
-                <div class="post-card-metrics">
-                  <span class="likes-count"><i class="bi bi-heart-fill text-danger" style="margin-right: 4px;"></i>{{ post.upvotes || 0 }} lượt thích</span>
-                  <span class="comments-count">{{ post.commentCount || 0 }} bình luận &nbsp;•&nbsp; {{ post.viewCount || 0 }} lượt xem</span>
-                </div>
-
-                <div class="post-divider"></div>
-
-                <div class="post-card-actions" (click)="$event.stopPropagation()">
-                  <button class="action-btn" [class.active]="post.myVote === 'up'" (click)="vote(post, 'up')">
-                    <i class="bi" [class.bi-heart-fill]="post.myVote === 'up'" [class.bi-heart]="post.myVote !== 'up'"></i><span>Thích</span>
-                  </button>
-                  <button class="action-btn" (click)="viewPost(post.id)"><i class="bi bi-chat-right-text"></i><span>Bình luận</span></button>
-                  <button class="action-btn"><i class="bi bi-send"></i><span>Chia sẻ</span></button>
-                </div>
-              </div>
+              }
             }
-          }
+
+            <!-- TAB 3: PROBLEMS -->
+            @if (activeTab === 'problems') {
+              @if (problems.length === 0) {
+                <div class="empty-state-card" style="padding: 40px; text-align: center;">
+                  <i class="bi bi-code-slash" style="font-size: 2.5rem; display: block; margin-bottom: 12px; color: var(--text-muted-dark);"></i>
+                  <h3>Chưa tạo bài tập code nào</h3>
+                  <p>Người dùng này chưa tạo bài tập lập trình nào.</p>
+                </div>
+              } @else {
+                <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                  @for (prob of problems; track prob.id) {
+                    <div class="problem-card" style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="difficulty-badge" style="font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;" [style.color]="prob.difficulty.toLowerCase() === 'easy' ? '#2db55d' : prob.difficulty.toLowerCase() === 'medium' ? '#f59e0b' : '#ef4444'" [style.background]="prob.difficulty.toLowerCase() === 'easy' ? 'rgba(45, 181, 93, 0.1)' : prob.difficulty.toLowerCase() === 'medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'">
+                          {{ prob.difficulty }}
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">{{ prob.testCaseCount }} test cases</span>
+                      </div>
+                      <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);">
+                        <a [routerLink]="['/code', prob.id]" style="color: inherit; text-decoration: none;">{{ prob.title }}</a>
+                      </h3>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
         </div>
-      </div>
 
       <div class="sidebar-column profile-side-column">
         <div class="sidebar-card profile-identity-card">

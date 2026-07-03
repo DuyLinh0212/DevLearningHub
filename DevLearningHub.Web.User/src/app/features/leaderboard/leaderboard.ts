@@ -102,6 +102,11 @@ export class LeaderboardComponent implements OnInit {
     return [this.leaderboard[0], this.leaderboard[1], this.leaderboard[2]].filter(Boolean);
   }
 
+  onAvatarError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/images/default-avatar.svg';
+  }
+
   private compareIds(id1: any, id2: any): boolean {
     if (!id1 || !id2) return false;
     return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();

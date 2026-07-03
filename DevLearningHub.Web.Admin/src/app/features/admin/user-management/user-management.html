@@ -1,11 +1,18 @@
 
 
     <header class="content-header">
-<div class="top-search">
-        <i class="bi bi-search"></i>
-        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tên đăng nhập, email, họ tên...">
+      <div class="top-breadcrumb">
+        <a routerLink="/admin">Quản trị</a>
+        <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+        <span>Người dùng</span>
       </div>
-      <div class="admin-header-actions">
+
+      <div class="top-search" style="width: 360px !important; margin-left: 20px;">
+        <i class="bi bi-search"></i>
+        <input type="text" [(ngModel)]="searchText" (input)="onSearchChange()" placeholder="Tìm theo tên đăng nhập, email, họ tên..." style="width: 100% !important;">
+      </div>
+
+      <div class="admin-header-actions" style="margin-left: auto;">
         <button class="btn-admin-act purple" (click)="openCreateModal()">
           <i class="bi bi-person-plus-fill"></i> Tạo tài khoản mới
         </button>
@@ -13,10 +20,6 @@
     </header>
 
     <div class="dashboard-scroll-body">
-      <section class="welcome-section">
-        <h1>Quản Lý Thành Viên Hệ Thống</h1>
-        <p>Tra cứu thông tin tài khoản, cấp quyền Admin/Moderator/User, khóa hoặc kích hoạt tài khoản.</p>
-      </section>
 
       <div class="post-filter-bar">
         <select [(ngModel)]="filterRole" (change)="onFilterChange()">
@@ -103,15 +106,19 @@
                       <button class="btn-view-profile" (click)="viewUserProfile(user.id)" title="Xem trang cá nhân">
                         <i class="bi bi-person-lines-fill"></i>
                       </button>
-                      <button class="btn-perm" (click)="openManageModal(user)" title="Quản lý vai trò & quyền hạn">
-                        <i class="bi bi-shield-lock-fill"></i>
-                      </button>
-                      <button class="btn-lock" 
-                              [class.btn-unlock-act]="user.isLocked" 
-                              (click)="toggleLock(user)" 
-                              [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
-                        <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
-                      </button>
+                      @if (hasPermission('user:manage_permissions') || hasPermission('user:edit')) {
+                        <button class="btn-perm" (click)="openManageModal(user)" title="Quản lý vai trò & quyền hạn">
+                          <i class="bi bi-shield-lock-fill"></i>
+                        </button>
+                      }
+                      @if (hasPermission('user:lock') || hasPermission('user:edit')) {
+                        <button class="btn-lock" 
+                                [class.btn-unlock-act]="user.isLocked" 
+                                (click)="toggleLock(user)" 
+                                [title]="user.isLocked ? 'Kích hoạt lại' : 'Khóa tài khoản'">
+                          <i class="bi" [class.bi-lock-fill]="!user.isLocked" [class.bi-unlock-fill]="user.isLocked"></i>
+                        </button>
+                      }
                     </div>
                   </td>
                 </tr>
