@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { QuizService } from '../../../core/services/quiz.service';
+import { AnalyticsService, QuizSetAnalytics, QuizSetParticipant } from '../../../core/services/analytics.service';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
 
@@ -16,6 +17,7 @@ import * as XLSX from 'xlsx';
 export class QuizManagementComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private http = inject(HttpClient);
+  private analytics = inject(AnalyticsService);
   private cdr = inject(ChangeDetectorRef);
   public mobileMenu = inject(MobileMenuService);
 
@@ -84,6 +86,13 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     questionIds: [] as any[],
     allowedCopy: false
   };
+
+  // Analytics stats
+  quizAnalyticsMap: Record<string, QuizSetAnalytics> = {};
+  isParticipantsModalOpen = false;
+  participantsList: QuizSetParticipant[] = [];
+  participantsQuizTitle = '';
+  isLoadingParticipants = false;
 
   popupMessage = '';
   popupTitle = '';
@@ -170,6 +179,47 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     this.loadTopics();
     this.loadQuestions();
     this.loadQuizSets();
+    this.loadQuizAnalytics();
+  }
+
+  loadQuizAnalytics() {
+    this.analytics.getQuizSetStats().subscribe({
+      next: (stats) => {
+        this.quizAnalyticsMap = {};
+        for (const s of stats) {
+          this.quizAnalyticsMap[s.quizSetId] = s;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Lỗi tải quiz analytics:', err)
+    });
+  }
+
+  getQuizAnalytics(quizSetId: string): QuizSetAnalytics | null {
+    return this.quizAnalyticsMap[quizSetId] ?? null;
+  }
+
+  openParticipantsModal(quizSetId: string, title: string) {
+    this.participantsQuizTitle = title;
+    this.isParticipantsModalOpen = true;
+    this.isLoadingParticipants = true;
+    this.participantsList = [];
+    this.analytics.getQuizSetParticipants(quizSetId).subscribe({
+      next: (list) => {
+        this.participantsList = list;
+        this.isLoadingParticipants = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingParticipants = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeParticipantsModal() {
+    this.isParticipantsModalOpen = false;
+    this.participantsList = [];
   }
 
   ngOnDestroy() {
@@ -278,7 +328,8 @@ loadQuizSets() {
           statusClass: s.isPublic ? 'public' : 'draft',
           status: s.isPublic ? 'Đã phát hành' : 'Bản nháp',
           isPublic: s.isPublic,
-          allowedCopy: s.allowedCopy ?? false
+          allowedCopy: s.allowedCopy ?? false,
+          reviewStatus: s.reviewStatus || ''
         }));
         this.cdr.detectChanges();
       }

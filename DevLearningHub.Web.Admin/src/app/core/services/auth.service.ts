@@ -65,22 +65,22 @@ export class AuthService {
       const payloadPart = token.split('.')[1];
       const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
 
-      // Check role: Admin has full control
-      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      const roles = Array.isArray(roleClaim) ? roleClaim.map((r: string) => r.toLowerCase()) : [(roleClaim || '').toLowerCase()];
-      if (roles.includes('admin')) return true;
-
-      // JWT stores permissions as multiple 'permission' claims (singular, not 'permissions')
-      // When decoded, they appear as an array or single string under key 'permission'
+      // JWT stores permissions as multiple 'permission' claims (singular)
       const permClaim = decoded['permission'];
       const permList: string[] = Array.isArray(permClaim)
         ? permClaim
         : (permClaim ? [permClaim] : []);
+      const roleClaim = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roles = Array.isArray(roleClaim) ? roleClaim : (roleClaim ? [roleClaim] : []);
 
-      // Also check full_control wildcard
+      const target = permission.toLowerCase();
+
+      // system.full_control grants everything
       if (permList.some((p: string) => p.toLowerCase() === 'system.full_control')) return true;
+      if (roles.some((r: string) => r?.toLowerCase() === 'admin')) return true;
 
-      return permList.some((p: string) => p.toLowerCase() === permission.toLowerCase());
+      // Direct permission match
+      return permList.some((p: string) => p.toLowerCase() === target);
     } catch (e) {
       console.error('Error decoding token:', e);
     }

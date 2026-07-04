@@ -1,4 +1,5 @@
 using DevLearningHub.Api.Entities;
+using DevLearningHub.Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Services;
@@ -25,6 +26,16 @@ public sealed class UserPermissionBreakdown
 
 public sealed class PermissionService : IPermissionService
 {
+    private static readonly string[] BaselineUserPermissions =
+    [
+        "quiz:create",
+        "comment:create",
+        "post:create",
+        "post:edit_own",
+        "problem:create",
+        "problem:edit"
+    ];
+
     private readonly DevLearningHubContext _db;
 
     public PermissionService(DevLearningHubContext db)
@@ -40,12 +51,39 @@ public sealed class PermissionService : IPermissionService
 
     public async Task<UserPermissionBreakdown> GetBreakdownAsync(Guid userId)
     {
+        var roleNames = await _db.UserRoles
+            .Where(ur => ur.UserId == userId && ur.Role.IsActive)
+            .Select(ur => ur.Role.Name)
+            .ToListAsync();
+
         // Permissions inherited from every active role assigned to the user.
         var rolePermissions = await _db.UserRoles
             .Where(ur => ur.UserId == userId && ur.Role.IsActive)
             .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Name))
             .Distinct()
             .ToListAsync();
+
+        if (roleNames.Any(role => string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)))
+        {
+            rolePermissions = await _db.Permissions
+                .Select(p => p.Name)
+                .Distinct()
+                .ToListAsync();
+            if (!rolePermissions.Contains(ClaimsPrincipalExtensions.FullControlPermission, StringComparer.OrdinalIgnoreCase))
+            {
+                rolePermissions.Add(ClaimsPrincipalExtensions.FullControlPermission);
+            }
+        }
+        else if (roleNames.Any(role => string.Equals(role, "User", StringComparison.OrdinalIgnoreCase)))
+        {
+            foreach (var permission in BaselineUserPermissions)
+            {
+                if (!rolePermissions.Contains(permission, StringComparer.OrdinalIgnoreCase))
+                {
+                    rolePermissions.Add(permission);
+                }
+            }
+        }
 
         // Per-user overrides: IsGranted=true adds, IsGranted=false revokes.
         var overrides = await _db.UserPermissions

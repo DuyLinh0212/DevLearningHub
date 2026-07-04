@@ -16,6 +16,14 @@ public partial class ProblemBank
 
     public bool IsPublic { get; set; }
 
+    public string ReviewStatus { get; set; } = "approved";
+
+    public Guid? ReviewedBy { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public string? ReviewNote { get; set; }
+
     public Guid? TopicId { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -23,6 +31,8 @@ public partial class ProblemBank
     public DateTime? UpdatedAt { get; set; }
 
     public virtual User CreatedByNavigation { get; set; } = null!;
+
+    public virtual User? Reviewer { get; set; }
 
     public virtual Topic? Topic { get; set; }
 

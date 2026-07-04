@@ -28,7 +28,7 @@ public class ProblemsController : ControllerBase
 	public async Task<ActionResult<IEnumerable<ProblemSummaryResponse>>> GetProblems()
 	{
 		var problems = await _context.Problems
-			.Where(p => p.IsActive)
+			.Where(p => p.IsActive && (p.ReviewStatus == "approved" || p.ReviewStatus == null || p.ReviewStatus == string.Empty))
 			.Include(p => p.Tags)
 			.Include(p => p.TestCases)
 			.Select(p => new ProblemSummaryResponse
@@ -104,6 +104,7 @@ public class ProblemsController : ControllerBase
 			Difficulty = request.Difficulty,
 			StarterCode = request.StarterCode,
 			IsActive = true,
+			ReviewStatus = User.HasPermission("problem:review") ? "approved" : "pending",
 			CreatedAt = DateTime.Now
 		};
 

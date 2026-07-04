@@ -53,7 +53,9 @@ public class PostsController : ControllerBase
         // Users who can hide posts (post:hide_any) also see hidden posts in the list; everyone else only sees visible ones.
         var includeHidden = User.TryGetUserId(out var viewerId)
             && await _permissions.HasPermissionAsync(viewerId, "post:hide_any");
-        var query = _db.Posts.AsNoTracking().Where(p => includeHidden || !p.IsHidden);
+        var query = _db.Posts.AsNoTracking().Where(p =>
+            (includeHidden || !p.IsHidden) &&
+            (includeHidden || p.ReviewStatus == "approved" || p.ReviewStatus == null || p.ReviewStatus == string.Empty));
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -230,6 +232,7 @@ public class PostsController : ControllerBase
             Downvotes = 0,
             ViewCount = 0,
             IsHidden = false,
+            ReviewStatus = await _permissions.HasPermissionAsync(userId, "post:review") ? "approved" : "pending",
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -657,6 +660,14 @@ public class PostsController : ControllerBase
 
             post.IsHidden = request.Hidden;
             post.UpdatedAt = DateTime.Now;
+
+            // When restoring, ensure the post is approved so it appears in user feeds
+            if (!request.Hidden && post.ReviewStatus != "approved")
+            {
+                post.ReviewStatus = "approved";
+                post.ReviewedBy = moderatorId;
+                post.ReviewedAt = DateTime.Now;
+            }
 
             var actionValue = request.Hidden ? "hide" : "restore";
             _db.ModerationLogs.Add(new ModerationLog

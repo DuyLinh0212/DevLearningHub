@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login';
 import { RegisterComponent } from './features/auth/register/register';
+import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './features/auth/reset-password/reset-password';
 import { DashboardComponent } from './features/dashboard/dashboard';
 import { QuizBankComponent } from './features/quiz/quiz-bank/quiz-bank';
 import { QuizCreateComponent } from './features/quiz/quiz-create/quiz-create';
@@ -17,6 +19,8 @@ export const routes: Routes = [
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'landing', component: LandingComponent },
   { path: 'quiz-play/:id', component: QuizPlayComponent, canActivate: [quizAccessGuard] },
   { path: 'quiz-result/:id', component: QuizResultComponent },
@@ -37,7 +41,8 @@ export const routes: Routes = [
       { path: 'user/:id', loadComponent: () => import('./features/user-profile/user-profile').then(m => m.UserProfileComponent) },
       { path: 'code', loadComponent: () => import('./features/code-playground/code-playground-list/code-playground-list').then(m => m.CodePlaygroundListComponent) },
       { path: 'code/:id', loadComponent: () => import('./features/code-playground/code-playground-workspace/code-playground-workspace').then(m => m.CodePlaygroundWorkspaceComponent) },
-      { path: 'moderator/users', loadComponent: () => import('./features/moderator/user-list/moderator-user-list').then(m => m.ModeratorUserListComponent) }
+      { path: 'moderator/users', loadComponent: () => import('./features/moderator/user-list/moderator-user-list').then(m => m.ModeratorUserListComponent) },
+      { path: 'roadmap', loadComponent: () => import('./features/roadmap/roadmap-view/roadmap-view').then(m => m.RoadmapViewComponent) }
     ]
   },
   { path: '**', redirectTo: 'landing' }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs/operators';
+import { AnalyticsService, ProblemBankAnalytics, ProblemBankParticipant } from '../../../core/services/analytics.service';
 
 const PROBLEM_TEMPLATES: Record<string, { title: string; difficulty: string; description: string; starterCode: string }> = {
   fibonacci: {
@@ -547,6 +548,7 @@ export class ProblemManagementComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
+  private analytics = inject(AnalyticsService);
 
   // ---- Tab ----
   activeTab: 'problems' | 'banks' = 'problems';
@@ -578,6 +580,13 @@ export class ProblemManagementComponent implements OnInit {
   selectedProblemToAddId = '';
   isAddingProblemToBank = false;
 
+  // Analytics
+  bankAnalyticsMap: Record<string, ProblemBankAnalytics> = {};
+  isParticipantsModalOpen = false;
+  participantsList: ProblemBankParticipant[] = [];
+  participantsBankTitle = '';
+  isLoadingParticipants = false;
+
   // Form State
   isModalOpen = false;
   isEditing = false;
@@ -594,6 +603,56 @@ export class ProblemManagementComponent implements OnInit {
     this.loadTopics();
     this.loadProblems();
     this.loadBanks();
+    this.loadBankAnalytics();
+  }
+
+  loadBankAnalytics() {
+    this.analytics.getProblemBankStats().subscribe({
+      next: (stats) => {
+        this.bankAnalyticsMap = {};
+        for (const s of stats) this.bankAnalyticsMap[s.bankId] = s;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Lỗi tải bank analytics:', err)
+    });
+  }
+
+  getBankAnalytics(bankId: string): ProblemBankAnalytics | null {
+    return this.bankAnalyticsMap[bankId] ?? null;
+  }
+
+  openBankParticipants(bankId: string, title: string) {
+    this.participantsBankTitle = title;
+    this.isParticipantsModalOpen = true;
+    this.isLoadingParticipants = true;
+    this.participantsList = [];
+    this.analytics.getProblemBankParticipants(bankId).subscribe({
+      next: (list) => { this.participantsList = list; this.isLoadingParticipants = false; this.cdr.detectChanges(); },
+      error: () => { this.isLoadingParticipants = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  closeBankParticipants() {
+    this.isParticipantsModalOpen = false;
+    this.participantsList = [];
+  }
+
+  getReviewStatusLabel(status: string): string {
+    if (!status) return '';
+    const s = status.toLowerCase();
+    if (s === 'pending') return 'Chờ duyệt';
+    if (s === 'approved') return 'Đã duyệt';
+    if (s === 'rejected') return 'Từ chối';
+    return status;
+  }
+
+  getReviewStatusClass(status: string): string {
+    if (!status) return '';
+    const s = status.toLowerCase();
+    if (s === 'pending') return 'review-pending';
+    if (s === 'approved') return 'review-approved';
+    if (s === 'rejected') return 'review-rejected';
+    return '';
   }
 
   loadTopics() {

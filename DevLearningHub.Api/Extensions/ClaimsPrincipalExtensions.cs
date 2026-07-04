@@ -30,6 +30,7 @@ public static class ClaimsPrincipalExtensions
     public static bool HasPermission(this ClaimsPrincipal principal, string permission)
     {
         return principal.HasClaim(PermissionClaimType, permission)
-            || principal.HasClaim(PermissionClaimType, FullControlPermission);
+            || principal.HasClaim(PermissionClaimType, FullControlPermission)
+            || principal.IsInRole("Admin");
     }
 }

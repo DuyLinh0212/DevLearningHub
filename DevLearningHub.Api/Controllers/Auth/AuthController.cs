@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using DevLearningHub.Api.Dtos.Auth;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
@@ -24,6 +25,8 @@ public class AuthController : ControllerBase
     private readonly IAuditService _audit;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthController> _logger;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
     public AuthController(
         DevLearningHubContext db,
@@ -32,7 +35,9 @@ public class AuthController : ControllerBase
         IPermissionService permissionService,
         IAuditService audit,
         IOptions<JwtOptions> jwtOptions,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _db = db;
         _passwordHasher = passwordHasher;
@@ -41,6 +46,8 @@ public class AuthController : ControllerBase
         _audit = audit;
         _jwtOptions = jwtOptions.Value;
         _logger = logger;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
@@ -183,6 +190,91 @@ public class AuthController : ControllerBase
         await WriteAuditAsync(storedToken.UserId, "auth.logout", "user", storedToken.UserId, null);
 
         return Ok(ApiResponse<object>.Ok(new { revoked = true }));
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword(ForgotPasswordRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        // Always return success to prevent email enumeration.
+        if (user == null || !user.IsActive || user.IsLocked)
+            return Ok(ApiResponse<object>.Ok(new { }, "If the email exists, a reset link has been sent."));
+
+        // Invalidate any existing unused tokens for this user.
+        var existing = await _db.PasswordResetTokens
+            .Where(t => t.UserId == user.Id && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync();
+        foreach (var t in existing) t.IsUsed = true;
+
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var tokenHash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
+
+        _db.PasswordResetTokens.Add(new PasswordResetToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenHash = tokenHash,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            IsUsed = false,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+
+        var clientUrl = _configuration["App:ClientUrl"] ?? "http://localhost:4201";
+        var resetLink = $"{clientUrl}/reset-password?token={rawToken}";
+        var displayName = user.FullName ?? user.Username;
+
+        var html = $@"
+<div style='font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px'>
+  <h2 style='color:#7c3aed'>DevLearningHub</h2>
+  <p>Xin chào <strong>{displayName}</strong>,</p>
+  <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+  <p>Nhấn vào nút bên dưới để đặt lại mật khẩu. Link có hiệu lực trong <strong>30 phút</strong>.</p>
+  <a href='{resetLink}'
+     style='display:inline-block;margin:16px 0;padding:12px 24px;background:#7c3aed;color:#fff;
+            text-decoration:none;border-radius:6px;font-weight:bold'>
+    Đặt lại mật khẩu
+  </a>
+  <p style='color:#888;font-size:0.85rem'>Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.</p>
+</div>";
+
+        await _emailService.SendAsync(user.Email, displayName, "Đặt lại mật khẩu – DevLearningHub", html);
+
+        return Ok(ApiResponse<object>.Ok(new { }, "If the email exists, a reset link has been sent."));
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<object>>> ResetPassword(ResetPasswordRequest request)
+    {
+        var tokenHash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(request.Token)));
+
+        var resetToken = await _db.PasswordResetTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && !t.IsUsed);
+
+        if (resetToken == null || resetToken.ExpiresAt <= DateTime.UtcNow)
+            return BadRequest(ApiResponse<object>.Fail("Token không hợp lệ hoặc đã hết hạn."));
+
+        var user = resetToken.User;
+        user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
+        user.UpdatedAt = DateTime.Now;
+
+        resetToken.IsUsed = true;
+
+        // Revoke all existing refresh tokens for security.
+        var refreshTokens = await _db.RefreshTokens
+            .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
+            .ToListAsync();
+        foreach (var rt in refreshTokens) rt.RevokedAt = DateTime.Now;
+
+        await _db.SaveChangesAsync();
+        await WriteAuditAsync(user.Id, "auth.reset_password", "user", user.Id, null);
+
+        return Ok(ApiResponse<object>.Ok(new { }, "Mật khẩu đã được đặt lại thành công."));
     }
 
     private async Task<Role> GetOrCreateDefaultUserRoleAsync(DateTime now)

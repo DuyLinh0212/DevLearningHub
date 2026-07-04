@@ -16,4 +16,8 @@ public partial class Roadmap
     public short OrderIndex { get; set; }
 
     public virtual ICollection<RoadmapTopic> RoadmapTopics { get; set; } = new List<RoadmapTopic>();
+
+    public virtual ICollection<RoadmapItem> RoadmapItems { get; set; } = new List<RoadmapItem>();
+
+    public virtual ICollection<UserRoadmap> UserRoadmaps { get; set; } = new List<UserRoadmap>();
 }

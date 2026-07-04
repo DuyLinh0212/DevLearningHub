@@ -77,6 +77,11 @@
                   <span class="post-date">{{ formatDate(post.createdAt) }}</span>
                 </div>
                 <div class="post-card-status">
+                  @if (post.reviewStatus) {
+                    <span class="review-badge-sm" [class.rv-pending]="post.reviewStatus === 'pending'" [class.rv-approved]="post.reviewStatus === 'approved'" [class.rv-rejected]="post.reviewStatus === 'rejected'">
+                      {{ post.reviewStatus === 'pending' ? 'Chờ duyệt' : post.reviewStatus === 'approved' ? 'Đã duyệt' : 'Từ chối' }}
+                    </span>
+                  }
                   <span class="status-badge" [class.visible]="!post.isHidden" [class.hidden]="post.isHidden">
                     <i class="bi" [class.bi-check-circle-fill]="!post.isHidden" [class.bi-eye-slash-fill]="post.isHidden"></i>
                     {{ post.isHidden ? 'Đã ẩn' : 'Hiển thị' }}

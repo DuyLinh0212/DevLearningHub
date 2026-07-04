@@ -1,0 +1,108 @@
+<header class="content-header">
+  <div class="header-title">
+    <h2>Hàng chờ kiểm duyệt</h2>
+    <p class="header-subtitle">Duyệt hoặc từ chối nội dung do người dùng tạo</p>
+  </div>
+</header>
+
+<div class="mq-body">
+  @if (!hasAnyAccess) {
+    <div class="access-denied">
+      <i class="bi bi-shield-lock-fill"></i>
+      <h3>Bạn chưa được cấp quyền kiểm duyệt</h3>
+      <p>Tài khoản của bạn hiện chưa được phân quyền duyệt nội dung. Vui lòng liên hệ quản trị viên.</p>
+    </div>
+  } @else {
+    <!-- Type tabs -->
+    <div class="mq-tabs">
+      @for (tab of tabs; track tab.key) {
+        <button class="mq-tab" [class.active]="activeTab === tab.key" (click)="selectTab(tab.key)">
+          <i class="bi" [class]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+          @if (tab.count > 0) {
+            <span class="mq-tab-count">{{ tab.count }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Status filter -->
+    <div class="mq-status-filter">
+      <button class="mq-chip" [class.active]="statusFilter === 'pending'" (click)="changeStatus('pending')">Chờ duyệt</button>
+      <button class="mq-chip" [class.active]="statusFilter === 'approved'" (click)="changeStatus('approved')">Đã duyệt</button>
+      <button class="mq-chip" [class.active]="statusFilter === 'rejected'" (click)="changeStatus('rejected')">Từ chối</button>
+    </div>
+
+    <!-- Queue -->
+    @if (isLoading) {
+      <div class="loading-state">
+        <i class="bi bi-arrow-repeat spin"></i>
+        <span>Đang tải...</span>
+      </div>
+    } @else if (items.length === 0) {
+      <div class="empty-pane">
+        <i class="bi bi-inbox"></i>
+        <span>Không có nội dung nào ở trạng thái "{{ statusLabel(statusFilter) }}".</span>
+      </div>
+    } @else {
+      <div class="mq-list">
+        @for (item of items; track item.id) {
+          <div class="mq-card">
+            <div class="mq-card-main">
+              <div class="mq-card-title">{{ item.title || '(Không có tiêu đề)' }}</div>
+              <div class="mq-card-meta">
+                <span class="mq-badge" [class]="'status-' + item.reviewStatus">{{ statusLabel(item.reviewStatus) }}</span>
+                <span class="mq-author">
+                  <i class="bi bi-person"></i>
+                  {{ item.authorFullName || item.authorUsername || 'Không rõ' }}
+                </span>
+                <span class="mq-date"><i class="bi bi-clock"></i> {{ formatDate(item.createdAt) }}</span>
+              </div>
+              @if (item.reviewNote) {
+                <div class="mq-note"><i class="bi bi-chat-left-text"></i> {{ item.reviewNote }}</div>
+              }
+            </div>
+
+            @if (statusFilter === 'pending' && activeTabCanReview) {
+              <div class="mq-card-actions">
+                <button class="btn-approve" (click)="openReview(item, 'approve')">
+                  <i class="bi bi-check-lg"></i> Duyệt
+                </button>
+                <button class="btn-reject" (click)="openReview(item, 'reject')">
+                  <i class="bi bi-x-lg"></i> Từ chối
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Review reason modal -->
+@if (reviewTarget) {
+  <div class="mq-modal-overlay" (click)="cancelReview()">
+    <div class="mq-modal" (click)="$event.stopPropagation()">
+      <h3 [class.reject]="reviewAction === 'reject'">
+        <i class="bi" [class]="reviewAction === 'approve' ? 'bi-check-circle' : 'bi-x-circle'"></i>
+        {{ reviewAction === 'approve' ? 'Duyệt nội dung' : 'Từ chối nội dung' }}
+      </h3>
+      <p class="mq-modal-target">{{ reviewTarget.title }}</p>
+
+      <label class="mq-modal-label">
+        Lý do {{ reviewAction === 'reject' ? '(bắt buộc)' : '(tuỳ chọn)' }}
+      </label>
+      <textarea class="mq-modal-textarea" rows="3" [(ngModel)]="reviewReason"
+                placeholder="Nhập ghi chú cho tác giả..."></textarea>
+
+      <div class="mq-modal-actions">
+        <button class="btn-cancel" (click)="cancelReview()" [disabled]="submitting">Huỷ</button>
+        <button [class]="reviewAction === 'approve' ? 'btn-approve' : 'btn-reject'"
+                (click)="confirmReview()" [disabled]="submitting">
+          {{ submitting ? 'Đang xử lý...' : (reviewAction === 'approve' ? 'Xác nhận duyệt' : 'Xác nhận từ chối') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

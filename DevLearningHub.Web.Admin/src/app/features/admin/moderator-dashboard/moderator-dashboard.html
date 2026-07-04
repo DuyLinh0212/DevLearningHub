@@ -1,207 +1,145 @@
 <header class="content-header">
   <div class="header-title">
-    <h2>Dashboard Moderator</h2>
+    <h2>Bảng điều hành kiểm duyệt</h2>
+    <p class="header-subtitle">Theo dõi hàng chờ và thao tác kiểm duyệt trong hệ thống</p>
   </div>
 </header>
 
 <div class="dashboard-scroll-body">
   @if (isLoading) {
-    <div class="loading-state" style="text-align: center; padding: 48px; color: var(--text-muted);">
-      <i class="bi bi-arrow-repeat spin" style="font-size: 2rem; display: block; margin-bottom: 12px; animation: spin 1s linear infinite;"></i>
-      Đang tải dữ liệu...
+    <div class="loading-state">
+      <i class="bi bi-arrow-repeat spin"></i>
+      <span>Đang tải dữ liệu...</span>
     </div>
   } @else if (!hasAnyPermission) {
-    <!-- Fallback if not authorized -->
-    <div class="admin-empty-state-error" style="text-align: center; padding: 80px 20px; background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 12px; max-width: 600px; margin: 40px auto; color: var(--text-muted-dark); box-shadow: var(--shadow-soft);">
-      <i class="bi bi-shield-lock-fill" style="color: #ef4444; font-size: 3rem; display: block; margin-bottom: 16px;"></i>
-      <h3 style="color: var(--text-main); font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Bạn chưa được cấp quyền quản trị</h3>
-      <p style="font-size: 0.9rem; margin: 0; max-width: 480px; margin: 0 auto; line-height: 1.5;">Tài khoản của bạn hiện chưa được Admin phân quyền quản lý các mô-đun của hệ thống. Vui lòng liên hệ quản trị viên cấp cao để được cấp quyền tương ứng.</p>
+    <div class="access-denied">
+      <i class="bi bi-shield-lock-fill"></i>
+      <h3>Bạn chưa được cấp quyền kiểm duyệt</h3>
+      <p>Tài khoản của bạn hiện chưa được phân quyền quản lý các mô-đun kiểm duyệt.
+         Vui lòng liên hệ quản trị viên cấp cao để được cấp quyền tương ứng.</p>
     </div>
   } @else {
-    <!-- Stats Cards -->
-    <section class="stats-container" style="margin-bottom: 24px;">
-      <!-- Total Posts (Forum) -->
-      @if (canModeratePosts) {
-        <div class="stat-card blue">
-          <div class="stat-card-header">
-            <span class="stat-title">Tổng bài viết</span>
-            <div class="stat-card-icon"><i class="bi bi-newspaper"></i></div>
+    <!-- KPI row -->
+    <section class="kpi-row">
+      @for (card of kpiCards; track card.key) {
+        <a class="kpi-card" [class]="'tone-' + card.tone" [routerLink]="card.link">
+          <div class="kpi-icon"><i class="bi" [class]="card.icon"></i></div>
+          <div class="kpi-body">
+            <span class="kpi-value">{{ card.value }}</span>
+            <span class="kpi-label">{{ card.label }}</span>
           </div>
-          <div class="stat-card-body">
-            <span class="stat-value">{{ stats.totalPosts }}</span>
-          </div>
-        </div>
-
-        <div class="stat-card green">
-          <div class="stat-card-header">
-            <span class="stat-title">Bài viết đã ẩn</span>
-            <div class="stat-card-icon"><i class="bi bi-eye-slash"></i></div>
-          </div>
-          <div class="stat-card-body">
-            <span class="stat-value">{{ stats.hiddenPosts }}</span>
-          </div>
-        </div>
+          <i class="bi bi-chevron-right kpi-arrow"></i>
+        </a>
       }
-
-      <!-- Total Problems (Quiz) -->
-      @if (hasPermission('quiz:edit')) {
-        <div class="stat-card purple">
-          <div class="stat-card-header">
-            <span class="stat-title">Tổng số bài tập</span>
-            <div class="stat-card-icon"><i class="bi bi-cpu-fill"></i></div>
-          </div>
-          <div class="stat-card-body">
-            <span class="stat-value">{{ stats.totalProblems }}</span>
-          </div>
-        </div>
-      }
-
     </section>
 
-    <!-- Widgets Grid -->
-    <section class="dashboard-grid">
-      <!-- Widget: Forum Moderation (Hidden Posts list) -->
-      @if (canModeratePosts) {
-        <div class="card" style="display: flex; flex-direction: column;">
-          <h3 style="padding: 16px 20px; border-bottom: 1px solid var(--bg-card-border); font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-main);">
-            <i class="bi bi-eye-slash-fill" style="color: #ef4444;"></i> Bài viết đã ẩn (Forum)
-          </h3>
-          <div style="flex: 1; padding: 12px; overflow-y: auto;">
-            @if (hiddenPostsList.length === 0) {
-              <div style="text-align: center; padding: 40px 20px; color: var(--text-muted-dark); font-size: 0.85rem;">
-                <i class="bi bi-check-circle" style="font-size: 1.75rem; color: #22c55e; display: block; margin-bottom: 8px;"></i>
-                Không có bài viết nào bị ẩn
-              </div>
-            } @else {
-              <div class="table-responsive" style="overflow-x: auto; font-size: 0.82rem;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-main);">
-                  <thead>
-                    <tr style="border-bottom: 1px solid var(--bg-card-border); color: var(--text-muted); font-weight: 600;">
-                      <th style="padding: 8px;">Tiêu đề</th>
-                      <th style="padding: 8px;">Tác giả</th>
-                      <th style="padding: 8px; text-align: right;">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (post of hiddenPostsList; track post.id) {
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.02); height: 48px; vertical-align: middle;">
-                        <td style="padding: 8px; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                          <a [routerLink]="['/admin/posts', post.id]" style="color: var(--text-main); text-decoration: none;" hover="color: #8b5cf6;">
-                            {{ post.title }}
-                          </a>
-                        </td>
-                        <td style="padding: 8px; color: var(--text-muted);">{{ post.author?.fullName || post.author?.username }}</td>
-                        <td style="padding: 8px; text-align: right;">
-                          <button 
-                            [disabled]="unhidingPostId === post.id" 
-                            (click)="unhidePost(post.id, $event)" 
-                            style="border: none; background: rgba(34, 197, 94, 0.12); color: #22c55e; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
-                          >
-                            @if (unhidingPostId === post.id) {
-                              Đang hiện...
-                            } @else {
-                              Hiện lại
-                            }
-                          </button>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
+    <div class="dashboard-columns">
+      <!-- Left column: hidden posts queue -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3><i class="bi bi-eye-slash-fill"></i> Bài viết đang ẩn</h3>
+          @if (hiddenPostsList.length > 0) {
+            <span class="panel-badge">{{ hiddenPostsList.length }}</span>
+          }
         </div>
-      }
-
-      <!-- Widget: Quiz Moderation (Recent Problems list) -->
-      @if (hasPermission('quiz:edit')) {
-        <div class="card" style="display: flex; flex-direction: column;">
-          <h3 style="padding: 16px 20px; border-bottom: 1px solid var(--bg-card-border); font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-main);">
-            <i class="bi bi-cpu-fill" style="color: #a855f7;"></i> Quản lý Bài tập (Quiz)
-          </h3>
-          <div style="flex: 1; padding: 12px; overflow-y: auto;">
-            @if (recentProblems.length === 0) {
-              <div style="text-align: center; padding: 40px 20px; color: var(--text-muted-dark); font-size: 0.85rem;">
-                Chưa có bài tập nào trong kho
-              </div>
-            } @else {
-              <div class="table-responsive" style="overflow-x: auto; font-size: 0.82rem;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-main);">
-                  <thead>
-                    <tr style="border-bottom: 1px solid var(--bg-card-border); color: var(--text-muted); font-weight: 600;">
-                      <th style="padding: 8px;">Tên bài tập</th>
-                      <th style="padding: 8px;">Độ khó</th>
-                      <th style="padding: 8px; text-align: right;">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (prob of recentProblems; track prob.id) {
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.02); height: 48px; vertical-align: middle;">
-                        <td style="padding: 8px; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                          {{ prob.title }}
-                        </td>
-                        <td style="padding: 8px;">
-                          <span style="font-weight: 600;" [style.color]="prob.level === 'easy' ? '#2db55d' : (prob.level === 'medium' ? '#f59e0b' : '#ef4444')">
-                            {{ prob.level === 'easy' ? 'Dễ' : (prob.level === 'medium' ? 'Trung bình' : 'Khó') }}
-                          </span>
-                        </td>
-                        <td style="padding: 8px; text-align: right;">
-                          <a 
-                            [routerLink]="['/admin/problems']" 
-                            style="text-decoration: none; border: none; background: var(--bg-nested); color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-block;"
-                          >
-                            Quản lý
-                          </a>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
+        <div class="panel-body">
+          @if (!canModeratePosts) {
+            <div class="empty-pane">
+              <i class="bi bi-lock"></i>
+              <span>Bạn không có quyền kiểm duyệt bài viết.</span>
+            </div>
+          } @else if (hiddenPostsList.length === 0) {
+            <div class="empty-pane">
+              <i class="bi bi-check-circle success"></i>
+              <span>Không có bài viết nào đang bị ẩn.</span>
+            </div>
+          } @else {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tiêu đề</th>
+                  <th>Tác giả</th>
+                  <th class="ta-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (post of hiddenPostsList; track post.id) {
+                  <tr>
+                    <td class="cell-title">
+                      <a [routerLink]="['/admin/posts', post.id]">{{ post.title }}</a>
+                    </td>
+                    <td class="cell-muted">{{ post.author?.fullName || post.author?.username }}</td>
+                    <td class="ta-right">
+                      <button class="btn-restore" [disabled]="unhidingPostId === post.id"
+                              (click)="unhidePost(post.id, $event)">
+                        {{ unhidingPostId === post.id ? 'Đang hiện...' : 'Hiện lại' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
-      }
+      </section>
 
-
-
-      <!-- Widget: Recent Activities -->
-      @if (canViewAuditLogs) {
-        <div class="card activity-card" style="display: flex; flex-direction: column;">
-          <h3 style="padding: 16px 20px; border-bottom: 1px solid var(--bg-card-border); font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-main);">
-            <i class="bi bi-clock-history" style="color: #a855f7;"></i> Hoạt động gần đây
-          </h3>
-          <div style="flex: 1; padding: 12px; overflow-y: auto;">
-            @if (recentActions.length === 0) {
-              <div class="empty-activity" style="text-align: center; padding: 40px 20px; color: var(--text-muted-dark); font-size: 0.85rem;">
-                <i class="bi bi-inbox" style="font-size: 1.5rem; display: block; margin-bottom: 6px; opacity: 0.5;"></i>
-                Chưa có hoạt động kiểm duyệt nào.
-              </div>
-            } @else {
-              <div class="activity-list">
-                @for (action of recentActions; track action.id) {
-                  <div class="activity-item" style="display: flex; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--bg-card-border);">
-                    <div class="activity-icon" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: center; color: #8b5cf6; flex-shrink: 0; font-size: 0.85rem;">
-                      <i class="bi" [class]="getActionIcon(action.action)"></i>
+      <!-- Right column: recent activity -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3><i class="bi bi-clock-history"></i> Hoạt động gần đây</h3>
+        </div>
+        <div class="panel-body">
+          @if (summary.recentModerationLogs.length === 0) {
+            <div class="empty-pane">
+              <i class="bi bi-inbox"></i>
+              <span>Chưa có hoạt động kiểm duyệt nào.</span>
+            </div>
+          } @else {
+            <div class="activity-list">
+              @for (log of summary.recentModerationLogs; track trackByLog($index, log)) {
+                <div class="activity-item">
+                  <div class="activity-icon" [class]="'act-' + log.action">
+                    <i class="bi" [class]="getActionIcon(log.action)"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-title">
+                      {{ getActionLabel(log.action) }}
+                      @if (log.targetType) {
+                        <span class="activity-target">{{ log.targetType }}<span *ngIf="log.targetId">: {{ log.targetId!.slice(0, 8) }}</span></span>
+                      }
                     </div>
-                    <div class="activity-content" style="flex: 1; min-width: 0; font-size: 0.78rem;">
-                      <div class="activity-title" style="font-weight: 600; color: var(--text-main); margin-bottom: 2px;">
-                        {{ getActionLabel(action.action) }}
-                        <span class="activity-target" style="color: var(--text-muted); font-weight: 400; font-family: monospace;">{{ action.targetType }}: {{ action.targetId.slice(0,8) }}...</span>
-                      </div>
-                      <div class="activity-meta" style="color: var(--text-muted-dark); font-size: 0.7rem;">
-                        <span class="actor">Bởi {{ action.actorUsername }}</span> • 
-                        <span class="time">{{ formatDate(action.createdAt) }}</span>
-                      </div>
+                    <div class="activity-meta">
+                      <span>Bởi {{ log.actorUsername }}</span>
+                      <span class="dot">•</span>
+                      <span>{{ formatDate(log.createdAt) }}</span>
                     </div>
                   </div>
-                }
-              </div>
-            }
-          </div>
+                </div>
+              }
+            </div>
+          }
         </div>
-      }
-    </section>
+      </section>
+    </div>
+
+    <!-- Quick actions -->
+    @if (quickActions.length > 0) {
+      <section class="panel quick-actions-panel">
+        <div class="panel-head">
+          <h3><i class="bi bi-lightning-charge-fill"></i> Thao tác nhanh</h3>
+        </div>
+        <div class="quick-actions-grid">
+          @for (action of quickActions; track action.label) {
+            <a class="quick-action" [routerLink]="action.link">
+              <div class="quick-action-icon"><i class="bi" [class]="action.icon"></i></div>
+              <div class="quick-action-text">
+                <span class="quick-action-label">{{ action.label }}</span>
+                <span class="quick-action-desc">{{ action.description }}</span>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

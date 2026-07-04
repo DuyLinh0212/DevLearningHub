@@ -87,6 +87,7 @@
                 <th>Tên bài tập</th>
                 <th>Chủ đề</th>
                 <th>Độ khó</th>
+                <th>Trạng thái</th>
                 <th>Số lượng Test Cases</th>
                 <th style="text-align:right">Hành động</th>
               </tr>
@@ -103,6 +104,15 @@
                     <span class="diff-badge" [ngClass]="getDifficultyClass(p.difficulty)">
                       {{ getDifficultyLabel(p.difficulty) }}
                     </span>
+                  </td>
+                  <td>
+                    @if (p.reviewStatus) {
+                      <span class="review-status-badge" [ngClass]="getReviewStatusClass(p.reviewStatus)">
+                        {{ getReviewStatusLabel(p.reviewStatus) }}
+                      </span>
+                    } @else {
+                      <span style="color: var(--text-muted-dark); font-size: 0.72rem;">—</span>
+                    }
                   </td>
                   <td>
                     <span class="testcases-count-badge">
@@ -154,9 +164,9 @@
               <tr>
                 <th>Tên ngân hàng</th>
                 <th>Bài tập</th>
+                <th>Người làm</th>
                 <th>Đánh giá</th>
                 <th>Lượt thích</th>
-                <th>Tác giả</th>
                 <th>Trạng thái</th>
                 <th style="text-align:right">Hành động</th>
               </tr>
@@ -172,6 +182,18 @@
                   </td>
                   <td><span class="testcases-count-badge"><i class="bi bi-collection"></i> {{ b.problemCount }}</span></td>
                   <td>
+                    @if (getBankAnalytics(b.id); as stats) {
+                      <span class="bank-stats-badge" (click)="openBankParticipants(b.id, b.title); $event.stopPropagation()" title="Nhấn để xem chi tiết">
+                        <i class="bi bi-people-fill"></i> {{ stats.participantCount }}
+                        @if (stats.averageCompletionPercent > 0) {
+                          &nbsp;•&nbsp;{{ stats.averageCompletionPercent | number:'1.0-0' }}%
+                        }
+                      </span>
+                    } @else {
+                      <span style="color: var(--text-muted-dark); font-size: 0.72rem;">—</span>
+                    }
+                  </td>
+                  <td>
                     <span style="display:flex;align-items:center;gap:4px;font-size:0.82rem;">
                       <i class="bi bi-star-fill" style="color:#ffb800;font-size:0.75rem"></i>
                       {{ (b.avgRating || 0).toFixed(1) }}
@@ -179,9 +201,10 @@
                     </span>
                   </td>
                   <td><span style="font-size:0.84rem;color:var(--text-muted)"><i class="bi bi-heart-fill" style="color:#ef4444;font-size:0.75rem"></i> {{ b.likeCount }}</span></td>
-                  <td><span style="font-size:0.82rem;color:var(--text-muted)">{{ b.creator?.fullName || b.creator?.username }}</span></td>
                   <td>
-                    @if (b.isPublic) {
+                    @if (b.reviewStatus) {
+                      <span class="review-status-badge" [ngClass]="getReviewStatusClass(b.reviewStatus)">{{ getReviewStatusLabel(b.reviewStatus) }}</span>
+                    } @else if (b.isPublic) {
                       <span class="topic-badge" style="background:rgba(44,187,93,.12);color:#2cbb5d;border-color:rgba(44,187,93,.3)"><i class="bi bi-globe"></i> Công khai</span>
                     } @else {
                       <span class="topic-badge" style="background:var(--bg-nested);color:var(--text-muted)"><i class="bi bi-lock-fill"></i> Riêng tư</span>
@@ -286,6 +309,40 @@
           {{ isSavingBank ? 'Đang lưu...' : (editingBankId ? 'Cập nhật' : 'Tạo ngân hàng') }}
         </button>
       </div>
+    </div>
+  </div>
+  }
+
+  <!-- Bank Participants Modal -->
+  @if (isParticipantsModalOpen) {
+  <div class="modal-overlay" (click)="closeBankParticipants()">
+    <div class="modal-box admin-large-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-modal-close" (click)="closeBankParticipants()"><i class="bi bi-x-lg"></i></button>
+      <h3>Người tham gia: <span style="color: #a855f7;">{{ participantsBankTitle }}</span></h3>
+      @if (isLoadingParticipants) {
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="bi bi-arrow-repeat" style="font-size: 1.5rem; animation: spin 1s linear infinite;"></i><p>Đang tải...</p></div>
+      } @else if (!participantsList.length) {
+        <div style="text-align: center; padding: 40px; color: var(--text-muted-dark);"><i class="bi bi-people" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i><p>Chưa có người tham gia.</p></div>
+      } @else {
+        <div class="admin-table-responsive-wrapper" style="margin-top: 16px;">
+          <table class="admin-management-table">
+            <thead>
+              <tr><th>Người dùng</th><th style="text-align: center;">Đã giải</th><th style="text-align: center;">Tổng</th><th style="text-align: center;">Hoàn thành</th><th style="text-align: center;">Độ chính xác</th></tr>
+            </thead>
+            <tbody>
+              @for (p of participantsList; track p.user.id) {
+              <tr>
+                <td><span style="font-weight: 600;">{{ p.user.fullName || p.user.username }}</span></td>
+                <td style="text-align: center; font-weight: 700; color: #a855f7;">{{ p.solvedCount }}</td>
+                <td style="text-align: center;">{{ p.totalProblems }}</td>
+                <td style="text-align: center;">{{ p.completionPercent | number:'1.0-0' }}%</td>
+                <td style="text-align: center;">{{ p.avgAccuracyPercent | number:'1.1-1' }}%</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
   </div>
   }

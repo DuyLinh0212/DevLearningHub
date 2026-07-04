@@ -57,16 +57,51 @@ public class QuizSetsController : ControllerBase
         }
         else
         {
-            query = query.Where(qs => qs.IsPublic);
+            query = query.Where(qs =>
+                qs.IsPublic &&
+                qs.ReviewStatus != "pending" &&
+                qs.ReviewStatus != "rejected");
         }
 
         var quizSets = await query
             .OrderByDescending(qs => qs.CreatedAt)
+            .Select(qs => new
+            {
+                qs.Id,
+                qs.CreatedBy,
+                qs.Title,
+                qs.Description,
+                qs.Mode,
+                qs.TimeLimitSeconds,
+                qs.IsPublic,
+                qs.AllowedCopy,
+                qs.TopicId,
+                qs.Level,
+                QuestionCount = qs.QuizSetQuestions.Count
+            })
+            .ToListAsync();
+
+        var creatorIds = quizSets
+            .Select(qs => qs.CreatedBy)
+            .Distinct()
+            .ToList();
+
+        var creatorNames = await _db.Users
+            .AsNoTracking()
+            .Where(user => creatorIds.Contains(user.Id))
+            .Select(user => new
+            {
+                user.Id,
+                Name = user.FullName ?? user.Username
+            })
+            .ToDictionaryAsync(user => user.Id, user => user.Name);
+
+        var response = quizSets
             .Select(qs => new QuizSetResponse
             {
                 Id = qs.Id,
                 CreatedBy = qs.CreatedBy,
-                CreatedByFullName = qs.CreatedByNavigation.FullName ?? qs.CreatedByNavigation.Username,
+                CreatedByFullName = creatorNames.GetValueOrDefault(qs.CreatedBy, string.Empty),
                 Title = qs.Title,
                 Description = qs.Description,
                 Mode = qs.Mode,
@@ -75,11 +110,11 @@ public class QuizSetsController : ControllerBase
                 AllowedCopy = qs.AllowedCopy,
                 TopicId = qs.TopicId,
                 Level = qs.Level,
-                QuestionCount = qs.QuizSetQuestions.Count
+                QuestionCount = qs.QuestionCount
             })
-            .ToListAsync();
+            .ToList();
 
-        return Ok(ApiResponse<List<QuizSetResponse>>.Ok(quizSets));
+        return Ok(ApiResponse<List<QuizSetResponse>>.Ok(response));
     }
 
     [HttpGet("{id:guid}")]
@@ -192,6 +227,7 @@ public class QuizSetsController : ControllerBase
             Mode = string.IsNullOrWhiteSpace(request.Mode) ? "practice" : request.Mode.Trim(),
             TimeLimitSeconds = request.TimeLimitSeconds,
             IsPublic = request.IsPublic,
+            ReviewStatus = request.IsPublic && !await _permissions.HasPermissionAsync(userId, "quiz:review") ? "pending" : "approved",
             AllowedCopy = request.AllowedCopy,
             TopicId = resolvedTopicId,
             Level = request.Level?.Trim(),

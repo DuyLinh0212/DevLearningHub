@@ -189,3 +189,32 @@ html.light-theme .code-font {
 .search-input, .admin-search-input, .inline-filter input[type='text'], .filter-row input[type='text'] { min-width:240px !important; flex:1 1 280px !important; }
 .filter-select, .admin-top-select, .inline-filter select, .filter-row select { min-width:180px !important; flex:0 1 220px !important; }
 @media (max-width:640px){ .bank-add-problem-select,.search-input,.admin-search-input,.filter-select,.admin-top-select,.inline-filter input[type='text'],.filter-row input[type='text'],.inline-filter select,.filter-row select{min-width:0 !important;width:100% !important;flex-basis:100% !important}.bank-add-problem-row .btn-action,.bank-add-problem-row button{width:100%;justify-content:center} }
+
+/* Review status badge */
+.review-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.review-status-badge.review-pending  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.review-status-badge.review-approved { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
+.review-status-badge.review-rejected { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+
+/* Bank stats badge */
+.bank-stats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  font-weight: 600;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bank-stats-badge:hover { background: rgba(139, 92, 246, 0.25); }

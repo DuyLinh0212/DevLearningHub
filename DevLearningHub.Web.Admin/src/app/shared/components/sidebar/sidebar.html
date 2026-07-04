@@ -24,6 +24,12 @@
       </a>
     }
 
+    @if (hasPermission('roadmap:edit') || hasPermission('roadmap:create') || hasPermission('roadmap:view_progress')) {
+      <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
+        <i class="bi bi-signpost-split"></i><span>Lộ trình</span>
+      </a>
+    }
+
     <div class="menu-section-divider"></div>
     <div class="menu-heading">Cộng đồng</div>
     @if (hasPermission('tag:edit')) {
@@ -31,7 +37,7 @@
         <i class="bi bi-tag"></i><span>Tag</span>
       </a>
     }
-    @if (hasPermission('post:hide') || hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
+    @if (hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
       <a routerLink="/admin/posts" routerLinkActive="active" class="menu-item">
         <i class="bi bi-people"></i><span>Bài viết</span>
       </a>
@@ -45,6 +51,11 @@
     @if (hasPermission('user:view_all')) {
       <a routerLink="/admin/users" routerLinkActive="active" class="menu-item">
         <i class="bi bi-person-lines-fill"></i><span>Người dùng</span>
+      </a>
+    }
+    @if (hasPermission('role:view')) {
+      <a routerLink="/admin/roles" routerLinkActive="active" class="menu-item">
+        <i class="bi bi-shield-lock"></i><span>Phân quyền</span>
       </a>
     }
     @if (hasRole('Admin')) {

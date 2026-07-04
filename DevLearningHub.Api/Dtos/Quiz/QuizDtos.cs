@@ -467,6 +467,8 @@ public class RoadmapResponse
 	public string? TargetRole { get; set; }
 
 	public List<RoadmapTopicResponse> Topics { get; set; } = new();
+
+	public List<RoadmapItemResponse> Items { get; set; } = new();
 }
 
 public class CreateRoadmapRequest

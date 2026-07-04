@@ -1,83 +1,124 @@
-<header class="content-header">
+﻿<header class="content-header">
   <div class="top-breadcrumb">
-    <a routerLink="/dashboard">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Lộ trình học tập</span>
+    <a routerLink="/dashboard">Học tập</a>
+    <i class="bi bi-chevron-right breadcrumb-chevron"></i>
+    <span>Lộ trình học tập</span>
   </div>
 </header>
 
 <div class="dashboard-scroll-body">
-  
-  <section class="welcome-section">
-    <h1>Lộ trình học tập đề xuất</h1>
-    <p>Theo dõi lộ trình học tập, từng bước rèn luyện kỹ năng lập trình cốt lõi được định hướng bởi giảng viên.</p>
+  <section class="welcome-section roadmap-hero">
+    <div>
+      <h1>Lộ trình học tập đề xuất</h1>
+      <p>Theo dõi từng chặng học, bộ đề và bài code được sắp xếp theo mục tiêu nghề nghiệp.</p>
+    </div>
+    <button class="btn-admin-act blue-outline" (click)="loadUserRoadmaps()" [disabled]="isLoading">
+      <i class="bi bi-arrow-clockwise"></i> Làm mới
+    </button>
   </section>
 
+  @if (loadError) {
+    <div class="roadmap-alert">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span>{{ loadError }}</span>
+    </div>
+  }
+
   <div class="roadmap-layout-grid">
-    
-    <div class="roadmap-sidebar-panel">
-        <h4>Chọn định hướng lộ trình</h4>
-        
-        @for (rm of roadmaps; track rm.id) {
-        <div class="roadmap-selector-card" [class.is-active]="activeRoadmap?.id === rm.id" (click)="selectRoadmap(rm)">
-            <h3>{{ rm.title }}</h3>
-            <span class="roadmap-selector-badge">{{ rm.level }}</span>
-        </div>
-        } @empty {
+    <aside class="roadmap-sidebar-panel">
+      <div class="panel-title-row">
+        <h4>Định hướng</h4>
+        <span>{{ roadmaps.length }} lộ trình</span>
+      </div>
+
+      @if (isLoading) {
         <div class="empty-state-placeholder">
+          <i class="bi bi-arrow-repeat empty-placeholder-icon spin"></i>
+          <p>Đang tải lộ trình...</p>
+        </div>
+      } @else {
+        @for (rm of roadmaps; track rm.id) {
+          <button type="button" class="roadmap-selector-card" [class.is-active]="activeRoadmap?.id === rm.id" (click)="selectRoadmap(rm)">
+            <span class="roadmap-selector-badge">{{ getLevelName(rm.level) }}</span>
+            <h3>{{ rm.title }}</h3>
+            <p>{{ rm.targetRole || 'Web Developer' }}</p>
+            <small><i class="bi bi-list-check"></i> {{ getRoadmapItemCount(rm) }} mục học</small>
+          </button>
+        } @empty {
+          <div class="empty-state-placeholder">
             <i class="bi bi-bezier2 empty-placeholder-icon"></i>
             <p>Chưa có lộ trình nào được khởi tạo.</p>
             <button class="btn-admin-act blue-outline" (click)="loadUserRoadmaps()">
-                <i class="bi bi-arrow-clockwise"></i> Thử lại
+              <i class="bi bi-arrow-clockwise"></i> Thử lại
             </button>
-        </div>
+          </div>
         }
-    </div>
+      }
+    </aside>
 
     @if (activeRoadmap) {
-      <div class="roadmap-tree-main">
+      <main class="roadmap-tree-main">
         <div class="active-roadmap-intro">
-          <h2>{{ activeRoadmap.title }}</h2>
-          <p>{{ activeRoadmap.description }}</p>
+          <div>
+            <span class="intro-kicker">{{ getLevelName(activeRoadmap.level) }}</span>
+            <h2>{{ activeRoadmap.title }}</h2>
+            <p>{{ activeRoadmap.description || 'Lộ trình này đang được cập nhật nội dung chi tiết.' }}</p>
+          </div>
+          <div class="intro-stats">
+            <strong>{{ roadmapNodes.length }}</strong>
+            <span>mục học</span>
+          </div>
         </div>
 
-        <div class="tree-timeline-track">
-          <div class="vertical-timeline-line"></div>
+        @if (!roadmapNodes.length) {
+          <div class="roadmap-empty-panel compact">
+            <i class="bi bi-inboxes empty-placeholder-icon"></i>
+            <h3>Lộ trình chưa có mục học</h3>
+            <p>Admin cần thêm chủ đề, bộ đề hoặc bài code để học viên bắt đầu.</p>
+          </div>
+        } @else {
+          <div class="tree-timeline-track">
+            <div class="vertical-timeline-line"></div>
 
-          @for (node of roadmapNodes; track node.stepNum) {
-            <div class="timeline-node-row">
-              <div class="node-status-circle" [attr.data-status]="node.status">
-                @if (node.status === 'completed') {
-                  <i class="bi bi-check-lg"></i>
-                } @else {
-                  <span [class.text-active]="node.status === 'current'">{{ node.stepNum }}</span>
-                }
-              </div>
+            @for (node of roadmapNodes; track node.stepNum) {
+              <div class="timeline-node-row">
+                <div class="node-status-circle" [attr.data-status]="node.status">
+                  <span>{{ node.stepNum }}</span>
+                </div>
 
-              <div class="node-content-box">
-                <div class="node-info-text">
-                  <h4>
-                    <i class="bi {{ node.icon }} node-step-icon"></i> {{ node.name }}
-                  </h4>
-                  <p>{{ node.desc }}</p>
-                </div>
-                <div class="node-action-btn-wrapper">
-                  @if (node.status === 'completed') {
-                    <button class="btn-admin-act blue-outline" routerLink="/quiz-bank"><i class="bi bi-arrow-clockwise"></i> Ôn tập lại</button>
-                  } @else if (node.status === 'current') {
-                    <button class="btn-admin-act purple-gradient" routerLink="/quiz-bank"><i class="bi bi-play-fill"></i> Học chặng này</button>
-                  } @else {
-                    <span class="node-locked-badge"><i class="bi bi-lock-fill"></i> Khóa</span>
-                  }
+                <div class="node-content-box">
+                  <div class="node-info-text">
+                    <div class="node-meta-row">
+                      <span class="node-type-chip" [attr.data-type]="node.type">
+                        <i class="bi {{ node.icon }}"></i> {{ node.typeLabel }}
+                      </span>
+                      @if (node.isRequired) {
+                        <span class="required-chip">Bắt buộc</span>
+                      }
+                    </div>
+                    <h4>{{ node.name }}</h4>
+                    <p>{{ node.desc }}</p>
+                  </div>
+                  <div class="node-action-btn-wrapper">
+                    @if (node.status === 'available') {
+                      <a class="btn-admin-act purple-gradient" [routerLink]="node.route">
+                        <i class="bi bi-play-fill"></i> Bắt đầu
+                      </a>
+                    } @else {
+                      <span class="node-locked-badge"><i class="bi bi-exclamation-circle"></i> Chưa sẵn sàng</span>
+                    }
+                  </div>
                 </div>
               </div>
-            </div>
-          }
-        </div>
-      </div>
+            }
+          </div>
+        }
+      </main>
     } @else {
       <div class="roadmap-empty-panel">
         <i class="bi bi-bezier2 empty-placeholder-icon"></i>
         <h3>Chưa chọn lộ trình</h3>
-        <p>Hãy chọn một lộ trình từ danh sách bên trái để xem chi tiết các chặng học.</p>
+        <p>Chọn một lộ trình ở cột bên trái để xem chi tiết các chặng học.</p>
       </div>
     }
   </div>

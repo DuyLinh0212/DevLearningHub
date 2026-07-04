@@ -65,6 +65,8 @@ public partial class User
 
     public virtual ICollection<UserRole> UserRoleUsers { get; set; } = new List<UserRole>();
 
+    public virtual ICollection<UserRoadmap> UserRoadmaps { get; set; } = new List<UserRoadmap>();
+
     public virtual ICollection<UserTopicProgress> UserTopicProgresses { get; set; } = new List<UserTopicProgress>();
 
     public virtual ICollection<Vote> Votes { get; set; } = new List<Vote>();

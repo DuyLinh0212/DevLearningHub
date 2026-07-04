@@ -23,6 +23,14 @@ public partial class Post
 
     public bool IsHidden { get; set; }
 
+    public string ReviewStatus { get; set; } = "approved";
+
+    public Guid? ReviewedBy { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public string? ReviewNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -32,6 +40,8 @@ public partial class Post
     public virtual Comment? AcceptedComment { get; set; }
 
     public virtual User Author { get; set; } = null!;
+
+    public virtual User? Reviewer { get; set; }
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 

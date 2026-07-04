@@ -126,6 +126,11 @@
             <span class="status-badge" [class.public]="set.statusClass === 'public'" [class.draft]="set.statusClass !== 'public'">
               {{ set.status }}
             </span>
+            @if (set.reviewStatus) {
+              <span class="review-badge-sm" [class.rv-pending]="set.reviewStatus === 'pending'" [class.rv-approved]="set.reviewStatus === 'approved'" [class.rv-rejected]="set.reviewStatus === 'rejected'" style="margin-left: 6px;">
+                {{ set.reviewStatus === 'pending' ? 'Chờ duyệt' : set.reviewStatus === 'approved' ? 'Đã duyệt' : 'Từ chối' }}
+              </span>
+            }
             
             <div class="quiz-set-menu-anchor" style="position: relative; display: inline-flex; margin-left: auto;">
               <button class="quiz-set-kebab-btn" type="button" (click)="toggleQuizSetMenu(set.id, $event); $event.stopPropagation()" title="Tùy chọn bộ đề">
@@ -161,6 +166,14 @@
             <span><i class="bi bi-bar-chart"></i> {{ getLevelName(set.level) }}</span>
             <span><i class="bi bi-clock"></i> {{ set.duration }} phút</span>
             <span><i class="bi bi-database-check"></i> {{ set.questionsCount }} câu</span>
+            @if (getQuizAnalytics(set.id); as stats) {
+              <span class="quiz-analytics-badge" (click)="openParticipantsModal(set.id, set.title); $event.stopPropagation()" title="Nhấn để xem chi tiết">
+                <i class="bi bi-people-fill"></i> {{ stats.participantCount }} người làm
+                @if (stats.averageScore > 0) {
+                  &nbsp;•&nbsp;TB: {{ stats.averageScore | number:'1.1-1' }}đ
+                }
+              </span>
+            }
           </div>
 
           <div class="card-actions-row" style="display: flex; gap: 8px; width: 100%;">
@@ -540,6 +553,58 @@
     </div>
   </div>
   }
+
+<!-- Participants Modal -->
+@if (isParticipantsModalOpen) {
+<div class="modal-overlay" (click)="closeParticipantsModal()">
+  <div class="modal-box admin-large-modal" (click)="$event.stopPropagation()">
+    <button type="button" class="btn-modal-close" (click)="closeParticipantsModal()" aria-label="Đóng">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <h3>Người tham gia: <span style="color: #a855f7;">{{ participantsQuizTitle }}</span></h3>
+    @if (isLoadingParticipants) {
+      <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+        <i class="bi bi-arrow-repeat" style="font-size: 1.5rem; animation: spin 1s linear infinite;"></i>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    } @else if (!participantsList.length) {
+      <div style="text-align: center; padding: 40px; color: var(--text-muted-dark);">
+        <i class="bi bi-people" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+        <p>Chưa có người tham gia làm bộ đề này.</p>
+      </div>
+    } @else {
+      <div class="admin-table-responsive-wrapper" style="margin-top: 16px;">
+        <table class="admin-management-table">
+          <thead>
+            <tr>
+              <th>Người dùng</th>
+              <th style="text-align: center;">Số lần làm</th>
+              <th style="text-align: center;">Hoàn thành</th>
+              <th style="text-align: center;">Điểm cao nhất</th>
+              <th style="text-align: center;">Độ chính xác</th>
+              <th>Lần làm cuối</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of participantsList; track p.userId) {
+            <tr>
+              <td>
+                <span style="font-weight: 600;">{{ p.fullName || p.username }}</span>
+              </td>
+              <td style="text-align: center;">{{ p.attemptsCount }}</td>
+              <td style="text-align: center;">{{ p.completedAttempts }}</td>
+              <td style="text-align: center; font-weight: 700; color: #a855f7;">{{ p.bestScore }}/{{ p.bestTotalQuestions }}</td>
+              <td style="text-align: center;">{{ p.bestAccuracy | number:'1.1-1' }}%</td>
+              <td style="font-size: 0.78rem; color: var(--text-muted);">{{ p.lastAttemptAt ? (p.lastAttemptAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+}
 
 <!-- Custom Popup Modal -->
 @if (popupMessage) {

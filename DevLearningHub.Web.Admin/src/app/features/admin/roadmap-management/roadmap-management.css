@@ -2,6 +2,48 @@
 @import '../../admin/admin-dashboard/admin-dashboard.css';
 @import '../../admin/quiz-management/quiz-management.css';
 
+.roadmap-admin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+  align-items: start;
+}
+
+.roadmap-admin-card {
+  border-radius: 8px !important;
+  border: 1px solid var(--bg-card-border) !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+
+.roadmap-admin-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(14, 165, 233, 0.32) !important;
+  background: color-mix(in srgb, var(--bg-card) 94%, #0ea5e9 6%) !important;
+}
+
+.roadmap-admin-card .status-badge.public {
+  border-radius: 999px !important;
+  background: rgba(14, 165, 233, 0.12) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(14, 165, 233, 0.22);
+}
+
+.roadmap-admin-card .card-title {
+  letter-spacing: 0 !important;
+}
+
+.roadmap-admin-card .card-actions-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 8px !important;
+}
+
+.roadmap-admin-card .btn-card-action {
+  min-height: 36px;
+  border-radius: 7px !important;
+  font-weight: 700 !important;
+}
+
 .quiz-rows-list {
   margin-top: 24px;
   display: flex;
@@ -219,7 +261,6 @@
     padding: 10px 8px !important;
   }
 
-  /* Modal full-width */
   .admin-large-modal {
     width: calc(100% - 16px) !important;
     padding: 14px !important;
@@ -249,5 +290,200 @@
 
   .assign-questions-scroll-list {
     max-height: 280px !important;
+  }
+}
+
+/* ===== Items Panel ===== */
+.btn-small-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #8b5cf6;
+  color: #fff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-small-primary:hover { background: #7c3aed; }
+
+.items-panel {
+  background: var(--bg-nested);
+  border: 1px solid var(--border-nested);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.item-row:hover { background: var(--bg-card-hover); }
+.item-row.item-required { border-left: 3px solid #f59e0b; }
+
+.item-order {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  flex-shrink: 0;
+}
+
+.item-type-badge.type-topic {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+}
+
+.item-type-badge.type-quiz_set {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+}
+
+.item-type-badge.type-problem,
+.item-type-badge.type-problem_bank {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+.item-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bg-card-border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.btn-icon-sm:hover:not(:disabled) { color: var(--text-main); border-color: var(--text-muted); }
+.btn-icon-sm:disabled { opacity: 0.4; cursor: default; }
+.btn-icon-sm.btn-danger:hover:not(:disabled) { color: #ef4444; border-color: #ef4444; }
+
+/* ===== Card actions ===== */
+.btn-card-action.btn-stats {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-card-action.btn-stats:hover { background: rgba(59, 130, 246, 0.18); }
+
+.btn-card-action.btn-danger {
+  background: transparent;
+  border: 1px solid var(--bg-card-border);
+  cursor: pointer;
+  border-radius: 7px;
+  transition: background 0.15s;
+}
+.btn-card-action.btn-danger:hover { background: rgba(239, 68, 68, 0.08); }
+
+/* ===== Progress bar ===== */
+.progress-bar-sm {
+  width: 80px;
+  height: 6px;
+  background: var(--bg-card-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 auto 4px;
+}
+.progress-fill {
+  height: 100%;
+  background: #8b5cf6;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+@media (max-width: 640px) {
+  .roadmap-admin-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .roadmap-admin-card .card-actions-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .item-row {
+    align-items: flex-start;
+  }
+
+  .item-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }

@@ -1,0 +1,155 @@
+<header class="content-header">
+  <div class="header-title">
+    <h2>Quản lý vai trò & Phân quyền</h2>
+    <p class="header-subtitle">Tạo và quản lý vai trò, gán quyền chi tiết cho từng role</p>
+  </div>
+  @if (canCreate) {
+    <button class="btn-create" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> Tạo Role mới
+    </button>
+  }
+</header>
+
+<div class="rm-body">
+  @if (isLoading) {
+    <div class="loading-state">
+      <span class="spin"><i class="bi bi-arrow-repeat"></i></span>
+      <span>Đang tải dữ liệu...</span>
+    </div>
+  } @else if (!roles.length) {
+    <div class="empty-pane">
+      <i class="bi bi-shield-exclamation"></i>
+      <p>Chưa có role nào được định nghĩa.</p>
+    </div>
+  } @else {
+    <div class="rm-table-wrap">
+      <table class="rm-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Mô tả</th>
+            <th class="col-center">Quyền</th>
+            <th class="col-center">Người dùng</th>
+            <th class="col-center">Trạng thái</th>
+            <th class="col-center">Hệ thống</th>
+            <th class="col-end">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (role of roles; track role.id) {
+            <tr>
+              <td class="cell-name">{{ role.name }}</td>
+              <td class="cell-desc">{{ role.description || '—' }}</td>
+              <td class="col-center">
+                <span class="perm-count" (click)="canAssignPerm && openPermModal(role)" [class.clickable]="canAssignPerm">
+                  {{ countPermissions(role) }}
+                </span>
+              </td>
+              <td class="col-center">{{ role.userCount }}</td>
+              <td class="col-center">
+                <span class="status-badge" [class.active]="role.isActive" [class.inactive]="!role.isActive">
+                  {{ role.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="col-center">
+                @if (role.isSystem) {
+                  <span class="system-badge">Hệ thống</span>
+                } @else {
+                  <span class="custom-badge">Custom</span>
+                }
+              </td>
+              <td class="cell-actions">
+                @if (canEdit && (!role.isSystem || canAssignPerm)) {
+                  <button class="btn-icon" title="Sửa role" (click)="openEditModal(role)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                }
+                @if (canAssignPerm) {
+                  <button class="btn-icon" title="Gán quyền" (click)="openPermModal(role)">
+                    <i class="bi bi-key-fill"></i>
+                  </button>
+                }
+                @if (canDelete && !role.isSystem && role.userCount === 0) {
+                  <button class="btn-icon btn-danger" title="Xóa role" (click)="confirmDelete(role)">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- ===== Role Create/Edit Modal ===== -->
+@if (isRoleModalOpen) {
+  <div class="modal-overlay" (click)="closeRoleModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>{{ isEditing ? 'Chỉnh sửa Role' : 'Tạo Role mới' }}</h3>
+      <label class="modal-label">Tên role</label>
+      <input type="text" class="modal-input" [(ngModel)]="roleForm.name" placeholder="VD: Editor" maxlength="100" />
+      <label class="modal-label">Mô tả</label>
+      <input type="text" class="modal-input" [(ngModel)]="roleForm.description" placeholder="Mô tả ngắn gọn" maxlength="200" />
+      @if (isEditing) {
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="roleForm.isActive" />
+          <span>Kích hoạt</span>
+        </label>
+      }
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeRoleModal()">Hủy</button>
+        <button class="btn-save" (click)="saveRole()" [disabled]="!roleForm.name.trim()">
+          {{ isEditing ? 'Cập nhật' : 'Tạo' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== Permission Assignment Modal ===== -->
+@if (isPermModalOpen) {
+  <div class="modal-overlay" (click)="closePermModal()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>Gán quyền cho <strong>{{ permRoleName }}</strong></h3>
+      <p class="perm-hint">Chọn các quyền bạn muốn gán cho role này.</p>
+      <div class="perm-grid">
+        @for (mod of permissionCatalog; track mod.module) {
+          <div class="perm-module">
+            <div class="perm-module-name">{{ mod.module }}</div>
+            <div class="perm-items">
+              @for (perm of mod.permissions; track perm.id) {
+                <label class="perm-item" [class.checked]="selectedPermissions.has(perm.name)">
+                  <input type="checkbox" [checked]="selectedPermissions.has(perm.name)" (change)="togglePermission(perm.name)" />
+                  <span class="perm-name">{{ perm.name }}</span>
+                  @if (perm.description) {
+                    <span class="perm-desc">{{ perm.description }}</span>
+                  }
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closePermModal()">Hủy</button>
+        <button class="btn-save" (click)="savePermissions()">Lưu quyền</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== Delete Confirmation ===== -->
+@if (deletingRole) {
+  <div class="modal-overlay" (click)="deletingRole = null">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <h3 class="danger">Xóa Role</h3>
+      <p>Bạn chắc chắn muốn xóa role <strong>{{ deletingRole.name }}</strong>? Hành động này không thể hoàn tác.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="deletingRole = null">Hủy</button>
+        <button class="btn-delete" (click)="executeDelete()">Xóa</button>
+      </div>
+    </div>
+  </div>
+}

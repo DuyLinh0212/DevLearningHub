@@ -43,6 +43,8 @@ public partial class DevLearningHubContext : DbContext
 
     public virtual DbSet<QuizSetQuestion> QuizSetQuestions { get; set; }
 
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
@@ -537,6 +539,29 @@ public partial class DevLearningHubContext : DbContext
             entity.HasOne(d => d.QuizSet).WithMany(p => p.QuizSetQuestions)
                 .HasForeignKey(d => d.QuizSetId)
                 .HasConstraintName("FK_qsq_quiz_set");
+        });
+
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.ToTable("password_reset_tokens");
+
+            entity.HasIndex(e => e.TokenHash, "idx_prt_hash").IsUnique();
+            entity.HasIndex(e => e.UserId, "idx_prt_user");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.TokenHash).HasMaxLength(255).HasColumnName("token_hash");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.IsUsed).HasColumnName("is_used");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_prt_user");
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>

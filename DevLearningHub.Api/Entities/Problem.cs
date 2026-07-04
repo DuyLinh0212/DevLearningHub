@@ -21,9 +21,19 @@ public partial class Problem
 
     public bool IsActive { get; set; }
 
+    public string ReviewStatus { get; set; } = "approved";
+
+    public Guid? ReviewedBy { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public string? ReviewNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public virtual User CreatedByNavigation { get; set; } = null!;
+
+    public virtual User? Reviewer { get; set; }
 
     public virtual ICollection<Submission> Submissions { get; set; } = new List<Submission>();
 

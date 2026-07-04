@@ -29,7 +29,7 @@ export class LoginComponent {
 
   onForgotPassword(event: Event) {
     event.preventDefault();
-    this.showPopup('Quên mật khẩu', 'Vui lòng liên hệ Admin của hệ thống để được hỗ trợ cấp lại mật khẩu!', 'info');
+    this.router.navigate(['/forgot-password']);
   }
 
   showPopup(title: string, message: string, type: 'success' | 'error' | 'info') {

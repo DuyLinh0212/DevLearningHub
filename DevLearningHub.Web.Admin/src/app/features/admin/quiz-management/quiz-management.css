@@ -1409,3 +1409,33 @@
   animation: none !important;
   z-index: 3000 !important;
 }
+
+/* ===== Quiz Analytics Badge ===== */
+.quiz-analytics-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  font-weight: 600;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.quiz-analytics-badge:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+/* Review badge in quiz cards */
+.review-badge-sm {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.review-badge-sm.rv-pending  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.review-badge-sm.rv-approved { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
+.review-badge-sm.rv-rejected { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }

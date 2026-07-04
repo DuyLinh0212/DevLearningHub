@@ -50,7 +50,7 @@ public class ProblemBanksController : ControllerBase
         }
 
         // Visibility: public banks for everyone; private banks only for their owner or code-problem managers.
-        query = query.Where(b => b.IsPublic || (hasUser && b.CreatedBy == userId) || canManageAny);
+        query = query.Where(b => (b.IsPublic && (b.ReviewStatus == "approved" || b.ReviewStatus == null || b.ReviewStatus == string.Empty)) || (hasUser && b.CreatedBy == userId) || canManageAny);
 
         var banks = await query
             .OrderByDescending(b => b.CreatedAt)
@@ -148,6 +148,7 @@ public class ProblemBanksController : ControllerBase
             Title = title,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             IsPublic = request.IsPublic,
+            ReviewStatus = request.IsPublic && !await CanManageProblemBanksAsync(userId) ? "pending" : "approved",
             TopicId = request.TopicId,
             CreatedAt = DateTime.Now
         };
