@@ -20,14 +20,12 @@ export class LandingComponent implements OnInit, OnDestroy {
   currentSlide: number = 0;
   totalSlides: number = 3;
   autoplayInterval: any;
-  featuredQuizzes: any[] = [];
 
   isLoggedIn: boolean = false;
   currentUser: any = null;
 
   ngOnInit() {
     this.startAutoplay();
-    this.loadFeaturedQuizzes();
     this.checkLoginStatus();
   }
 
@@ -113,18 +111,5 @@ export class LandingComponent implements OnInit, OnDestroy {
     this.currentSlide = index;
     this.stopAutoplay();
     this.startAutoplay();
-  }
-
-  private loadFeaturedQuizzes() {
-    this.quizService.getAllQuizzes(false).subscribe({
-      next: (res) => {
-        if (res && res.length > 0) {
-          this.featuredQuizzes = res.slice(0, 3);
-        }
-      },
-      error: (err) => {
-        console.error(err);
-      }
-    });
   }
 }

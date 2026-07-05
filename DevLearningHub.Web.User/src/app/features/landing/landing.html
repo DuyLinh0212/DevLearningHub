@@ -23,7 +23,7 @@
         @if (isLoggedIn) {
           <div class="user-nav-profile" style="display: flex; align-items: center; gap: 12px;">
             <a routerLink="/dashboard" class="user-info-link" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-main);">
-              <img [src]="currentUser?.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #a855f7;">
+              <img [src]="currentUser?.avatarUrl || 'assets/images/default-avatar.svg'" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--accent);">
               <span class="nav-user-name" style="font-weight: 600; font-size: 0.85rem;">{{ currentUser?.fullName || currentUser?.username || 'Học viên' }}</span>
             </a>
             <button class="btn-nav-logout" (click)="logout()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
@@ -66,12 +66,12 @@
                 <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
                 <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
               </div>
-              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+              <p class="avatar-text"><span class="highlight-accent">5,000+</span> sinh viên HUIT tham gia tuần này</p>
             </div>
           </div>
           <div class="slide-graphic">
             <div class="graphic-glow-container">
-              <div class="graphic-glow glow-purple"></div>
+              <div class="graphic-glow glow-cyan"></div>
               <img src="https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?q=80&w=1200" alt="Quiz System" class="graphic-img">
             </div>
           </div>
@@ -103,7 +103,7 @@
                 <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
                 <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
               </div>
-              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+              <p class="avatar-text"><span class="highlight-accent">5,000+</span> sinh viên HUIT tham gia tuần này</p>
             </div>
           </div>
           <div class="slide-graphic">
@@ -140,12 +140,12 @@
                 <img src="https://i.pravatar.cc/40?img=47" alt="avatar">
                 <img src="https://i.pravatar.cc/40?img=28" alt="avatar">
               </div>
-              <p class="avatar-text"><span class="highlight-purple">5,000+</span> sinh viên HUIT tham gia tuần này</p>
+              <p class="avatar-text"><span class="highlight-accent">5,000+</span> sinh viên HUIT tham gia tuần này</p>
             </div>
           </div>
           <div class="slide-graphic">
             <div class="graphic-glow-container">
-              <div class="graphic-glow glow-pink"></div>
+              <div class="graphic-glow glow-amber"></div>
               <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200" alt="Forum Dev" class="graphic-img">
             </div>
           </div>
@@ -218,7 +218,7 @@
         <div class="topic-icon bg-red"><i class="bi bi-terminal"></i></div>
         <h3>Trình chấm bài (Online Judge)</h3>
         <p>Nộp mã nguồn trực tuyến, thực thi mã nguồn và chấm điểm tự động qua các testcase ẩn</p>
-        <a routerLink="/login" class="topic-link text-red">Khách phá ngay <i class="bi bi-arrow-right"></i></a>
+        <a routerLink="/login" class="topic-link text-red">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
       </div>
     </div>
   </section>
@@ -244,9 +244,9 @@
       </div>
 
       <div class="feature-card">
-        <div class="feat-icon text-blue"><i class="bi bi-people"></i></div>
-        <h3>Bảng điều khiển</h3>
-        <p>Công cụ quản lý ngân hàng câu hỏi, import dữ liệu hàng loạt từ Excel/JSON dễ dàng</p>
+        <div class="feat-icon text-blue"><i class="bi bi-signpost-split"></i></div>
+        <h3>Bản đồ lộ trình học tập</h3>
+        <p>Xây dựng khung lộ trình riêng, kết hợp tuần tự trắc nghiệm và bài code theo từng chặng để tiến bộ có định hướng</p>
       </div>
 
       <div class="feature-card">

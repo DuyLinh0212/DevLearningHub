@@ -41,6 +41,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
   matchedPages: any[] = [];
   matchedQuizzes: any[] = [];
   matchedPosts: any[] = [];
+  matchedRoadmaps: any[] = [];
+  matchedProblems: any[] = [];
   showSearchResults = false;
 
   notifications: NotificationItem[] = [];
@@ -323,7 +325,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.searchLoading = true;
     this.matchedPages = this.pagesList.filter(p => p.name.toLowerCase().includes(query));
 
-    let pending = 2;
+    let pending = 4;
     const done = () => { if (--pending <= 0) { this.searchLoading = false; this.cdr.detectChanges(); } };
 
     this.http.get<any>('/api/quiz-sets').subscribe({
@@ -347,6 +349,28 @@ export class TopbarComponent implements OnInit, OnDestroy {
       error: () => { this.matchedPosts = []; done(); }
     });
 
+    this.http.get<any>('/api/roadmaps').subscribe({
+      next: res => {
+        const list: any[] = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        this.matchedRoadmaps = list.filter((r: any) =>
+          r.title?.toLowerCase().includes(query) || r.description?.toLowerCase().includes(query)
+        ).slice(0, 5);
+        done();
+      },
+      error: () => { this.matchedRoadmaps = []; done(); }
+    });
+
+    this.http.get<any>('/api/problems').subscribe({
+      next: res => {
+        const list: any[] = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
+        this.matchedProblems = list.filter((p: any) =>
+          p.title?.toLowerCase().includes(query)
+        ).slice(0, 5);
+        done();
+      },
+      error: () => { this.matchedProblems = []; done(); }
+    });
+
     this.cdr.detectChanges();
   }
 
@@ -357,6 +381,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.matchedPages = [];
     this.matchedQuizzes = [];
     this.matchedPosts = [];
+    this.matchedRoadmaps = [];
+    this.matchedProblems = [];
     this.cdr.detectChanges();
   }
 

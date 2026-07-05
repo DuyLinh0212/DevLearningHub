@@ -170,7 +170,7 @@
       <div class="search-status"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tìm...</div>
       } @else if (searchQuery && !showSearchResults) {
       <div class="search-status">Nhập để tìm kiếm...</div>
-      } @else if (matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedPosts.length === 0 && searchQuery) {
+      } @else if (matchedPages.length === 0 && matchedQuizzes.length === 0 && matchedPosts.length === 0 && matchedRoadmaps.length === 0 && matchedProblems.length === 0 && searchQuery) {
       <div class="search-status">Không có kết quả phù hợp</div>
       }
 
@@ -210,6 +210,36 @@
           <div class="result-content">
             <span class="result-title">{{ p.title }}</span>
             <span class="result-desc">{{ getPlainExcerpt(p.bodyMarkdown) }}</span>
+          </div>
+        </a>
+        }
+      </div>
+      }
+
+      @if (matchedRoadmaps.length > 0) {
+      <div class="search-section">
+        <div class="search-section-label">Lộ trình</div>
+        @for (r of matchedRoadmaps; track r.id) {
+        <a routerLink="/roadmap" class="search-result" (click)="toggleSearch()">
+          <i class="bi bi-signpost-split"></i>
+          <div class="result-content">
+            <span class="result-title">{{ r.title }}</span>
+            <span class="result-desc">{{ r.description || 'Không có mô tả' }}</span>
+          </div>
+        </a>
+        }
+      </div>
+      }
+
+      @if (matchedProblems.length > 0) {
+      <div class="search-section">
+        <div class="search-section-label">Bài code</div>
+        @for (p of matchedProblems; track p.id) {
+        <a [routerLink]="['/code', p.id]" class="search-result" (click)="toggleSearch()">
+          <i class="bi bi-code-square"></i>
+          <div class="result-content">
+            <span class="result-title">{{ p.title }}</span>
+            <span class="result-desc">{{ p.difficulty || 'Không rõ độ khó' }}</span>
           </div>
         </a>
         }
