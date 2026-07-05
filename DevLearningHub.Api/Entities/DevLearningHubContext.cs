@@ -175,7 +175,7 @@ public partial class DevLearningHubContext : DbContext
                 .HasColumnName("reason");
             entity.Property(e => e.TargetId).HasColumnName("target_id");
             entity.Property(e => e.TargetType)
-                .HasMaxLength(10)
+                .HasMaxLength(20)
                 .HasColumnName("target_type");
 
             entity.HasOne(d => d.Moderator).WithMany(p => p.ModerationLogs)
@@ -510,6 +510,7 @@ public partial class DevLearningHubContext : DbContext
                 .HasMaxLength(200)
                 .HasColumnName("title");
             entity.Property(e => e.TopicId).HasColumnName("topic_id");
+            entity.Property(e => e.ExamQuestionCount).HasColumnName("exam_question_count");
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.QuizSets)
                 .HasForeignKey(d => d.CreatedBy)

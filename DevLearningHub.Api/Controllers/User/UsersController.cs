@@ -263,19 +263,8 @@ public class UsersController : ControllerBase
             .Select(s => new { Score = s.Score!.Value, s.TotalQuestions })
             .ToListAsync();
 
-        var userXp = scoreRows.Sum(session => CalculateXp(session.Score));
-        var userXpRows = await _db.Users
-            .AsNoTracking()
-            .Where(u => u.IsActive)
-            .Select(u => new
-            {
-                u.Id,
-                Xp = _db.QuizSessions
-                    .Where(s => s.UserId == u.Id && s.Status == "completed" && s.Score.HasValue)
-                    .Sum(s => (int?)s.Score!.Value) ?? 0
-            })
-            .ToListAsync();
-        var rank = userXpRows.Count(row => CalculateXp(row.Xp) > userXp) + 1;
+        var userXp = user.XpPoints;
+        var rank = await _db.Users.CountAsync(u => u.IsActive && u.XpPoints > userXp) + 1;
         var avgScore = scoreRows.Count == 0
             ? 0
             : scoreRows.Average(s => (double)s.Score / s.TotalQuestions);
@@ -332,23 +321,11 @@ public class UsersController : ControllerBase
             .OrderBy(u => u.Username)
             .ToListAsync();
 
-        var userIds = users.Select(user => user.Id).ToList();
-        var completedScores = await _db.QuizSessions
-            .AsNoTracking()
-            .Where(session => userIds.Contains(session.UserId) && session.Status == "completed" && session.Score.HasValue)
-            .GroupBy(session => session.UserId)
-            .Select(group => new
-            {
-                UserId = group.Key,
-                Score = group.Sum(session => session.Score!.Value)
-            })
-            .ToDictionaryAsync(row => row.UserId, row => row.Score);
-
         var entries = users
             .Select(user => new
             {
                 User = user,
-                XP = CalculateXp(completedScores.GetValueOrDefault(user.Id))
+                XP = user.XpPoints
             })
             .OrderByDescending(row => row.XP)
             .ThenBy(row => row.User.Username)

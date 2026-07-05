@@ -20,7 +20,7 @@
           </div>
           <span class="cp-percent">{{ solvedPercent }}%</span>
         </div>
-        @if (hasPermission('problem:create')) {
+        @if (currentUserId) {
           <button class="btn-create-problem" (click)="openCreateModal()">
             <i class="bi bi-plus-circle-fill"></i> Tạo bài tập
           </button>
@@ -106,6 +106,7 @@
               <!-- My bank badge -->
               @if (isMyBank(bank)) {
                 <span class="bank-mine-badge"><i class="bi bi-person-fill"></i> Của tôi</span>
+                <app-review-status-badge [status]="bank.reviewStatus"></app-review-status-badge>
               }
 
               <!-- Visibility badge -->
@@ -154,7 +155,7 @@
                   <i class="bi" [class.bi-heart-fill]="bank.myLiked" [class.bi-heart]="!bank.myLiked"></i>
                 </button>
 
-                @if (isMyBank(bank)) {
+                @if (canManageBank(bank)) {
                   <button class="btn-bank-edit" (click)="openCreateBankModal(bank); $event.stopPropagation()" title="Chỉnh sửa">
                     <i class="bi bi-pencil"></i>
                   </button>
@@ -253,6 +254,9 @@
                     <a [routerLink]="['/code', p.id]" class="problem-title-link">
                       <span class="problem-idx">{{ idx + 1 }}.</span> {{ p.title }}
                     </a>
+                    @if (isMyProblem(p)) {
+                      <app-review-status-badge [status]="p.reviewStatus"></app-review-status-badge>
+                    }
                     @if (p.tags.length > 0) {
                       <div class="tag-row">
                         @for (tag of p.tags.slice(0, 3); track tag) {
@@ -334,7 +338,7 @@
               <div class="empty-state" style="padding:32px 0">
                 <i class="bi bi-inbox"></i>
                 <h3>Ngân hàng chưa có bài tập</h3>
-                @if (isMyBank(selectedBank) || true) {
+                @if (canManageBank(selectedBank)) {
                   <button class="btn-clear" (click)="openAddProblemModal(selectedBank.id, $event)">
                     <i class="bi bi-plus-circle"></i> Thêm bài tập
                   </button>
@@ -342,7 +346,7 @@
               </div>
             } @else {
               <div class="bank-detail-prob-list">
-                @if (isMyBank(selectedBank)) {
+                @if (canManageBank(selectedBank)) {
                   <div style="text-align:right;margin-bottom:10px">
                     <button class="btn-add-to-bank-inline" (click)="openAddProblemModal(selectedBank.id, $event)">
                       <i class="bi bi-plus-circle"></i> Thêm bài tập
@@ -356,7 +360,7 @@
                     <span class="diff-text" [ngClass]="getDifficultyClass(item.difficulty)">
                       {{ getDifficultyLabel(item.difficulty) }}
                     </span>
-                    @if (isMyBank(selectedBank)) {
+                    @if (canManageBank(selectedBank)) {
                       <button class="btn-remove-from-bank" (click)="removeProblemFromBank(item.problemId)" title="Xóa khỏi ngân hàng">
                         <i class="bi bi-x-circle"></i>
                       </button>

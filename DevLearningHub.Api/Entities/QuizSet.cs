@@ -19,7 +19,7 @@ public partial class QuizSet
 
     public bool IsPublic { get; set; }
 
-    public string ReviewStatus { get; set; } = "approved";
+    public string ReviewStatus { get; set; } = "pending";
 
     public Guid? ReviewedBy { get; set; }
 
@@ -34,6 +34,9 @@ public partial class QuizSet
     public string? Level { get; set; }
 
     public bool AllowedCopy { get; set; }
+
+    // Fixed number of questions drawn per mock-exam attempt, set by the creator. Null means use all questions.
+    public int? ExamQuestionCount { get; set; }
 
     public virtual User CreatedByNavigation { get; set; } = null!;
 

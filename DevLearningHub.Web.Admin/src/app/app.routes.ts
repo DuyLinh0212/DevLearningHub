@@ -11,7 +11,6 @@ import { TopicManagementComponent } from './features/admin/topic-management/topi
 import { TagManagementComponent } from './features/admin/tag-management/tag-management';
 import { PostManagementComponent } from './features/admin/post-management/post-management';
 import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
-import { UserManagementComponent } from './features/admin/user-management/user-management';
 import { AdminUserProfileComponent } from './features/admin/user-profile/user-profile';
 import { ModeratorManagementComponent } from './features/admin/moderator-management/moderator-management';
 import { ModeratorDashboardComponent } from './features/admin/moderator-dashboard/moderator-dashboard';
@@ -20,6 +19,7 @@ import { ProblemManagementComponent } from './features/admin/problem-management/
 import { TestcaseManagementComponent } from './features/admin/testcase-management/testcase-management';
 import { ReportManagementComponent } from './features/admin/report-management/report-management';
 import { ModerationQueueComponent } from './features/admin/moderation-queue/moderation-queue';
+import { ModerationLogComponent } from './features/admin/moderation-log/moderation-log';
 import { RoleManagementComponent } from './features/admin/role-management/role-management';
 import { SettingsComponent } from './features/settings/settings';
 import { DashboardComponent } from './features/dashboard/dashboard';
@@ -34,6 +34,7 @@ export const routes: Routes = [
     path: '',
     component: AdminLayoutComponent,
     children: [
+      { path: '', pathMatch: 'full', redirectTo: '/landing' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
       { path: 'admin/quiz', component: QuizManagementComponent, canActivate: [permissionGuard('quiz:edit')] },
@@ -42,18 +43,20 @@ export const routes: Routes = [
       { path: 'admin/tags', component: TagManagementComponent, canActivate: [permissionGuard('tag:edit')] },
       { path: 'admin/posts', component: PostManagementComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
       { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
-      { path: 'admin/users', component: UserManagementComponent, canActivate: [permissionGuard('user:view_all')] },
+      // Legacy compatibility: the standalone user list now lives inside the unified
+      // Phân quyền screen as the "Danh sách người dùng" tab (plan section 7.1).
+      { path: 'admin/users', pathMatch: 'full', redirectTo: 'admin/roles?tab=users' },
       { path: 'admin/users/:id', component: AdminUserProfileComponent, canActivate: [permissionGuard('user:view_all')] },
       { path: 'admin/moderators', component: ModeratorManagementComponent, canActivate: [adminGuard] },
-      { path: 'admin/moderator-dashboard', component: ModeratorDashboardComponent, canActivate: [permissionGuard(['post:review', 'post:hide_any', 'post:delete_any', 'post:edit_any', 'problem:review', 'quiz:review', 'problem_bank:review', 'audit:view'])] },
+      { path: 'admin/moderator-dashboard', component: ModeratorDashboardComponent, canActivate: [permissionGuard(['post:review', 'post:hide_any', 'post:delete_any', 'post:edit_any', 'problem:review', 'quiz:review', 'problem_bank:review', 'roadmap:review', 'audit:view'])] },
       { path: 'admin/audit-logs', component: AuditLogsComponent, canActivate: [permissionGuard('audit:view')] },
-      { path: 'admin/problems', component: ProblemManagementComponent, canActivate: [permissionGuard('quiz:edit')] },
-      { path: 'admin/problems/:id/test-cases', component: TestcaseManagementComponent, canActivate: [permissionGuard('quiz:edit')] },
+      { path: 'admin/problems', component: ProblemManagementComponent, canActivate: [permissionGuard(['problem:create', 'problem:edit'])] },
+      { path: 'admin/problems/:id/test-cases', component: TestcaseManagementComponent, canActivate: [permissionGuard(['problem:create', 'problem:edit'])] },
       { path: 'admin/reports', component: ReportManagementComponent, canActivate: [permissionGuard(['post:hide_any', 'post:delete_any'])] },
-      { path: 'admin/moderation', component: ModerationQueueComponent, canActivate: [permissionGuard(['post:review', 'problem:review', 'quiz:review', 'problem_bank:review'])] },
-      { path: 'admin/roles', component: RoleManagementComponent, canActivate: [permissionGuard('role:view')] },
+      { path: 'admin/moderation', component: ModerationQueueComponent, canActivate: [permissionGuard(['post:review', 'problem:review', 'quiz:review', 'problem_bank:review', 'roadmap:review'])] },
+      { path: 'admin/moderation-log', component: ModerationLogComponent, canActivate: [permissionGuard('audit:view')] },
+      { path: 'admin/roles', component: RoleManagementComponent, canActivate: [permissionGuard(['role:view', 'user:view_all'])] },
       { path: 'settings', component: SettingsComponent, canActivate: [adminGuard] },
     ]
   },
-  { path: '', redirectTo: 'landing', pathMatch: 'full' }
 ];

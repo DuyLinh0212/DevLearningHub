@@ -25,6 +25,8 @@ export interface ProblemBankSummary {
   myRating: number | null;
   createdAt: string;
   updatedAt: string | null;
+  reviewStatus?: string;
+  reviewNote?: string | null;
 }
 
 export interface ProblemBankProblemItem {

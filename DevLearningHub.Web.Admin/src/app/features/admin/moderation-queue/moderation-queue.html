@@ -3,6 +3,9 @@
     <h2>Hàng chờ kiểm duyệt</h2>
     <p class="header-subtitle">Duyệt hoặc từ chối nội dung do người dùng tạo</p>
   </div>
+  <a class="btn-view-log" routerLink="/admin/moderation-log">
+    <i class="bi bi-journal-text"></i> Nhật ký kiểm duyệt
+  </a>
 </header>
 
 <div class="mq-body">
@@ -47,7 +50,7 @@
     } @else {
       <div class="mq-list">
         @for (item of items; track item.id) {
-          <div class="mq-card">
+          <div class="mq-card mq-card-clickable" (click)="viewDetail(item)">
             <div class="mq-card-main">
               <div class="mq-card-title">{{ item.title || '(Không có tiêu đề)' }}</div>
               <div class="mq-card-meta">
@@ -64,7 +67,10 @@
             </div>
 
             @if (statusFilter === 'pending' && activeTabCanReview) {
-              <div class="mq-card-actions">
+              <div class="mq-card-actions" (click)="$event.stopPropagation()">
+                <button class="btn-view" (click)="viewDetail(item)">
+                  <i class="bi bi-eye"></i> Xem chi tiết
+                </button>
                 <button class="btn-approve" (click)="openReview(item, 'approve')">
                   <i class="bi bi-check-lg"></i> Duyệt
                 </button>
@@ -103,6 +109,102 @@
           {{ submitting ? 'Đang xử lý...' : (reviewAction === 'approve' ? 'Xác nhận duyệt' : 'Xác nhận từ chối') }}
         </button>
       </div>
+    </div>
+  </div>
+}
+
+<!-- Content detail modal -->
+@if (detailTarget) {
+  <div class="mq-modal-overlay" (click)="closeDetail()">
+    <div class="mq-modal mq-detail-modal" (click)="$event.stopPropagation()">
+      <div class="mq-detail-header">
+        <h3>{{ detailTarget.title || '(Không có tiêu đề)' }}</h3>
+        <button class="btn-close-detail" (click)="closeDetail()"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="mq-card-meta">
+        <span class="mq-badge" [class]="'status-' + detailTarget.reviewStatus">{{ statusLabel(detailTarget.reviewStatus) }}</span>
+        <span class="mq-author"><i class="bi bi-person"></i> {{ detailTarget.authorFullName || detailTarget.authorUsername || 'Không rõ' }}</span>
+        <span class="mq-date"><i class="bi bi-clock"></i> {{ formatDate(detailTarget.createdAt) }}</span>
+      </div>
+
+      <div class="mq-detail-body">
+        @if (detailLoading) {
+          <div class="loading-state"><i class="bi bi-arrow-repeat spin"></i><span>Đang tải nội dung...</span></div>
+        } @else if (detailError) {
+          <div class="empty-pane"><i class="bi bi-exclamation-triangle"></i><span>{{ detailError }}</span></div>
+        } @else if (detailContent) {
+          <!-- Post -->
+          @if (detailTarget.type === 'post') {
+            <p class="mq-detail-text">{{ detailContent.bodyMarkdown }}</p>
+            @if (detailContent.imageUrl) {
+              <img class="mq-detail-image" [src]="detailContent.imageUrl" alt="" />
+            }
+          }
+          <!-- Quiz set -->
+          @if (detailTarget.type === 'quiz_set') {
+            @if (detailContent.description) { <p class="mq-detail-text">{{ detailContent.description }}</p> }
+            <div class="mq-detail-list">
+              @for (q of detailContent.questions; track q.questionId; let i = $index) {
+                <div class="mq-detail-item">
+                  <div class="mq-detail-item-title">{{ i + 1 }}. {{ q.content }}</div>
+                  <ul class="mq-detail-options">
+                    @for (o of q.options; track o.id) {
+                      <li [class.correct]="o.isCorrect">{{ o.content }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+          <!-- Problem (code) -->
+          @if (detailTarget.type === 'problem') {
+            <p class="mq-detail-text">{{ detailContent.description }}</p>
+            <div class="mq-detail-list">
+              @for (tc of detailContent.sampleTestCases; track tc.id) {
+                <div class="mq-detail-item">
+                  <div class="mq-detail-item-title">Input</div>
+                  <pre class="mq-detail-code">{{ tc.input }}</pre>
+                  <div class="mq-detail-item-title">Expected output</div>
+                  <pre class="mq-detail-code">{{ tc.expectedOutput }}</pre>
+                </div>
+              }
+            </div>
+          }
+          <!-- Problem bank -->
+          @if (detailTarget.type === 'problem_bank') {
+            @if (detailContent.description) { <p class="mq-detail-text">{{ detailContent.description }}</p> }
+            <div class="mq-detail-list">
+              @for (p of detailContent.problems; track p.problemId) {
+                <div class="mq-detail-item"><i class="bi bi-cpu"></i> {{ p.title }} <span class="mq-detail-tag">{{ p.difficulty }}</span></div>
+              }
+            </div>
+          }
+          <!-- Roadmap -->
+          @if (detailTarget.type === 'roadmap') {
+            @if (detailContent.description) { <p class="mq-detail-text">{{ detailContent.description }}</p> }
+            <div class="mq-detail-list">
+              @for (it of detailContent.items; track it.id) {
+                <div class="mq-detail-item"><i class="bi bi-signpost-split"></i> {{ it.title }} <span class="mq-detail-tag">{{ it.itemType }}</span></div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      @if (detailTarget.reviewNote) {
+        <div class="mq-note"><i class="bi bi-chat-left-text"></i> {{ detailTarget.reviewNote }}</div>
+      }
+
+      @if (statusFilter === 'pending' && activeTabCanReview) {
+        <div class="mq-modal-actions">
+          <button class="btn-reject" (click)="openReview(detailTarget, 'reject')">
+            <i class="bi bi-x-lg"></i> Từ chối
+          </button>
+          <button class="btn-approve" (click)="openReview(detailTarget, 'approve')">
+            <i class="bi bi-check-lg"></i> Duyệt
+          </button>
+        </div>
+      }
     </div>
   </div>
 }

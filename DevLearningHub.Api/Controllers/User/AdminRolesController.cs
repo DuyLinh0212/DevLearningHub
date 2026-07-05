@@ -43,7 +43,8 @@ public class AdminRolesController : ControllerBase
             .OrderBy(r => r.Name)
             .ToListAsync();
 
-        return Ok(ApiResponse<List<RoleResponse>>.Ok(roles.Select(MapRole).ToList()));
+        var catalog = await GetPermissionCatalogAsync();
+        return Ok(ApiResponse<List<RoleResponse>>.Ok(roles.Select(r => MapRole(r, catalog)).ToList()));
     }
 
     [HttpGet("{id:guid}")]
@@ -57,9 +58,13 @@ public class AdminRolesController : ControllerBase
             .Include(r => r.UserRoles)
             .FirstOrDefaultAsync(r => r.Id == id);
 
-        return role == null
-            ? NotFound(ApiResponse<RoleResponse>.Fail("Role not found."))
-            : Ok(ApiResponse<RoleResponse>.Ok(MapRole(role)));
+        if (role == null)
+        {
+            return NotFound(ApiResponse<RoleResponse>.Fail("Role not found."));
+        }
+
+        var catalog = await GetPermissionCatalogAsync();
+        return Ok(ApiResponse<RoleResponse>.Ok(MapRole(role, catalog)));
     }
 
     [HttpPost]
@@ -287,11 +292,26 @@ public class AdminRolesController : ControllerBase
             .ThenInclude(rp => rp.Permission)
             .Include(r => r.UserRoles)
             .FirstAsync(r => r.Id == id);
-        return MapRole(role);
+        var catalog = await GetPermissionCatalogAsync();
+        return MapRole(role, catalog);
     }
 
-    private static RoleResponse MapRole(Role role)
+    // Full permission catalog, used to expand Admin's effective permissions.
+    private async Task<List<string>> GetPermissionCatalogAsync()
     {
+        return await _db.Permissions
+            .AsNoTracking()
+            .Select(p => p.Name)
+            .ToListAsync();
+    }
+
+    private static RoleResponse MapRole(Role role, IReadOnlyCollection<string> catalog)
+    {
+        var rawPermissions = role.RolePermissions
+            .Select(rp => rp.Permission.Name)
+            .OrderBy(p => p)
+            .ToList();
+
         return new RoleResponse
         {
             Id = role.Id,
@@ -302,7 +322,36 @@ public class AdminRolesController : ControllerBase
             CreatedAt = role.CreatedAt,
             UpdatedAt = role.UpdatedAt,
             UserCount = role.UserRoles.Count,
-            Permissions = role.RolePermissions.Select(rp => rp.Permission.Name).OrderBy(p => p).ToList()
+            Permissions = rawPermissions,
+            EffectivePermissions = ComputeEffectivePermissions(role.Name, rawPermissions, catalog)
         };
+    }
+
+    // Mirrors PermissionService role-level rules so the admin matrix renders what a
+    // role actually has in force: Admin = full catalog + full_control; User = raw + baseline.
+    private static List<string> ComputeEffectivePermissions(
+        string roleName,
+        IEnumerable<string> rawPermissions,
+        IReadOnlyCollection<string> catalog)
+    {
+        var effective = new HashSet<string>(rawPermissions, StringComparer.OrdinalIgnoreCase);
+
+        if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var permission in catalog)
+            {
+                effective.Add(permission);
+            }
+            effective.Add(ClaimsPrincipalExtensions.FullControlPermission);
+        }
+        else if (string.Equals(roleName, "User", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var permission in PermissionService.BaselineUserPermissions)
+            {
+                effective.Add(permission);
+            }
+        }
+
+        return effective.OrderBy(p => p).ToList();
     }
 }

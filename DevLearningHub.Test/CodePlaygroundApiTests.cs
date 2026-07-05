@@ -82,6 +82,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
             Description = "Cho 2 số nguyên A và B. Tính A + B",
             Difficulty = "easy",
             IsActive = true,
+            ReviewStatus = "approved",
             CreatedAt = DateTime.Now
         };
         db.Problems.Add(problem);
@@ -293,6 +294,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                 Title = "Private bank",
                 Description = "Owner private bank",
                 IsPublic = false,
+                ReviewStatus = "pending",
                 TopicId = topicId,
                 CreatedAt = DateTime.Now
             });
@@ -306,6 +308,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
                 Description = "Description",
                 Difficulty = "easy",
                 IsActive = true,
+                ReviewStatus = "approved",
                 CreatedAt = DateTime.Now
             });
 

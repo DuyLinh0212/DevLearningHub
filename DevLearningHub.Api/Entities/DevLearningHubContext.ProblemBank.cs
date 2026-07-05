@@ -19,6 +19,8 @@ public partial class DevLearningHubContext
 
     public virtual DbSet<UserRoadmap> UserRoadmaps { get; set; } = null!;
 
+    public virtual DbSet<UserRoadmapItemCompletion> UserRoadmapItemCompletions { get; set; } = null!;
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProblemBank>(entity =>
@@ -40,7 +42,7 @@ public partial class DevLearningHubContext
                 .HasColumnName("is_public");
             entity.Property(e => e.ReviewStatus)
                 .HasMaxLength(20)
-                .HasDefaultValue("approved")
+                .HasDefaultValue("pending")
                 .HasColumnName("review_status");
             entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
@@ -148,7 +150,7 @@ public partial class DevLearningHubContext
         {
             entity.Property(e => e.ReviewStatus)
                 .HasMaxLength(20)
-                .HasDefaultValue("approved")
+                .HasDefaultValue("pending")
                 .HasColumnName("review_status");
             entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
@@ -165,7 +167,7 @@ public partial class DevLearningHubContext
         {
             entity.Property(e => e.ReviewStatus)
                 .HasMaxLength(20)
-                .HasDefaultValue("approved")
+                .HasDefaultValue("pending")
                 .HasColumnName("review_status");
             entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
@@ -182,7 +184,7 @@ public partial class DevLearningHubContext
         {
             entity.Property(e => e.ReviewStatus)
                 .HasMaxLength(20)
-                .HasDefaultValue("approved")
+                .HasDefaultValue("pending")
                 .HasColumnName("review_status");
             entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
@@ -193,6 +195,37 @@ public partial class DevLearningHubContext
             entity.HasOne(d => d.Reviewer).WithMany()
                 .HasForeignKey(d => d.ReviewedBy)
                 .HasConstraintName("FK_quiz_sets_reviewer");
+        });
+
+        modelBuilder.Entity<Roadmap>(entity =>
+        {
+            entity.HasIndex(e => e.CreatedBy, "idx_roadmaps_creator");
+
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.IsPublic)
+                .HasDefaultValue(true)
+                .HasColumnName("is_public");
+            entity.Property(e => e.ReviewStatus)
+                .HasMaxLength(20)
+                .HasDefaultValue("pending")
+                .HasColumnName("review_status");
+            entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
+            entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.ReviewNote)
+                .HasMaxLength(500)
+                .HasColumnName("review_note");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany()
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_roadmaps_creator");
+
+            entity.HasOne(d => d.Reviewer).WithMany()
+                .HasForeignKey(d => d.ReviewedBy)
+                .HasConstraintName("FK_roadmaps_reviewer");
         });
 
         modelBuilder.Entity<RoadmapItem>(entity =>
@@ -220,6 +253,7 @@ public partial class DevLearningHubContext
             entity.Property(e => e.IsRequired)
                 .HasDefaultValue(true)
                 .HasColumnName("is_required");
+            entity.Property(e => e.PassThreshold).HasColumnName("pass_threshold");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnName("created_at");
@@ -266,6 +300,27 @@ public partial class DevLearningHubContext
             entity.HasOne(d => d.Roadmap).WithMany(p => p.UserRoadmaps)
                 .HasForeignKey(d => d.RoadmapId)
                 .HasConstraintName("FK_user_roadmaps_roadmap");
+        });
+
+        modelBuilder.Entity<UserRoadmapItemCompletion>(entity =>
+        {
+            entity.ToTable("user_roadmap_item_completions");
+
+            entity.HasKey(e => new { e.UserId, e.RoadmapItemId });
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RoadmapItemId).HasColumnName("roadmap_item_id");
+            entity.Property(e => e.CompletedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("completed_at");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_user_roadmap_item_completions_user");
+
+            entity.HasOne(d => d.RoadmapItem).WithMany()
+                .HasForeignKey(d => d.RoadmapItemId)
+                .HasConstraintName("FK_user_roadmap_item_completions_item");
         });
     }
 }

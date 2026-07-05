@@ -13,6 +13,8 @@ export interface ProblemSummary {
   createdAt: string;
   testCaseCount: number;
   tags: string[];
+  reviewStatus?: string;
+  reviewNote?: string | null;
 }
 
 export interface PublicTestCase {
@@ -93,8 +95,12 @@ export interface SubmissionDetail extends SubmissionSummary {
 export class CodeService {
   private http = inject(HttpClient);
 
-  getProblems(): Observable<ProblemSummary[]> {
-    return this.http.get<ProblemSummary[]>('/api/problems');
+  getProblems(options?: { mine?: boolean }): Observable<ProblemSummary[]> {
+    const params: Record<string, string> = {};
+    if (options?.mine) {
+      params['mine'] = 'true';
+    }
+    return this.http.get<ProblemSummary[]>('/api/problems', { params });
   }
 
   getProblem(id: string): Observable<ProblemDetail> {

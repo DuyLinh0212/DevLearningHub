@@ -1,0 +1,104 @@
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/admin/moderation">Kiểm duyệt</a>
+    <i class="bi bi-chevron-right" style="font-size: 0.72rem; margin: 0 4px; color: var(--text-muted-dark);"></i>
+    <span>Nhật ký kiểm duyệt</span>
+  </div>
+
+  <div class="admin-header-actions" style="margin-left: auto;">
+    <button class="btn-admin-act" (click)="loadLogs()">
+      <i class="bi bi-arrow-clockwise"></i> Làm mới
+    </button>
+  </div>
+</header>
+
+<div class="dashboard-scroll-body">
+
+  <div class="post-filter-bar">
+    <select [(ngModel)]="filterType" (change)="onFilterChange()">
+      <option value="">Tất cả loại nội dung</option>
+      <option value="post">Bài viết</option>
+      <option value="problem">Bài code</option>
+      <option value="problem_bank">Kho bài tập</option>
+      <option value="quiz_set">Bộ quiz</option>
+      <option value="roadmap">Lộ trình</option>
+    </select>
+    <select [(ngModel)]="filterAction" (change)="onFilterChange()">
+      <option value="">Tất cả hành động</option>
+      <option value="approve">Duyệt</option>
+      <option value="reject">Từ chối</option>
+    </select>
+    <button class="audit-reset-btn" (click)="resetFilters()" title="Xóa bộ lọc">
+      <i class="bi bi-x-circle"></i> Xóa lọc
+    </button>
+    <span class="post-count-info">{{ logs.length }} / {{ totalCount }} bản ghi</span>
+  </div>
+
+  @if (isLoading) {
+    <div class="empty-state-user">
+      <i class="bi bi-arrow-repeat"></i>
+      <h3>Đang tải nhật ký...</h3>
+    </div>
+  } @else if (loadError) {
+    <div class="empty-state-user">
+      <i class="bi bi-shield-lock"></i>
+      <h3>Không thể hiển thị</h3>
+      <p>{{ loadError }}</p>
+    </div>
+  } @else if (logs.length === 0) {
+    <div class="empty-state-user">
+      <i class="bi bi-journal-text"></i>
+      <h3>Không có bản ghi nào</h3>
+      <p>Không có nhật ký phù hợp với điều kiện lọc hiện tại.</p>
+    </div>
+  } @else {
+    <div class="post-table-wrap">
+      <table class="post-table audit-table">
+        <thead>
+          <tr>
+            <th>Thời điểm</th>
+            <th>Người duyệt</th>
+            <th>Loại nội dung</th>
+            <th>Hành động</th>
+            <th>Nội dung</th>
+            <th>Lý do</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of logs; track log.id) {
+            <tr>
+              <td class="audit-time">{{ formatDateTime(log.createdAt) }}</td>
+              <td>
+                <div class="username-txt">{{ log.moderatorFullName || log.moderatorUsername || '—' }}</div>
+                @if (log.moderatorUsername) {
+                  <div class="email-txt">{{ log.moderatorUsername }}</div>
+                }
+              </td>
+              <td><span class="target-badge">{{ typeLabel(log.targetType) }}</span></td>
+              <td>
+                <span class="action-badge" [attr.data-group]="log.action === 'approve' ? 'quiz' : 'post'">{{ actionLabel(log.action) }}</span>
+              </td>
+              <td class="audit-detail">{{ log.targetTitle || '—' }}</td>
+              <td class="audit-detail">{{ log.reason || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPages > 1) {
+        <div class="pagination-row">
+          <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          @for (p of pageNumbers; track p) {
+            <button class="page-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+          }
+          <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <span class="page-info">Trang {{ currentPage }}/{{ totalPages }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

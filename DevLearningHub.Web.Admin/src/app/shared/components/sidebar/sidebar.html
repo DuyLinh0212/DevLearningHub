@@ -3,79 +3,33 @@
     <i class="bi bi-x-lg"></i>
   </button>
 
+  <div class="sidebar-hero">
+    <p class="sidebar-kicker">Trung tâm điều hành</p>
+    <h2>{{ profile.displayName || 'Quản trị viên' }}</h2>
+    <p class="sidebar-meta">{{ profile.email || profile.username || 'Vận hành, kiểm duyệt và hệ thống' }}</p>
+  </div>
+
   <nav class="sidebar-menu" aria-label="Admin navigation">
-    <div class="menu-heading">Điều phối</div>
-    @if (hasRole('Admin')) {
-      <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="menu-item">
-        <i class="bi bi-grid-1x2"></i><span>Tổng quan</span>
-      </a>
+    @for (section of visibleSections; track section.title) {
+      <section class="menu-group">
+        <div class="menu-heading">{{ section.title }}</div>
+        <div class="menu-group-items">
+          @for (item of section.items; track item.path) {
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              class="menu-item">
+              <i [class]="item.icon"></i>
+              <span class="menu-copy">{{ item.name }}</span>
+              @if (badgeValue(item) > 0) {
+                <span class="menu-badge">{{ badgeValue(item) }}</span>
+              }
+            </a>
+          }
+        </div>
+      </section>
     }
-    @if (hasPermission('quiz:edit')) {
-      <a routerLink="/admin/quiz" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-collection"></i><span>Bộ đề</span>
-      </a>
-      <a routerLink="/admin/problems" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-code-slash"></i><span>Bài code</span>
-      </a>
-    }
-    @if (hasPermission('topic:edit')) {
-      <a routerLink="/admin/topics" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-tags"></i><span>Chủ đề</span>
-      </a>
-    }
-
-    @if (hasPermission('roadmap:edit') || hasPermission('roadmap:create') || hasPermission('roadmap:view_progress')) {
-      <a routerLink="/admin/roadmap" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-signpost-split"></i><span>Lộ trình</span>
-      </a>
-    }
-
-    <div class="menu-section-divider"></div>
-    <div class="menu-heading">Cộng đồng</div>
-    @if (hasPermission('tag:edit')) {
-      <a routerLink="/admin/tags" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-tag"></i><span>Tag</span>
-      </a>
-    }
-    @if (hasPermission('post:hide_any') || hasPermission('post:edit_any') || hasPermission('post:delete_any')) {
-      <a routerLink="/admin/posts" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-people"></i><span>Bài viết</span>
-      </a>
-      <a routerLink="/admin/reports" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-flag"></i><span>Báo cáo</span>
-      </a>
-    }
-
-    <div class="menu-section-divider"></div>
-    <div class="menu-heading">Hệ thống</div>
-    @if (hasPermission('user:view_all')) {
-      <a routerLink="/admin/users" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-person-lines-fill"></i><span>Người dùng</span>
-      </a>
-    }
-    @if (hasPermission('role:view')) {
-      <a routerLink="/admin/roles" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-shield-lock"></i><span>Phân quyền</span>
-      </a>
-    }
-    @if (hasRole('Admin')) {
-      <a routerLink="/admin/moderators" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-shield-check"></i><span>Moderator</span>
-      </a>
-    }
-    @if (hasRole('Moderator')) {
-      <a routerLink="/admin/moderator-dashboard" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-speedometer2"></i><span>Moderator</span>
-      </a>
-    }
-    @if (hasPermission('audit:view')) {
-      <a routerLink="/admin/audit-logs" routerLinkActive="active" class="menu-item">
-        <i class="bi bi-terminal"></i><span>Nhật ký</span>
-      </a>
-    }
-    <a routerLink="/settings" routerLinkActive="active" class="menu-item">
-      <i class="bi bi-gear"></i><span>Cài đặt</span>
-    </a>
   </nav>
 </aside>
 

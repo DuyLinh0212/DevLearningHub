@@ -1,16 +1,23 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   RolesService, RoleItem, PermissionModule, PermissionItem
 } from '../../../core/services/roles.service';
+import { UserManagementComponent } from '../user-management/user-management';
+import {
+  buildPermissionMatrix, PermissionMatrixColumn, PermissionMatrixRow
+} from './permission-matrix';
+
+type PhanQuyenTab = 'groups' | 'users';
 
 @Component({
   selector: 'app-role-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UserManagementComponent],
   templateUrl: './role-management.html',
   styleUrl: './role-management.css'
 })
@@ -18,57 +25,86 @@ export class RoleManagementComponent implements OnInit {
   private rolesSvc = inject(RolesService);
   private auth = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   public mobileMenu = inject(MobileMenuService);
+
+  // ===== Tabs =====
+  activeTab: PhanQuyenTab = 'groups';
 
   isLoading = false;
   roles: RoleItem[] = [];
   permissionCatalog: PermissionModule[] = [];
 
-  // Permissions of current user
+  // Permission matrix view model (built once from the catalog).
+  matrixColumns: PermissionMatrixColumn[] = [];
+  matrixRows: PermissionMatrixRow[] = [];
+
+  // Current user's own permissions (drives action visibility).
   canCreate = false;
   canEdit = false;
   canDelete = false;
   canAssignPerm = false;
-  canAssignRole = false;
+  canViewUsers = false;
 
-  // Role form modal
+  // ===== Left column: role selection =====
+  selectedRole: RoleItem | null = null;
+  // Working set of permissions for the selected role (edited via the matrix).
+  selectedPermissions = new Set<string>();
+  isSavingPermissions = false;
+
+  // ===== Role create/edit modal =====
   isRoleModalOpen = false;
   isEditing = false;
   editingRoleId = '';
   roleForm = { name: '', description: '', isActive: true };
 
-  // Permission assignment modal
-  isPermModalOpen = false;
-  permRoleId = '';
-  permRoleName = '';
-  selectedPermissions: Set<string> = new Set();
-
-  // Flat permissions list for display
-  allPermissions: PermissionItem[] = [];
-
-  // Confirm delete
+  // ===== Delete confirmation =====
   deletingRole: RoleItem | null = null;
 
   ngOnInit() {
     this.resolveOwnPermissions();
-    this.loadRoles();
+
+    // Sync the active tab from the query param (?tab=groups|users), defaulting to groups.
+    this.route.queryParamMap.subscribe(params => {
+      const tab = params.get('tab');
+      this.activeTab = tab === 'users' ? 'users' : 'groups';
+      this.cdr.detectChanges();
+    });
+
     this.loadPermissionCatalog();
+    this.loadRoles();
   }
 
   private resolveOwnPermissions() {
-    // Use sync hasPermission which reads JWT — admin role always returns true
     this.canCreate = this.auth.hasPermission('role:create');
     this.canEdit = this.auth.hasPermission('role:edit');
     this.canDelete = this.auth.hasPermission('role:delete');
     this.canAssignPerm = this.auth.hasPermission('role:assign_permission');
-    this.canAssignRole = this.auth.hasPermission('user:edit_role');
+    this.canViewUsers = this.auth.hasPermission('user:view_all');
   }
 
+  // ===== Tab switching (keeps the URL in sync) =====
+  switchTab(tab: PhanQuyenTab) {
+    if (this.activeTab === tab) return;
+    this.activeTab = tab;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  // ===== Data loading =====
   loadRoles() {
     this.isLoading = true;
     this.rolesSvc.getRoles().subscribe({
       next: (data) => {
         this.roles = data;
+        // Preserve the current selection across reloads, else select the first role.
+        const previouslySelected = this.selectedRole?.id;
+        const next = data.find(r => r.id === previouslySelected) ?? data[0] ?? null;
+        this.selectRole(next);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -76,6 +112,7 @@ export class RoleManagementComponent implements OnInit {
         console.error('Lỗi tải roles:', err);
         this.isLoading = false;
         this.roles = [];
+        this.selectedRole = null;
         this.cdr.detectChanges();
       }
     });
@@ -85,15 +122,75 @@ export class RoleManagementComponent implements OnInit {
     this.rolesSvc.getPermissionCatalog().subscribe({
       next: (modules) => {
         this.permissionCatalog = modules;
-        this.allPermissions = modules.flatMap(m => m.permissions);
+        const matrix = buildPermissionMatrix(modules);
+        this.matrixColumns = matrix.columns;
+        this.matrixRows = matrix.rows;
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Lỗi tải permission catalog:', err)
     });
   }
 
-  // ===== Role CRUD =====
+  // ===== Left column: role selection =====
+  selectRole(role: RoleItem | null) {
+    this.selectedRole = role;
+    this.selectedPermissions = new Set(role?.permissions ?? []);
+    this.cdr.detectChanges();
+  }
 
+  // ===== Matrix editing =====
+
+  // The matrix is read-only for system roles whose permissions are computed (Admin/User),
+  // or when the user lacks role:assign_permission.
+  get isMatrixEditable(): boolean {
+    if (!this.selectedRole || !this.canAssignPerm) return false;
+    // Admin holds the full catalog implicitly; editing its rows is meaningless.
+    return !this.isComputedRole(this.selectedRole);
+  }
+
+  isComputedRole(role: RoleItem): boolean {
+    const name = role.name.toLowerCase();
+    return name === 'admin' || name === 'user';
+  }
+
+  // Whether a cell should render as checked. For computed roles we reflect the
+  // effective permissions returned by the API so the matrix shows reality.
+  isCellChecked(permission: PermissionItem | null): boolean {
+    if (!permission) return false;
+    if (this.selectedRole && this.isComputedRole(this.selectedRole)) {
+      const effective = this.selectedRole.effectivePermissions ?? this.selectedRole.permissions;
+      return effective.some(p => p.toLowerCase() === permission.name.toLowerCase());
+    }
+    return this.selectedPermissions.has(permission.name);
+  }
+
+  toggleCell(permission: PermissionItem | null) {
+    if (!permission || !this.isMatrixEditable) return;
+    if (this.selectedPermissions.has(permission.name)) {
+      this.selectedPermissions.delete(permission.name);
+    } else {
+      this.selectedPermissions.add(permission.name);
+    }
+  }
+
+  savePermissions() {
+    if (!this.selectedRole || !this.isMatrixEditable) return;
+    this.isSavingPermissions = true;
+    this.rolesSvc.setRolePermissions(this.selectedRole.id, {
+      permissions: [...this.selectedPermissions]
+    }).subscribe({
+      next: () => {
+        this.isSavingPermissions = false;
+        this.loadRoles();
+      },
+      error: (err) => {
+        this.isSavingPermissions = false;
+        alert(this.extractError(err));
+      }
+    });
+  }
+
+  // ===== Role CRUD =====
   openCreateModal() {
     this.isEditing = false;
     this.editingRoleId = '';
@@ -138,51 +235,27 @@ export class RoleManagementComponent implements OnInit {
   }
 
   confirmDelete(role: RoleItem) {
-    if (role.isSystem) { alert('Không thể xóa role hệ thống.'); return; }
-    if (role.userCount > 0) { alert(`Role "${role.name}" đang được gán cho ${role.userCount} người dùng. Gỡ họ khỏi role này trước khi xóa.`); return; }
+    if (role.isSystem) { alert('Không thể xóa vai trò hệ thống.'); return; }
+    if (role.userCount > 0) { alert(`Vai trò "${role.name}" đang được gán cho ${role.userCount} người dùng. Gỡ họ khỏi vai trò này trước khi xóa.`); return; }
     this.deletingRole = role;
   }
 
   executeDelete() {
     if (!this.deletingRole) return;
-    this.rolesSvc.deleteRole(this.deletingRole.id).subscribe({
-      next: () => { this.deletingRole = null; this.loadRoles(); },
+    const deletedId = this.deletingRole.id;
+    this.rolesSvc.deleteRole(deletedId).subscribe({
+      next: () => {
+        this.deletingRole = null;
+        if (this.selectedRole?.id === deletedId) {
+          this.selectedRole = null;
+        }
+        this.loadRoles();
+      },
       error: (err) => { alert(this.extractError(err)); this.deletingRole = null; }
     });
   }
 
-  // ===== Permissions =====
-
-  openPermModal(role: RoleItem) {
-    this.permRoleId = role.id;
-    this.permRoleName = role.name;
-    this.selectedPermissions = new Set(role.permissions);
-    this.isPermModalOpen = true;
-  }
-
-  closePermModal() {
-    this.isPermModalOpen = false;
-  }
-
-  togglePermission(name: string) {
-    if (this.selectedPermissions.has(name)) {
-      this.selectedPermissions.delete(name);
-    } else {
-      this.selectedPermissions.add(name);
-    }
-  }
-
-  savePermissions() {
-    this.rolesSvc.setRolePermissions(this.permRoleId, {
-      permissions: [...this.selectedPermissions]
-    }).subscribe({
-      next: () => { this.loadRoles(); this.closePermModal(); },
-      error: (err) => alert(this.extractError(err))
-    });
-  }
-
   // ===== Helpers =====
-
   countPermissions(role: RoleItem): number {
     return role.permissions?.length ?? 0;
   }

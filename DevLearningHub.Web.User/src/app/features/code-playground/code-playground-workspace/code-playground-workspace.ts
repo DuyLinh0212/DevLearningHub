@@ -6,6 +6,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CodeService, ProblemDetail, SubmissionSummary, SubmissionDetail } from '../../../core/services/code.service';
 import { ForumService } from '../../../core/services/forum.service';
 import { ReportService } from '../../../core/services/report.service';
+import { RoadmapService } from '../../../core/services/roadmap.service';
 
 interface LanguageOption {
   id: number;
@@ -67,6 +68,10 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private forumService = inject(ForumService);
   private reportService = inject(ReportService);
+  private roadmapService = inject(RoadmapService);
+
+  private roadmapId: string | null = null;
+  private roadmapItemId: string | null = null;
 
   problemId = '';
   problem: ProblemDetail | null = null;
@@ -203,6 +208,8 @@ int main() {
 
   ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('id') || '';
+    this.roadmapId = this.route.snapshot.queryParamMap.get('roadmapId');
+    this.roadmapItemId = this.route.snapshot.queryParamMap.get('roadmapItemId');
     if (this.problemId) {
       this.loadProblem();
       this.loadSubmissions();
@@ -416,9 +423,16 @@ int main() {
       next: (res) => {
         this.submissionResult = res;
         this.isExecuting = false;
-        
+
         // Reload submission list
         this.loadSubmissions();
+
+        if ((res?.verdict || '').toLowerCase() === 'accepted' && this.roadmapId && this.roadmapItemId) {
+          this.roadmapService.completeItem(this.roadmapId, this.roadmapItemId).subscribe({
+            error: (err) => console.error('Khong the danh dau hoan thanh muc hoc trong lo trinh:', err)
+          });
+        }
+
         this.cdr.detectChanges();
       },
       error: (err) => {

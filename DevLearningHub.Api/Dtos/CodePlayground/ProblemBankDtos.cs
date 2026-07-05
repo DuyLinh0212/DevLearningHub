@@ -51,6 +51,7 @@ public class ProblemBankResponse
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsPublic { get; set; }
+    public string ReviewStatus { get; set; } = string.Empty;
     public Guid? TopicId { get; set; }
     public string? TopicName { get; set; }
     public ProblemBankUserSummary Creator { get; set; } = new();

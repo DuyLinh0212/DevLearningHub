@@ -17,8 +17,17 @@ export const adminGuard = () => {
         : ['admin', 'moderator'].includes((roleClaim || '').toLowerCase());
 
       if (isAdminOrModerator) return true;
+
+      // Check for admin:access permission (allows non-Admin/Moderator roles to access admin panel)
+      const permClaim = decodedPayload['permission'];
+      const permList: string[] = Array.isArray(permClaim)
+        ? permClaim
+        : (permClaim ? [permClaim] : []);
+      if (permList.some((p: string) => p.toLowerCase() === 'admin:access' || p.toLowerCase() === 'system.full_control')) {
+        return true;
+      }
     } catch (e) {
-      console.error('Lỗi giải mã token trong Guard:', e);
+      console.error('Error decoding token in Guard:', e);
     }
   }
 

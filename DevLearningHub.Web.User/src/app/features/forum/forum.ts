@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../core/services/forum.service';
 import { HttpClient } from '@angular/common/http';
 import { ReportService } from '../../core/services/report.service';
+import { ReviewStatusBadgeComponent } from '../../shared/components/review-status-badge/review-status-badge';
 
 @Component({
   selector: 'app-forum',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, ReviewStatusBadgeComponent],
   templateUrl: './forum.html',
   styleUrl: './forum.css'
 })
@@ -140,10 +141,10 @@ export class ForumComponent implements OnInit, OnDestroy {
     });
   }
 
-  hasPermission(permission: string): boolean {
-    const target = (permission || '').toLowerCase();
-    return this.currentUserPermissions.includes(target)
-      || this.currentUserPermissions.includes('system.full_control');
+  // Ownership-based approach: permission checks are removed from Web.User.
+  // Admin/moderation features are handled by Web.Admin only.
+  isOwner(authorId: string): boolean {
+    return (authorId || '').toString().toLowerCase() === this.currentUserId;
   }
 
   onCreatePostClick() {
@@ -154,11 +155,9 @@ export class ForumComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.hasPermission('post:create') || this.hasPermission('post:edit')) {
-      this.router.navigate(['/forum/create']);
-    } else {
-      alert('Bạn không có quyền tạo bài viết!');
-    }
+    // Ownership-based logic: any logged-in user can create posts post.
+    // Backend will enforce any remaining business rules.
+    this.router.navigate(['/forum/create']);
   }
 
   togglePostMenu(postId: string, event: Event) {

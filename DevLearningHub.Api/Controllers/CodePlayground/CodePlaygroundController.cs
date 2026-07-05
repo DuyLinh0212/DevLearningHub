@@ -142,6 +142,20 @@ public class CodePlaygroundController : ControllerBase
 
         // 7. Lưu tất cả vào Database
         _context.Submissions.Add(submission);
+
+        // Cấp 100 XP cho lượt nộp "accepted" đầu tiên của user với bài này (chống farm điểm khi nộp lại)
+        if (submission.Verdict == "accepted")
+        {
+            var alreadySolved = await _context.Submissions
+                .AnyAsync(s => s.UserId == currentUserId && s.ProblemId == request.ProblemId && s.Verdict == "accepted");
+            if (!alreadySolved)
+            {
+                var user = await _context.Users.FirstAsync(u => u.Id == currentUserId);
+                user.XpPoints += 100;
+                user.UpdatedAt = DateTime.Now;
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         // 8. Trả về kết quả hiển thị nhanh gọn cho Client

@@ -619,38 +619,27 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   canEditPost(): boolean {
-    // Author edits own; anyone with post:edit_any can edit any post.
-    return this.isPostAuthor() || this.hasPermission('post:edit_any');
+    return this.isPostAuthor();
   }
 
   canDeletePost(): boolean {
-    // Author deletes own; anyone with post:delete_any can delete any post.
-    return this.isPostAuthor() || this.hasPermission('post:delete_any');
+    return this.isPostAuthor();
   }
 
   canHidePost(): boolean {
-    // Author can hide/unhide their own post (requires post:hide_own); Moderator/Admin can hide/unhide any post (requires post:hide_any).
-    const isOwner = this.isPostAuthor();
-    return (isOwner && this.hasPermission('post:hide_own')) || this.hasPermission('post:hide_any');
+    return this.isPostAuthor();
   }
 
   canEditComment(comment: any): boolean {
-    // Comment editing stays author-only (the API allows only the author to edit).
-    if (!comment || !this.currentUserId) return false;
-    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    return commentAuthorId === this.currentUserId;
+    return this.isCommentAuthor(comment);
   }
 
   canDeleteComment(comment: any): boolean {
-    if (!comment || !this.currentUserId) return false;
-    const commentAuthorId = (comment.author.id || '').toString().toLowerCase();
-    // Author deletes own; anyone with comment:delete can delete any comment.
-    return commentAuthorId === this.currentUserId || this.hasPermission('comment:delete');
+    return this.isCommentAuthor(comment);
   }
 
-  // Moderators/Admins can hide or unhide any comment (requires comment:hide permission).
   canModerateComment(): boolean {
-    return this.hasPermission('comment:hide');
+    return false;
   }
 
   toggleModerateComment(comment: any) {

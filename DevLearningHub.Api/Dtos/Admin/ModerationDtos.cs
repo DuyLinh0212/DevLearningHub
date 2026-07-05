@@ -21,3 +21,17 @@ public class ReviewContentRequest
     [MaxLength(500)]
     public string? Reason { get; set; }
 }
+
+public class ModerationLogResponse
+{
+    public Guid Id { get; set; }
+    public Guid ModeratorId { get; set; }
+    public string? ModeratorUsername { get; set; }
+    public string? ModeratorFullName { get; set; }
+    public string TargetType { get; set; } = string.Empty;
+    public Guid TargetId { get; set; }
+    public string? TargetTitle { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string? Reason { get; set; }
+    public DateTime CreatedAt { get; set; }
+}

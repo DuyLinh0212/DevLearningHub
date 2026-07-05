@@ -53,4 +53,40 @@ export class RoadmapService {
     map(res => res?.data || res || [])
   );
 }
+
+  addItem(roadmapId: string, data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${roadmapId}/items`, data).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  updateItem(roadmapId: string, itemId: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${roadmapId}/items/${itemId}`, data).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  removeItem(roadmapId: string, itemId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${roadmapId}/items/${itemId}`).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  startRoadmap(roadmapId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${roadmapId}/start`, {}).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  getMyProgress(roadmapId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${roadmapId}/my-progress`).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  completeItem(roadmapId: string, itemId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${roadmapId}/items/${itemId}/complete`, {}).pipe(
+      map(res => res?.data || res)
+    );
+  }
 }

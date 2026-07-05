@@ -16,7 +16,7 @@ public partial class ProblemBank
 
     public bool IsPublic { get; set; }
 
-    public string ReviewStatus { get; set; } = "approved";
+    public string ReviewStatus { get; set; } = "pending";
 
     public Guid? ReviewedBy { get; set; }
 

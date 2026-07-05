@@ -19,17 +19,20 @@ public class QuizSetsController : ControllerBase
     private readonly IAuditService _audit;
     private readonly IPermissionService _permissions;
     private readonly INotificationService _notifications;
+    private readonly IAutoApprovalPolicy _autoApproval;
 
     public QuizSetsController(
         DevLearningHubContext db,
         IAuditService audit,
         IPermissionService permissions,
-        INotificationService notifications)
+        INotificationService notifications,
+        IAutoApprovalPolicy autoApproval)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
         _notifications = notifications;
+        _autoApproval = autoApproval;
     }
 
     [HttpGet]
@@ -40,27 +43,38 @@ public class QuizSetsController : ControllerBase
         [FromQuery] bool includePrivate = false)
     {
         var query = _db.QuizSets.AsNoTracking();
+        var hasUser = User.TryGetUserId(out var userId);
 
         if (topicId.HasValue)
         {
             query = query.Where(qs => qs.TopicId == topicId.Value);
         }
 
-        if (includePrivate && User.TryGetUserId(out var userId))
+        if (hasUser)
         {
-            // Quiz managers (quiz:edit) see every set; others only public ones plus their own.
             var canManage = await _permissions.HasPermissionAsync(userId, "quiz:edit");
-            if (!canManage)
+            var canReview = await _permissions.HasPermissionAsync(userId, "quiz:review");
+            if (!canManage && !canReview)
             {
-                query = query.Where(qs => qs.IsPublic || qs.CreatedBy == userId);
+                if (includePrivate)
+                {
+                    query = query.Where(qs =>
+                        (qs.IsPublic && qs.ReviewStatus == "approved")
+                        || qs.CreatedBy == userId);
+                }
+                else
+                {
+                    query = query.Where(qs =>
+                        (qs.IsPublic && qs.ReviewStatus == "approved")
+                        || qs.CreatedBy == userId);
+                }
             }
         }
         else
         {
             query = query.Where(qs =>
                 qs.IsPublic &&
-                qs.ReviewStatus != "pending" &&
-                qs.ReviewStatus != "rejected");
+                qs.ReviewStatus == "approved");
         }
 
         var quizSets = await query
@@ -77,6 +91,9 @@ public class QuizSetsController : ControllerBase
                 qs.AllowedCopy,
                 qs.TopicId,
                 qs.Level,
+                qs.ExamQuestionCount,
+                qs.ReviewStatus,
+                qs.ReviewNote,
                 QuestionCount = qs.QuizSetQuestions.Count
             })
             .ToListAsync();
@@ -110,7 +127,10 @@ public class QuizSetsController : ControllerBase
                 AllowedCopy = qs.AllowedCopy,
                 TopicId = qs.TopicId,
                 Level = qs.Level,
-                QuestionCount = qs.QuestionCount
+                QuestionCount = qs.QuestionCount,
+                ExamQuestionCount = qs.ExamQuestionCount,
+                ReviewStatus = qs.ReviewStatus,
+                ReviewNote = qs.ReviewNote
             })
             .ToList();
 
@@ -137,10 +157,15 @@ public class QuizSetsController : ControllerBase
 
         var isOwner = User.TryGetUserId(out var userId) && quizSet.CreatedBy == userId;
         var canManageAny = await _permissions.HasPermissionAsync(userId, "quiz:edit");
-        var canManage = isOwner || canManageAny;
+        var canReview = await _permissions.HasPermissionAsync(userId, "quiz:review");
+        var canManage = isOwner || canManageAny || canReview;
         if (!quizSet.IsPublic && !canManage)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Forbidden."));
+        }
+        if (quizSet.ReviewStatus is "pending" or "rejected" && !canManage)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Quiz set is waiting for review."));
         }
 
         var response = new QuizSetDetailResponse
@@ -156,6 +181,9 @@ public class QuizSetsController : ControllerBase
             AllowedCopy = quizSet.AllowedCopy,
             TopicId = quizSet.TopicId,
             Level = quizSet.Level,
+            ExamQuestionCount = quizSet.ExamQuestionCount,
+            ReviewStatus = quizSet.ReviewStatus,
+            ReviewNote = quizSet.ReviewNote,
             Questions = quizSet.QuizSetQuestions
                 .OrderBy(qsq => qsq.OrderIndex)
                 .Select(qsq => new QuizSetQuestionResponse
@@ -227,10 +255,11 @@ public class QuizSetsController : ControllerBase
             Mode = string.IsNullOrWhiteSpace(request.Mode) ? "practice" : request.Mode.Trim(),
             TimeLimitSeconds = request.TimeLimitSeconds,
             IsPublic = request.IsPublic,
-            ReviewStatus = request.IsPublic && !await _permissions.HasPermissionAsync(userId, "quiz:review") ? "pending" : "approved",
+            ReviewStatus = await _autoApproval.EvaluateQuizSetAsync(userId, request.Title, request.Description, request.IsPublic),
             AllowedCopy = request.AllowedCopy,
             TopicId = resolvedTopicId,
             Level = request.Level?.Trim(),
+            ExamQuestionCount = request.ExamQuestionCount > 0 ? request.ExamQuestionCount : null,
             CreatedAt = DateTime.Now
         };
 
@@ -302,6 +331,7 @@ public class QuizSetsController : ControllerBase
             AllowedCopy = false,
             TopicId = source.TopicId,
             Level = source.Level,
+            ExamQuestionCount = source.ExamQuestionCount,
             CreatedAt = now
         };
 
@@ -401,6 +431,8 @@ public class QuizSetsController : ControllerBase
         quizSet.AllowedCopy = request.AllowedCopy;
         quizSet.TopicId = resolvedTopicId;
         quizSet.Level = request.Level?.Trim();
+        quizSet.ExamQuestionCount = request.ExamQuestionCount > 0 ? request.ExamQuestionCount : null;
+        ApplyAutoReview(quizSet, await _autoApproval.EvaluateQuizSetAsync(quizSet.CreatedBy, quizSet.Title, quizSet.Description, quizSet.IsPublic));
 
         if (request.Questions != null)
         {
@@ -570,11 +602,27 @@ public class QuizSetsController : ControllerBase
             var canAccess = false;
             if (User.TryGetUserId(out var userId))
             {
-                canAccess = quizSet.CreatedBy == userId || await _permissions.HasPermissionAsync(userId, "quiz:edit");
+                canAccess = quizSet.CreatedBy == userId
+                    || await _permissions.HasPermissionAsync(userId, "quiz:edit")
+                    || await _permissions.HasPermissionAsync(userId, "quiz:review");
             }
             if (!canAccess)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
+            }
+        }
+        else if (quizSet.ReviewStatus is "pending" or "rejected")
+        {
+            var canAccess = false;
+            if (User.TryGetUserId(out var userId))
+            {
+                canAccess = quizSet.CreatedBy == userId
+                    || await _permissions.HasPermissionAsync(userId, "quiz:edit")
+                    || await _permissions.HasPermissionAsync(userId, "quiz:review");
+            }
+            if (!canAccess)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Quiz set is waiting for review."));
             }
         }
 
@@ -830,7 +878,10 @@ public class QuizSetsController : ControllerBase
             AllowedCopy = quizSet.AllowedCopy,
             TopicId = quizSet.TopicId,
             Level = quizSet.Level,
-            QuestionCount = questionCount
+            QuestionCount = questionCount,
+            ExamQuestionCount = quizSet.ExamQuestionCount,
+            ReviewStatus = quizSet.ReviewStatus,
+            ReviewNote = quizSet.ReviewNote
         };
     }
 
@@ -840,5 +891,16 @@ public class QuizSetsController : ControllerBase
         var hasCreate = await _permissions.HasPermissionAsync(userId, "quiz:create");
         var hasEdit = await _permissions.HasPermissionAsync(userId, "quiz:edit");
         return hasEdit || (isOwner && hasCreate);
+    }
+
+    private static void ApplyAutoReview(QuizSet quizSet, string reviewStatus)
+    {
+        quizSet.ReviewStatus = reviewStatus;
+        if (!string.Equals(reviewStatus, "approved", StringComparison.OrdinalIgnoreCase))
+        {
+            quizSet.ReviewedBy = null;
+            quizSet.ReviewedAt = null;
+            quizSet.ReviewNote = null;
+        }
     }
 }

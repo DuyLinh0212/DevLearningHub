@@ -7,6 +7,7 @@ import { ProblemBankService, ProblemBankSummary, ProblemBankDetail } from '../..
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { ReviewStatusBadgeComponent } from '../../../shared/components/review-status-badge/review-status-badge';
 
 type ProblemFormTestCase = {
   id?: string;
@@ -18,7 +19,7 @@ type ProblemFormTestCase = {
 @Component({
   selector: 'app-code-playground-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReviewStatusBadgeComponent],
   templateUrl: './code-playground-list.html',
   styleUrl: './code-playground-list.css'
 })
@@ -97,8 +98,7 @@ export class CodePlaygroundListComponent implements OnInit {
     const fromTopics = this.topics.map((t: any) => t.name).filter(Boolean);
     return Array.from(new Set([...defaults, ...fromTopics, ...fromProblems].map((x: any) => String(x).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
   }
-  // ---- User permissions ----
-  userPermissions: string[] = [];
+  // ---- User permissions (removed — ownership-based checks only) ----
 
   // ---- Edit problem ----
   isEditMode = false;
@@ -182,12 +182,12 @@ export class CodePlaygroundListComponent implements OnInit {
     });
   }
 
-  hasPermission(perm: string): boolean {
-    return this.userPermissions.includes(perm);
+  canManageBank(bank: ProblemBankSummary | ProblemBankDetail): boolean {
+    return this.isMyBank(bank);
   }
 
   canEditProblem(problem: ProblemSummary): boolean {
-    return this.isMyProblem(problem) || this.hasPermission('problem:edit');
+    return this.isMyProblem(problem);
   }
 
   private loadCurrentUser() {
@@ -196,8 +196,7 @@ export class CodePlaygroundListComponent implements OnInit {
     this.http.get<any>('/api/users/me').subscribe({
       next: (res) => {
         const u = res?.data || res;
-        this.currentUserId = (u?.id || '').toLowerCase();
-        this.userPermissions = Array.isArray(u?.permissions) ? u.permissions : [];
+        this.currentUserId = (u?.id || '').toString().toLowerCase();
         this.cdr.detectChanges();
       },
       error: () => {}
@@ -210,7 +209,7 @@ export class CodePlaygroundListComponent implements OnInit {
     this.isLoading = true;
     this.cdr.detectChanges();
     forkJoin({
-      problems: this.codeService.getProblems(),
+      problems: this.codeService.getProblems({ mine: true }),
       topics: this.http.get<any>('/api/topics'),
       submissions: this.codeService.getSubmissions()
     }).subscribe({
@@ -231,7 +230,7 @@ export class CodePlaygroundListComponent implements OnInit {
       },
       error: () => {
         forkJoin({
-          problems: this.codeService.getProblems(),
+          problems: this.codeService.getProblems({ mine: true }),
           topics: this.http.get<any>('/api/topics')
         }).subscribe({
           next: ({ problems, topics }) => {
@@ -368,6 +367,10 @@ export class CodePlaygroundListComponent implements OnInit {
 
   openAddProblemModal(bankId: string, event: Event) {
     event.stopPropagation();
+    const bank = this.banks.find(b => b.id === bankId);
+    if (bank && !this.canManageBank(bank)) {
+      return;
+    }
     this.addProblemBankId = bankId;
     this.addProblemSearch = '';
     this.showAddProblemModal = true;
@@ -381,9 +384,10 @@ export class CodePlaygroundListComponent implements OnInit {
 
   get filteredAddProblems(): ProblemSummary[] {
     const search = this.addProblemSearch.trim().toLowerCase();
-    const myProblems = this.problems.filter(p => this.isMyProblem(p));
-    if (!search) return myProblems.slice(0, 20);
-    return myProblems.filter(p => p.title.toLowerCase().includes(search)).slice(0, 20);
+    // Ownership-based: only show the user's own problems for adding to banks.
+    const source = this.problems.filter(p => this.isMyProblem(p));
+    if (!search) return source.slice(0, 20);
+    return source.filter(p => p.title.toLowerCase().includes(search)).slice(0, 20);
   }
 
   isProblemInBank(problemId: string): boolean {

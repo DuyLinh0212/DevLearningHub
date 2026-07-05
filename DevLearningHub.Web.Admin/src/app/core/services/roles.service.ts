@@ -13,6 +13,10 @@ export interface RoleItem {
   createdAt: string;
   updatedAt: string;
   permissions: string[];
+  // Permissions the role effectively holds (Admin = full catalog, User = raw + baseline).
+  // Used to render the matrix in read-only state for system roles. May be absent on
+  // older API responses, so treat as optional.
+  effectivePermissions?: string[];
   userCount: number;
 }
 

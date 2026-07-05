@@ -43,11 +43,13 @@ public class ModeratorDashboardAnalyticsResponse
     public int PendingProblems { get; set; }
     public int PendingProblemBanks { get; set; }
     public int PendingQuizSets { get; set; }
+    public int PendingRoadmaps { get; set; }
     public int HiddenPosts { get; set; }
     public int TotalPosts { get; set; }
     public int TotalProblems { get; set; }
     public int TotalQuizSets { get; set; }
     public int TotalProblemBanks { get; set; }
+    public int TotalRoadmaps { get; set; }
     public List<RecentModerationActivityResponse> RecentActivities { get; set; } = new();
 }
 

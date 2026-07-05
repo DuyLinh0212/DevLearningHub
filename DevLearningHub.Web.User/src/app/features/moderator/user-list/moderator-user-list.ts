@@ -116,11 +116,8 @@ export class ModeratorUserListComponent implements OnInit {
   }
 
   toggleBan(user: any) {
-    if (!this.hasPermission('user:ban')) {
-      alert('Bạn không có quyền khóa/mở khóa tài khoản.');
-      return;
-    }
-    const action = user.isLocked ? 'mở khóa' : 'khóa';
+    // Backend authorization will reject if the user lacks permission.
+    const action = user.isLocked ? 'mo khoa' : 'khoa';
     if (!confirm(`Bạn có chắc muốn ${action} tài khoản "${user.username}"?`)) return;
 
     const endpoint = user.isLocked

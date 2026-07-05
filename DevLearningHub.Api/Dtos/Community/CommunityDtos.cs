@@ -83,6 +83,10 @@ public class PostSummaryResponse
 
     public bool IsHidden { get; set; }
 
+    public string ReviewStatus { get; set; } = string.Empty;
+
+    public string? ReviewNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

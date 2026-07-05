@@ -53,7 +53,9 @@ export class QuizCreateComponent implements OnInit {
     passRate: 70,
     shuffle: true,
     instantResult: true,
-    allowedCopy: true
+    allowedCopy: true,
+    examUseAllQuestions: true,
+    examQuestionCount: 10
   };
 
   questions: any[] = [this.createEmptyQuestion()];
@@ -107,6 +109,8 @@ export class QuizCreateComponent implements OnInit {
                 uiLevel = 'medium'; 
               }
 
+              const examQuestionCount = target.examQuestionCount ?? target.ExamQuestionCount ?? null;
+
               this.quizMeta = {
                 title: target.title || '',
                 desc: target.description || target.desc || '',
@@ -116,7 +120,9 @@ export class QuizCreateComponent implements OnInit {
                 passRate: target.passRate || 70,
                 shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
                 instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
-                allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true
+                allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true,
+                examUseAllQuestions: !examQuestionCount,
+                examQuestionCount: examQuestionCount || 10
               };
 
               const rawQuestions = target.questions || [];
@@ -514,7 +520,8 @@ export class QuizCreateComponent implements OnInit {
       topicId: requestedTopicId,
       topic: requestedTopicName,
       level: mappedLevel,
-      allowedCopy: this.quizMeta.allowedCopy ?? true
+      allowedCopy: this.quizMeta.allowedCopy ?? true,
+      examQuestionCount: this.quizMeta.examUseAllQuestions ? null : (this.quizMeta.examQuestionCount || null)
     };
 
     const request$ = this.editingQuizId && !this.editingQuizId.toString().startsWith('custom_')

@@ -1,4 +1,4 @@
-﻿<header class="content-header">
+<header class="content-header">
   <div class="top-breadcrumb">
     <a routerLink="/dashboard">Học tập</a>
     <i class="bi bi-chevron-right breadcrumb-chevron"></i>
@@ -9,12 +9,20 @@
 <div class="dashboard-scroll-body">
   <section class="welcome-section roadmap-hero">
     <div>
-      <h1>Lộ trình học tập đề xuất</h1>
+      <h1>Lộ trình học tập</h1>
       <p>Theo dõi từng chặng học, bộ đề và bài code được sắp xếp theo mục tiêu nghề nghiệp.</p>
     </div>
-    <button class="btn-admin-act blue-outline" (click)="loadUserRoadmaps()" [disabled]="isLoading">
-      <i class="bi bi-arrow-clockwise"></i> Làm mới
-    </button>
+
+    <div class="hero-actions">
+      @if (canCreateRoadmap) {
+        <button class="btn-admin-act blue-solid" type="button" (click)="openRoadmapModal()">
+          <i class="bi bi-plus-circle"></i> Tạo lộ trình
+        </button>
+      }
+      <button class="btn-admin-act blue-outline" type="button" (click)="loadUserRoadmaps()" [disabled]="isLoading">
+        <i class="bi bi-arrow-clockwise"></i> Làm mới
+      </button>
+    </div>
   </section>
 
   @if (loadError) {
@@ -38,19 +46,43 @@
         </div>
       } @else {
         @for (rm of roadmaps; track rm.id) {
-          <button type="button" class="roadmap-selector-card" [class.is-active]="activeRoadmap?.id === rm.id" (click)="selectRoadmap(rm)">
-            <span class="roadmap-selector-badge">{{ getLevelName(rm.level) }}</span>
+          <button
+            type="button"
+            class="roadmap-selector-card"
+            [class.is-active]="activeRoadmap?.id === rm.id"
+            (click)="selectRoadmap(rm)">
+            <div class="roadmap-card-head">
+              <span class="roadmap-selector-badge">{{ getLevelName(rm.level) }}</span>
+              <span class="visibility-chip" [class.is-public]="rm.isPublic" [class.is-private]="!rm.isPublic">
+                {{ getVisibilityLabel(rm) }}
+              </span>
+            </div>
+
             <h3>{{ rm.title }}</h3>
-            <p>{{ rm.targetRole || 'Web Developer' }}</p>
-            <small><i class="bi bi-list-check"></i> {{ getRoadmapItemCount(rm) }} mục học</small>
+            <p>{{ rm.description || 'Lộ trình này đang chờ bổ sung mô tả chi tiết.' }}</p>
+
+            <div class="roadmap-card-meta">
+              <small><i class="bi bi-list-check"></i> {{ getRoadmapItemCount(rm) }} mục học</small>
+              @if (isOwnRoadmap(rm) || canEditRoadmap(rm)) {
+                <span class="status-chip" [ngClass]="getReviewStatusClass(rm.reviewStatus)">
+                  {{ getReviewStatusLabel(rm.reviewStatus) }}
+                </span>
+              }
+            </div>
           </button>
         } @empty {
           <div class="empty-state-placeholder">
             <i class="bi bi-bezier2 empty-placeholder-icon"></i>
             <p>Chưa có lộ trình nào được khởi tạo.</p>
-            <button class="btn-admin-act blue-outline" (click)="loadUserRoadmaps()">
-              <i class="bi bi-arrow-clockwise"></i> Thử lại
-            </button>
+            @if (canCreateRoadmap) {
+              <button class="btn-admin-act blue-solid" type="button" (click)="openRoadmapModal()">
+                <i class="bi bi-plus-circle"></i> Tạo lộ trình đầu tiên
+              </button>
+            } @else {
+              <button class="btn-admin-act blue-outline" type="button" (click)="loadUserRoadmaps()">
+                <i class="bi bi-arrow-clockwise"></i> Thử lại
+              </button>
+            }
           </div>
         }
       }
@@ -59,14 +91,53 @@
     @if (activeRoadmap) {
       <main class="roadmap-tree-main">
         <div class="active-roadmap-intro">
-          <div>
-            <span class="intro-kicker">{{ getLevelName(activeRoadmap.level) }}</span>
+          <div class="active-roadmap-main">
+            <div class="active-roadmap-badges">
+              <span class="intro-kicker">{{ getLevelName(activeRoadmap.level) }}</span>
+              <span class="visibility-chip" [class.is-public]="activeRoadmap.isPublic" [class.is-private]="!activeRoadmap.isPublic">
+                {{ getVisibilityLabel(activeRoadmap) }}
+              </span>
+              @if (isOwnRoadmap(activeRoadmap) || canEditRoadmap(activeRoadmap)) {
+                <span class="status-chip" [ngClass]="getReviewStatusClass(activeRoadmap.reviewStatus)">
+                  {{ getReviewStatusLabel(activeRoadmap.reviewStatus) }}
+                </span>
+              }
+            </div>
+
             <h2>{{ activeRoadmap.title }}</h2>
             <p>{{ activeRoadmap.description || 'Lộ trình này đang được cập nhật nội dung chi tiết.' }}</p>
+
+            @if (activeRoadmap.reviewStatus === 'rejected' && activeRoadmap.reviewNote) {
+              <div class="review-note-banner">
+                <i class="bi bi-info-circle"></i>
+                <span>{{ activeRoadmap.reviewNote }}</span>
+              </div>
+            }
           </div>
-          <div class="intro-stats">
-            <strong>{{ roadmapNodes.length }}</strong>
-            <span>mục học</span>
+
+          <div class="intro-side">
+            <div class="intro-stats">
+              <strong>{{ roadmapNodes.length }}</strong>
+              <span>mục học</span>
+            </div>
+
+            @if (canEditRoadmap(activeRoadmap) || canDeleteRoadmap(activeRoadmap)) {
+              <div class="intro-actions">
+                @if (canEditRoadmap(activeRoadmap)) {
+                  <button class="btn-admin-act blue-solid" type="button" (click)="openItemModal()">
+                    <i class="bi bi-plus-lg"></i> Thêm mục học
+                  </button>
+                  <button class="btn-admin-act blue-outline" type="button" (click)="openRoadmapModal(activeRoadmap)">
+                    <i class="bi bi-pencil-square"></i> Sửa
+                  </button>
+                }
+                @if (canDeleteRoadmap(activeRoadmap)) {
+                  <button class="btn-admin-act danger-outline" type="button" (click)="deleteRoadmap(activeRoadmap, $event)">
+                    <i class="bi bi-trash3"></i> Xóa
+                  </button>
+                }
+              </div>
+            }
           </div>
         </div>
 
@@ -74,7 +145,7 @@
           <div class="roadmap-empty-panel compact">
             <i class="bi bi-inboxes empty-placeholder-icon"></i>
             <h3>Lộ trình chưa có mục học</h3>
-            <p>Admin cần thêm chủ đề, bộ đề hoặc bài code để học viên bắt đầu.</p>
+            <p>Bạn đã tạo được khung lộ trình. Hãy bổ sung chủ đề, bộ đề hoặc bài code ở trang quản trị để hoàn thiện nội dung.</p>
           </div>
         } @else {
           <div class="tree-timeline-track">
@@ -82,7 +153,7 @@
 
             @for (node of roadmapNodes; track node.stepNum) {
               <div class="timeline-node-row">
-                <div class="node-status-circle" [attr.data-status]="node.status">
+                <div class="node-status-circle" [attr.data-status]="node.completed ? 'completed' : node.status">
                   <span>{{ node.stepNum }}</span>
                 </div>
 
@@ -95,17 +166,27 @@
                       @if (node.isRequired) {
                         <span class="required-chip">Bắt buộc</span>
                       }
+                      @if (node.completed) {
+                        <span class="required-chip">Đã hoàn thành</span>
+                      }
                     </div>
                     <h4>{{ node.name }}</h4>
                     <p>{{ node.desc }}</p>
                   </div>
                   <div class="node-action-btn-wrapper">
                     @if (node.status === 'available') {
-                      <a class="btn-admin-act purple-gradient" [routerLink]="node.route">
+                      <a class="btn-admin-act blue-solid" [routerLink]="node.route" [queryParams]="node.queryParams">
                         <i class="bi bi-play-fill"></i> Bắt đầu
                       </a>
+                    } @else if (node.status === 'locked') {
+                      <span class="node-locked-badge"><i class="bi bi-lock-fill"></i> Chưa mở khóa</span>
                     } @else {
                       <span class="node-locked-badge"><i class="bi bi-exclamation-circle"></i> Chưa sẵn sàng</span>
+                    }
+                    @if (activeRoadmap && canEditRoadmap(activeRoadmap) && node.itemId) {
+                      <button class="btn-icon-ghost" type="button" (click)="removeItem(node, $event)" title="Xóa mục học">
+                        <i class="bi bi-trash3"></i>
+                      </button>
                     }
                   </div>
                 </div>
@@ -123,3 +204,149 @@
     }
   </div>
 </div>
+
+@if (isRoadmapModalOpen) {
+  <div class="roadmap-modal-backdrop" (click)="closeRoadmapModal()"></div>
+  <section class="roadmap-modal-sheet" role="dialog" aria-modal="true" aria-label="Trình chỉnh sửa lộ trình">
+    <div class="modal-head">
+      <div>
+        <span class="modal-kicker">{{ isEditingRoadmap ? 'Cập nhật' : 'Khởi tạo' }}</span>
+        <h3>{{ isEditingRoadmap ? 'Chỉnh sửa lộ trình' : 'Tạo lộ trình mới' }}</h3>
+      </div>
+      <button type="button" class="btn-icon-ghost" (click)="closeRoadmapModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <label class="field-block">
+        <span>Tiêu đề</span>
+        <input type="text" [(ngModel)]="roadmapForm.title" maxlength="200" placeholder="Ví dụ: Lộ trình trở thành .NET Backend Developer">
+      </label>
+
+      <label class="field-block">
+        <span>Mô tả</span>
+        <textarea [(ngModel)]="roadmapForm.description" rows="4" maxlength="1000" placeholder="Tóm tắt mục tiêu, đối tượng học và kết quả đầu ra mong muốn."></textarea>
+      </label>
+
+      <div class="field-grid">
+        <label class="field-block">
+          <span>Cấp độ</span>
+          <select [(ngModel)]="roadmapForm.level">
+            <option value="beginner">Cơ bản</option>
+            <option value="intermediate">Trung cấp</option>
+            <option value="advanced">Nâng cao</option>
+          </select>
+        </label>
+
+        <label class="visibility-toggle">
+          <input type="checkbox" [(ngModel)]="roadmapForm.isPublic">
+          <div>
+            <strong>Công khai lộ trình</strong>
+            <p>Nếu bạn bật tùy chọn này, lộ trình có thể vào trạng thái chờ duyệt tùy theo chính sách kiểm duyệt.</p>
+          </div>
+        </label>
+      </div>
+
+      @if (roadmapSaveError) {
+        <div class="roadmap-alert modal-alert">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span>{{ roadmapSaveError }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-admin-act blue-outline" type="button" (click)="closeRoadmapModal()" [disabled]="isSavingRoadmap">
+        Hủy
+      </button>
+      <button class="btn-admin-act blue-solid" type="button" (click)="saveRoadmap()" [disabled]="isSavingRoadmap">
+        <i class="bi" [class.bi-hourglass-split]="isSavingRoadmap" [class.bi-check2-circle]="!isSavingRoadmap"></i>
+        {{ isSavingRoadmap ? 'Đang lưu...' : (isEditingRoadmap ? 'Lưu thay đổi' : 'Tạo lộ trình') }}
+      </button>
+    </div>
+  </section>
+}
+
+@if (isItemModalOpen) {
+  <div class="roadmap-modal-backdrop" (click)="closeItemModal()"></div>
+  <section class="roadmap-modal-sheet" role="dialog" aria-modal="true" aria-label="Thêm mục học">
+    <div class="modal-head">
+      <div>
+        <span class="modal-kicker">Mục học mới</span>
+        <h3>Thêm mục học vào lộ trình</h3>
+      </div>
+      <button type="button" class="btn-icon-ghost" (click)="closeItemModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <label class="field-block">
+        <span>Loại mục học</span>
+        <select [(ngModel)]="itemForm.itemType" (ngModelChange)="onItemTypeChange()">
+          <option value="topic">Chủ đề</option>
+          <option value="quiz_set">Bộ đề</option>
+          <option value="problem">Bài code</option>
+          <option value="problem_bank">Bộ bài code</option>
+        </select>
+      </label>
+
+      <label class="field-block">
+        <span>Nội dung</span>
+        @if (isLoadingItemOptions) {
+          <div class="empty-state-placeholder compact">
+            <i class="bi bi-arrow-repeat empty-placeholder-icon spin"></i>
+            <p>Đang tải danh sách...</p>
+          </div>
+        } @else {
+          <select [ngModel]="selectedItemRefId" (ngModelChange)="setSelectedItemRefId($event)">
+            <option value="" disabled>Chọn nội dung</option>
+            @for (opt of itemOptions; track opt.id) {
+              <option [value]="opt.id">{{ opt.title || opt.name }}</option>
+            }
+          </select>
+        }
+      </label>
+
+      <div class="field-grid">
+        <label class="field-block">
+          <span>Thứ tự (order index)</span>
+          <input type="number" [(ngModel)]="itemForm.orderIndex" min="0">
+        </label>
+
+        @if (itemForm.itemType === 'quiz_set') {
+          <label class="field-block">
+            <span>Ngưỡng đạt (%)</span>
+            <input type="number" [(ngModel)]="itemForm.passThreshold" min="1" max="100">
+          </label>
+        }
+      </div>
+
+      <label class="visibility-toggle">
+        <input type="checkbox" [(ngModel)]="itemForm.isRequired">
+        <div>
+          <strong>Bắt buộc</strong>
+          <p>Mục học bắt buộc sẽ tính vào điều kiện hoàn thành lộ trình.</p>
+        </div>
+      </label>
+
+      @if (itemSaveError) {
+        <div class="roadmap-alert modal-alert">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span>{{ itemSaveError }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-admin-act blue-outline" type="button" (click)="closeItemModal()" [disabled]="isSavingItem">
+        Hủy
+      </button>
+      <button class="btn-admin-act blue-solid" type="button" (click)="saveItem()" [disabled]="isSavingItem">
+        <i class="bi" [class.bi-hourglass-split]="isSavingItem" [class.bi-check2-circle]="!isSavingItem"></i>
+        {{ isSavingItem ? 'Đang lưu...' : 'Thêm mục học' }}
+      </button>
+    </div>
+  </section>
+}

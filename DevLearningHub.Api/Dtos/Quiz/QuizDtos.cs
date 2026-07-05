@@ -195,6 +195,10 @@ public class CreateQuizSetRequest
 	[MaxLength(100)]
 	public string? Level { get; set; }
 
+	// Fixed number of questions drawn per mock-exam attempt, set by the creator. Null/0 means use all questions.
+	[Range(1, int.MaxValue)]
+	public int? ExamQuestionCount { get; set; }
+
 	public List<QuizSetQuestionWriteRequest>? Questions { get; set; }
 }
 
@@ -222,6 +226,10 @@ public class UpdateQuizSetRequest
 
 	[MaxLength(100)]
 	public string? Level { get; set; }
+
+	// Fixed number of questions drawn per mock-exam attempt, set by the creator. Null/0 means use all questions.
+	[Range(1, int.MaxValue)]
+	public int? ExamQuestionCount { get; set; }
 
 	public List<QuizSetQuestionWriteRequest>? Questions { get; set; }
 }
@@ -268,6 +276,12 @@ public class QuizSetResponse
 	public string? Level { get; set; }
 
 	public int QuestionCount { get; set; }
+
+	public int? ExamQuestionCount { get; set; }
+
+	public string ReviewStatus { get; set; } = string.Empty;
+
+	public string? ReviewNote { get; set; }
 }
 
 public class QuizSetQuestionResponse
@@ -308,6 +322,12 @@ public class QuizSetDetailResponse
 	public Guid? TopicId { get; set; }
 
 	public string? Level { get; set; }
+
+	public int? ExamQuestionCount { get; set; }
+
+	public string ReviewStatus { get; set; } = string.Empty;
+
+	public string? ReviewNote { get; set; }
 
 	public List<QuizSetQuestionResponse> Questions { get; set; } = new();
 }
@@ -456,11 +476,25 @@ public class RoadmapResponse
 {
 	public Guid Id { get; set; }
 
+	public Guid CreatedBy { get; set; }
+
 	public string Title { get; set; } = string.Empty;
 
 	public string Level { get; set; } = string.Empty;
 
 	public string? Description { get; set; }
+
+	public bool IsPublic { get; set; }
+
+	public string ReviewStatus { get; set; } = string.Empty;
+
+	public Guid? ReviewedBy { get; set; }
+
+	public DateTime? ReviewedAt { get; set; }
+
+	public string? ReviewNote { get; set; }
+
+	public DateTime CreatedAt { get; set; }
 
 	public short OrderIndex { get; set; }
 
@@ -480,6 +514,8 @@ public class CreateRoadmapRequest
 	public string? Description { get; set; }
 
 	public string? TargetRole { get; set; }
+
+	public bool IsPublic { get; set; } = true;
 }
 
 public class UpdateRoadmapRequest
@@ -491,6 +527,8 @@ public class UpdateRoadmapRequest
 	public string? Description { get; set; }
 
 	public string? TargetRole { get; set; }
+
+	public bool IsPublic { get; set; } = true;
 }
 
 public class AddTopicToRoadmapRequest

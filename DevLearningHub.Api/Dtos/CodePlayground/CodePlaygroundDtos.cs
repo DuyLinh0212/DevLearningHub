@@ -12,6 +12,8 @@ public class ProblemSummaryResponse
     public string Title { get; set; } = string.Empty;
     public string Difficulty { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public string ReviewStatus { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
     public DateTime CreatedAt { get; set; }
     public int TestCaseCount { get; set; }
     public List<string> Tags { get; set; } = new();
@@ -27,6 +29,8 @@ public class ProblemDetailResponse
     public string Difficulty { get; set; } = string.Empty;
     public string? StarterCode { get; set; }
     public bool IsActive { get; set; }
+    public string ReviewStatus { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<string> Tags { get; set; } = new();
     public List<PublicTestCaseResponse> SampleTestCases { get; set; } = new();

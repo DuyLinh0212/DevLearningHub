@@ -26,11 +26,13 @@ public class ProblemBanksController : ControllerBase
 
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IAutoApprovalPolicy _autoApproval;
 
-    public ProblemBanksController(DevLearningHubContext db, IPermissionService permissions)
+    public ProblemBanksController(DevLearningHubContext db, IPermissionService permissions, IAutoApprovalPolicy autoApproval)
     {
         _db = db;
         _permissions = permissions;
+        _autoApproval = autoApproval;
     }
 
     // ----- Bank CRUD -----
@@ -78,6 +80,7 @@ public class ProblemBanksController : ControllerBase
                 Title = b.Title,
                 Description = b.Description,
                 IsPublic = b.IsPublic,
+                ReviewStatus = b.ReviewStatus,
                 TopicId = b.TopicId,
                 TopicName = b.Topic != null ? b.Topic.Name : null,
                 Creator = new ProblemBankUserSummary
@@ -116,6 +119,16 @@ public class ProblemBanksController : ControllerBase
             return NotFound(ApiResponse<ProblemBankDetailResponse>.Fail("Problem bank not found."));
         }
 
+        var reviewVisible = !bank.IsPublic
+            || bank.Creator.Id == viewerId
+            || canManageAny
+            || bank.ReviewStatus == "approved"
+            || string.IsNullOrWhiteSpace(bank.ReviewStatus);
+        if (!reviewVisible)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<ProblemBankDetailResponse>.Fail("This problem bank is waiting for review."));
+        }
+
         // Hide someone else's private bank unless the viewer can manage code problems.
         if (!bank.IsPublic && bank.Creator.Id != viewerId && !canManageAny)
         {
@@ -148,7 +161,7 @@ public class ProblemBanksController : ControllerBase
             Title = title,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             IsPublic = request.IsPublic,
-            ReviewStatus = request.IsPublic && !await CanManageProblemBanksAsync(userId) ? "pending" : "approved",
+            ReviewStatus = await _autoApproval.EvaluateProblemBankAsync(userId, null, title, request.Description, request.IsPublic),
             TopicId = request.TopicId,
             CreatedAt = DateTime.Now
         };
@@ -191,6 +204,7 @@ public class ProblemBanksController : ControllerBase
         bank.IsPublic = request.IsPublic;
         bank.TopicId = request.TopicId;
         bank.UpdatedAt = DateTime.Now;
+        ApplyAutoReview(bank, await _autoApproval.EvaluateProblemBankAsync(bank.CreatedBy, bank.Id, bank.Title, bank.Description, bank.IsPublic));
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<ProblemBankResponse>.Ok(await LoadSummaryAsync(bank.Id, userId)));
@@ -280,6 +294,10 @@ public class ProblemBanksController : ControllerBase
         });
 
         bank.UpdatedAt = DateTime.Now;
+        if (bank.IsPublic)
+        {
+            ApplyAutoReview(bank, await _autoApproval.EvaluateProblemBankAsync(bank.CreatedBy, bank.Id, bank.Title, bank.Description, bank.IsPublic));
+        }
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<object>.Ok(new { added = true }));
@@ -314,6 +332,10 @@ public class ProblemBanksController : ControllerBase
 
         _db.ProblemBankItems.Remove(item);
         bank.UpdatedAt = DateTime.Now;
+        if (bank.IsPublic)
+        {
+            ApplyAutoReview(bank, await _autoApproval.EvaluateProblemBankAsync(bank.CreatedBy, bank.Id, bank.Title, bank.Description, bank.IsPublic));
+        }
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<object>.Ok(new { removed = true }));
@@ -671,6 +693,7 @@ public class ProblemBanksController : ControllerBase
             Title = b.Title,
             Description = b.Description,
             IsPublic = b.IsPublic,
+            ReviewStatus = b.ReviewStatus,
             TopicId = b.TopicId,
             TopicName = b.Topic != null ? b.Topic.Name : null,
             Creator = new ProblemBankUserSummary
@@ -699,5 +722,16 @@ public class ProblemBanksController : ControllerBase
             .Where(b => b.Id == bankId)
             .Select(SummarySelector(viewerId))
             .FirstAsync();
+    }
+
+    private static void ApplyAutoReview(ProblemBank bank, string reviewStatus)
+    {
+        bank.ReviewStatus = reviewStatus;
+        if (!string.Equals(reviewStatus, "approved", StringComparison.OrdinalIgnoreCase))
+        {
+            bank.ReviewedBy = null;
+            bank.ReviewedAt = null;
+            bank.ReviewNote = null;
+        }
     }
 }

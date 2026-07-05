@@ -40,39 +40,22 @@ export class PostCreateComponent implements OnInit {
   isUploadingImage: boolean = false;
 
   ngOnInit() {
-    // Kiểm tra token trước khi cho phép vào trang tạo/sửa
+    // Kiem tra token truoc khi cho phep vao trang tao/sua
     const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
     if (!hasToken) {
-      alert('Vui lòng đăng nhập để đăng bài viết!');
+      alert('Vui long dang nhap de dang bai viet!');
       this.router.navigate(['/login']);
       return;
     }
 
-    this.http.get<any>('/api/users/me').subscribe({
-      next: (res) => {
-        const user = res?.data || res;
-        const perms = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
-        const hasPermission = perms.includes('post:create') || perms.includes('post:edit') || perms.includes('system.full_control');
-        
-        if (!hasPermission) {
-          alert('Bạn không có quyền đăng bài viết!');
-          this.router.navigate(['/forum']);
-          return;
-        }
-
-        this.route.params.subscribe(params => {
-          this.postId = params['id'] || '';
-          if (this.postId) {
-            this.isEditMode = true;
-            this.loadPostForEdit();
-          }
-          this.loadTags();
-        });
-      },
-      error: () => {
-        alert('Không thể xác thực quyền truy cập.');
-        this.router.navigate(['/forum']);
+    // Ownership-based: any logged-in user can create/edit posts.
+    this.route.params.subscribe(params => {
+      this.postId = params['id'] || '';
+      if (this.postId) {
+        this.isEditMode = true;
+        this.loadPostForEdit();
       }
+      this.loadTags();
     });
   }
 

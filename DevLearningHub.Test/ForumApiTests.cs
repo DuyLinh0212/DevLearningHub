@@ -330,6 +330,7 @@ public class ForumApiTests : IClassFixture<CustomWebApplicationFactory>
             Downvotes = 0,
             ViewCount = 0,
             IsHidden = isHidden,
+            ReviewStatus = "approved",
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };

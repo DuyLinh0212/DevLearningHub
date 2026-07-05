@@ -13,6 +13,8 @@ public class RoadmapItemResponse
     public short OrderIndex { get; set; }
     public bool IsRequired { get; set; }
     public bool Completed { get; set; }
+    public bool Unlocked { get; set; } = true;
+    public byte? PassThreshold { get; set; }
 }
 
 public class UpsertRoadmapItemRequest
@@ -26,6 +28,7 @@ public class UpsertRoadmapItemRequest
     public string? DescriptionOverride { get; set; }
     public int OrderIndex { get; set; }
     public bool IsRequired { get; set; } = true;
+    public byte? PassThreshold { get; set; }
 }
 
 public class RoadmapProgressResponse

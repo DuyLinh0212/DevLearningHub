@@ -312,6 +312,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             slug: "quiz-set-topic-7506");
 
         var quizSetId = await CreateQuizSetAndGetIdAsync(auth.AccessToken, topicId, "Detail quiz set 7506", true);
+        await ApproveQuizSetAsync(quizSetId);
         var firstQuestionId = await SeedQuestionAsync(topicId, auth.UserId, "First detail question 7506", isActive: true);
         var secondQuestionId = await SeedQuestionAsync(topicId, auth.UserId, "Second detail question 7506", isActive: true);
 
@@ -571,24 +572,50 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
 
+        var owner = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = $"seed_quiz_owner_{Guid.NewGuid():N}",
+            Email = $"seed_quiz_owner_{Guid.NewGuid():N}@test.local",
+            PasswordHash = "not-used-in-this-test",
+            FullName = $"Owner for {title}",
+            IsActive = true,
+            IsLocked = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+
         var quizSet = new QuizSet
         {
             Id = Guid.NewGuid(),
-            CreatedBy = Guid.NewGuid(),
+            CreatedBy = owner.Id,
             Title = title,
             Description = $"Description for {title}",
             Mode = "practice",
             TimeLimitSeconds = 900,
             IsPublic = isPublic,
+            ReviewStatus = isPublic ? "approved" : "pending",
             TopicId = null,
             Level = "beginner",
             CreatedAt = DateTime.Now
         };
 
+        // QuizSet list project sang CreatedByNavigation, nên dữ liệu seed phải có owner hợp lệ.
+        db.Users.Add(owner);
         db.QuizSets.Add(quizSet);
         await db.SaveChangesAsync();
 
         return quizSet.Id;
+    }
+
+    private async Task ApproveQuizSetAsync(Guid quizSetId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+
+        var quizSet = db.QuizSets.First(qs => qs.Id == quizSetId);
+        quizSet.ReviewStatus = "approved";
+        await db.SaveChangesAsync();
     }
 
     private async Task SeedQuizSessionAsync(Guid userId, Guid quizSetId)

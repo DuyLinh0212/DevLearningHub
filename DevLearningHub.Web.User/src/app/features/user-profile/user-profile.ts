@@ -8,11 +8,12 @@ import { catchError, finalize } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../core/services/forum.service';
 import { QuizService } from '../../core/services/quiz.service';
+import { ReviewStatusBadgeComponent } from '../../shared/components/review-status-badge/review-status-badge';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ReviewStatusBadgeComponent],
   templateUrl: './user-profile.html',
   styleUrl: './user-profile.css'
 })

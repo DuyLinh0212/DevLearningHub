@@ -254,6 +254,7 @@ export class QuizService {
 			statusClass: isPub ? 'public' : 'draft',
 			status: isPub ? 'Đã phát hành' : 'Bản nháp',
 			allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
+			examQuestionCount: quiz.examQuestionCount ?? quiz.ExamQuestionCount ?? null,
 			attempts: finalAttempts,
 			questionIds: quiz.questionIds || []
 		};
@@ -293,7 +294,8 @@ export class QuizService {
 			allowedCopy: form.allowedCopy ?? true,
 			topicId: form.topicId || null,
 			topic: form.topic || null,
-			level: form.level || null
+			level: form.level || null,
+			examQuestionCount: form.examUseAllQuestions ? null : (form.examQuestionCount || null)
 		};
 	}
 

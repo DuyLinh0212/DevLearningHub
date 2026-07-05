@@ -376,6 +376,7 @@ public class QuizSessionApiTests : IClassFixture<CustomWebApplicationFactory>
             Mode = "practice",
             TimeLimitSeconds = 600,
             IsPublic = true,
+            ReviewStatus = "approved",
             TopicId = quizSetHasTopic ? topicId : null,
             Level = "beginner",
             CreatedAt = now

@@ -100,27 +100,9 @@
       <div class="paradigm-mode-card exam-card">
         <div>
           <h4 class="exam-title"><i class="bi bi-stopwatch-fill"></i> Chế độ Thi thử</h4>
-          <p class="paradigm-desc">Làm bài thi thử dưới áp lực thời gian thực tế với số câu hỏi tự chọn.</p>
-
-          <div class="limiter-form-group">
-            <label>Số lượng câu hỏi thi thử:</label>
-            <div class="stepper-wrapper">
-              <button type="button" class="stepper-btn btn-minus" (click)="decreaseExamCount()" [disabled]="selectedExamCount <= 1">
-                <i class="bi bi-dash-lg"></i>
-              </button>
-              <input type="number" [(ngModel)]="selectedExamCount" [max]="quizQuestionsCount" min="1" class="stepper-input" placeholder="Nhập số câu...">
-              <button type="button" class="stepper-btn btn-plus" (click)="increaseExamCount()" [disabled]="selectedExamCount >= quizQuestionsCount">
-                <i class="bi bi-plus-lg"></i>
-              </button>
-            </div>
-            @if (isExamCountInvalid) {
-            <div class="stepper-error-message">
-              <i class="bi bi-exclamation-circle"></i> {{ getExamErrorMessage() }}
-            </div>
-            }
-          </div>
+          <p class="paradigm-desc">Làm bài thi thử dưới áp lực thời gian thực tế với <strong>{{ effectiveExamCount }}</strong> câu hỏi được người tạo bộ đề thiết lập sẵn.</p>
         </div>
-        <button (click)="startQuiz('exam')" [disabled]="isExamCountInvalid" class="btn-start-paradigm btn-exam">
+        <button (click)="startQuiz('exam')" class="btn-start-paradigm btn-exam">
           <i class="bi bi-lightning-charge-fill"></i> Bắt đầu Thi thử
         </button>
       </div>

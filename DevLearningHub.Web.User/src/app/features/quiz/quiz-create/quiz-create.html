@@ -97,6 +97,25 @@
 
           <div class="setting-toggle-row">
             <div class="toggle-text-left">
+              <h4>Dùng tất cả câu hỏi khi thi thử</h4>
+              <p>Nếu tắt, bạn có thể chọn cố định số câu hỏi lấy ngẫu nhiên cho mỗi lượt thi thử</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="quizMeta.examUseAllQuestions">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          @if (!quizMeta.examUseAllQuestions) {
+          <div class="input-field-group">
+            <label>Số câu hỏi mỗi lần thi thử <span class="text-danger">*</span></label>
+            <input type="number" [(ngModel)]="quizMeta.examQuestionCount" min="1" [max]="questions.length || null">
+            <small class="form-help-info">Mỗi lượt thi thử sẽ lấy ngẫu nhiên đúng số câu này trong bộ đề</small>
+          </div>
+          }
+
+          <div class="setting-toggle-row">
+            <div class="toggle-text-left">
               <h4>Trộn thứ tự câu hỏi</h4>
               <p>Xáo trộn thứ tự câu hỏi mỗi khi học viên bắt đầu lượt ôn tập mới</p>
             </div>

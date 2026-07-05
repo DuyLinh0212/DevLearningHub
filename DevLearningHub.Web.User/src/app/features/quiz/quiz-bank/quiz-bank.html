@@ -130,6 +130,9 @@
                       >
                         {{ idx + 1 }}. {{ quiz.title }}
                       </a>
+                      @if (isMyQuiz(quiz)) {
+                        <app-review-status-badge [status]="quiz.reviewStatus"></app-review-status-badge>
+                      }
                       <span class="quiz-desc-sub">{{ quiz.desc }}</span>
                     </div>
                   </td>

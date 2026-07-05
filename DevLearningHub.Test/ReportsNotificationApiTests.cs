@@ -210,6 +210,7 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             Description = "Problem description",
             Difficulty = "easy",
             IsActive = true,
+            ReviewStatus = "approved",
             CreatedAt = DateTime.Now
         });
         await db.SaveChangesAsync();
@@ -242,6 +243,7 @@ public class ReportsNotificationApiTests : IClassFixture<CustomWebApplicationFac
             AuthorId = ownerId,
             Title = "Post",
             BodyMarkdown = "Body",
+            ReviewStatus = "approved",
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         });

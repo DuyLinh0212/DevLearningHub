@@ -24,17 +24,20 @@ public class PostsController : ControllerBase
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
     private readonly IPermissionService _permissions;
     private readonly INotificationService _notifications;
+    private readonly IAutoApprovalPolicy _autoApproval;
 
     public PostsController(
         DevLearningHubContext db,
         IHubContext<CommentHub, ICommentHubClient> commentHub,
         IPermissionService permissions,
-        INotificationService notifications)
+        INotificationService notifications,
+        IAutoApprovalPolicy autoApproval)
     {
         _db = db;
         _commentHub = commentHub;
         _permissions = permissions;
         _notifications = notifications;
+        _autoApproval = autoApproval;
     }
 
     [HttpGet]
@@ -53,9 +56,15 @@ public class PostsController : ControllerBase
         // Users who can hide posts (post:hide_any) also see hidden posts in the list; everyone else only sees visible ones.
         var includeHidden = User.TryGetUserId(out var viewerId)
             && await _permissions.HasPermissionAsync(viewerId, "post:hide_any");
+        var canReview = viewerId != Guid.Empty && await _permissions.HasPermissionAsync(viewerId, "post:review");
         var query = _db.Posts.AsNoTracking().Where(p =>
             (includeHidden || !p.IsHidden) &&
-            (includeHidden || p.ReviewStatus == "approved" || p.ReviewStatus == null || p.ReviewStatus == string.Empty));
+            (includeHidden
+                || canReview
+                || p.AuthorId == viewerId
+                || p.ReviewStatus == "approved"
+                || p.ReviewStatus == null
+                || p.ReviewStatus == string.Empty));
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -99,6 +108,8 @@ public class PostsController : ControllerBase
                 ViewCount = p.ViewCount,
                 CommentCount = p.Comments.Count(c => !c.IsHidden),
                 IsHidden = p.IsHidden,
+                ReviewStatus = p.ReviewStatus,
+                ReviewNote = p.ReviewNote,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
                 Tags = p.Tags
@@ -146,9 +157,14 @@ public class PostsController : ControllerBase
 
         var isOwner = User.TryGetUserId(out var userId) && post.AuthorId == userId;
         var canViewHidden = userId != Guid.Empty && await _permissions.HasPermissionAsync(userId, "post:hide_any");
+        var canReview = userId != Guid.Empty && await _permissions.HasPermissionAsync(userId, "post:review");
         if (post.IsHidden && !isOwner && !canViewHidden)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Post is hidden."));
+        }
+        if (post.ReviewStatus != "approved" && !string.IsNullOrWhiteSpace(post.ReviewStatus) && !isOwner && !canReview)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PostDetailResponse>.Fail("Post is waiting for review."));
         }
 
         // Count this read as a view.
@@ -173,6 +189,8 @@ public class PostsController : ControllerBase
             ViewCount = post.ViewCount,
             CommentCount = await _db.Comments.CountAsync(c => c.PostId == post.Id && !c.IsHidden),
             IsHidden = post.IsHidden,
+            ReviewStatus = post.ReviewStatus,
+            ReviewNote = post.ReviewNote,
             AcceptedCommentId = post.AcceptedCommentId,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
@@ -232,7 +250,7 @@ public class PostsController : ControllerBase
             Downvotes = 0,
             ViewCount = 0,
             IsHidden = false,
-            ReviewStatus = await _permissions.HasPermissionAsync(userId, "post:review") ? "approved" : "pending",
+            ReviewStatus = await _autoApproval.EvaluatePostAsync(userId, title, body, isPublic: true),
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -287,6 +305,7 @@ public class PostsController : ControllerBase
         post.BodyMarkdown = body;
         post.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
         post.UpdatedAt = DateTime.Now;
+        ApplyAutoReview(post, await _autoApproval.EvaluatePostAsync(post.AuthorId, title, body, isPublic: !post.IsHidden));
 
         if (request.TagIds != null)
         {
@@ -661,14 +680,6 @@ public class PostsController : ControllerBase
             post.IsHidden = request.Hidden;
             post.UpdatedAt = DateTime.Now;
 
-            // When restoring, ensure the post is approved so it appears in user feeds
-            if (!request.Hidden && post.ReviewStatus != "approved")
-            {
-                post.ReviewStatus = "approved";
-                post.ReviewedBy = moderatorId;
-                post.ReviewedAt = DateTime.Now;
-            }
-
             var actionValue = request.Hidden ? "hide" : "restore";
             _db.ModerationLogs.Add(new ModerationLog
             {
@@ -787,6 +798,8 @@ public class PostsController : ControllerBase
             ViewCount = post.ViewCount,
             CommentCount = commentCount,
             IsHidden = post.IsHidden,
+            ReviewStatus = post.ReviewStatus,
+            ReviewNote = post.ReviewNote,
             AcceptedCommentId = post.AcceptedCommentId,
             CreatedAt = post.CreatedAt,
             UpdatedAt = post.UpdatedAt,
@@ -796,5 +809,16 @@ public class PostsController : ControllerBase
                 .Select(MapTag)
                 .ToList()
         };
+    }
+
+    private static void ApplyAutoReview(Post post, string reviewStatus)
+    {
+        post.ReviewStatus = reviewStatus;
+        if (!string.Equals(reviewStatus, "approved", StringComparison.OrdinalIgnoreCase))
+        {
+            post.ReviewedBy = null;
+            post.ReviewedAt = null;
+            post.ReviewNote = null;
+        }
     }
 }

@@ -4,11 +4,12 @@ import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { ReviewStatusBadgeComponent } from '../../../shared/components/review-status-badge/review-status-badge';
 
 @Component({
   selector: 'app-quiz-bank',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, ReviewStatusBadgeComponent],
   templateUrl: './quiz-bank.html',
   styleUrl: './quiz-bank.css'
 })
@@ -26,7 +27,6 @@ export class QuizBankComponent implements OnInit {
   selectedTopicId: string = '';
   selectedDifficulty: string = '';
   currentUserId: string = '';
-  currentUserPermissions: string[] = [];
   activeQuizMenuId: string | null = null;
 
   // Calendar properties
@@ -122,36 +122,26 @@ export class QuizBankComponent implements OnInit {
         const user = res?.data || res;
         if (user) {
           this.currentUserId = (user.id || user.Id || user.userId || user.sub || '').toString().toLowerCase();
-          this.currentUserPermissions = (user.permissions || []).map((p: string) => (p || '').toLowerCase());
         }
         this.loadTopicsAndQuizzes();
       },
       error: (err) => {
-        console.error('Lỗi lấy thông tin cá nhân tại Kho đề:', err);
+        console.error('Loi lay thong tin ca nhan tai Kho de:', err);
         this.loadTopicsAndQuizzes();
       }
     });
   }
 
-  hasPermission(permission: string): boolean {
-    const target = (permission || '').toLowerCase();
-    return this.currentUserPermissions.includes(target)
-      || this.currentUserPermissions.includes('system.full_control');
-  }
-
   onCreateQuizClick() {
     const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken') || localStorage.getItem('token'));
     if (!hasToken) {
-      alert('Vui lòng đăng nhập để tạo bộ đề!');
+      alert('Vui long dang nhap de tao bo de!');
       this.router.navigate(['/login']);
       return;
     }
 
-    if (this.hasPermission('quiz:create') || this.hasPermission('quiz:edit')) {
-      this.router.navigate(['/quiz-create']);
-    } else {
-      alert('Bạn không có quyền tạo bộ đề thi!');
-    }
+    // Ownership-based: any logged-in user can create/edit quizzes.
+    this.router.navigate(['/quiz-create']);
   }
 
   loadTopicsAndQuizzes() {
@@ -189,6 +179,7 @@ export class QuizBankComponent implements OnInit {
             topicId: quiz.topicId || '',
             level: quiz.level || 'beginner',
             allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
+            reviewStatus: quiz.reviewStatus,
             updated: 'Mới cập nhật'
           };
         });
@@ -278,6 +269,10 @@ export class QuizBankComponent implements OnInit {
   compareIds(id1: any, id2: any): boolean {
     if (!id1 || !id2) return false;
     return id1.toString().toLowerCase().trim() === id2.toString().toLowerCase().trim();
+  }
+
+  isMyQuiz(quiz: any): boolean {
+    return this.compareIds(quiz?.createdBy, this.currentUserId);
   }
 
   copyQuiz(quiz: any, event: Event) {

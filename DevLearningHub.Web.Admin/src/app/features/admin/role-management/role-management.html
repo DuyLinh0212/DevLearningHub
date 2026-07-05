@@ -1,95 +1,178 @@
 <header class="content-header">
   <div class="header-title">
-    <h2>Quản lý vai trò & Phân quyền</h2>
-    <p class="header-subtitle">Tạo và quản lý vai trò, gán quyền chi tiết cho từng role</p>
+    <h2>Phân quyền</h2>
+    <p class="header-subtitle">Quản lý nhóm quyền, ma trận quyền và người dùng trong hệ thống</p>
   </div>
-  @if (canCreate) {
-    <button class="btn-create" (click)="openCreateModal()">
-      <i class="bi bi-plus-lg"></i> Tạo Role mới
-    </button>
-  }
 </header>
 
-<div class="rm-body">
-  @if (isLoading) {
-    <div class="loading-state">
-      <span class="spin"><i class="bi bi-arrow-repeat"></i></span>
-      <span>Đang tải dữ liệu...</span>
-    </div>
-  } @else if (!roles.length) {
-    <div class="empty-pane">
-      <i class="bi bi-shield-exclamation"></i>
-      <p>Chưa có role nào được định nghĩa.</p>
-    </div>
-  } @else {
-    <div class="rm-table-wrap">
-      <table class="rm-table">
-        <thead>
-          <tr>
-            <th>Role</th>
-            <th>Mô tả</th>
-            <th class="col-center">Quyền</th>
-            <th class="col-center">Người dùng</th>
-            <th class="col-center">Trạng thái</th>
-            <th class="col-center">Hệ thống</th>
-            <th class="col-end">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
+<!-- ===== Tabs ===== -->
+<div class="pq-tabs" role="tablist">
+  <button
+    class="pq-tab"
+    role="tab"
+    [class.active]="activeTab === 'groups'"
+    [attr.aria-selected]="activeTab === 'groups'"
+    (click)="switchTab('groups')">
+    <i class="bi bi-shield-lock"></i> Nhóm quyền
+  </button>
+  @if (canViewUsers) {
+    <button
+      class="pq-tab"
+      role="tab"
+      [class.active]="activeTab === 'users'"
+      [attr.aria-selected]="activeTab === 'users'"
+      (click)="switchTab('users')">
+      <i class="bi bi-person-lines-fill"></i> Danh sách người dùng
+    </button>
+  }
+</div>
+
+<!-- ===== Tab: Nhóm quyền ===== -->
+@if (activeTab === 'groups') {
+  <div class="pq-groups">
+    <!-- Left column: role list -->
+    <aside class="pq-roles">
+      <div class="pq-roles-head">
+        <span>Vai trò</span>
+        @if (canCreate) {
+          <button class="btn-create btn-create-sm" (click)="openCreateModal()">
+            <i class="bi bi-plus-lg"></i> Thêm
+          </button>
+        }
+      </div>
+
+      @if (isLoading) {
+        <div class="loading-state">
+          <span class="spin"><i class="bi bi-arrow-repeat"></i></span>
+          <span>Đang tải dữ liệu...</span>
+        </div>
+      } @else if (!roles.length) {
+        <div class="empty-pane">
+          <i class="bi bi-shield-exclamation"></i>
+          <p>Chưa có vai trò nào được định nghĩa.</p>
+        </div>
+      } @else {
+        <ul class="pq-role-list">
           @for (role of roles; track role.id) {
-            <tr>
-              <td class="cell-name">{{ role.name }}</td>
-              <td class="cell-desc">{{ role.description || '—' }}</td>
-              <td class="col-center">
-                <span class="perm-count" (click)="canAssignPerm && openPermModal(role)" [class.clickable]="canAssignPerm">
-                  {{ countPermissions(role) }}
-                </span>
-              </td>
-              <td class="col-center">{{ role.userCount }}</td>
-              <td class="col-center">
-                <span class="status-badge" [class.active]="role.isActive" [class.inactive]="!role.isActive">
-                  {{ role.isActive ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="col-center">
+            <li
+              class="pq-role-item"
+              [class.selected]="selectedRole?.id === role.id"
+              (click)="selectRole(role)">
+              <div class="pq-role-main">
+                <span class="pq-role-name">{{ role.name }}</span>
                 @if (role.isSystem) {
                   <span class="system-badge">Hệ thống</span>
                 } @else {
-                  <span class="custom-badge">Custom</span>
+                  <span class="custom-badge">Tùy chỉnh</span>
                 }
-              </td>
-              <td class="cell-actions">
-                @if (canEdit && (!role.isSystem || canAssignPerm)) {
-                  <button class="btn-icon" title="Sửa role" (click)="openEditModal(role)">
+              </div>
+              @if (role.description) {
+                <p class="pq-role-desc">{{ role.description }}</p>
+              }
+              <div class="pq-role-meta">
+                <span class="status-badge" [class.active]="role.isActive" [class.inactive]="!role.isActive">
+                  {{ role.isActive ? 'Đang bật' : 'Đã tắt' }}
+                </span>
+                <span class="pq-usercount"><i class="bi bi-people"></i> {{ role.userCount }}</span>
+                <span class="perm-count">{{ countPermissions(role) }} quyền</span>
+              </div>
+              <div class="pq-role-actions">
+                @if (canEdit) {
+                  <button class="btn-icon" title="Sửa vai trò" (click)="openEditModal(role); $event.stopPropagation()">
                     <i class="bi bi-pencil-square"></i>
                   </button>
                 }
-                @if (canAssignPerm) {
-                  <button class="btn-icon" title="Gán quyền" (click)="openPermModal(role)">
-                    <i class="bi bi-key-fill"></i>
-                  </button>
-                }
                 @if (canDelete && !role.isSystem && role.userCount === 0) {
-                  <button class="btn-icon btn-danger" title="Xóa role" (click)="confirmDelete(role)">
+                  <button class="btn-icon btn-danger" title="Xóa vai trò" (click)="confirmDelete(role); $event.stopPropagation()">
                     <i class="bi bi-trash3"></i>
                   </button>
                 }
-              </td>
-            </tr>
+              </div>
+            </li>
           }
-        </tbody>
-      </table>
-    </div>
-  }
-</div>
+        </ul>
+      }
+    </aside>
+
+    <!-- Right column: permission matrix -->
+    <section class="pq-matrix">
+      @if (!selectedRole) {
+        <div class="empty-pane">
+          <i class="bi bi-grid-3x3-gap"></i>
+          <p>Chọn một vai trò để xem ma trận quyền.</p>
+        </div>
+      } @else {
+        <div class="pq-matrix-head">
+          <div>
+            <h3>Ma trận quyền · {{ selectedRole.name }}</h3>
+            @if (isComputedRole(selectedRole)) {
+              <p class="perm-hint">
+                Đây là vai trò hệ thống. Quyền được tính tự động và chỉ hiển thị ở chế độ xem.
+              </p>
+            } @else if (!canAssignPerm) {
+              <p class="perm-hint">Bạn không có quyền chỉnh sửa phân quyền của vai trò.</p>
+            } @else {
+              <p class="perm-hint">Tích vào ô để bật/tắt quyền, sau đó nhấn Lưu.</p>
+            }
+          </div>
+          @if (isMatrixEditable) {
+            <button class="btn-save" (click)="savePermissions()" [disabled]="isSavingPermissions">
+              {{ isSavingPermissions ? 'Đang lưu...' : 'Lưu' }}
+            </button>
+          }
+        </div>
+
+        <div class="pq-matrix-wrap">
+          <table class="pq-matrix-table">
+            <thead>
+              <tr>
+                <th class="pq-row-head">Chức năng</th>
+                @for (col of matrixColumns; track col.action) {
+                  <th class="col-center">{{ col.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of matrixRows; track row.module) {
+                <tr>
+                  <td class="pq-row-head">{{ row.label }}</td>
+                  @for (cell of row.cells; track $index) {
+                    <td class="col-center">
+                      @if (cell.permission) {
+                        <input
+                          type="checkbox"
+                          class="pq-check"
+                          [checked]="isCellChecked(cell.permission)"
+                          [disabled]="!isMatrixEditable"
+                          [title]="cell.permission.name"
+                          (change)="toggleCell(cell.permission)" />
+                      } @else {
+                        <span class="pq-empty-cell">—</span>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+}
+
+<!-- ===== Tab: Danh sách người dùng ===== -->
+@if (activeTab === 'users' && canViewUsers) {
+  <app-user-management></app-user-management>
+}
 
 <!-- ===== Role Create/Edit Modal ===== -->
 @if (isRoleModalOpen) {
   <div class="modal-overlay" (click)="closeRoleModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-      <h3>{{ isEditing ? 'Chỉnh sửa Role' : 'Tạo Role mới' }}</h3>
-      <label class="modal-label">Tên role</label>
-      <input type="text" class="modal-input" [(ngModel)]="roleForm.name" placeholder="VD: Editor" maxlength="100" />
+      <h3>{{ isEditing ? 'Chỉnh sửa vai trò' : 'Tạo vai trò mới' }}</h3>
+      <label class="modal-label">Tên vai trò</label>
+      <input type="text" class="modal-input" [(ngModel)]="roleForm.name" placeholder="VD: Biên tập viên" maxlength="100" />
       <label class="modal-label">Mô tả</label>
       <input type="text" class="modal-input" [(ngModel)]="roleForm.description" placeholder="Mô tả ngắn gọn" maxlength="200" />
       @if (isEditing) {
@@ -108,44 +191,12 @@
   </div>
 }
 
-<!-- ===== Permission Assignment Modal ===== -->
-@if (isPermModalOpen) {
-  <div class="modal-overlay" (click)="closePermModal()">
-    <div class="modal modal-lg" (click)="$event.stopPropagation()">
-      <h3>Gán quyền cho <strong>{{ permRoleName }}</strong></h3>
-      <p class="perm-hint">Chọn các quyền bạn muốn gán cho role này.</p>
-      <div class="perm-grid">
-        @for (mod of permissionCatalog; track mod.module) {
-          <div class="perm-module">
-            <div class="perm-module-name">{{ mod.module }}</div>
-            <div class="perm-items">
-              @for (perm of mod.permissions; track perm.id) {
-                <label class="perm-item" [class.checked]="selectedPermissions.has(perm.name)">
-                  <input type="checkbox" [checked]="selectedPermissions.has(perm.name)" (change)="togglePermission(perm.name)" />
-                  <span class="perm-name">{{ perm.name }}</span>
-                  @if (perm.description) {
-                    <span class="perm-desc">{{ perm.description }}</span>
-                  }
-                </label>
-              }
-            </div>
-          </div>
-        }
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" (click)="closePermModal()">Hủy</button>
-        <button class="btn-save" (click)="savePermissions()">Lưu quyền</button>
-      </div>
-    </div>
-  </div>
-}
-
 <!-- ===== Delete Confirmation ===== -->
 @if (deletingRole) {
   <div class="modal-overlay" (click)="deletingRole = null">
     <div class="modal modal-sm" (click)="$event.stopPropagation()">
-      <h3 class="danger">Xóa Role</h3>
-      <p>Bạn chắc chắn muốn xóa role <strong>{{ deletingRole.name }}</strong>? Hành động này không thể hoàn tác.</p>
+      <h3 class="danger">Xóa vai trò</h3>
+      <p>Bạn chắc chắn muốn xóa vai trò <strong>{{ deletingRole.name }}</strong>? Hành động này không thể hoàn tác.</p>
       <div class="modal-actions">
         <button class="btn-cancel" (click)="deletingRole = null">Hủy</button>
         <button class="btn-delete" (click)="executeDelete()">Xóa</button>

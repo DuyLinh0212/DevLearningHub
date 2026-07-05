@@ -123,6 +123,7 @@ export class UserManagementComponent implements OnInit {
   private readonly roleHiddenPermissions: Record<string, string[]> = {
     User: [
       'audit:view',
+      'admin:access',
       'system.full_control',
       'user:view_all', 'user:ban', 'user:edit_role', 'user:force_logout'
     ]
@@ -134,7 +135,8 @@ export class UserManagementComponent implements OnInit {
     User: [
       'quiz:create', 'quiz:edit',
       'comment:create',
-      'post:create', 'post:edit_own'
+      'post:create', 'post:edit_own',
+      'problem:create', 'problem:edit'
     ]
   };
 
@@ -476,7 +478,28 @@ export class UserManagementComponent implements OnInit {
 
   // Called when the selected role changes (from radio buttons).
   onRoleChange() {
-    this.applyRolePermissionPresets();
+    // Reset all permission checkboxes first.
+    this.manageChecked = {};
+    // Fetch the default permissions for the newly selected role and apply them.
+    const roleName = this.manageSelectedRole;
+    this.http.get<any>(`/api/admin/roles`).subscribe({
+      next: (res) => {
+        const roles: any[] = res?.data ?? (Array.isArray(res) ? res : []);
+        const selected = roles.find((r: any) => r.name === roleName);
+        if (selected?.permissions) {
+          for (const permName of selected.permissions) {
+            this.manageChecked[permName] = true;
+          }
+        }
+        this.applyRolePermissionPresets();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Fallback: just apply presets if API fails.
+        this.applyRolePermissionPresets();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // Apply baseline grants for certain roles. Admin can still uncheck them to deny.

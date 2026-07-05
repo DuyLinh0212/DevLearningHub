@@ -523,6 +523,7 @@ public class QuizQuestionApiTests : IClassFixture<CustomWebApplicationFactory>
             Title = title,
             Level = level,
             Description = $"Description for {title}",
+            ReviewStatus = "approved",
             OrderIndex = orderIndex
         });
 

@@ -26,6 +26,8 @@ public partial class RoadmapItem
 
     public bool IsRequired { get; set; }
 
+    public byte? PassThreshold { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public virtual Roadmap Roadmap { get; set; } = null!;

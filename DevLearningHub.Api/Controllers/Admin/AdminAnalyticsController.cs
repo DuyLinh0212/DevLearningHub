@@ -203,11 +203,13 @@ public class AdminAnalyticsController : ControllerBase
             PendingProblems = await _db.Problems.CountAsync(p => p.ReviewStatus == "pending"),
             PendingProblemBanks = await _db.ProblemBanks.CountAsync(b => b.ReviewStatus == "pending"),
             PendingQuizSets = await _db.QuizSets.CountAsync(q => q.ReviewStatus == "pending"),
+            PendingRoadmaps = await _db.Roadmaps.CountAsync(r => r.ReviewStatus == "pending"),
             HiddenPosts = await _db.Posts.CountAsync(p => p.IsHidden),
             TotalPosts = await _db.Posts.CountAsync(),
             TotalProblems = await _db.Problems.CountAsync(),
             TotalProblemBanks = await _db.ProblemBanks.CountAsync(),
             TotalQuizSets = await _db.QuizSets.CountAsync(),
+            TotalRoadmaps = await _db.Roadmaps.CountAsync(),
             RecentActivities = await _db.AuditLogs
                 .AsNoTracking()
                 .Where(l => l.Action.Contains("review") || l.Action.Contains("moderation") || l.Action.Contains("hide"))

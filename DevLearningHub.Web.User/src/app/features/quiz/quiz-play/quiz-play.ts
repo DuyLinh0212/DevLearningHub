@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ReportService } from '../../../core/services/report.service';
+import { RoadmapService } from '../../../core/services/roadmap.service';
 
 @Component({
   selector: 'app-quiz-play',
@@ -20,6 +21,7 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private reportService = inject(ReportService);
+  private roadmapService = inject(RoadmapService);
 
   sessionId: string = '';
   quizId: string = '';
@@ -27,6 +29,8 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
 
   quizMode: string = 'practice';
   questionLimit: number = 0;
+  private roadmapId: string | null = null;
+  private roadmapItemId: string | null = null;
 
   totalQuestions: number = 0;
   originalTotalQuestions: number = 0; // Tổng câu gốc của bộ đề (không bị limit bởi thi thử)
@@ -62,6 +66,8 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
     this.quizId = this.route.snapshot.paramMap.get('id') || '';
     this.quizMode = this.route.snapshot.queryParamMap.get('mode') || 'practice';
     this.questionLimit = Number(this.route.snapshot.queryParamMap.get('limit') || 0);
+    this.roadmapId = this.route.snapshot.queryParamMap.get('roadmapId');
+    this.roadmapItemId = this.route.snapshot.queryParamMap.get('roadmapItemId');
 
     if (!this.quizId) {
       this.router.navigate(['/quiz-bank']);
@@ -253,6 +259,13 @@ export class QuizPlayComponent implements OnInit, OnDestroy {
         const answered = this.selectedAnswers.filter(a => a !== null).length;
         this.quizService.saveQuizProgress(this.quizId, answered, this.originalTotalQuestions);
         this.isConfirmModalOpen = false;
+
+        if (this.roadmapId && this.roadmapItemId) {
+          this.roadmapService.completeItem(this.roadmapId, this.roadmapItemId).subscribe({
+            error: (err) => console.error('Khong the danh dau hoan thanh muc hoc trong lo trinh:', err)
+          });
+        }
+
         this.router.navigate(['/quiz-result', this.sessionId], {
           queryParams: { mode: this.quizMode }
         });

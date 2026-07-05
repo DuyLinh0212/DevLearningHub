@@ -1,14 +1,14 @@
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/services/auth.service'; 
+import { AuthService } from '../../../core/services/auth.service';
 import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -90,8 +90,17 @@ export class LoginComponent {
                 roleClaim.map((r: string) => r.toLowerCase()).includes('moderator')
               : ['admin', 'moderator'].includes((roleClaim || '').toLowerCase());
 
-            if (!isAdminOrModerator) {
-              this.errorMessage = 'Bạn không có quyền truy cập cổng Quản trị!';
+            // Also check for admin:access permission (allows non-Admin/Moderator roles to access admin panel)
+            const permClaim = decodedPayload['permission'];
+            const permList: string[] = Array.isArray(permClaim)
+              ? permClaim
+              : (permClaim ? [permClaim] : []);
+            const hasAdminAccess = permList.some((p: string) =>
+              p.toLowerCase() === 'admin:access' || p.toLowerCase() === 'system.full_control'
+            );
+
+            if (!isAdminOrModerator && !hasAdminAccess) {
+              this.errorMessage = 'Ban khong co quyen truy cap cong Quan tri!';
               localStorage.removeItem('accessToken');
               this.cdr.detectChanges();
               return;
@@ -100,8 +109,26 @@ export class LoginComponent {
               ? roleClaim.map((r: string) => r.toLowerCase())
               : [ (roleClaim || '').toLowerCase() ];
 
-            if (roles.includes('moderator') && !roles.includes('admin')) {
+            // Admin goes to main admin dashboard.
+            if (roles.includes('admin')) {
+              this.router.navigate(['/admin']);
+              return;
+            }
+
+            // Moderator role (legacy) goes to moderator dashboard.
+            if (roles.includes('moderator')) {
               this.router.navigate(['/admin/moderator-dashboard']);
+              return;
+            }
+
+            // Non-admin, non-moderator with admin:access: check if they have review
+            // permissions to route them to the appropriate dashboard.
+            const reviewPerms = ['post:review', 'problem:review', 'quiz:review', 'problem_bank:review', 'roadmap:review'];
+            const hasReviewPerms = reviewPerms.some(rp =>
+              permList.some((p: string) => p.toLowerCase() === rp)
+            );
+            if (hasReviewPerms) {
+              this.router.navigate(['/admin/moderation']);
             } else {
               this.router.navigate(['/admin']);
             }

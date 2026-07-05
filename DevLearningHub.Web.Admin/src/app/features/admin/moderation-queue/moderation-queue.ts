@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   ModerationService, ModerationQueueItem, ModerationType, ReviewStatus
@@ -18,7 +19,7 @@ interface QueueTab {
 @Component({
   selector: 'app-moderation-queue',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './moderation-queue.html',
   styleUrl: './moderation-queue.css'
 })
@@ -40,6 +41,12 @@ export class ModerationQueueComponent implements OnInit {
   reviewReason = '';
   submitting = false;
 
+  // Detail view state.
+  detailTarget: ModerationQueueItem | null = null;
+  detailContent: any = null;
+  detailLoading = false;
+  detailError = '';
+
   ngOnInit() {
     this.buildTabs();
     if (this.tabs.length > 0) {
@@ -54,6 +61,7 @@ export class ModerationQueueComponent implements OnInit {
       { key: 'problem', label: 'Bài code', icon: 'bi-cpu', permission: 'problem:review', count: 0, visible: false },
       { key: 'problem_bank', label: 'Kho bài tập', icon: 'bi-collection', permission: 'problem_bank:review', count: 0, visible: false },
       { key: 'quiz_set', label: 'Bộ quiz', icon: 'bi-patch-question', permission: 'quiz:review', count: 0, visible: false },
+      { key: 'roadmap', label: 'Lộ trình', icon: 'bi-signpost-split', permission: 'roadmap:review', count: 0, visible: false },
     ];
     for (const tab of all) {
       tab.visible = this.auth.hasPermission(tab.permission);
@@ -103,7 +111,37 @@ export class ModerationQueueComponent implements OnInit {
     });
   }
 
+  viewDetail(item: ModerationQueueItem) {
+    this.detailTarget = item;
+    this.detailContent = null;
+    this.detailError = '';
+    this.detailLoading = true;
+    this.cdr.detectChanges();
+
+    this.moderation.getDetail(item.type, item.id).subscribe({
+      next: (content) => {
+        this.detailContent = content;
+        this.detailLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.detailError = 'Không thể tải nội dung chi tiết.';
+        this.detailLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeDetail() {
+    this.detailTarget = null;
+    this.detailContent = null;
+    this.detailError = '';
+    this.cdr.detectChanges();
+  }
+
   openReview(item: ModerationQueueItem, action: 'approve' | 'reject') {
+    this.detailTarget = null;
+    this.detailContent = null;
     this.reviewTarget = item;
     this.reviewAction = action;
     this.reviewReason = '';
@@ -142,6 +180,7 @@ export class ModerationQueueComponent implements OnInit {
         this.submitting = false;
         this.reviewTarget = null;
         this.reviewReason = '';
+        if (this.detailTarget?.id === id) this.closeDetail();
         this.cdr.detectChanges();
       },
       error: (err) => {

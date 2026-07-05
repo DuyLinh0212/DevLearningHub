@@ -28,7 +28,6 @@ export class TopbarComponent implements OnInit, OnDestroy {
   private notifRealtimeSub?: Subscription;
 
   profile = { displayName: '', avatarUrl: '', xpPoints: 0 };
-  userPermissions: string[] = [];
   currentUserId = '';
 
   toastNotif: NotificationItem | null = null;
@@ -76,10 +75,6 @@ export class TopbarComponent implements OnInit, OnDestroy {
   ];
 
   get isMobileOpen() { return this.mobileMenu.isOpen(); }
-
-  hasPermission(perm: string): boolean {
-    return this.userPermissions.includes('system.full_control') || this.userPermissions.includes(perm);
-  }
 
   ngOnInit() {
     this.loadProfile();
@@ -141,11 +136,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
         const u = res?.data || res;
         if (!u) return;
         this.profile = {
-          displayName: u.fullName || u.username || 'Học viên',
+          displayName: u.fullName || u.username || 'Hoc vien',
           avatarUrl: u.avatarUrl || '',
           xpPoints: u.xpPoints || 0,
         };
-        this.userPermissions = u.permissions || [];
         this.currentUserId = (u.id || '').toString().toLowerCase();
         this.cdr.detectChanges();
       }

@@ -26,7 +26,10 @@ public sealed class UserPermissionBreakdown
 
 public sealed class PermissionService : IPermissionService
 {
-    private static readonly string[] BaselineUserPermissions =
+    // Baseline permissions every "User" role member gets implicitly, on top of any
+    // raw role_permissions rows. Exposed so role-level effective permission computation
+    // (e.g. the admin permission matrix) stays in sync with this single source of truth.
+    public static readonly string[] BaselineUserPermissions =
     [
         "quiz:create",
         "comment:create",

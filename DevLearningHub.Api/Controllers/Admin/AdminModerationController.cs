@@ -1,4 +1,5 @@
 using DevLearningHub.Api.Authorization;
+using DevLearningHub.Api.Controllers.Users;
 using DevLearningHub.Api.Dtos.Admin;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
@@ -16,48 +17,64 @@ namespace DevLearningHub.Api.Controllers.Admin;
 public class AdminModerationController : ControllerBase
 {
     private static readonly string[] ValidStatuses = ["pending", "approved", "rejected"];
+    private static readonly string[] AllTypes = ["post", "problem", "problem_bank", "quiz_set", "roadmap"];
 
     private readonly DevLearningHubContext _db;
     private readonly IAuditService _audit;
+    private readonly IPermissionService _permissions;
 
-    public AdminModerationController(DevLearningHubContext db, IAuditService audit)
+    public AdminModerationController(DevLearningHubContext db, IAuditService audit, IPermissionService permissions)
     {
         _db = db;
         _audit = audit;
+        _permissions = permissions;
     }
 
     [HttpGet("queue")]
-    [HasPermission("analytics:view")]
     public async Task<ActionResult<ApiResponse<List<ModerationQueueItemResponse>>>> GetQueue(
         [FromQuery] string? type = null,
         [FromQuery] string status = "pending")
     {
+        if (!User.TryGetUserId(out var reviewerId))
+        {
+            return Unauthorized(ApiResponse<List<ModerationQueueItemResponse>>.Fail("Unauthorized."));
+        }
+
         status = NormalizeStatus(status);
-        var types = string.IsNullOrWhiteSpace(type)
-            ? new[] { "post", "problem", "problem_bank", "quiz_set" }
-            : new[] { NormalizeType(type) };
+        var requestedTypes = string.IsNullOrWhiteSpace(type)
+            ? AllTypes
+            : [NormalizeType(type)];
+
+        var visibleTypes = new List<string>();
+        foreach (var itemType in requestedTypes)
+        {
+            if (await _permissions.HasPermissionAsync(reviewerId, PermissionFor(itemType)) || User.HasPermission("system.full_control"))
+            {
+                visibleTypes.Add(itemType);
+            }
+        }
+
+        if (visibleTypes.Count == 0)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<ModerationQueueItemResponse>>.Fail("Forbidden."));
+        }
 
         var result = new List<ModerationQueueItemResponse>();
-        foreach (var itemType in types)
+        foreach (var itemType in visibleTypes)
         {
             result.AddRange(await QueryItemsAsync(itemType, status));
         }
 
-        return Ok(ApiResponse<List<ModerationQueueItemResponse>>.Ok(
-            result.OrderByDescending(i => i.CreatedAt).ToList()));
+        return Ok(ApiResponse<List<ModerationQueueItemResponse>>.Ok(result.OrderByDescending(i => i.CreatedAt).ToList()));
     }
 
     [HttpPost("{type}/{id:guid}/approve")]
     public Task<ActionResult<ApiResponse<object>>> Approve(string type, Guid id, ReviewContentRequest request)
-    {
-        return ReviewAsync(type, id, "approved", request.Reason);
-    }
+        => ReviewAsync(type, id, "approved", request.Reason);
 
     [HttpPost("{type}/{id:guid}/reject")]
     public Task<ActionResult<ApiResponse<object>>> Reject(string type, Guid id, ReviewContentRequest request)
-    {
-        return ReviewAsync(type, id, "rejected", request.Reason);
-    }
+        => ReviewAsync(type, id, "rejected", request.Reason);
 
     private async Task<ActionResult<ApiResponse<object>>> ReviewAsync(string type, Guid id, string status, string? reason)
     {
@@ -67,7 +84,7 @@ public class AdminModerationController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
         }
 
-        if (!User.HasPermission(PermissionFor(type)))
+        if (!await _permissions.HasPermissionAsync(reviewerId, PermissionFor(type)) && !User.HasPermission("system.full_control"))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
@@ -111,6 +128,15 @@ public class AdminModerationController : ControllerBase
                 quizSet.ReviewedAt = DateTime.Now;
                 quizSet.ReviewNote = note;
                 break;
+
+            case "roadmap":
+                var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == id);
+                if (roadmap == null) return NotFound(ApiResponse<object>.Fail("Roadmap not found."));
+                roadmap.ReviewStatus = status;
+                roadmap.ReviewedBy = reviewerId;
+                roadmap.ReviewedAt = DateTime.Now;
+                roadmap.ReviewNote = note;
+                break;
         }
 
         _db.ModerationLogs.Add(new ModerationLog
@@ -119,7 +145,7 @@ public class AdminModerationController : ControllerBase
             ModeratorId = reviewerId,
             TargetType = type,
             TargetId = id,
-            Action = $"review.{status}",
+            Action = status == "approved" ? "approve" : "reject",
             Reason = note,
             CreatedAt = DateTime.Now
         });
@@ -128,6 +154,95 @@ public class AdminModerationController : ControllerBase
         await _audit.LogAsync($"moderation.review.{status}", type, id, note);
 
         return Ok(ApiResponse<object>.Ok(new { type, id, status }));
+    }
+
+    [HttpGet("logs")]
+    public async Task<ActionResult<ApiResponse<PagedResult<ModerationLogResponse>>>> GetLogs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? type = null,
+        [FromQuery] string? action = null)
+    {
+        if (!User.TryGetUserId(out var reviewerId))
+        {
+            return Unauthorized(ApiResponse<PagedResult<ModerationLogResponse>>.Fail("Unauthorized."));
+        }
+
+        if (!await _permissions.HasPermissionAsync(reviewerId, "audit:view") && !User.HasPermission("system.full_control"))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<PagedResult<ModerationLogResponse>>.Fail("Forbidden."));
+        }
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _db.ModerationLogs.Include(l => l.Moderator).AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var normalizedType = NormalizeType(type);
+            query = query.Where(l => l.TargetType == normalizedType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(action))
+        {
+            query = query.Where(l => l.Action == action);
+        }
+
+        var totalCount = await query.CountAsync();
+        var logs = await query
+            .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var titlesByTypeAndId = new Dictionary<(string Type, Guid Id), string?>();
+        foreach (var group in logs.GroupBy(l => l.TargetType))
+        {
+            var ids = group.Select(l => l.TargetId).Distinct().ToList();
+            var titles = await ResolveTitlesAsync(group.Key, ids);
+            foreach (var (id, title) in titles)
+            {
+                titlesByTypeAndId[(group.Key, id)] = title;
+            }
+        }
+
+        var items = logs.Select(l => new ModerationLogResponse
+        {
+            Id = l.Id,
+            ModeratorId = l.ModeratorId,
+            ModeratorUsername = l.Moderator?.Username,
+            ModeratorFullName = l.Moderator?.FullName,
+            TargetType = l.TargetType,
+            TargetId = l.TargetId,
+            TargetTitle = titlesByTypeAndId.GetValueOrDefault((l.TargetType, l.TargetId)),
+            Action = l.Action,
+            Reason = l.Reason,
+            CreatedAt = l.CreatedAt
+        }).ToList();
+
+        var result = new PagedResult<ModerationLogResponse>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(ApiResponse<PagedResult<ModerationLogResponse>>.Ok(result));
+    }
+
+    private async Task<Dictionary<Guid, string?>> ResolveTitlesAsync(string type, List<Guid> ids)
+    {
+        return type switch
+        {
+            "post" => await _db.Posts.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => (string?)p.Title),
+            "problem" => await _db.Problems.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => (string?)p.Title),
+            "problem_bank" => await _db.ProblemBanks.AsNoTracking().Where(b => ids.Contains(b.Id)).ToDictionaryAsync(b => b.Id, b => (string?)b.Title),
+            "quiz_set" => await _db.QuizSets.AsNoTracking().Where(q => ids.Contains(q.Id)).ToDictionaryAsync(q => q.Id, q => (string?)q.Title),
+            "roadmap" => await _db.Roadmaps.AsNoTracking().Where(r => ids.Contains(r.Id)).ToDictionaryAsync(r => r.Id, r => (string?)r.Title),
+            _ => new Dictionary<Guid, string?>()
+        };
     }
 
     private async Task<List<ModerationQueueItemResponse>> QueryItemsAsync(string type, string status)
@@ -194,6 +309,21 @@ public class AdminModerationController : ControllerBase
                     ReviewedAt = q.ReviewedAt,
                     ReviewNote = q.ReviewNote
                 }).ToListAsync(),
+            "roadmap" => await _db.Roadmaps.AsNoTracking()
+                .Where(r => r.ReviewStatus == status)
+                .Select(r => new ModerationQueueItemResponse
+                {
+                    Type = "roadmap",
+                    Id = r.Id,
+                    Title = r.Title,
+                    ReviewStatus = r.ReviewStatus,
+                    AuthorUsername = r.CreatedByNavigation.Username,
+                    AuthorFullName = r.CreatedByNavigation.FullName,
+                    CreatedAt = r.CreatedAt,
+                    ReviewedBy = r.ReviewedBy,
+                    ReviewedAt = r.ReviewedAt,
+                    ReviewNote = r.ReviewNote
+                }).ToListAsync(),
             _ => new List<ModerationQueueItemResponse>()
         };
     }
@@ -203,7 +333,7 @@ public class AdminModerationController : ControllerBase
         var normalized = type.Trim().ToLowerInvariant();
         if (normalized is "problem-bank" or "problem_bank") return "problem_bank";
         if (normalized is "quiz-set" or "quiz_set") return "quiz_set";
-        if (normalized is "post" or "problem") return normalized;
+        if (normalized is "post" or "problem" or "roadmap") return normalized;
         throw new ArgumentException("Invalid moderation type.");
     }
 
@@ -221,6 +351,7 @@ public class AdminModerationController : ControllerBase
             "problem" => "problem:review",
             "problem_bank" => "problem_bank:review",
             "quiz_set" => "quiz:review",
+            "roadmap" => "roadmap:review",
             _ => "system.full_control"
         };
     }

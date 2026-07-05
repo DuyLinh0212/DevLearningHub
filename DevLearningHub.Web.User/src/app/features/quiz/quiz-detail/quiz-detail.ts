@@ -34,7 +34,7 @@ export class QuizDetailComponent implements OnInit {
 	quizLevelRaw: string = 'beginner';
 	get creatorId(): string { return this.quizCreatedById; }
 
-	selectedExamCount: number = 10;
+	examQuestionCount: number | null = null;
 	history: any[] = [];
 	isLoadingHistory = false;
 	avgAccuracy = 0;
@@ -85,6 +85,7 @@ export class QuizDetailComponent implements OnInit {
 				this.quizShuffle = quiz.shuffle || false;
 				this.quizInstantResult = quiz.instantResult || false;
 				this.quizAllowedCopy = quiz.allowedCopy ?? quiz.AllowedCopy ?? true;
+				this.examQuestionCount = quiz.examQuestionCount ?? quiz.ExamQuestionCount ?? null;
 
 				const rawLevel = (quiz.level || 'beginner').toString().toLowerCase().trim();
 				this.quizLevelRaw = rawLevel;
@@ -94,10 +95,6 @@ export class QuizDetailComponent implements OnInit {
 					this.quizLevel = 'Trung bình';
 				} else {
 					this.quizLevel = 'Khó';
-				}
-
-				if (this.quizQuestionsCount < 10 && this.quizQuestionsCount > 0) {
-					this.selectedExamCount = this.quizQuestionsCount;
 				}
 
 				this.loadHistory();
@@ -131,29 +128,18 @@ export class QuizDetailComponent implements OnInit {
 		});
 	}
 
-	decreaseExamCount() {
-		if (this.selectedExamCount > 1) {
-			this.selectedExamCount--;
-			this.cdr.detectChanges();
+	get effectiveExamCount(): number {
+		if (!this.examQuestionCount || this.examQuestionCount >= this.quizQuestionsCount) {
+			return this.quizQuestionsCount;
 		}
-	}
-
-	increaseExamCount() {
-		if (this.selectedExamCount < this.quizQuestionsCount) {
-			this.selectedExamCount++;
-			this.cdr.detectChanges();
-		}
+		return this.examQuestionCount;
 	}
 
 	startQuiz(mode: 'practice' | 'exam') {
-		const limit = mode === 'exam' ? this.selectedExamCount : this.quizQuestionsCount;
+		const limit = mode === 'exam' ? this.effectiveExamCount : this.quizQuestionsCount;
 		this.router.navigate(['/quiz-play', this.quizId], {
 			queryParams: { mode, limit }
 		});
-	}
-
-	get isExamCountInvalid(): boolean {
-		return this.selectedExamCount > this.quizQuestionsCount || this.selectedExamCount < 1;
 	}
 
 	get showQuizCreator(): boolean {
@@ -162,16 +148,6 @@ export class QuizDetailComponent implements OnInit {
 
 	get isOwner(): boolean {
 		return this.compareIds(this.quizCreatedById, this.currentUserId);
-	}
-
-	getExamErrorMessage(): string {
-		if (this.selectedExamCount > this.quizQuestionsCount) {
-			return `Chỉ có tối đa ${this.quizQuestionsCount} câu hỏi trong bộ đề này.`;
-		}
-		if (this.selectedExamCount < 1) {
-			return 'Số câu hỏi phải lớn hơn 0.';
-		}
-		return '';
 	}
 
 	formatDuration(seconds?: number): string {
@@ -229,7 +205,8 @@ export class QuizDetailComponent implements OnInit {
 			isPublic: true,
 			allowedCopy: allowedCopy,
 			topicId: null,
-			level: this.quizLevelRaw
+			level: this.quizLevelRaw,
+			examQuestionCount: this.examQuestionCount
 		}).subscribe({
 			next: () => {
 				this.quizAllowedCopy = allowedCopy;

@@ -23,7 +23,7 @@ public partial class Post
 
     public bool IsHidden { get; set; }
 
-    public string ReviewStatus { get; set; } = "approved";
+    public string ReviewStatus { get; set; } = "pending";
 
     public Guid? ReviewedBy { get; set; }
 
