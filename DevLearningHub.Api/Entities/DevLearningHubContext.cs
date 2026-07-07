@@ -197,6 +197,7 @@ public partial class DevLearningHubContext : DbContext
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnName("created_at");
             entity.Property(e => e.IsRead).HasColumnName("is_read");
+            entity.Property(e => e.IsHiddenFromBell).HasColumnName("is_hidden_from_bell");
             entity.Property(e => e.Message).HasColumnName("message");
             entity.Property(e => e.RefId).HasColumnName("ref_id");
             entity.Property(e => e.RefType)

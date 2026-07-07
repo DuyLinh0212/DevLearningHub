@@ -186,7 +186,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.notifLoading = true;
     this.notifError = false;
     this.cdr.detectChanges();
-    this.notificationService.getNotifications(1, 20).subscribe({
+    this.notificationService.getNotifications(1, 20, false, true).subscribe({
       next: (res) => {
         const data = res?.data || res;
         this.notifications = data?.items || [];
@@ -257,7 +257,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   deleteNotif(notif: NotificationItem, event: Event) {
     event.stopPropagation();
-    this.notificationService.deleteNotification(notif.id).subscribe({
+    this.notificationService.hideFromBell(notif.id).subscribe({
       next: () => {
         this.notifications = this.notifications.filter(n => n.id !== notif.id);
         this.cdr.detectChanges();
@@ -275,6 +275,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
       case 'comment_deleted': return 'bi-trash-fill';
       case 'quiz_deleted': return 'bi-journal-x';
       case 'problem_deleted': return 'bi-code-square';
+      case 'content_approved': return 'bi-check-circle-fill';
+      case 'content_rejected': return 'bi-x-circle-fill';
       case 'like': return 'bi-heart-fill';
       case 'follow': return 'bi-person-plus-fill';
       case 'submission': return 'bi-code-slash';

@@ -862,4 +862,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  isAdminPost(post: any): boolean {
+    return post?.author?.roles?.some((r: string) => r.toLowerCase() === 'admin' || r.toLowerCase() === 'system.full_control') || false;
+  }
 }

@@ -1,0 +1,114 @@
+<header class="content-header">
+  <div class="top-breadcrumb">
+    <a routerLink="/admin/posts">Bài viết</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Tạo bài viết mới</span>
+  </div>
+</header>
+
+<div class="dashboard-scroll-body">
+  <div class="form-container-card">
+    <h2>Tạo bài viết mới</h2>
+    <p class="form-subtitle">Đăng bài viết trực tiếp từ trang quản trị, giống hệt trải nghiệm đăng bài trên diễn đàn.</p>
+
+    <form (ngSubmit)="submitForm()" #postForm="ngForm" class="post-form">
+      <!-- TIÊU ĐỀ -->
+      <div class="form-group">
+        <label for="title">Tiêu đề bài viết <span class="text-danger">*</span></label>
+        <input type="text" id="title" name="title" [(ngModel)]="title" required maxlength="300" placeholder="Tiêu đề ngắn gọn, rõ ràng..." class="form-input">
+        <small class="form-help">Tiêu đề phải tóm tắt được nội dung câu hỏi/thảo luận của bạn.</small>
+      </div>
+
+      <!-- ẢNH ĐẠI DIỆN MINH HỌA -->
+      <div class="form-group">
+        <label>Ảnh minh họa bài viết (Tùy chọn)</label>
+        <div class="image-upload-wrapper">
+          <div class="image-upload-zone" [class.has-image]="imageUrl || localFileUrl" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+            @if (imageUrl || localFileUrl) {
+              <div class="upload-img-container">
+                <img [src]="localFileUrl || imageUrl" alt="Preview Image" class="upload-preview-img">
+                <div class="upload-overlay">
+                  <i class="bi bi-camera-fill"></i>
+                  <span>Thay đổi ảnh</span>
+                </div>
+                <button type="button" class="btn-remove-image" (click)="clearImage($event)" title="Xóa ảnh"><i class="bi bi-x-lg"></i></button>
+              </div>
+            } @else {
+              <div class="upload-placeholder">
+                <i class="bi bi-image"></i>
+                <span>Chọn ảnh minh họa từ thiết bị</span>
+                <span class="upload-sub-text">Hỗ trợ định dạng PNG, JPG, JPEG (Tối đa 5MB)</span>
+              </div>
+            }
+          </div>
+          @if (isUploadingImage) {
+            <div class="upload-progress-spinner" style="margin-top: 10px; display: flex; align-items: center; gap: 8px; color: #a855f7; font-size: 0.85rem;">
+              <i class="bi bi-arrow-repeat spin-animation"></i>
+              <span>Đang tải ảnh lên Cloudinary...</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- NỘI DUNG CHI TIẾT -->
+      <div class="form-group">
+        <label for="bodyMarkdown">Nội dung chi tiết <span class="text-danger">*</span></label>
+        <textarea id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" required rows="14" placeholder="Mô tả chi tiết nội dung, đính kèm code hỗ trợ định dạng Markdown..." class="form-textarea"></textarea>
+        <small class="form-help">Hỗ trợ định dạng Markdown để viết văn bản và khối code.</small>
+      </div>
+
+      <!-- LỰA CHỌN TAGS (DROPDOWN / COMBOBOX) -->
+      <div class="form-group">
+        <label>Gán thẻ phân loại (Chọn ít nhất 1) <span class="text-danger">*</span></label>
+        <p class="form-help" style="margin-top: 0; margin-bottom: 12px;">Giúp các thành viên khác dễ dàng lọc thấy bài đăng theo chủ đề.</p>
+
+        @if (tagsLoading) {
+          <div class="tags-loading-indicator">Đang tải thẻ phân loại...</div>
+        } @else {
+          <div class="tag-combobox-wrapper" (click)="toggleTagDropdown($event)">
+            <div class="tag-combobox-input-area">
+              @for (tagId of selectedTagIds; track tagId) {
+                @if (getTagById(tagId); as selectedTag) {
+                  <span class="tag-selected-pill" [style.background-color]="selectedTag.colorHex || '#a855f7'">
+                    #{{ selectedTag.name }}
+                    <i class="bi bi-x" (click)="removeTagSelection(tagId, $event)" title="Gỡ bỏ"></i>
+                  </span>
+                }
+              }
+              @if (selectedTagIds.length === 0) {
+                <span class="tag-combobox-placeholder">Chọn các nhãn liên quan từ danh sách...</span>
+              }
+            </div>
+            <div class="tag-combobox-arrow">
+              <i class="bi bi-chevron-down"></i>
+            </div>
+
+            @if (isTagDropdownOpen) {
+              <div class="tag-combobox-dropdown" (click)="$event.stopPropagation()">
+                @for (tag of tags; track tag.id) {
+                  <div class="tag-dropdown-item"
+                       [class.selected]="isTagSelected(tag.id)"
+                       (click)="toggleTagSelection(tag.id)">
+                    <span class="tag-dot" [style.background-color]="tag.colorHex"></span>
+                    <span class="tag-name">#{{ tag.name }}</span>
+                    @if (isTagSelected(tag.id)) {
+                      <i class="bi bi-check check-icon"></i>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- HÀNH ĐỘNG HỦY / ĐĂNG BÀI -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancel()">Hủy bỏ</button>
+        <button type="submit" class="btn-submit" [disabled]="!postForm.form.valid || selectedTagIds.length === 0 || isSaving">
+          <i class="bi bi-cloud-arrow-up-fill"></i>
+          {{ isSaving ? 'ĐANG LƯU BÀI...' : 'ĐĂNG BÀI VIẾT' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

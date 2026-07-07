@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Test.Factories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -364,6 +365,11 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
                 StartedAt = DateTime.Now
             });
 
+        // Mirrors QuizSessionsController.CalculateXp (score * 50) since these sessions
+        // are seeded directly instead of going through the real submit endpoint.
+        var user = await db.Users.SingleAsync(u => u.Id == userId);
+        user.XpPoints += (3 * 50) + (6 * 50);
+
         await db.SaveChangesAsync();
     }
 
@@ -376,6 +382,7 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
         if (existing != null)
         {
             existing.IsActive = true;
+            existing.XpPoints = 10000;
             db.QuizSessions.RemoveRange(db.QuizSessions.Where(session => session.UserId == existing.Id));
             db.QuizSessions.Add(new QuizSession
             {
@@ -399,7 +406,8 @@ public class UsersApiTests : IClassFixture<CustomWebApplicationFactory>
             Email = "leaderboard_max_01@gmail.com",
             PasswordHash = "not-used-in-this-test",
             FullName = "Leaderboard Max 01",
-            XpPoints = 0,
+            // Mirrors QuizSessionsController.CalculateXp (score * 50) for the seeded 200/200 session.
+            XpPoints = 10000,
             IsActive = true,
             IsLocked = false,
             CreatedAt = DateTime.Now,

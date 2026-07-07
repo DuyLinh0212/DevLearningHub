@@ -11,13 +11,13 @@ export class RoadmapService {
   private apiUrl = '/api/roadmaps';
 
   getAllRoadmaps(): Observable<any[]> {
-    return this.http.get<any>(this.apiUrl).pipe(
+    return this.http.get<any>(`${this.apiUrl}?manageMode=true`).pipe(
       map(res => res?.data || res || [])
     );
   }
 
   getRoadmapById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/${id}?manageMode=true`).pipe(
       map(res => res?.data || res)
     );
   }

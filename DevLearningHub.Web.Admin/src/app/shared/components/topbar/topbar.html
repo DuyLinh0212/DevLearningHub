@@ -1,4 +1,4 @@
-﻿<header class="topbar">
+<header class="topbar">
 
   <!-- Left: hamburger (mobile) -->
   <div class="topbar-left">
@@ -103,6 +103,18 @@
   </div>
 
 </header>
+
+<!-- Realtime notification toast -->
+@if (toastNotif) {
+  <div class="notif-toast" (click)="dismissToast()">
+    <i class="bi {{ getNotifIcon(toastNotif.type) }} notif-toast-icon"></i>
+    <div class="notif-toast-body">
+      <p class="notif-toast-msg">{{ toastNotif.message }}</p>
+      <span class="notif-toast-time">{{ getRelativeTime(toastNotif.createdAt) }}</span>
+    </div>
+    <button class="notif-toast-close" (click)="dismissToast()"><i class="bi bi-x"></i></button>
+  </div>
+}
 
 <!-- Search overlay -->
 @if (isSearchOpen) {

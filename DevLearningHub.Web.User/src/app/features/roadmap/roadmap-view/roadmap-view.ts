@@ -71,6 +71,11 @@ export class RoadmapViewComponent implements OnInit {
   itemForm: ItemFormState = this.createDefaultItemForm();
   itemOptions: any[] = [];
   isLoadingItemOptions = false;
+  isDescriptionExpanded = false;
+
+  toggleDescription() {
+    this.isDescriptionExpanded = !this.isDescriptionExpanded;
+  }
 
   ngOnInit() {
     this.loadViewerContext();
@@ -114,6 +119,7 @@ export class RoadmapViewComponent implements OnInit {
 
   selectRoadmap(roadmap: any) {
     this.activeRoadmap = roadmap;
+    this.isDescriptionExpanded = false;
     this.roadmapNodes = this.buildNodes(roadmap);
     this.cdr.detectChanges();
     this.loadProgress(roadmap.id);

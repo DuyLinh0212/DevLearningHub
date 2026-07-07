@@ -5,6 +5,8 @@ import { MobileMenuService } from '../../../core/services/mobile-menu.service';
 import { QuizService } from '../../../core/services/quiz.service';
 import { AnalyticsService, QuizSetAnalytics, QuizSetParticipant } from '../../../core/services/analytics.service';
 import { CommonModule } from '@angular/common';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 
 @Component({
@@ -62,6 +64,7 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   importSummary = { total: 0, valid: 0, invalid: 0 };
   parsedQuestions: any[] = [];
   topicsMap: Record<string, string> = {};
+  importDefaultTopicId: string = '';
 
   private readonly importTemplateCsv = 'assets/templates/quiz-import-template.csv';
   private readonly importTemplateJson = 'assets/templates/quiz-import-template.json';
@@ -84,7 +87,8 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
     passRate: 80,
     mode: 'practice',
     questionIds: [] as any[],
-    allowedCopy: false
+    allowedCopy: false,
+    isPublic: true
   };
 
   // Analytics stats
@@ -512,7 +516,8 @@ toggleQuizSetStatus(set: any) {
         passRate: quizSet.passRate || 80,
         mode: quizSet.mode || 'practice',
         questionIds: quizSet.questionIds ? [...quizSet.questionIds] : [],
-        allowedCopy: quizSet.allowedCopy ?? false
+        allowedCopy: quizSet.allowedCopy ?? false,
+        isPublic: quizSet.isPublic ?? true
       };
     } else {
       this.isEditingQuizSet = false;
@@ -528,7 +533,8 @@ toggleQuizSetStatus(set: any) {
         passRate: 80,
         mode: 'practice',
         questionIds: [],
-        allowedCopy: false
+        allowedCopy: false,
+        isPublic: true
       };
     }
     this.isQuizSetModalOpen = true;
@@ -555,7 +561,8 @@ toggleQuizSetStatus(set: any) {
       passRate: quizSet.passRate || 80,
       mode: quizSet.mode || 'practice',
       questionIds: quizSet.questionIds ? [...quizSet.questionIds] : [],
-      allowedCopy: quizSet.allowedCopy ?? false
+      allowedCopy: quizSet.allowedCopy ?? false,
+      isPublic: quizSet.isPublic ?? true
     };
     this.loadQuizSetQuestionIds(quizSet.id);
     this.cdr.detectChanges();
@@ -675,8 +682,8 @@ saveQuizSet() {
         description: finalDescription,
         mode: this.quizSetForm.mode || 'practice',
         timeLimitSeconds: (this.quizSetForm.duration || 15) * 60, // Gửi số giây chuẩn xuống Backend
-        isPublic: this.selectedQuizSet ? (this.selectedQuizSet.isPublic ?? true) : true,
-        topicId: this.quizSetForm.topicId, 
+        isPublic: this.quizSetForm.isPublic ?? true,
+        topicId: this.quizSetForm.topicId,
         level: mappedLevel,
         allowedCopy: this.quizSetForm.allowedCopy ?? false
     };
@@ -727,6 +734,7 @@ saveQuizSet() {
 
   openImportModal() {
     this.isImportModalOpen = true;
+    this.importDefaultTopicId = this.topics[0]?.id || '';
     this.loadTopicsForImport();
   }
 
@@ -744,6 +752,10 @@ saveQuizSet() {
           topics.forEach((t: any) => {
             if (t.id) this.topicsMap[t.id.toLowerCase()] = t.name || t.id;
           });
+        }
+        // Tự động chọn topic đầu tiên nếu chưa có
+        if (!this.importDefaultTopicId && topics.length > 0) {
+          this.importDefaultTopicId = topics[0].id;
         }
         if (this.parsedQuestions.length > 0) {
           this.parsedQuestions = this.parsedQuestions.map(q => ({
@@ -903,17 +915,29 @@ saveQuizSet() {
   private validateAndMapImport(q: any, index: number) {
     const options = q.options || [];
     const textContent = q.content || q.text || '';
-    const topicIdentifier = (q.topicId || '').trim();
+    // Nếu câu hỏi không có topicId trong file, dùng topic mặc định đã chọn
+    const topicIdentifier = ((q.topicId || '').trim()) || this.importDefaultTopicId || '';
+
+    // Xử lý options dạng mảng string (từ file JSON template) hoặc mảng object
+    let parsedOptions = options;
+    if (options.length > 0 && typeof options[0] === 'string') {
+      // Dạng ["Option A", "Option B", ...] + correctIndex
+      const correctIndex = q.correctIndex ?? 0;
+      parsedOptions = options.map((opt: string, idx: number) => ({
+        content: opt,
+        isCorrect: idx === correctIndex
+      }));
+    }
 
     const hasText = typeof textContent === 'string' && !!textContent.trim();
     const hasTopic = !!topicIdentifier;
-    const hasOptions = options.length >= 2;
+    const hasOptions = parsedOptions.length >= 2;
 
     const isValid = hasText && hasTopic && hasOptions;
 
     let errorMsg = '';
     if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
-    else if (!hasTopic) errorMsg = 'Mã TopicId định danh đang bị bỏ trống.';
+    else if (!hasTopic) errorMsg = 'Vui lòng chọn chủ đề mặc định ở phía trên.';
     else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
 
     const topicName = this.topicsMap[topicIdentifier.toLowerCase()] || topicIdentifier || '---';
@@ -924,10 +948,11 @@ saveQuizSet() {
       topic: topicIdentifier,
       topicName: topicName,
       topicId: topicIdentifier,
+      _originalTopicId: (q.topicId || '').trim(), // Lưu topicId gốc từ file (có thể rỗng)
       level: q.level || 'beginner',
       explanation: q.explanation || '',
-      optionsCount: options.length,
-      options: options,
+      optionsCount: parsedOptions.length,
+      options: parsedOptions,
       isValid: isValid,
       errorMsg: errorMsg
     };
@@ -949,6 +974,28 @@ saveQuizSet() {
     this.parsedQuestions = [];
     this.importSummary = { total: 0, valid: 0, invalid: 0 };
     this.cdr.detectChanges();
+  }
+
+  onImportTopicChange() {
+    // Khi đổi topic mặc định, re-validate toàn bộ danh sách
+    if (this.parsedQuestions.length > 0) {
+      this.parsedQuestions = this.parsedQuestions.map((q, idx) => {
+        // Chỉ re-validate những câu hỏi đang thiếu topicId gốc
+        const originalTopicId = (q._originalTopicId ?? q.topicId ?? '');
+        const effectiveTopicId = originalTopicId || this.importDefaultTopicId || '';
+        const topicName = this.topicsMap[effectiveTopicId.toLowerCase()] || effectiveTopicId || '---';
+        const hasText = !!q.text?.trim();
+        const hasTopic = !!effectiveTopicId;
+        const hasOptions = q.options?.length >= 2;
+        const isValid = hasText && hasTopic && hasOptions;
+        let errorMsg = '';
+        if (!hasText) errorMsg = 'Nội dung câu hỏi không được để trống.';
+        else if (!hasTopic) errorMsg = 'Vui lòng chọn chủ đề mặc định ở phía trên.';
+        else if (!hasOptions) errorMsg = 'Danh sách đáp án lựa chọn phải từ 2 mục trở lên.';
+        return { ...q, topicId: effectiveTopicId, topicName, isValid, errorMsg };
+      });
+      this.calculateImportSummary();
+    }
   }
 
   executeImport() {
@@ -990,12 +1037,32 @@ saveQuizSet() {
     this.isImporting = true;
 
     this.quizService.importQuestions(payload).subscribe({
-      next: () => {
-        this.isImporting = false;
-        alert(`Đã nạp thành công ${payload.length} câu hỏi vào hệ thống!`);
-        this.clearImportFile();
-        this.closeImportModal();
-        this.loadQuestions();
+      next: (res: any) => {
+        // Lấy danh sách ID câu hỏi vừa được tạo từ backend
+        const importedIds = res?.createdQuestionIds || res?.CreatedQuestionIds || [];
+
+        if (this.isAssignModalOpen && this.selectedQuizSet && importedIds.length > 0) {
+          const assignReqs = importedIds.map((id: any) =>
+            this.quizService.assignQuestionToSet(this.selectedQuizSet.id, id).pipe(
+              catchError(err => of(null))
+            )
+          );
+
+          forkJoin(assignReqs).subscribe(() => {
+            this.isImporting = false;
+            alert(`Đã nạp và gán thành công ${importedIds.length} câu hỏi vào bộ đề!`);
+            this.clearImportFile();
+            this.closeImportModal();
+            this.loadQuestions();
+            this.loadQuizSetQuestionIds(this.selectedQuizSet.id);
+          });
+        } else {
+          this.isImporting = false;
+          alert(`Đã nạp thành công ${payload.length} câu hỏi vào hệ thống!`);
+          this.clearImportFile();
+          this.closeImportModal();
+          this.loadQuestions();
+        }
       },
       error: (err) => {
         this.isImporting = false;

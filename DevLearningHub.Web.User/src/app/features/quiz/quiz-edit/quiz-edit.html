@@ -27,6 +27,17 @@
         </label>
       </div>
 
+      <div class="copy-option-card">
+        <div class="copy-option-text">
+          <h4>Hiển thị công khai</h4>
+          <p>Tắt tùy chọn này nếu bạn muốn giữ bộ đề này ở chế độ riêng tư.</p>
+        </div>
+        <label class="copy-switch">
+          <input type="checkbox" name="isPublic" [(ngModel)]="quizData.isPublic">
+          <span class="copy-switch-slider"></span>
+        </label>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label>Số lượng câu hỏi</label>

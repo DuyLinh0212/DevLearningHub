@@ -1,4 +1,4 @@
-﻿<header class="content-header">
+<header class="content-header">
       <div class="top-breadcrumb">
         <a routerLink="/quiz-bank">Học tập</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Tạo Đề ôn luyện</span>
       </div>
@@ -132,6 +132,17 @@
             </div>
             <label class="switch-control">
               <input type="checkbox" [(ngModel)]="quizMeta.allowedCopy">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-toggle-row" style="margin-top: 16px;">
+            <div class="toggle-text-left">
+              <h4>Hiển thị công khai</h4>
+              <p>Cho phép người khác nhìn thấy và làm bộ đề này</p>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" [(ngModel)]="quizMeta.isPublic">
               <span class="switch-slider"></span>
             </label>
           </div>

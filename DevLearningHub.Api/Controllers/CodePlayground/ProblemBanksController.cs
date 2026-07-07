@@ -4,9 +4,11 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Community; // PagedResponse<T>
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.CodePlayground;
@@ -27,12 +29,18 @@ public class ProblemBanksController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissions;
     private readonly IAutoApprovalPolicy _autoApproval;
+    private readonly IHubContext<NotificationHub, INotificationClient> _notificationHub;
 
-    public ProblemBanksController(DevLearningHubContext db, IPermissionService permissions, IAutoApprovalPolicy autoApproval)
+    public ProblemBanksController(
+        DevLearningHubContext db,
+        IPermissionService permissions,
+        IAutoApprovalPolicy autoApproval,
+        IHubContext<NotificationHub, INotificationClient> notificationHub)
     {
         _db = db;
         _permissions = permissions;
         _autoApproval = autoApproval;
+        _notificationHub = notificationHub;
     }
 
     // ----- Bank CRUD -----
@@ -168,6 +176,11 @@ public class ProblemBanksController : ControllerBase
 
         _db.ProblemBanks.Add(bank);
         await _db.SaveChangesAsync();
+
+        if (bank.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("problem_bank");
+        }
 
         return Ok(ApiResponse<ProblemBankResponse>.Ok(await LoadSummaryAsync(bank.Id, userId), "Problem bank created."));
     }

@@ -13,6 +13,10 @@ public interface INotificationClient
 
     // Pushed with the current unread count so the bell badge stays in sync.
     Task UnreadCountChanged(int unreadCount);
+
+    // Pushed whenever a moderation queue item changes state (created/approved/rejected),
+    // so open moderation queue views can refresh instantly instead of waiting on their poll.
+    Task ModerationQueueChanged(string type);
 }
 
 // Realtime hub for user notifications (replies, moderation deletes, ...).

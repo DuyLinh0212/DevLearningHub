@@ -32,16 +32,22 @@
       </div>
 
       <div class="settings-menu-card">
-        <button type="button" class="settings-tab-btn active"><i class="bi bi-person-circle"></i> Hồ sơ</button>
-        <button type="button" class="settings-tab-btn"><i class="bi bi-shield-lock"></i> Bảo mật</button>
-        <button type="button" class="settings-tab-btn"><i class="bi bi-bell"></i> Thông báo</button>
-        <button type="button" class="settings-tab-btn"><i class="bi bi-palette"></i> Giao diện</button>
-        <button type="button" class="settings-tab-btn"><i class="bi bi-shield-shaded"></i> Riêng tư</button>
+        <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'profile'" (click)="setTab('profile')"><i class="bi bi-person-circle"></i> Hồ sơ</button>
+        <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'security'" (click)="setTab('security')"><i class="bi bi-shield-lock"></i> Bảo mật</button>
+        <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'notifications'" (click)="setTab('notifications')">
+          <i class="bi bi-bell"></i> Thông báo
+          @if (notificationService.unreadCount() > 0) {
+            <span class="settings-tab-badge">{{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}</span>
+          }
+        </button>
+        <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'appearance'" (click)="setTab('appearance')"><i class="bi bi-palette"></i> Giao diện</button>
+        <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'privacy'" (click)="setTab('privacy')"><i class="bi bi-shield-shaded"></i> Riêng tư</button>
       </div>
     </div>
 
     <!-- CỘT PHẢI: NỘI DUNG THIẾT LẬP -->
     <div class="settings-content">
+      @if (activeTab === 'profile') {
       <div class="settings-main-card">
         <div class="card-header">
           <h3>Thông tin hồ sơ cá nhân</h3>
@@ -79,6 +85,92 @@
           </div>
         </form>
       </div>
+      }
+
+      @if (activeTab === 'notifications') {
+      <div class="settings-main-card">
+        <div class="card-header settings-notif-header">
+          <div>
+            <h3>Thông báo</h3>
+            <p>Toàn bộ thông báo bạn từng nhận, mới nhất hiển thị trước. Thông báo mới sẽ tự động xuất hiện ngay lập tức.</p>
+          </div>
+          @if (notifications.length > 0) {
+            <button type="button" class="notif-mark-all" (click)="markAllNotifRead()">Đọc tất cả</button>
+          }
+        </div>
+
+        <div class="settings-notif-body">
+          @if (notifLoading) {
+            <div class="notif-status"><i class="bi bi-arrow-repeat spin-anim"></i> Đang tải...</div>
+          } @else if (notifError) {
+            <div class="notif-status">
+              <i class="bi bi-exclamation-triangle"></i> Không thể tải thông báo
+              <button type="button" class="notif-mark-all" (click)="loadNotifications(notifPage)" style="display:inline; margin-left:8px;">Thử lại</button>
+            </div>
+          } @else if (notifications.length === 0) {
+            <div class="notif-empty">
+              <i class="bi bi-bell-slash"></i>
+              <p>Chưa có thông báo nào</p>
+            </div>
+          } @else {
+            @for (n of notifications; track n.id) {
+              <div class="notif-item" [class.unread]="!n.isRead" [class.selected]="selectedNotif?.id === n.id" (click)="openNotifDetail(n)">
+                <div class="notif-icon-wrap" [class.notif-unread-dot]="!n.isRead">
+                  <i class="bi {{ getNotifIcon(n.type) }}"></i>
+                </div>
+                <div class="notif-content">
+                  <p class="notif-msg">{{ n.message }}</p>
+                  <span class="notif-time">{{ getRelativeTime(n.createdAt) }}</span>
+                </div>
+                <button type="button" class="notif-del" (click)="deleteNotif(n, $event)" title="Xóa">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+              @if (selectedNotif?.id === n.id) {
+                <div class="notif-detail">
+                  <div class="notif-detail-row">
+                    <span>Loại</span>
+                    <strong>{{ n.refType || n.type }}</strong>
+                  </div>
+                  <div class="notif-detail-row">
+                    <span>Thời gian</span>
+                    <strong>{{ getRelativeTime(n.createdAt) }}</strong>
+                  </div>
+                  @if (n.reporterName) {
+                    <div class="notif-detail-row">
+                      <span>Người báo</span>
+                      <strong>{{ n.reporterName }}</strong>
+                    </div>
+                  }
+                  @if (n.reportDescription) {
+                    <div class="notif-report-note">
+                      <span>Nội dung báo cáo</span>
+                      <p>{{ n.reportDescription }}</p>
+                    </div>
+                  } @else {
+                    <p class="notif-detail-message">{{ n.message }}</p>
+                  }
+                  @if (canOpenNotifTarget(n)) {
+                    <button type="button" class="notif-open-target" (click)="openNotifTarget(n, $event)">
+                      <i class="bi bi-box-arrow-up-right"></i>
+                      Xem chi tiết
+                    </button>
+                  }
+                </div>
+              }
+            }
+          }
+        </div>
+
+        @if (notifTotalPages > 1) {
+          <div class="settings-notif-pagination">
+            <button type="button" [disabled]="notifPage <= 1" (click)="goToNotifPage(notifPage - 1)"><i class="bi bi-chevron-left"></i></button>
+            <span>Trang {{ notifPage }} / {{ notifTotalPages }}</span>
+            <button type="button" [disabled]="notifPage >= notifTotalPages" (click)="goToNotifPage(notifPage + 1)"><i class="bi bi-chevron-right"></i></button>
+          </div>
+        }
+      </div>
+      }
     </div>
   </div>
 </div>

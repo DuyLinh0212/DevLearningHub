@@ -3,9 +3,11 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.Quiz;
@@ -20,19 +22,22 @@ public class QuizSetsController : ControllerBase
     private readonly IPermissionService _permissions;
     private readonly INotificationService _notifications;
     private readonly IAutoApprovalPolicy _autoApproval;
+    private readonly IHubContext<NotificationHub, INotificationClient> _notificationHub;
 
     public QuizSetsController(
         DevLearningHubContext db,
         IAuditService audit,
         IPermissionService permissions,
         INotificationService notifications,
-        IAutoApprovalPolicy autoApproval)
+        IAutoApprovalPolicy autoApproval,
+        IHubContext<NotificationHub, INotificationClient> notificationHub)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
         _notifications = notifications;
         _autoApproval = autoApproval;
+        _notificationHub = notificationHub;
     }
 
     [HttpGet]
@@ -266,6 +271,11 @@ public class QuizSetsController : ControllerBase
         _db.QuizSets.Add(quizSet);
         AddNewQuestionsToQuizSet(quizSet.Id, userId, resolvedTopicId, request.Questions);
         await _db.SaveChangesAsync();
+
+        if (quizSet.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("quiz_set");
+        }
 
         var response = await MapQuizSetResponseAsync(quizSet, request.Questions?.Count ?? 0);
 

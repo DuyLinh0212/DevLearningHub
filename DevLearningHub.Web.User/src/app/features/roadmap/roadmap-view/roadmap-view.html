@@ -59,7 +59,6 @@
             </div>
 
             <h3>{{ rm.title }}</h3>
-            <p>{{ rm.description || 'Lộ trình này đang chờ bổ sung mô tả chi tiết.' }}</p>
 
             <div class="roadmap-card-meta">
               <small><i class="bi bi-list-check"></i> {{ getRoadmapItemCount(rm) }} mục học</small>
@@ -105,7 +104,16 @@
             </div>
 
             <h2>{{ activeRoadmap.title }}</h2>
-            <p>{{ activeRoadmap.description || 'Lộ trình này đang được cập nhật nội dung chi tiết.' }}</p>
+            <div class="roadmap-desc-container">
+              <p class="roadmap-main-desc" [class.expanded]="isDescriptionExpanded">
+                {{ activeRoadmap.description || 'Lộ trình này đang được cập nhật nội dung chi tiết.' }}
+              </p>
+              @if (activeRoadmap.description && activeRoadmap.description.length > 200) {
+                <button type="button" class="btn-toggle-desc" (click)="toggleDescription()">
+                  {{ isDescriptionExpanded ? 'Thu gọn' : 'Xem thêm' }}
+                </button>
+              }
+            </div>
 
             @if (activeRoadmap.reviewStatus === 'rejected' && activeRoadmap.reviewNote) {
               <div class="review-note-banner">

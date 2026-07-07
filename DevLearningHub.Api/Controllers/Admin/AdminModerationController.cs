@@ -4,9 +4,11 @@ using DevLearningHub.Api.Dtos.Admin;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.Admin;
@@ -22,12 +24,16 @@ public class AdminModerationController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IAuditService _audit;
     private readonly IPermissionService _permissions;
+    private readonly INotificationService _notifications;
+    private readonly IHubContext<NotificationHub, INotificationClient> _hub;
 
-    public AdminModerationController(DevLearningHubContext db, IAuditService audit, IPermissionService permissions)
+    public AdminModerationController(DevLearningHubContext db, IAuditService audit, IPermissionService permissions, INotificationService notifications, IHubContext<NotificationHub, INotificationClient> hub)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
+        _notifications = notifications;
+        _hub = hub;
     }
 
     [HttpGet("queue")]
@@ -90,6 +96,8 @@ public class AdminModerationController : ControllerBase
         }
 
         var note = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        Guid authorId;
+        string title;
         switch (type)
         {
             case "post":
@@ -99,6 +107,8 @@ public class AdminModerationController : ControllerBase
                 post.ReviewedBy = reviewerId;
                 post.ReviewedAt = DateTime.Now;
                 post.ReviewNote = note;
+                authorId = post.AuthorId;
+                title = post.Title;
                 break;
 
             case "problem":
@@ -109,6 +119,8 @@ public class AdminModerationController : ControllerBase
                 problem.ReviewedAt = DateTime.Now;
                 problem.ReviewNote = note;
                 problem.IsActive = status == "approved";
+                authorId = problem.CreatedBy;
+                title = problem.Title;
                 break;
 
             case "problem_bank":
@@ -118,6 +130,8 @@ public class AdminModerationController : ControllerBase
                 bank.ReviewedBy = reviewerId;
                 bank.ReviewedAt = DateTime.Now;
                 bank.ReviewNote = note;
+                authorId = bank.CreatedBy;
+                title = bank.Title;
                 break;
 
             case "quiz_set":
@@ -127,6 +141,8 @@ public class AdminModerationController : ControllerBase
                 quizSet.ReviewedBy = reviewerId;
                 quizSet.ReviewedAt = DateTime.Now;
                 quizSet.ReviewNote = note;
+                authorId = quizSet.CreatedBy;
+                title = quizSet.Title;
                 break;
 
             case "roadmap":
@@ -136,7 +152,12 @@ public class AdminModerationController : ControllerBase
                 roadmap.ReviewedBy = reviewerId;
                 roadmap.ReviewedAt = DateTime.Now;
                 roadmap.ReviewNote = note;
+                authorId = roadmap.CreatedBy;
+                title = roadmap.Title;
                 break;
+
+            default:
+                return NotFound(ApiResponse<object>.Fail("Unsupported moderation type."));
         }
 
         _db.ModerationLogs.Add(new ModerationLog
@@ -153,7 +174,56 @@ public class AdminModerationController : ControllerBase
         await _db.SaveChangesAsync();
         await _audit.LogAsync($"moderation.review.{status}", type, id, note);
 
+        Console.WriteLine($"=======> [MODERATION DEBUG] Chuẩn bị gọi NotifyAsync. AuthorId={authorId}, ReviewerId={reviewerId}, Type={type}, Status={status}");
+
+        await _notifications.NotifyAsync(
+            authorId,
+            status == "approved" ? NotificationTypes.ContentApproved : NotificationTypes.ContentRejected,
+            BuildReviewMessage(type, title, status, note),
+            id,
+            RefTypeFor(type),
+            actorId: reviewerId);
+
+        Console.WriteLine($"=======> [MODERATION DEBUG] Đã gọi NotifyAsync xong!");
+
+        await _hub.Clients.All.ModerationQueueChanged(type);
+
         return Ok(ApiResponse<object>.Ok(new { type, id, status }));
+    }
+
+    private static string BuildReviewMessage(string type, string title, string status, string? note)
+    {
+        var typeLabel = type switch
+        {
+            "post" => "bài viết",
+            "problem" => "bài code",
+            "problem_bank" => "bộ bài code",
+            "quiz_set" => "bộ đề trắc nghiệm",
+            "roadmap" => "lộ trình",
+            _ => "nội dung"
+        };
+
+        if (status == "approved")
+        {
+            return $"{char.ToUpperInvariant(typeLabel[0])}{typeLabel[1..]} \"{title}\" của bạn đã được duyệt.";
+        }
+
+        return string.IsNullOrWhiteSpace(note)
+            ? $"{char.ToUpperInvariant(typeLabel[0])}{typeLabel[1..]} \"{title}\" của bạn đã bị từ chối."
+            : $"{char.ToUpperInvariant(typeLabel[0])}{typeLabel[1..]} \"{title}\" của bạn đã bị từ chối. Lý do: {note}";
+    }
+
+    private static string RefTypeFor(string type)
+    {
+        return type switch
+        {
+            "post" => NotificationRefTypes.Post,
+            "problem" => NotificationRefTypes.Problem,
+            "problem_bank" => NotificationRefTypes.ProblemBank,
+            "quiz_set" => NotificationRefTypes.QuizSet,
+            "roadmap" => NotificationRefTypes.Roadmap,
+            _ => type
+        };
     }
 
     [HttpGet("logs")]

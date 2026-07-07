@@ -18,9 +18,6 @@
       </div>
 
       <div class="admin-header-actions" style="margin-left: auto;">
-        <button class="btn-admin-act blue" (click)="openImportModal()">
-          <i class="bi bi-cloud-arrow-up-fill"></i> Import Excel/JSON
-        </button>
 
         @if (currentSubTab === 'bank') {
         <button class="btn-admin-act purple" (click)="openQuestionModal()">
@@ -312,8 +309,11 @@
         }
       </div>
 
-      <div class="modal-actions-row" style="margin-top: 20px;">
-        <button class="btn-modal-cancel" (click)="openQuestionModal()"><i class="bi bi-plus-lg"></i> Tạo câu hỏi mới</button>
+      <div class="modal-actions-row" style="margin-top: 20px; display: flex; justify-content: space-between;">
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-modal-cancel" (click)="openImportModal()"><i class="bi bi-cloud-arrow-up-fill"></i> Nạp từ Excel/JSON</button>
+          <button class="btn-modal-cancel" (click)="openQuestionModal()"><i class="bi bi-plus-lg"></i> Tạo câu hỏi mới</button>
+        </div>
         <button class="btn-modal-confirm" (click)="closeAssignModal()">Hoàn tất thiết lập</button>
       </div>
     </div>
@@ -368,6 +368,16 @@
           <div class="input-field-group" style="flex: 1;">
             <label>Tỷ lệ điểm đạt (%)</label>
             <input type="number" [(ngModel)]="quizSetForm.passRate" min="1" max="100">
+          </div>
+        </div>
+
+        <div class="input-field-row" style="margin-top: 14px; display: flex; gap: 12px;">
+          <div class="input-field-group" style="flex: 1;">
+            <label>Trạng thái công khai</label>
+            <select [(ngModel)]="quizSetForm.isPublic">
+              <option [ngValue]="true">Công khai (Người học có thể thấy)</option>
+              <option [ngValue]="false">Riêng tư (Chỉ Admin thấy)</option>
+            </select>
           </div>
         </div>
 
@@ -430,6 +440,24 @@
             </ul>
           </div>
         </div>
+      </div>
+
+      <!-- Chủ đề mặc định khi file không chứa topicId -->
+      <div style="margin-top: 16px; padding: 14px 16px; background: var(--bg-nested); border-radius: 8px; border: 1px solid var(--border-nested); display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; margin: 0;">
+          <i class="bi bi-tag-fill" style="margin-right: 6px; color: #a855f7;"></i>Chủ đề mặc định:
+        </label>
+        <select [(ngModel)]="importDefaultTopicId" (ngModelChange)="onImportTopicChange()"
+                style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168,85,247,0.3);
+                       background: var(--bg-card); color: var(--text-main); font-size: 0.85rem; cursor: pointer;">
+          <option value="" disabled>-- Chọn chủ đề --</option>
+          @for (t of topics; track t.id) {
+            <option [value]="t.id">{{ t.name }}</option>
+          }
+        </select>
+        <span style="font-size: 0.78rem; color: var(--text-muted); white-space: nowrap;">
+          <i class="bi bi-info-circle" style="margin-right: 4px;"></i>Áp dụng cho các câu hỏi không có topicId trong file
+        </span>
       </div>
 
       <div class="import-upload-grid" style="margin-top: 20px;">

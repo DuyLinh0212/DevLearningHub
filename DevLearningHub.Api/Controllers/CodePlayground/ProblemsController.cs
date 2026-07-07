@@ -2,9 +2,11 @@ using DevLearningHub.Api.Authorization;
 using DevLearningHub.Api.Dtos.CodePlayground;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.CodePlayground;
@@ -17,17 +19,20 @@ public class ProblemsController : ControllerBase
     private readonly INotificationService _notifications;
     private readonly IPermissionService _permissions;
     private readonly IAutoApprovalPolicy _autoApproval;
+    private readonly IHubContext<NotificationHub, INotificationClient> _notificationHub;
 
     public ProblemsController(
         DevLearningHubContext context,
         INotificationService notifications,
         IPermissionService permissions,
-        IAutoApprovalPolicy autoApproval)
+        IAutoApprovalPolicy autoApproval,
+        IHubContext<NotificationHub, INotificationClient> notificationHub)
     {
         _context = context;
         _notifications = notifications;
         _permissions = permissions;
         _autoApproval = autoApproval;
+        _notificationHub = notificationHub;
     }
 
     [HttpGet("problems")]
@@ -162,6 +167,11 @@ public class ProblemsController : ControllerBase
 
         _context.Problems.Add(problem);
         await _context.SaveChangesAsync();
+
+        if (problem.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("problem");
+        }
 
         return CreatedAtAction(nameof(GetProblem), new { id = problem.Id }, new ProblemDetailResponse
         {

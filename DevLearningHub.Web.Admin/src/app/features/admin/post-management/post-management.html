@@ -13,6 +13,12 @@
       </div>
 
       <div class="admin-header-actions" style="margin-left: auto;">
+        @if (hasPermission('post:create')) {
+          <button class="btn-admin-act" style="background: rgba(168,85,247,0.1); color:#a855f7; border:1px solid rgba(168,85,247,0.2);" (click)="goToCreatePost()">
+            <i class="bi bi-plus-lg"></i>
+            Tạo bài viết
+          </button>
+        }
         <button class="btn-admin-act" style="background: rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);" (click)="toggleShowHidden()">
           <i class="bi" [class.bi-eye-slash-fill]="!showHidden" [class.bi-eye-fill]="showHidden"></i>
           {{ showHidden ? 'Ẩn bài đã hide' : 'Hiện cả bài đã hide' }}
@@ -207,5 +213,4 @@
     </div>
   </div>
   }
-
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import {
   ModerationService, ModerationQueueItem, ModerationType, ReviewStatus
 } from '../../../core/services/moderation.service';
+import { NotificationRealtimeService } from '../../../core/services/notification-realtime.service';
+import { Subscription, interval } from 'rxjs';
 
 interface QueueTab {
   key: ModerationType;
@@ -23,10 +25,11 @@ interface QueueTab {
   templateUrl: './moderation-queue.html',
   styleUrl: './moderation-queue.css'
 })
-export class ModerationQueueComponent implements OnInit {
+export class ModerationQueueComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private auth = inject(AuthService);
   private moderation = inject(ModerationService);
+  private notifRealtime = inject(NotificationRealtimeService);
 
   tabs: QueueTab[] = [];
   activeTab: ModerationType = 'post';
@@ -47,11 +50,41 @@ export class ModerationQueueComponent implements OnInit {
   detailLoading = false;
   detailError = '';
 
+  private pollSub?: Subscription;
+  private queueChangedSub?: Subscription;
+
   ngOnInit() {
     this.buildTabs();
     if (this.tabs.length > 0) {
       this.activeTab = this.tabs[0].key;
-      this.loadQueue();
+      this.startPolling();
+    }
+    this.queueChangedSub = this.notifRealtime.moderationQueueChanged$.subscribe(() => {
+      if (this.statusFilter === 'pending' && !this.submitting) {
+        this.loadQueueSilent();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.stopPolling();
+    this.queueChangedSub?.unsubscribe();
+  }
+
+  startPolling() {
+    this.stopPolling();
+    this.pollSub = interval(5000).subscribe(() => {
+      if (this.statusFilter === 'pending' && !this.submitting) {
+        this.loadQueueSilent();
+      }
+    });
+    this.loadQueue(); // Initial load with spinner
+  }
+
+  stopPolling() {
+    if (this.pollSub) {
+      this.pollSub.unsubscribe();
+      this.pollSub = undefined;
     }
   }
 
@@ -81,13 +114,20 @@ export class ModerationQueueComponent implements OnInit {
   selectTab(key: ModerationType) {
     if (this.activeTab === key) return;
     this.activeTab = key;
-    this.loadQueue();
+    this.startPolling(); // Restart polling for the new tab
   }
 
   changeStatus(status: ReviewStatus) {
     if (this.statusFilter === status) return;
     this.statusFilter = status;
-    this.loadQueue();
+    
+    // Only poll automatically if viewing the pending queue
+    if (status === 'pending') {
+      this.startPolling();
+    } else {
+      this.stopPolling();
+      this.loadQueue();
+    }
   }
 
   loadQueue() {
@@ -95,11 +135,14 @@ export class ModerationQueueComponent implements OnInit {
     this.items = [];
     this.cdr.detectChanges();
 
-    this.moderation.getQueue(this.activeTab, this.statusFilter).subscribe({
-      next: (items) => {
-        this.items = items;
-        const tab = this.tabs.find(t => t.key === this.activeTab);
-        if (tab && this.statusFilter === 'pending') tab.count = items.length;
+    this.moderation.getQueue('all', this.statusFilter).subscribe({
+      next: (allItems) => {
+        if (this.statusFilter === 'pending') {
+          for (const tab of this.tabs) {
+            tab.count = allItems.filter(i => i.type === tab.key).length;
+          }
+        }
+        this.items = allItems.filter(i => i.type === this.activeTab);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -108,6 +151,26 @@ export class ModerationQueueComponent implements OnInit {
         this.isLoading = false;
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  loadQueueSilent() {
+    this.moderation.getQueue('all', this.statusFilter).subscribe({
+      next: (allItems) => {
+        if (this.statusFilter === 'pending') {
+          for (const tab of this.tabs) {
+            tab.count = allItems.filter(i => i.type === tab.key).length;
+          }
+        }
+        
+        const activeItems = allItems.filter(i => i.type === this.activeTab);
+        // Only update if there's a difference to avoid UI flicker
+        if (JSON.stringify(this.items.map(i => i.id)) !== JSON.stringify(activeItems.map(i => i.id))) {
+          this.items = activeItems;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {} // Silent fail
     });
   }
 

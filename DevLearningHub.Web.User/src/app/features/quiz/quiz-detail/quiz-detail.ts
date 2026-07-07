@@ -28,11 +28,15 @@ export class QuizDetailComponent implements OnInit {
 	quizShuffle: boolean = false;
 	quizInstantResult: boolean = false;
 	quizAllowedCopy: boolean = true;
+	quizIsPublic: boolean = true;
 	currentUserId: string = '';
 	quizCreatedBy: string = '';
 	quizCreatedById: string = '';
 	quizLevelRaw: string = 'beginner';
 	get creatorId(): string { return this.quizCreatedById; }
+
+	private roadmapId: string | null = null;
+	private roadmapItemId: string | null = null;
 
 	examQuestionCount: number | null = null;
 	history: any[] = [];
@@ -42,6 +46,8 @@ export class QuizDetailComponent implements OnInit {
 
 	ngOnInit() {
 		this.quizId = this.route.snapshot.paramMap.get('id') || '';
+		this.roadmapId = this.route.snapshot.queryParamMap.get('roadmapId');
+		this.roadmapItemId = this.route.snapshot.queryParamMap.get('roadmapItemId');
 
 		if (!this.quizId) {
 			this.router.navigate(['/quiz-bank']);
@@ -85,6 +91,7 @@ export class QuizDetailComponent implements OnInit {
 				this.quizShuffle = quiz.shuffle || false;
 				this.quizInstantResult = quiz.instantResult || false;
 				this.quizAllowedCopy = quiz.allowedCopy ?? quiz.AllowedCopy ?? true;
+				this.quizIsPublic = quiz.isPublic ?? quiz.IsPublic ?? true;
 				this.examQuestionCount = quiz.examQuestionCount ?? quiz.ExamQuestionCount ?? null;
 
 				const rawLevel = (quiz.level || 'beginner').toString().toLowerCase().trim();
@@ -137,9 +144,12 @@ export class QuizDetailComponent implements OnInit {
 
 	startQuiz(mode: 'practice' | 'exam') {
 		const limit = mode === 'exam' ? this.effectiveExamCount : this.quizQuestionsCount;
-		this.router.navigate(['/quiz-play', this.quizId], {
-			queryParams: { mode, limit }
-		});
+		const queryParams: any = { mode, limit };
+		if (this.roadmapId && this.roadmapItemId) {
+			queryParams.roadmapId = this.roadmapId;
+			queryParams.roadmapItemId = this.roadmapItemId;
+		}
+		this.router.navigate(['/quiz-play', this.quizId], { queryParams });
 	}
 
 	get showQuizCreator(): boolean {
@@ -202,7 +212,7 @@ export class QuizDetailComponent implements OnInit {
 			description: this.quizDesc,
 			mode: 'practice',
 			timeLimitSeconds: this.quizDuration * 60,
-			isPublic: true,
+			isPublic: this.quizIsPublic,
 			allowedCopy: allowedCopy,
 			topicId: null,
 			level: this.quizLevelRaw,
@@ -215,6 +225,21 @@ export class QuizDetailComponent implements OnInit {
 			error: (err) => {
 				console.error(err);
 				alert(err?.error?.message || 'Không thể cập nhật quyền sao chép.');
+			}
+		});
+	}
+
+	deleteQuizSet() {
+		if (!confirm('Bạn có chắc chắn muốn xóa bộ đề này? Thao tác này không thể hoàn tác.')) return;
+		
+		this.quizService.deleteQuizSet(this.quizId).subscribe({
+			next: () => {
+				alert('Đã xóa bộ đề thành công.');
+				this.router.navigate(['/quiz-bank']);
+			},
+			error: (err) => {
+				console.error(err);
+				alert(err?.error?.message || 'Không thể xóa bộ đề.');
 			}
 		});
 	}

@@ -384,6 +384,10 @@
   border-radius: 10px;
   background: var(--bg-card);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Cap the height so long role lists scroll instead of being clipped by .pq-matrix's min-height. */
+  max-height: min(640px, calc(100vh - 260px));
 }
 .pq-roles-head {
   display: flex;
@@ -397,10 +401,26 @@
   color: var(--text-muted);
   border-bottom: 1px solid var(--bg-card-border);
   background: var(--bg-card-hover);
+  flex-shrink: 0;
 }
 .btn-create-sm { padding: 5px 12px; font-size: 0.78rem; }
 
-.pq-role-list { list-style: none; margin: 0; padding: 0; }
+.pq-role-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.pq-role-list::-webkit-scrollbar { width: 5px; }
+.pq-role-list::-webkit-scrollbar-thumb { background: var(--bg-card-border); border-radius: 999px; }
+
+/* Loading/empty states sit inside the same scroll-capped column. */
+.pq-roles .loading-state,
+.pq-roles .empty-pane {
+  overflow-y: auto;
+}
 .pq-role-item {
   position: relative;
   padding: 12px 14px;
@@ -447,7 +467,7 @@
   right: 10px;
   display: flex;
   gap: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.12s;
 }
 .pq-role-item:hover .pq-role-actions,

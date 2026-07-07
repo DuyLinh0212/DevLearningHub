@@ -1,4 +1,4 @@
-﻿import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -53,6 +53,7 @@ export class QuizCreateComponent implements OnInit {
     passRate: 70,
     shuffle: true,
     instantResult: true,
+    isPublic: true,
     allowedCopy: true,
     examUseAllQuestions: true,
     examQuestionCount: 10
@@ -120,6 +121,7 @@ export class QuizCreateComponent implements OnInit {
                 passRate: target.passRate || 70,
                 shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
                 instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
+                isPublic: target.isPublic ?? true,
                 allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true,
                 examUseAllQuestions: !examQuestionCount,
                 examQuestionCount: examQuestionCount || 10
@@ -513,10 +515,10 @@ export class QuizCreateComponent implements OnInit {
 
     const quizSetPayload = {
       title: this.quizMeta.title.trim(),
-      description: this.quizMeta.desc ? this.quizMeta.desc.trim() : '', // Khớp tên cột description dưới DB
+      description: this.quizMeta.desc ? this.quizMeta.desc.trim() : '', 
       mode: 'practice', 
       timeLimitSeconds: (this.quizMeta.duration || 15) * 60,
-      isPublic: !isDraft,
+      isPublic: this.quizMeta.isPublic,
       topicId: requestedTopicId,
       topic: requestedTopicName,
       level: mappedLevel,

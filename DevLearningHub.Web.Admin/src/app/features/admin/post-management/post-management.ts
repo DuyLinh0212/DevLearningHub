@@ -283,6 +283,10 @@ export class PostManagementComponent implements OnInit {
     this.closeModerateModal();
   }
 
+  goToCreatePost() {
+    this.router.navigate(['/admin/posts/create']);
+  }
+
   moderatePost(postId: string, hide: boolean, reason: string) {
     const payload = { hidden: hide, reason: reason || null };
     this.http.post<any>(`/api/posts/${postId}/moderate`, payload).subscribe({

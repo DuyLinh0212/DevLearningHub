@@ -102,10 +102,25 @@ export class NotificationService {
     });
   }
 
-  getNotifications(page = 1, pageSize = 20, unreadOnly = false): Observable<any> {
+  getNotifications(page = 1, pageSize = 20, unreadOnly = false, excludeHiddenFromBell = false): Observable<any> {
     return this.http.get<any>('/api/notifications', {
-      params: { page: String(page), pageSize: String(pageSize), unreadOnly: String(unreadOnly) }
+      params: {
+        page: String(page),
+        pageSize: String(pageSize),
+        unreadOnly: String(unreadOnly),
+        excludeHiddenFromBell: String(excludeHiddenFromBell)
+      }
     });
+  }
+
+  // Hides a notification from the bell dropdown only — it still shows in the full history (Settings tab).
+  hideFromBell(id: string): Observable<any> {
+    return this.http.post<any>(`/api/notifications/${id}/hide-from-bell`, {}).pipe(
+      tap((res) => {
+        const count = res?.data?.unreadCount ?? 0;
+        this.unreadCount.set(count);
+      })
+    );
   }
 
   markAsRead(id: string): Observable<any> {

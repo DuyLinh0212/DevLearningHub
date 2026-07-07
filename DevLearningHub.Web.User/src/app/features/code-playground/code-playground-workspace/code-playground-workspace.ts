@@ -76,8 +76,6 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   problemId = '';
   problem: ProblemDetail | null = null;
   parsedDescription: SafeHtml = '';
-  parsedEditorial: SafeHtml = '';
-  parsedSolutions: SafeHtml = '';
   discussionPostId: string | null = null;
   isLoading = true;
 
@@ -105,7 +103,7 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   highlightedCode: SafeHtml = '';
 
   // Tabs control
-  activeLeftTab: 'description' | 'editorial' | 'solutions' | 'submissions' = 'description';
+  activeLeftTab: 'description' | 'solutions' | 'submissions' = 'description';
   activeConsoleTab: 'testcase' | 'result' = 'testcase';
   isSolved = false;
 
@@ -114,22 +112,6 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
   dislikes = 0;
   isLiked = false;
   isDisliked = false;
-  
-  acceptedStr = '';
-  totalSubsStr = '';
-  acceptanceRate = '';
-  
-  showTopics = false;
-  showCompanies = false;
-  activeHintIndex: number | null = null;
-  companies: string[] = [];
-  hints: string[] = [];
-  discussionCount = 0;
-
-  feedbackVoted = false;
-  feedbackSelection: 'yes' | 'no' | null = null;
-  feedbackYesPercent = 50;
-  feedbackNoPercent = 50;
 
   streakCount = 3;
   dccCompleted = false;
@@ -229,9 +211,6 @@ int main() {
         this.parsedDescription = this.sanitizer.bypassSecurityTrustHtml(
           this.parseMarkdown(res.description || '')
         );
-
-        // Generate dynamic editorial and solution content
-        this.generateEditorialAndSolutions(res.title || '');
 
         // Try to fetch discussion post matching the problem title (fuzzy match)
         if (res.title) {
@@ -578,46 +557,9 @@ int main() {
     this.cdr.detectChanges();
   }
 
-  voteFeedback(type: 'yes' | 'no') {
-    if (this.feedbackVoted) return;
-    this.feedbackSelection = type;
-    this.feedbackVoted = true;
-    
-    if (type === 'yes') {
-      const currentYesCount = Math.round(this.feedbackYesPercent * 5);
-      const total = 500;
-      this.feedbackYesPercent = Math.round(((currentYesCount + 1) / (total + 1)) * 100);
-      this.feedbackNoPercent = 100 - this.feedbackYesPercent;
-    } else {
-      const currentNoCount = Math.round(this.feedbackNoPercent * 5);
-      const total = 500;
-      this.feedbackNoPercent = Math.round(((currentNoCount + 1) / (total + 1)) * 100);
-      this.feedbackYesPercent = 100 - this.feedbackNoPercent;
-    }
-    this.cdr.detectChanges();
-  }
-
-  toggleAccordion(type: 'topics' | 'companies' | 'hints') {
-    if (type === 'topics') {
-      this.showTopics = !this.showTopics;
-    } else if (type === 'companies') {
-      this.showCompanies = !this.showCompanies;
-    }
-    this.cdr.detectChanges();
-  }
-
-  toggleHint(idx: number) {
-    if (this.activeHintIndex === idx) {
-      this.activeHintIndex = null;
-    } else {
-      this.activeHintIndex = idx;
-    }
-    this.cdr.detectChanges();
-  }
-
   generateProblemMockStats(problemId: string, title: string, difficulty: string) {
     if (!problemId) return;
-    
+
     let hash = 0;
     const str = problemId + title;
     for (let i = 0; i < str.length; i++) {
@@ -630,72 +572,6 @@ int main() {
     this.dislikes = (hash % 80) + 5;
     this.isLiked = false;
     this.isDisliked = false;
-
-    // Acceptance rate
-    let baseRate = 50;
-    if (difficulty.toLowerCase() === 'easy') baseRate = 78;
-    else if (difficulty.toLowerCase() === 'hard') baseRate = 22;
-
-    const rateOffset = (hash % 14) - 7; // -7 to +7
-    const finalRate = baseRate + rateOffset;
-    this.acceptanceRate = finalRate.toFixed(1) + '%';
-
-    const totalSubs = (hash % 80000) + 10000;
-    const accepted = Math.floor(totalSubs * finalRate / 100);
-
-    this.acceptedStr = this.formatNumber(accepted);
-    this.totalSubsStr = this.formatNumber(totalSubs);
-
-    // Discussion count
-    this.discussionCount = (hash % 180) + 12;
-
-    // Companies
-    const allCompanies = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple', 'Uber', 'Bloomberg', 'TikTok', 'Adobe'];
-    const companyCount = (hash % 3) + 2; // 2 to 4 companies
-    this.companies = [];
-    for (let i = 0; i < companyCount; i++) {
-      const compIndex = (hash + i) % allCompanies.length;
-      const compName = allCompanies[compIndex];
-      if (!this.companies.includes(compName)) {
-        this.companies.push(compName);
-      }
-    }
-
-    // Hints
-    this.hints = [];
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('tính tổng') || lowerTitle.includes('sum') || lowerTitle.includes('hai số')) {
-      this.hints.push("Đọc trực tiếp các giá trị đầu vào từ luồng vào tiêu chuẩn (stdin).");
-      this.hints.push("Sử dụng kiểu dữ liệu số nguyên đủ lớn (như `long long` trong C++ hoặc `long` trong Java) để tránh lỗi tràn số khi tính tổng các số cực lớn.");
-    } else if (lowerTitle.includes('hello')) {
-      this.hints.push("Đảm bảo in chính xác chuỗi 'Hello World!' bao gồm cả dấu chấm than ở cuối.");
-      this.hints.push("Hãy chắc chắn rằng không in thừa bất kỳ ký tự khoảng trắng hay ký tự xuống dòng nào không cần thiết.");
-    } else if (lowerTitle.includes('lớn nhất') || lowerTitle.includes('max') || lowerTitle.includes('mảng')) {
-      this.hints.push("Khởi tạo biến lưu giá trị cực đại tạm thời bằng phần tử đầu tiên của mảng.");
-      this.hints.push("Duyệt qua các phần tử tiếp theo từ chỉ số 1 đến N-1 và cập nhật biến cực đại nếu tìm thấy phần tử có giá trị lớn hơn.");
-    } else {
-      this.hints.push("Hãy mô tả giải thuật của bạn bằng mã giả trước khi bắt đầu viết mã nguồn thực tế.");
-      this.hints.push("Xem xét kỹ các ràng buộc về bộ nhớ và thời gian (Time Limit & Memory Limit) trong đề bài.");
-    }
-
-    // Reset feedback survey state for this problem
-    this.feedbackVoted = false;
-    this.feedbackSelection = null;
-    const yesVotes = (hash % 300) + 100;
-    const noVotes = (hash % 80) + 10;
-    const totalVotes = yesVotes + noVotes;
-    this.feedbackYesPercent = Math.round((yesVotes / totalVotes) * 100);
-    this.feedbackNoPercent = 100 - this.feedbackYesPercent;
-  }
-
-  private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
   }
 
   parseMarkdown(text: string): string {
@@ -1037,195 +913,4 @@ int main() {
     return result;
   }
 
-  generateEditorialAndSolutions(title: string) {
-    const lowerTitle = title.toLowerCase();
-    let editorialMarkdown = '';
-    let solutionsMarkdown = '';
-
-    if (lowerTitle.includes('tính tổng') || lowerTitle.includes('sum') || lowerTitle.includes('hai số') || lowerTitle.includes('two sum')) {
-      editorialMarkdown = `
-### Hướng tiếp cận Two Sum / Tính tổng hai số
-
-Bài toán yêu cầu tìm hai số trong mảng sao cho tổng của chúng bằng một giá trị \`target\` cho trước.
-
-#### Cách 1: Vét cạn (Brute Force)
-Sử dụng 2 vòng lặp lồng nhau để duyệt qua mọi cặp phần tử \`(i, j)\`.
-- **Độ phức tạp thời gian:** \`O(N^2)\`
-- **Độ phức tạp không gian:** \`O(1)\`
-
-#### Cách 2: Sử dụng Bảng băm (Hash Map) - Tối ưu
-Ta duyệt qua mảng một lần. Với mỗi phần tử \`x\`, ta kiểm tra xem \`target - x\` đã tồn tại trong bảng băm chưa:
-1. Nếu có, ta đã tìm thấy cặp số thỏa mãn.
-2. Nếu không, ta đưa \`x\` và chỉ số của nó vào bảng băm.
-- **Độ phức tạp thời gian:** \`O(N)\`
-- **Độ phức tạp không gian:** \`O(N)\`
-      `;
-
-      solutionsMarkdown = `
-Dưới đây là lời giải mẫu bằng Python và C++ sử dụng phương pháp Hash Map:
-
-#### Python 3
-\`\`\`python
-class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        hashmap = {}
-        for i, num in enumerate(nums):
-            complement = target - num
-            if complement in hashmap:
-                return [hashmap[complement], i]
-            hashmap[num] = i
-\`\`\`
-
-#### C++
-\`\`\`cpp
-#include <vector>
-#include <unordered_map>
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        unordered_map<int, int> hashmap;
-        for (int i = 0; i < nums.size(); ++i) {
-            int complement = target - nums[i];
-            if (hashmap.count(complement)) {
-                return {hashmap[complement], i};
-            }
-            hashmap[nums[i]] = i;
-        }
-        return {};
-    }
-};
-\`\`\`
-      `;
-    } else if (lowerTitle.includes('concatenation') || lowerTitle.includes('ghép mảng') || lowerTitle.includes('nhân đôi')) {
-      editorialMarkdown = `
-### Ghép hai mảng / Concatenation of Array
-
-Bài toán yêu cầu tạo ra mảng \`ans\` có độ dài \`2n\` từ mảng đầu vào \`nums\` có độ dài \`n\` sao cho \`ans[i] == nums[i]\` và \`ans[i + n] == nums[i]\`.
-
-#### Giải pháp
-Chúng ta chỉ cần duyệt qua mảng \`nums\` một lần từ \`0\` đến \`n - 1\`. Với mỗi chỉ số \`i\`:
-- Gán \`ans[i] = nums[i]\`
-- Gán \`ans[i + n] = nums[i]\`
-
-Hoặc đơn giản hơn, trong các ngôn ngữ có hỗ trợ nối mảng (như Python hay JS), chúng ta chỉ cần thực hiện phép nhân bản mảng (ví dụ: \`nums + nums\` trong Python, hoặc \`[...nums, ...nums]\` trong JS).
-
-- **Độ phức tạp thời gian:** \`O(N)\`
-- **Độ phức tạp không gian:** \`O(N)\` để lưu mảng kết quả.
-      `;
-
-      solutionsMarkdown = `
-Dưới đây là các giải pháp ngắn gọn bằng các ngôn ngữ khác nhau:
-
-#### JavaScript
-\`\`\`javascript
-var getConcatenation = function(nums) {
-    return [...nums, ...nums];
-};
-\`\`\`
-
-#### Python 3
-\`\`\`python
-class Solution:
-    def getConcatenation(self, nums: List[int]) -> List[int]:
-        return nums * 2
-\`\`\`
-
-#### C++
-\`\`\`cpp
-class Solution {
-public:
-    vector<int> getConcatenation(vector<int>& nums) {
-        int n = nums.size();
-        vector<int> ans(2 * n);
-        for (int i = 0; i < n; ++i) {
-            ans[i] = nums[i];
-            ans[i + n] = nums[i];
-        }
-        return ans;
-    }
-};
-\`\`\`
-      `;
-    } else if (lowerTitle.includes('hello') || lowerTitle.includes('xin chào')) {
-      editorialMarkdown = `
-### Xin chào thế giới / Hello World
-
-Bài toán cơ bản nhất để kiểm tra khả năng xuất dữ liệu ra thiết bị đầu ra tiêu chuẩn (stdout).
-
-#### Giải pháp
-In ra chuỗi chữ \`Hello World!\` hoặc \`Hello, World!\` tùy theo đề bài yêu cầu. Hãy chú ý đến từng ký tự viết hoa, viết thường và dấu câu.
-
-- **Độ phức tạp thời gian:** \`O(1)\`
-- **Độ phức tạp không gian:** \`O(1)\`
-      `;
-
-      solutionsMarkdown = `
-#### Python 3
-\`\`\`python
-print("Hello World!")
-\`\`\`
-
-#### JavaScript
-\`\`\`javascript
-console.log("Hello World!");
-\`\`\`
-
-#### C++
-\`\`\`cpp
-#include <iostream>
-using namespace std;
-
-int main() {
-    cout << "Hello World!" << endl;
-    return 0;
-}
-\`\`\`
-      `;
-    } else {
-      // Fallback
-      editorialMarkdown = `
-### Hướng dẫn Giải thuật cho bài toán: ${title}
-
-Bài toán này có thể giải bằng nhiều hướng tiếp cận khác nhau. Dưới đây là phân tích chi tiết:
-
-#### Hướng tiếp cận 1: Duyệt tuyến tính (Linear Scan)
-Duyệt qua các phần tử để tìm kết quả. Phù hợp với mảng nhỏ hoặc các cấu trúc dữ liệu đơn giản.
-- **Độ phức tạp thời gian:** \`O(N)\`
-- **Độ phức tạp không gian:** \`O(1)\`
-
-#### Hướng tiếp cận 2: Chia để trị hoặc Quy hoạch động (Dynamic Programming)
-Với các bài toán phức tạp hơn hoặc có các ràng buộc lớn, bạn cần lưu trữ lại kết quả của các bài toán con để tránh tính toán lặp lại.
-- **Độ phức tạp thời gian:** \`O(N)\` hoặc \`O(N log N)\`
-- **Độ phức tạp không gian:** \`O(N)\`
-      `;
-
-      solutionsMarkdown = `
-#### Python 3
-\`\`\`python
-# Giải pháp mẫu chung
-def solve(input_data):
-    # Xử lý thuật toán tại đây
-    result = []
-    return result
-\`\`\`
-
-#### C++
-\`\`\`cpp
-#include <iostream>
-#include <vector>
-
-using namespace std;
-
-// Giải pháp mẫu chung
-void solve() {
-    // Viết giải thuật tối ưu tại đây
-}
-\`\`\`
-      `;
-    }
-
-    this.parsedEditorial = this.sanitizer.bypassSecurityTrustHtml(this.parseMarkdown(editorialMarkdown));
-    this.parsedSolutions = this.sanitizer.bypassSecurityTrustHtml(this.parseMarkdown(solutionsMarkdown));
-  }
 }

@@ -42,7 +42,7 @@
           </div>
 
           <div class="card-meta-row" style="display: flex; align-items: center; gap: 10px; color: var(--text-muted-dark); font-size: 0.72rem; margin-bottom: 12px; border-top: 1px solid var(--border-nested); padding-top: 10px; flex-wrap: wrap;">
-            <span><i class="bi bi-person-workspace"></i> Vai trò: {{ rm.targetRole }}</span>
+            <span><i class="bi" [class.bi-globe2]="rm.isPublic" [class.bi-lock-fill]="!rm.isPublic"></i> {{ rm.isPublic ? 'Công khai' : 'Riêng tư' }}</span>
             <span><i class="bi bi-diagram-3"></i> {{ rm.topicsCount }} chủ đề</span>
             <span><i class="bi bi-list-ol"></i> {{ getRoadmapSummary(rm) }}</span>
           </div>
@@ -135,13 +135,17 @@
         </div>
         <div class="input-modal-flex-row">
           <div class="input-field-group-flex">
-            <label>Vai trò hướng đến</label>
-            <select [(ngModel)]="roadmapForm.targetRole">
-              <option value="Backend Developer">Backend Developer</option>
-              <option value="Frontend Developer">Frontend Developer</option>
-              <option value="Fullstack Developer">Fullstack Developer</option>
-              <option value="Software QA / Tester">Software QA / Tester</option>
-            </select>
+            <label>Hiển thị</label>
+            <div class="copy-privacy-card" style="margin: 0;">
+              <div class="copy-privacy-text">
+                <h4>{{ roadmapForm.isPublic ? 'Công khai' : 'Riêng tư' }}</h4>
+                <p>Cho phép mọi học viên nhìn thấy lộ trình này</p>
+              </div>
+              <label class="copy-privacy-switch">
+                <input type="checkbox" [checked]="roadmapForm.isPublic" (change)="roadmapForm.isPublic = !roadmapForm.isPublic">
+                <span class="copy-privacy-slider"></span>
+              </label>
+            </div>
           </div>
           <div class="input-field-group-flex">
             <label>Phân cấp lộ trình</label>

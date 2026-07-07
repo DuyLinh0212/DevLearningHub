@@ -34,7 +34,8 @@ public class NotificationsController : ControllerBase
     public async Task<ActionResult<ApiResponse<NotificationListResponse>>> GetNotifications(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = DefaultPageSize,
-        [FromQuery] bool unreadOnly = false)
+        [FromQuery] bool unreadOnly = false,
+        [FromQuery] bool excludeHiddenFromBell = false)
     {
         if (!User.TryGetUserId(out var userId))
         {
@@ -48,6 +49,10 @@ public class NotificationsController : ControllerBase
         if (unreadOnly)
         {
             query = query.Where(n => !n.IsRead);
+        }
+        if (excludeHiddenFromBell)
+        {
+            query = query.Where(n => !n.IsHiddenFromBell);
         }
 
         var totalCount = await query.CountAsync();
@@ -197,6 +202,29 @@ public class NotificationsController : ControllerBase
 
         var unreadCount = await _db.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
         return Ok(ApiResponse<object>.Ok(new { id = notification.Id, isRead = true, unreadCount }));
+    }
+
+    [HttpPost("{id:guid}/hide-from-bell")]
+    // Hide a notification from the bell dropdown without deleting it — it still shows in the full history.
+    public async Task<ActionResult<ApiResponse<object>>> HideFromBell(Guid id)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
+        }
+
+        var notification = await _db.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+        if (notification == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("Notification not found."));
+        }
+
+        notification.IsHiddenFromBell = true;
+        notification.IsRead = true;
+        await _db.SaveChangesAsync();
+
+        var unreadCount = await _db.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+        return Ok(ApiResponse<object>.Ok(new { id = notification.Id, isHiddenFromBell = true, unreadCount }));
     }
 
     [HttpPost("read-all")]

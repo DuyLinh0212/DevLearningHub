@@ -38,6 +38,72 @@
   gap: 8px !important;
 }
 
+.copy-privacy-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-nested);
+  border-radius: 8px;
+  background: var(--bg-nested);
+}
+
+.copy-privacy-text h4 {
+  margin: 0 0 2px 0;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.copy-privacy-text p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted-dark);
+}
+
+.copy-privacy-switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.copy-privacy-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.copy-privacy-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--border-nested);
+  border-radius: 999px;
+  transition: 0.2s;
+}
+
+.copy-privacy-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.copy-privacy-switch input:checked + .copy-privacy-slider {
+  background-color: #a855f7;
+}
+
+.copy-privacy-switch input:checked + .copy-privacy-slider::before {
+  transform: translateX(18px);
+}
+
 .roadmap-admin-card .btn-card-action {
   min-height: 36px;
   border-radius: 7px !important;

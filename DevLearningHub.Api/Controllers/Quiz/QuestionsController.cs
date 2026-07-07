@@ -235,6 +235,7 @@ public class QuestionsController : ControllerBase
 
         var errors = new List<string>();
         var created = 0;
+        var createdIds = new List<Guid>();
         var topics = await _db.Topics.ToListAsync();
         var usedSlugs = topics.Select(topic => topic.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -296,6 +297,7 @@ public class QuestionsController : ControllerBase
             _db.Questions.Add(question);
             _db.QuestionOptions.AddRange(options);
             created++;
+            createdIds.Add(question.Id);
         }
 
         await _db.SaveChangesAsync();
@@ -304,7 +306,8 @@ public class QuestionsController : ControllerBase
         {
             CreatedCount = created,
             SkippedCount = errors.Count,
-            Errors = errors
+            Errors = errors,
+            CreatedQuestionIds = createdIds
         };
 
         return Ok(ApiResponse<ImportQuestionsResultResponse>.Ok(response));

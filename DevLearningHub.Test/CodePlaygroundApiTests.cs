@@ -61,6 +61,21 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
         db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
 
+        // 0. Seed User để controller cấp XP cho lượt nộp "accepted" không bị lỗi thiếu bản ghi
+        db.Users.Add(new User
+        {
+            Id = _testUserId,
+            Username = $"codeplayground_{_testUserId:N}",
+            Email = $"codeplayground_{_testUserId:N}@test.local",
+            PasswordHash = "not-used-in-this-test",
+            FullName = "Code Playground Test User",
+            XpPoints = 0,
+            IsActive = true,
+            IsLocked = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        });
+
         // 1. Seed Ngôn ngữ lập trình
         var language = new ProgrammingLanguage
         {

@@ -80,7 +80,7 @@
       <main class="lc-post-main">
 
         <!-- Article Card -->
-        <article class="lc-article-card">
+        <article class="lc-article-card" [class.admin-post]="isAdminPost(post)">
 
           <!-- Author row -->
           <div class="lc-author-row">
@@ -93,9 +93,14 @@
               style="cursor:pointer"
             />
             <div class="lc-author-info">
-              <span class="lc-author-name" (click)="goToProfile(post.author.id)" style="cursor:pointer">
-                {{ post.author.fullName || post.author.username }}
-              </span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="lc-author-name" (click)="goToProfile(post.author.id)" style="cursor:pointer">
+                  {{ post.author.fullName || post.author.username }}
+                </span>
+                @if (isAdminPost(post)) {
+                  <span class="admin-badge"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                }
+              </div>
               <div class="lc-post-meta">
                 <i class="bi bi-eye"></i> {{ post.viewCount | number }}
                 &nbsp;·&nbsp;

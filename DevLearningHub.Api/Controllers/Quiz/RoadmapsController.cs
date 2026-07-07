@@ -3,9 +3,11 @@ using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Dtos.Quiz;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Extensions;
+using DevLearningHub.Api.Hubs;
 using DevLearningHub.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevLearningHub.Api.Controllers.Quiz;
@@ -17,20 +19,26 @@ public class RoadmapsController : ControllerBase
     private readonly DevLearningHubContext _db;
     private readonly IPermissionService _permissions;
     private readonly IAutoApprovalPolicy _autoApproval;
+    private readonly IHubContext<NotificationHub, INotificationClient> _notificationHub;
 
-    public RoadmapsController(DevLearningHubContext db, IPermissionService permissions, IAutoApprovalPolicy autoApproval)
+    public RoadmapsController(
+        DevLearningHubContext db,
+        IPermissionService permissions,
+        IAutoApprovalPolicy autoApproval,
+        IHubContext<NotificationHub, INotificationClient> notificationHub)
     {
         _db = db;
         _permissions = permissions;
         _autoApproval = autoApproval;
+        _notificationHub = notificationHub;
     }
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse<List<RoadmapResponse>>>> GetRoadmaps()
+    public async Task<ActionResult<ApiResponse<List<RoadmapResponse>>>> GetRoadmaps([FromQuery] bool manageMode = false)
     {
         User.TryGetUserId(out var userId);
-        var canManageAny = userId != Guid.Empty && await CanManageAnyRoadmapAsync(userId);
+        var canManageAny = manageMode && userId != Guid.Empty && await CanManageAnyRoadmapAsync(userId);
 
         var query = _db.Roadmaps
             .Include(r => r.RoadmapTopics)
@@ -63,7 +71,7 @@ public class RoadmapsController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse<RoadmapResponse>>> GetRoadmap(Guid id)
+    public async Task<ActionResult<ApiResponse<RoadmapResponse>>> GetRoadmap(Guid id, [FromQuery] bool manageMode = false)
     {
         var roadmap = await _db.Roadmaps
             .Include(r => r.RoadmapTopics)
@@ -83,7 +91,7 @@ public class RoadmapsController : ControllerBase
             return NotFound(ApiResponse<RoadmapResponse>.Fail("Roadmap not found."));
         }
 
-        if (!await CanViewRoadmapAsync(roadmap))
+        if (!await CanViewRoadmapAsync(roadmap, manageMode))
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<RoadmapResponse>.Fail("Forbidden."));
         }
@@ -123,6 +131,11 @@ public class RoadmapsController : ControllerBase
 
         _db.Roadmaps.Add(roadmap);
         await _db.SaveChangesAsync();
+
+        if (roadmap.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("roadmap");
+        }
 
         return Ok(ApiResponse<RoadmapResponse>.Ok(BuildRoadmapResponse(roadmap)));
     }
@@ -511,7 +524,7 @@ public class RoadmapsController : ControllerBase
             result.OrderByDescending(r => r.LastActivityAt ?? r.StartedAt).ToList()));
     }
 
-    private async Task<bool> CanViewRoadmapAsync(Roadmap roadmap)
+    private async Task<bool> CanViewRoadmapAsync(Roadmap roadmap, bool manageMode = false)
     {
         if (roadmap.IsPublic && roadmap.ReviewStatus == "approved")
         {
@@ -523,7 +536,7 @@ public class RoadmapsController : ControllerBase
             return false;
         }
 
-        return roadmap.CreatedBy == userId || await CanManageAnyRoadmapAsync(userId);
+        return roadmap.CreatedBy == userId || (manageMode && await CanManageAnyRoadmapAsync(userId));
     }
 
     private async Task<bool> CanManageRoadmapAsync(Roadmap roadmap, Guid userId)

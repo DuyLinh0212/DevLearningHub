@@ -17,6 +17,8 @@ public static class NotificationTypes
     public const string CommentDeleted = "comment_deleted";
     public const string QuizDeleted = "quiz_deleted";
     public const string ProblemDeleted = "problem_deleted";
+    public const string ContentApproved = "content_approved";
+    public const string ContentRejected = "content_rejected";
 }
 
 public static class NotificationRefTypes
@@ -27,6 +29,8 @@ public static class NotificationRefTypes
     public const string Question = "question";
     public const string QuizSet = "quiz_set";
     public const string Problem = "problem";
+    public const string ProblemBank = "problem_bank";
+    public const string Roadmap = "roadmap";
 }
 
 // Creates a notification: persists it (so offline users still see it later) and
@@ -75,16 +79,22 @@ public sealed class NotificationService : INotificationService
         string? refType = null,
         Guid? actorId = null)
     {
+        Console.WriteLine($"=======> [NOTIFY DEBUG] Đã vào NotifyAsync. RecipientId={recipientId}, ActorId={actorId}");
+
         if (recipientId == Guid.Empty)
         {
+            Console.WriteLine($"=======> [NOTIFY DEBUG] Bị chặn vì RecipientId rỗng.");
             return;
         }
 
         // Don't notify a user about their own action (e.g. deleting their own post).
         if (actorId.HasValue && actorId.Value == recipientId)
         {
+            Console.WriteLine($"=======> [NOTIFY DEBUG] Bị chặn vì ActorId == RecipientId (tự thao tác tự nhận thông báo).");
             return;
         }
+
+        Console.WriteLine($"=======> [NOTIFY DEBUG] Đã qua vòng kiểm tra. Chuẩn bị lưu Database.");
 
         var notification = new Notification
         {
@@ -124,11 +134,13 @@ public sealed class NotificationService : INotificationService
         try
         {
             var userKey = recipientId.ToString();
+            _logger.LogInformation("=======> [SIGNALR DEBUG] Đang đẩy thông báo realtime tới User {UserKey} về hành động: {Type}", userKey, notification.Type);
             await _hub.Clients.User(userKey).ReceiveNotification(payload);
 
             // Keep the bell badge in sync without an extra round-trip from the client.
             var unread = await _db.Notifications.CountAsync(n => n.UserId == recipientId && !n.IsRead);
             await _hub.Clients.User(userKey).UnreadCountChanged(unread);
+            _logger.LogInformation("=======> [SIGNALR DEBUG] Đã đẩy thành công tới User {UserKey}!", userKey);
         }
         catch (Exception ex)
         {

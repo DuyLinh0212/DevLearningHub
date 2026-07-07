@@ -546,6 +546,8 @@ public class ImportQuestionsResultResponse
 	public int SkippedCount { get; set; }
 
 	public List<string> Errors { get; set; } = new();
+
+	public List<Guid> CreatedQuestionIds { get; set; } = new();
 }
 
 public class QuizHistoryItem

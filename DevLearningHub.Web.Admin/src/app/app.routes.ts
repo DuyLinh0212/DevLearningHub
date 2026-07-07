@@ -10,6 +10,7 @@ import { RoadmapManagementComponent } from './features/admin/roadmap-management/
 import { TopicManagementComponent } from './features/admin/topic-management/topic-management';
 import { TagManagementComponent } from './features/admin/tag-management/tag-management';
 import { PostManagementComponent } from './features/admin/post-management/post-management';
+import { AdminPostCreateComponent } from './features/admin/post-create/post-create';
 import { AdminPostDetailComponent } from './features/admin/post-detail/post-detail';
 import { AdminUserProfileComponent } from './features/admin/user-profile/user-profile';
 import { ModeratorManagementComponent } from './features/admin/moderator-management/moderator-management';
@@ -42,6 +43,7 @@ export const routes: Routes = [
       { path: 'admin/topics', component: TopicManagementComponent, canActivate: [permissionGuard('topic:edit')] },
       { path: 'admin/tags', component: TagManagementComponent, canActivate: [permissionGuard('tag:edit')] },
       { path: 'admin/posts', component: PostManagementComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
+      { path: 'admin/posts/create', component: AdminPostCreateComponent, canActivate: [permissionGuard('post:create')] },
       { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
       // Legacy compatibility: the standalone user list now lives inside the unified
       // Phân quyền screen as the "Danh sách người dùng" tab (plan section 7.1).

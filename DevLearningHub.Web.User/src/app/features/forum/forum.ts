@@ -143,8 +143,12 @@ export class ForumComponent implements OnInit, OnDestroy {
 
   // Ownership-based approach: permission checks are removed from Web.User.
   // Admin/moderation features are handled by Web.Admin only.
-  isOwner(authorId: string): boolean {
-    return (authorId || '').toString().toLowerCase() === this.currentUserId;
+  isOwner(authorId?: string): boolean {
+    return !!authorId && authorId === this.currentUserId;
+  }
+
+  isAdminPost(post: any): boolean {
+    return post?.author?.roles?.some((r: string) => r.toLowerCase() === 'admin' || r.toLowerCase() === 'system.full_control') || false;
   }
 
   onCreatePostClick() {
@@ -334,21 +338,36 @@ export class ForumComponent implements OnInit, OnDestroy {
     });
   }
 
-  sortBy: 'newest' | 'votes' = 'newest';
+  sortBy: 'newest' | 'votes' | 'featured' = 'newest';
 
-  setSortBy(sortType: 'newest' | 'votes') {
+  setSortBy(sortType: 'newest' | 'votes' | 'featured') {
     this.sortBy = sortType;
     this.applyFilters();
   }
 
   applyFilters() {
     let result = [...this.posts];
+
+    // "Đáng chú ý" chỉ hiển thị bài của Admin, mới nhất lên trước — không ghim, không trộn bài thường.
+    if (this.sortBy === 'featured') {
+      result = result
+        .filter(post => this.isAdminPost(post))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      this.filteredPosts = result;
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (this.sortBy === 'newest') {
       result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else if (this.sortBy === 'votes') {
       result.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
     }
-    this.filteredPosts = result;
+
+    // Bài viết của Admin luôn được ghim lên đầu diễn đàn, giữ nguyên thứ tự sắp xếp đã chọn trong từng nhóm.
+    const pinned = result.filter(post => this.isAdminPost(post));
+    const rest = result.filter(post => !this.isAdminPost(post));
+    this.filteredPosts = [...pinned, ...rest];
     this.cdr.detectChanges();
   }
 

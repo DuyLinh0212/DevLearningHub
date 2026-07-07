@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    ADMIN TOPBAR â€” Simplified header bar (nav is in sidebar)
    ===================================================================== */
 
@@ -520,3 +520,58 @@ html.light-theme .topbar {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 .profile-dropdown { right: 0; }
+
+/* ── Realtime notification toast ── */
+.notif-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  background: var(--bg-card, #1e1e2e);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 360px;
+  cursor: pointer;
+  animation: toastIn 0.3s ease;
+}
+@keyframes toastIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.notif-toast-icon {
+  font-size: 1.2rem;
+  color: #a855f7;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.notif-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+.notif-toast-msg {
+  font-size: 0.88rem;
+  color: var(--text-main, #f0f0f5);
+  margin: 0 0 3px 0;
+  line-height: 1.4;
+}
+.notif-toast-time {
+  font-size: 0.75rem;
+  color: var(--text-muted, #888);
+}
+.notif-toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.notif-toast-close:hover { color: var(--text-main, #f0f0f5); }

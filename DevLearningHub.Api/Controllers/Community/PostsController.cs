@@ -22,6 +22,7 @@ public class PostsController : ControllerBase
 
     private readonly DevLearningHubContext _db;
     private readonly IHubContext<CommentHub, ICommentHubClient> _commentHub;
+    private readonly IHubContext<NotificationHub, INotificationClient> _notificationHub;
     private readonly IPermissionService _permissions;
     private readonly INotificationService _notifications;
     private readonly IAutoApprovalPolicy _autoApproval;
@@ -29,12 +30,14 @@ public class PostsController : ControllerBase
     public PostsController(
         DevLearningHubContext db,
         IHubContext<CommentHub, ICommentHubClient> commentHub,
+        IHubContext<NotificationHub, INotificationClient> notificationHub,
         IPermissionService permissions,
         INotificationService notifications,
         IAutoApprovalPolicy autoApproval)
     {
         _db = db;
         _commentHub = commentHub;
+        _notificationHub = notificationHub;
         _permissions = permissions;
         _notifications = notifications;
         _autoApproval = autoApproval;
@@ -101,7 +104,8 @@ public class PostsController : ControllerBase
                     Id = p.Author.Id,
                     Username = p.Author.Username,
                     FullName = p.Author.FullName,
-                    AvatarUrl = p.Author.AvatarUrl
+                    AvatarUrl = p.Author.AvatarUrl,
+                    Roles = p.Author.UserRoleUsers.Select(ur => ur.Role.Name).ToList()
                 },
                 Upvotes = p.Upvotes,
                 Downvotes = p.Downvotes,
@@ -262,6 +266,11 @@ public class PostsController : ControllerBase
 
         _db.Posts.Add(post);
         await _db.SaveChangesAsync();
+
+        if (post.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("post");
+        }
 
         var author = await _db.Users.FirstAsync(u => u.Id == userId);
 

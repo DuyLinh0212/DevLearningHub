@@ -1,4 +1,4 @@
-﻿@import '../../dashboard/dashboard.css';
+@import '../../dashboard/dashboard.css';
 
 :host {
   display: flex;
@@ -235,11 +235,42 @@
   line-height: 1.25;
 }
 
-.active-roadmap-intro p {
+.roadmap-desc-container {
+  margin: 0 0 16px;
+}
+
+.roadmap-main-desc {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.6;
   font-size: 0.88rem;
+  
+  /* Line clamp by default */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.roadmap-main-desc.expanded {
+  -webkit-line-clamp: unset;
+}
+
+.btn-toggle-desc {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  padding: 4px 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btn-toggle-desc:hover {
+  color: #0ea5e9;
+  text-decoration: underline;
 }
 
 .review-note-banner {

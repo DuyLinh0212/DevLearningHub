@@ -19,6 +19,8 @@ public partial class Notification
 
     public bool IsRead { get; set; }
 
+    public bool IsHiddenFromBell { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public virtual User User { get; set; } = null!;

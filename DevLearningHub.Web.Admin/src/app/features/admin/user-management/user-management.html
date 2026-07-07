@@ -111,7 +111,7 @@
                           <i class="bi bi-shield-lock-fill"></i>
                         </button>
                       }
-                      @if (hasPermission('user:lock') || hasPermission('user:edit')) {
+                      @if (hasPermission('user:ban') || hasPermission('user:edit')) {
                         <button class="btn-lock" 
                                 [class.btn-unlock-act]="user.isLocked" 
                                 (click)="toggleLock(user)" 

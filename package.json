@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:admin": "playwright test admin",
+    "test:e2e:user": "playwright test user",
+    "test:e2e:crud": "playwright test crud",
+    "test:e2e:rbac": "playwright test rbac",
+    "test:e2e:flow": "playwright test flow"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.0"
+  }
+}

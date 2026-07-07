@@ -88,7 +88,7 @@ export class RoadmapManagementComponent implements OnInit {
   roadmapForm = {
     title: '',
     description: '',
-    targetRole: 'Backend Developer',
+    isPublic: true,
     level: 'Trung bình'
   };
 
@@ -125,7 +125,7 @@ export class RoadmapManagementComponent implements OnInit {
             id: rm.id,
             title: rm.title || '',
             description: rm.description || '',
-            targetRole: rm.targetRole || 'Web Developer',
+            isPublic: rm.isPublic ?? true,
             level: vnLvl,
             topicsCount: rm.topics ? rm.topics.length : 0,
             itemsCount: rm.items ? rm.items.length : 0,
@@ -142,17 +142,29 @@ export class RoadmapManagementComponent implements OnInit {
 
   loadAvailableQuizSets() {
     this.http.get<any>('/api/quiz-sets').subscribe({
-      next: (res) => { this.availableQuizSets = res?.data ?? []; this.cdr.detectChanges(); }
+      next: (res) => { 
+        const data = res?.data || res;
+        this.availableQuizSets = Array.isArray(data) ? data : []; 
+        this.cdr.detectChanges(); 
+      }
     });
   }
   loadAvailableProblems() {
     this.http.get<any>('/api/problems').subscribe({
-      next: (res) => { this.availableProblems = res?.data ?? []; this.cdr.detectChanges(); }
+      next: (res) => { 
+        const data = res?.data || res;
+        this.availableProblems = Array.isArray(data) ? data : []; 
+        this.cdr.detectChanges(); 
+      }
     });
   }
   loadAvailableProblemBanks() {
     this.http.get<any>('/api/problem-banks').subscribe({
-      next: (res) => { this.availableProblemBanks = res?.data ?? []; this.cdr.detectChanges(); }
+      next: (res) => { 
+        const data = res?.data || res;
+        this.availableProblemBanks = Array.isArray(data) ? data : []; 
+        this.cdr.detectChanges(); 
+      }
     });
   }
 
@@ -184,7 +196,7 @@ export class RoadmapManagementComponent implements OnInit {
     const payload = {
       title: this.roadmapForm.title.trim(),
       description: this.roadmapForm.description.trim(),
-      targetRole: this.roadmapForm.targetRole,
+      isPublic: this.roadmapForm.isPublic,
       level: dbLevel
     };
 
@@ -226,7 +238,7 @@ export class RoadmapManagementComponent implements OnInit {
       this.roadmapForm = {
         title: roadmap.title || '',
         description: roadmap.description || '',
-        targetRole: roadmap.targetRole || 'Backend Developer',
+        isPublic: roadmap.isPublic ?? true,
         level: roadmap.level || 'Trung bình'
       };
     } else {
@@ -235,7 +247,7 @@ export class RoadmapManagementComponent implements OnInit {
       this.roadmapForm = {
         title: '',
         description: '',
-        targetRole: 'Backend Developer',
+        isPublic: true,
         level: 'Trung bình'
       };
     }

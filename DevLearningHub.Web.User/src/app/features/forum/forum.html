@@ -37,6 +37,9 @@
           <button class="sort-btn" [class.active]="sortBy === 'votes'" (click)="setSortBy('votes')">
             Nhiều vote nhất
           </button>
+          <button class="sort-btn sort-btn-featured" [class.active]="sortBy === 'featured'" (click)="setSortBy('featured')">
+            <i class="bi bi-star-fill"></i> Đáng chú ý
+          </button>
           @if (selectedTag) {
             <button class="sort-btn active tag-pill-filter">
               Tag: {{ selectedTag }}
@@ -55,14 +58,19 @@
         </div>
       } @else if (filteredPosts.length === 0) {
         <div class="empty-state-card">
-          <i class="bi bi-chat-right-text-fill"></i>
-          <h3>Không tìm thấy bài viết nào</h3>
-          <p>Hãy là người đầu tiên đặt câu hỏi hoặc chia sẻ tài liệu trên diễn đàn!</p>
+          <i class="bi" [class.bi-chat-right-text-fill]="sortBy !== 'featured'" [class.bi-star]="sortBy === 'featured'"></i>
+          @if (sortBy === 'featured') {
+            <h3>Chưa có bài viết đáng chú ý</h3>
+            <p>Các bài viết do Admin đăng sẽ xuất hiện ở đây, mới nhất lên trước.</p>
+          } @else {
+            <h3>Không tìm thấy bài viết nào</h3>
+            <p>Hãy là người đầu tiên đặt câu hỏi hoặc chia sẻ tài liệu trên diễn đàn!</p>
+          }
         </div>
       } @else {
         <div class="posts-list">
           @for (post of filteredPosts; track post.id) {
-            <div class="social-post-card" (click)="viewPostDetail(post.id)">
+            <div class="social-post-card" [class.admin-post]="isAdminPost(post)" (click)="viewPostDetail(post.id)">
               <div class="post-card-header">
                 <img
                   [src]="post.author?.avatarUrl || 'assets/images/default-avatar.svg'"
@@ -73,9 +81,17 @@
                   (error)="onAvatarError($event)"
                 />
                 <div class="author-meta-text">
-                  <span class="author-name" style="cursor: pointer;" (click)="goToProfile(post.author?.id, $event)">
-                    {{ post.author?.fullName || post.author?.username || 'Người dùng' }}
-                  </span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="author-name" style="cursor: pointer;" (click)="goToProfile(post.author?.id, $event)">
+                      {{ post.author?.fullName || post.author?.username || 'Người dùng' }}
+                    </span>
+                    @if (isAdminPost(post)) {
+                      <span class="admin-badge"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                    }
+                    @if (isAdminPost(post) && sortBy !== 'featured') {
+                      <span class="pinned-badge"><i class="bi bi-pin-angle-fill"></i> Đã ghim</span>
+                    }
+                  </div>
                   <span class="post-date">{{ formatRelativeTime(post.createdAt) }}</span>
                 </div>
 
