@@ -146,7 +146,16 @@
                    <i class="bi bi-eye"></i>
                    <span>Xem chi tiết</span>
                  </button>
-                  @if (hasPermission('post:hide_any') || hasPermission('post:hide')) {
+                  @if (hasPermission('post:edit_any')) {
+                    <button class="action-btn" routerLink="/admin/posts/{{ post.id }}/edit">
+                      <i class="bi bi-pencil"></i>
+                      <span>Sửa</span>
+                    </button>
+                  }
+                  <!-- Danh sách này hiển thị bài của MỌI tác giả, nên ẩn/hiện bất kỳ bài
+                       nào đòi hỏi quyền kiểm duyệt post:hide_any. Quyền post:hide chỉ cho
+                       phép tự ẩn bài của mình (thao tác ở app User), không áp dụng ở đây. -->
+                  @if (hasPermission('post:hide_any')) {
                     @if (!post.isHidden) {
                       <button class="action-btn action-btn-moderate" (click)="openModerateModal(post, true)">
                         <i class="bi bi-eye-slash"></i>
@@ -159,7 +168,7 @@
                       </button>
                     }
                   }
-                  @if (hasPermission('post:delete_any') || hasPermission('post:delete')) {
+                  @if (hasPermission('post:delete_any')) {
                     <button class="action-btn action-btn-delete" (click)="deletePost(post.id)">
                       <i class="bi bi-trash3"></i>
                       <span>Xóa</span>

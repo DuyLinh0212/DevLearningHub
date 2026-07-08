@@ -894,6 +894,8 @@ public partial class DevLearningHubContext : DbContext
 
             entity.HasIndex(e => e.Username, "UQ_users_username").IsUnique();
 
+            entity.HasIndex(e => e.GoogleId, "UX_Users_GoogleId").IsUnique().HasFilter("([google_id] IS NOT NULL)");
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("id");
@@ -911,6 +913,9 @@ entity.Property(e => e.Bio).HasColumnName("bio");
             entity.Property(e => e.FullName)
                 .HasMaxLength(100)
                 .HasColumnName("full_name");
+            entity.Property(e => e.GoogleId)
+                .HasMaxLength(64)
+                .HasColumnName("google_id");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");

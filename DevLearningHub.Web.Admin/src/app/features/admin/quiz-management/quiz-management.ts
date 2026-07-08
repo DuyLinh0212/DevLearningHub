@@ -706,15 +706,24 @@ saveQuizSet() {
   }
 
   deleteQuizSet(id: any) {
-    if (confirm('Xác nhận xóa hoàn toàn bộ đề thi này khỏi hệ thống phân phối?')) {
+    if (confirm('Xác nhận xóa bộ đề thi này khỏi hệ thống phân phối? Nếu bộ đề đã có người làm bài, hệ thống sẽ tự động lưu trữ (ẩn) thay vì xóa vĩnh viễn để không làm mất lịch sử làm bài.')) {
       this.quizService.deleteQuizSet(id).subscribe({
-        next: () => {
+        next: (res: any) => {
           this.loadQuizSets();
-          alert('Đã xóa bộ đề thi thành công!');
+          // BE trả archived:true khi bộ đề đã có người làm bài — nó được ẩn/lưu trữ thay
+          // vì xóa cứng, để giữ nguyên lịch sử QuizSession/QuizAnswer liên quan.
+          if (res?.data?.archived) {
+            alert('Bộ đề đã có người làm bài nên được lưu trữ (ẩn khỏi danh sách) thay vì xóa vĩnh viễn.');
+          } else {
+            alert('Đã xóa bộ đề thi thành công!');
+          }
         },
-        error: () => {
-          this.quizSets = this.quizSets.filter(s => s.id !== id);
-          this.cdr.detectChanges();
+        error: (err: any) => {
+          // Không được tự ý xóa khỏi danh sách ở đây: nếu BE từ chối thật sự mà vẫn xóa
+          // khỏi UI thì admin tưởng đã xóa xong, đến khi tải lại trang bộ đề "tái xuất
+          // hiện" vì thực ra chưa hề bị xóa/lưu trữ dưới DB.
+          console.error('Lỗi xóa bộ đề:', err);
+          alert(err?.error?.message || 'Không thể xóa bộ đề thi.');
         }
       });
     }

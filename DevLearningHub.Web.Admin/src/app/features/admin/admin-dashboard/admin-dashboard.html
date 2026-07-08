@@ -1,4 +1,4 @@
-﻿<header class="content-header admin-dash-header">
+<header class="content-header admin-dash-header">
   <div class="top-breadcrumb">
     <a routerLink="/admin">Quản trị</a>
     <i class="bi bi-chevron-right"></i>
@@ -11,44 +11,36 @@
 </header>
 
 <div class="dashboard-scroll-body admin-dashboard-page">
-  <section class="stats-container admin-stats-grid">
-    @for (stat of adminStats; track stat.title) {
-    <a class="stat-card {{ stat.color }}" [routerLink]="stat.link">
-      <div class="stat-card-header">
-        <span class="stat-title">{{ stat.title }}</span>
-        <i class="bi {{ stat.icon }} stat-card-icon"></i>
-      </div>
-      <div class="stat-card-body">
-        <span class="stat-value">{{ stat.value }}</span>
-        @if (stat.unit) { <span class="stat-unit">{{ stat.unit }}</span> }
-      </div>
-    </a>
-    }
+
+  <!-- Dải trạng thái hệ thống kiểu "dev console" -->
+  <section class="ops-strip">
+    <div class="ops-status">
+      <span class="ops-dot"></span>
+      <span class="ops-label">Hệ thống đang hoạt động</span>
+    </div>
+    <div class="ops-meta">
+      <span class="ops-clock">Làm mới lúc <code>{{ lastUpdatedLabel || '--:--' }}</code></span>
+      <button class="ops-refresh-btn" (click)="loadBackendData()" title="Làm mới dữ liệu">
+        <i class="bi bi-arrow-repeat"></i> Làm mới
+      </button>
+    </div>
   </section>
 
-  <section class="admin-panel wide-panel">
-    <div class="section-head-row">
-      <div>
-        <h2>Bài viết gần đây</h2>
-        <p class="section-subtitle">Các bài đăng mới nhất trong diễn đàn.</p>
+  <!-- KPI: 4 chỉ số cốt lõi của nền tảng -->
+  <section class="stats-container admin-stats-grid">
+    @for (stat of adminStats; track stat.title) {
+    <a class="kpi-tile {{ stat.color }}" [routerLink]="stat.link">
+      <div class="kpi-top-row">
+        <span class="kpi-eyebrow">{{ stat.title }}</span>
+        <span class="kpi-icon-chip"><i class="bi {{ stat.icon }}"></i></span>
       </div>
-      <a routerLink="/admin/posts" class="btn-see-all"><i class="bi bi-arrow-right"></i> Xem tất cả</a>
-    </div>
-
-    <div class="content-list">
-      @for (post of recentPosts; track post.id) {
-      <a class="content-row" [routerLink]="['/admin/posts', post.id]">
-        <div class="content-icon post"><i class="bi bi-chat-left-text"></i></div>
-        <div class="content-main">
-          <h4>{{ post.title || post.heading || 'Bài viết không tiêu đề' }}</h4>
-          <p>{{ post.authorName || post.username || post.createdBy || 'Người dùng' }} · {{ formatDateTime(post.createdAt || post.createdOn) }}</p>
-        </div>
-        @if (post.isHidden || post.hidden) { <span class="state-badge muted">Đã ẩn</span> }
-      </a>
-      } @empty {
-      <div class="admin-empty-state slim"><i class="bi bi-chat-square-text"></i><p>Chưa có bài viết gần đây.</p></div>
-      }
-    </div>
+      <div class="kpi-value-row">
+        <span class="kpi-value">{{ stat.value }}</span>
+        @if (stat.unit) { <span class="kpi-unit">{{ stat.unit }}</span> }
+      </div>
+      <span class="kpi-goto">Xem chi tiết <i class="bi bi-arrow-right"></i></span>
+    </a>
+    }
   </section>
 
   <div class="middle-layout admin-middle-layout">

@@ -59,6 +59,8 @@ public class ProblemBankResponse
     public int LikeCount { get; set; }
     public double AvgRating { get; set; }
     public int RatingCount { get; set; }
+    // Distinct number of learners who have submitted at least one exercise in this bank.
+    public int ParticipantCount { get; set; }
     // Whether the current (authenticated) user liked it / their star value (null if none).
     public bool MyLiked { get; set; }
     public byte? MyRating { get; set; }

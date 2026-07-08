@@ -114,8 +114,10 @@ public class RoadmapsController : ControllerBase
         }
 
         var maxOrder = await _db.Roadmaps.Select(r => (int?)r.OrderIndex).MaxAsync() ?? 0;
-        var reviewStatus = await _autoApproval.EvaluateRoadmapAsync(userId, null, request.Title, request.Description, request.IsPublic);
 
+        // A newly created roadmap is always a private "draft": it is never pushed into the
+        // moderation queue on creation. The owner keeps building it (adding items) and only when
+        // they explicitly hit "Submit" (POST {id}/submit) is it evaluated for review/publication.
         var roadmap = new Roadmap
         {
             Id = Guid.NewGuid(),
@@ -124,18 +126,13 @@ public class RoadmapsController : ControllerBase
             Level = request.Level.Trim(),
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             IsPublic = request.IsPublic,
-            ReviewStatus = reviewStatus,
+            ReviewStatus = "draft",
             CreatedAt = DateTime.Now,
             OrderIndex = (short)(maxOrder + 1)
         };
 
         _db.Roadmaps.Add(roadmap);
         await _db.SaveChangesAsync();
-
-        if (roadmap.ReviewStatus == "pending")
-        {
-            await _notificationHub.Clients.All.ModerationQueueChanged("roadmap");
-        }
 
         return Ok(ApiResponse<RoadmapResponse>.Ok(BuildRoadmapResponse(roadmap)));
     }
@@ -181,8 +178,13 @@ public class RoadmapsController : ControllerBase
         roadmap.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         roadmap.IsPublic = request.IsPublic;
 
-        var reviewStatus = await _autoApproval.EvaluateRoadmapAsync(roadmap.CreatedBy, roadmap.Id, roadmap.Title, roadmap.Description, roadmap.IsPublic);
-        ApplyAutoReview(roadmap, reviewStatus);
+        // Editing a draft keeps it a draft — it must not silently enter moderation. Only roadmaps
+        // that were already submitted (pending/approved/rejected) are re-evaluated on edit.
+        if (roadmap.ReviewStatus != "draft")
+        {
+            var reviewStatus = await _autoApproval.EvaluateRoadmapAsync(roadmap.CreatedBy, roadmap.Id, roadmap.Title, roadmap.Description, roadmap.IsPublic);
+            ApplyAutoReview(roadmap, reviewStatus);
+        }
 
         await _db.SaveChangesAsync();
         return Ok(ApiResponse<RoadmapResponse>.Ok(BuildRoadmapResponse(roadmap)));
@@ -217,6 +219,68 @@ public class RoadmapsController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<string>.Ok("Deleted successfully."));
+    }
+
+    [HttpPost("{id:guid}/submit")]
+    [Authorize]
+    // Submit a draft (or previously rejected) roadmap for review/publication. This is the only
+    // path that moves a roadmap out of "draft": creation and editing never do. Depending on the
+    // auto-approval policy the roadmap becomes "approved" (private, or trusted author) or "pending"
+    // (public content awaiting moderation), and only then is the moderation queue notified.
+    public async Task<ActionResult<ApiResponse<RoadmapResponse>>> SubmitRoadmap(Guid id)
+    {
+        if (!User.TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<RoadmapResponse>.Fail("Unauthorized."));
+        }
+
+        var roadmap = await _db.Roadmaps
+            .Include(r => r.RoadmapTopics)
+                .ThenInclude(rt => rt.Topic)
+            .Include(r => r.RoadmapItems)
+                .ThenInclude(i => i.Topic)
+            .Include(r => r.RoadmapItems)
+                .ThenInclude(i => i.QuizSet)
+            .Include(r => r.RoadmapItems)
+                .ThenInclude(i => i.Problem)
+            .Include(r => r.RoadmapItems)
+                .ThenInclude(i => i.ProblemBank)
+            .FirstOrDefaultAsync(r => r.Id == id);
+        if (roadmap == null)
+        {
+            return NotFound(ApiResponse<RoadmapResponse>.Fail("Roadmap not found."));
+        }
+
+        if (!await CanManageRoadmapAsync(roadmap, userId))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<RoadmapResponse>.Fail("Forbidden."));
+        }
+
+        if (roadmap.ReviewStatus == "pending")
+        {
+            return BadRequest(ApiResponse<RoadmapResponse>.Fail("Lộ trình đang chờ kiểm duyệt."));
+        }
+
+        if (roadmap.ReviewStatus == "approved")
+        {
+            return BadRequest(ApiResponse<RoadmapResponse>.Fail("Lộ trình đã được duyệt."));
+        }
+
+        if (!roadmap.RoadmapItems.Any())
+        {
+            return BadRequest(ApiResponse<RoadmapResponse>.Fail("Hãy thêm ít nhất một mục học trước khi gửi kiểm duyệt."));
+        }
+
+        var reviewStatus = await _autoApproval.EvaluateRoadmapAsync(roadmap.CreatedBy, roadmap.Id, roadmap.Title, roadmap.Description, roadmap.IsPublic);
+        ApplyAutoReview(roadmap, reviewStatus);
+        await _db.SaveChangesAsync();
+
+        if (roadmap.ReviewStatus == "pending")
+        {
+            await _notificationHub.Clients.All.ModerationQueueChanged("roadmap");
+        }
+
+        return Ok(ApiResponse<RoadmapResponse>.Ok(BuildRoadmapResponse(roadmap)));
     }
 
     [HttpPost("{roadmapId:guid}/topics")]

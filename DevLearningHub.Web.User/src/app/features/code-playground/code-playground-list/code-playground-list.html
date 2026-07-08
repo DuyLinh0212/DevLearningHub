@@ -131,6 +131,9 @@
                 <span class="bank-stat-item">
                   <i class="bi bi-collection"></i> {{ bank.problemCount }} bài
                 </span>
+                <span class="bank-stat-item" title="Số người đã làm bộ đề này">
+                  <i class="bi bi-people-fill"></i> {{ bank.participantCount }} người đã làm
+                </span>
                 <span class="bank-stat-item">
                   <i class="bi bi-heart-fill like-icon"></i> {{ bank.likeCount }}
                 </span>
@@ -322,6 +325,7 @@
             <!-- Bank meta -->
             <div class="bank-detail-meta">
               <span><i class="bi bi-collection"></i> {{ selectedBank.problemCount }} bài tập</span>
+              <span><i class="bi bi-people-fill"></i> {{ selectedBank.participantCount }} người đã làm</span>
               <span><i class="bi bi-heart-fill" style="color:#ef4444"></i> {{ selectedBank.likeCount }}</span>
               <span>
                 <i class="bi bi-star-fill" style="color:#ffb800"></i>

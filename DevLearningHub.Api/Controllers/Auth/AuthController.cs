@@ -3,6 +3,7 @@ using DevLearningHub.Api.Dtos.Auth;
 using DevLearningHub.Api.Dtos.Common;
 using DevLearningHub.Api.Entities;
 using DevLearningHub.Api.Services;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ public class AuthController : ControllerBase
     private readonly ILogger<AuthController> _logger;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly GoogleOptions _googleOptions;
 
     public AuthController(
         DevLearningHubContext db,
@@ -37,7 +39,8 @@ public class AuthController : ControllerBase
         IOptions<JwtOptions> jwtOptions,
         ILogger<AuthController> logger,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IOptions<GoogleOptions> googleOptions)
     {
         _db = db;
         _passwordHasher = passwordHasher;
@@ -48,6 +51,7 @@ public class AuthController : ControllerBase
         _logger = logger;
         _emailService = emailService;
         _configuration = configuration;
+        _googleOptions = googleOptions.Value;
     }
 
     [HttpPost("register")]
@@ -130,6 +134,97 @@ public class AuthController : ControllerBase
 
         var response = await BuildAuthResponseAsync(user);
         return Ok(ApiResponse<AuthResponse>.Ok(response));
+    }
+
+    [HttpPost("google")]
+    [AllowAnonymous]
+    // Verify a Google Identity Services ID token, then log in or provision the user.
+    public async Task<ActionResult<ApiResponse<AuthResponse>>> GoogleLogin(GoogleLoginRequest request)
+    {
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _googleOptions.ClientId }
+            });
+        }
+        catch (InvalidJwtException)
+        {
+            return Unauthorized(ApiResponse<AuthResponse>.Fail("Google ID token không hợp lệ."));
+        }
+
+        var email = payload.Email.Trim().ToLowerInvariant();
+        var now = DateTime.Now;
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Subject)
+            ?? await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user == null)
+        {
+            var username = await GenerateUniqueUsernameFromEmailAsync(email);
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = username,
+                Email = email,
+                GoogleId = payload.Subject,
+                FullName = payload.Name,
+                AvatarUrl = payload.Picture,
+                XpPoints = 0,
+                IsActive = true,
+                IsLocked = false,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            var defaultRole = await GetOrCreateDefaultUserRoleAsync(now);
+            await _db.SaveChangesAsync();
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+
+            await EnsureDefaultUserRoleAsync(user.Id, defaultRole.Id, now);
+            await WriteAuditAsync(user.Id, "auth.register_google", "user", user.Id, null);
+        }
+        else if (user.GoogleId == null)
+        {
+            // Link an existing password-based account to this Google identity.
+            user.GoogleId = payload.Subject;
+            user.UpdatedAt = now;
+            await _db.SaveChangesAsync();
+        }
+
+        if (!user.IsActive)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<AuthResponse>.Fail("Account is inactive."));
+        }
+
+        if (user.IsLocked)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<AuthResponse>.Fail("Account is locked."));
+        }
+
+        await WriteAuditAsync(user.Id, "auth.google_login", "user", user.Id, null);
+
+        var response = await BuildAuthResponseAsync(user);
+        return Ok(ApiResponse<AuthResponse>.Ok(response));
+    }
+
+    private async Task<string> GenerateUniqueUsernameFromEmailAsync(string email)
+    {
+        var baseUsername = new string(email.Split('@')[0].Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        if (string.IsNullOrEmpty(baseUsername)) baseUsername = "user";
+
+        var candidate = baseUsername;
+        var suffix = 0;
+        while (await _db.Users.AnyAsync(u => u.Username == candidate))
+        {
+            suffix++;
+            candidate = $"{baseUsername}{suffix}";
+        }
+
+        return candidate;
     }
 
     [HttpPost("refresh")]
@@ -223,7 +318,7 @@ public class AuthController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
-        var clientUrl = _configuration["App:ClientUrl"] ?? "http://localhost:4201";
+        var clientUrl = _configuration["App:ClientUrl"] ?? "http://localhost:4200";
         var resetLink = $"{clientUrl}/reset-password?token={rawToken}";
         var displayName = user.FullName ?? user.Username;
 

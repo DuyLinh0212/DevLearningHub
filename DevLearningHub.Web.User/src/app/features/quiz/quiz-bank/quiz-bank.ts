@@ -1,19 +1,18 @@
-import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { QuizService } from '../../../core/services/quiz.service';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { ReviewStatusBadgeComponent } from '../../../shared/components/review-status-badge/review-status-badge';
 
 @Component({
   selector: 'app-quiz-bank',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, ReviewStatusBadgeComponent],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './quiz-bank.html',
   styleUrl: './quiz-bank.css'
 })
-export class QuizBankComponent implements OnInit {
+export class QuizBankComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private route = inject(ActivatedRoute);
   public cdr = inject(ChangeDetectorRef);
@@ -23,19 +22,21 @@ export class QuizBankComponent implements OnInit {
   quizzes: any[] = [];
   topics: any[] = [];
   searchText: string = '';
+  // Status filter buckets: all | published | pending | private (review-status aware, owner-aware).
   selectedStatus: string = 'all';
   selectedTopicId: string = '';
   selectedDifficulty: string = '';
   currentUserId: string = '';
   activeQuizMenuId: string | null = null;
-
-  // Calendar properties
-  calendarDays: (number | null)[] = [];
-  currentDay = new Date().getDate();
-  currentMonthYearLabel = '';
+  // Viewport-relative coordinates for the open row menu. The menu is rendered with
+  // position:fixed so it escapes the list's overflow clipping (the scroll container
+  // otherwise cut off the dropdown and hid the "Xóa"/delete item).
+  quizMenuPos: { top: number; right: number } = { top: 0, right: 0 };
 
   ngOnInit() {
-    this.generateCalendar();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', this.onAnyScroll, true);
+    }
     this.loadCurrentUser();
 
     // LẮNG NGHE ĐƯỜNG DẪN URL ĐỂ BẮT TỪ KHÓA TÌM KIẾM TỪ SIDEBAR CHUYỂN SANG
@@ -47,29 +48,6 @@ export class QuizBankComponent implements OnInit {
       }
       this.cdr.detectChanges();
     });
-  }
-
-  generateCalendar() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const monthNames = [
-      'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-      'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-    ];
-    this.currentMonthYearLabel = `${monthNames[month]} ${year}`;
-    
-    const firstDay = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    
-    const days: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-    for (let i = 1; i <= totalDays; i++) {
-      days.push(i);
-    }
-    this.calendarDays = days;
   }
 
   getTopicProblemCount(topicId: string): number {
@@ -96,8 +74,34 @@ export class QuizBankComponent implements OnInit {
 
   toggleQuizMenu(quizId: string, event: Event) {
     event.stopPropagation();
-    this.activeQuizMenuId = this.activeQuizMenuId === quizId ? null : quizId;
+    const willOpen = this.activeQuizMenuId !== quizId;
+    if (willOpen) {
+      const trigger = (event.currentTarget as HTMLElement) || (event.target as HTMLElement);
+      const rect = trigger.getBoundingClientRect();
+      // Anchor the fixed-position menu just below the button and align its right edge.
+      this.quizMenuPos = {
+        top: Math.round(rect.bottom + 4),
+        right: Math.round(window.innerWidth - rect.right)
+      };
+    }
+    this.activeQuizMenuId = willOpen ? quizId : null;
     this.cdr.detectChanges();
+  }
+
+  // Close the row menu on any scroll: a fixed-position menu would otherwise stay pinned to the
+  // viewport while its row scrolls away underneath. Capture phase catches inner scroll
+  // containers (the table/dashboard scroll body) too, since scroll events do not bubble.
+  private readonly onAnyScroll = () => {
+    if (this.activeQuizMenuId !== null) {
+      this.activeQuizMenuId = null;
+      this.cdr.detectChanges();
+    }
+  };
+
+  ngOnDestroy() {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('scroll', this.onAnyScroll, true);
+    }
   }
 
   shareQuiz(quizId: string, event: Event) {
@@ -193,17 +197,69 @@ export class QuizBankComponent implements OnInit {
     });
   }
 
+  // The learner-facing state of a quiz set, combining ownership + review status. This is what
+  // lets an author see and open their OWN sets that are still "Chờ duyệt" (pending) or "Bị từ chối"
+  // (rejected) — states the plain public/private flag alone can't express.
+  getQuizState(quiz: any): 'published' | 'pending' | 'rejected' | 'private' {
+    const review = (quiz?.reviewStatus || '').toString().toLowerCase();
+    if (this.isMyQuiz(quiz)) {
+      if (review === 'pending') return 'pending';
+      if (review === 'rejected') return 'rejected';
+      return quiz?.statusClass === 'public' ? 'published' : 'private';
+    }
+    // Sets from other authors are only ever listed once approved & public.
+    return 'published';
+  }
+
+  getStateLabel(state: string): string {
+    switch (state) {
+      case 'pending': return 'Chờ duyệt';
+      case 'rejected': return 'Bị từ chối';
+      case 'private': return 'Riêng tư';
+      default: return 'Đã phát hành';
+    }
+  }
+
+  // Which filter bucket a set belongs to. Rejected sets sit with private drafts — both are
+  // owner-only, off the public shelf — so the author still finds them under "Riêng tư".
+  private matchesStatusBucket(quiz: any, bucket: string): boolean {
+    if (bucket === 'all') return true;
+    const state = this.getQuizState(quiz);
+    if (bucket === 'private') return state === 'private' || state === 'rejected';
+    return state === bucket;
+  }
+
+  statusCount(bucket: string): number {
+    if (!Array.isArray(this.quizzes)) return 0;
+    return this.quizzes.filter(quiz => this.matchesStatusBucket(quiz, bucket)).length;
+  }
+
+  // Counts scoped to the current author, for the "Bộ đề của bạn" side panel.
+  myStatusCount(bucket: string): number {
+    if (!Array.isArray(this.quizzes)) return 0;
+    return this.quizzes.filter(quiz => this.isMyQuiz(quiz) && this.matchesStatusBucket(quiz, bucket)).length;
+  }
+
+  // Zero-padded 2-digit row index for the editor-gutter line numbers.
+  pad2(n: number): string {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  changeStatus(status: string) {
+    this.selectedStatus = status;
+    this.cdr.detectChanges();
+  }
+
   get filteredQuizzes(): any[] {
     if (!Array.isArray(this.quizzes)) return [];
 
     return this.quizzes.filter(quiz => {
       const title = (quiz.title || '').toString().toLowerCase();
       const desc = (quiz.desc || '').toString().toLowerCase();
-      const statusClass = (quiz.statusClass || 'public').toString().toLowerCase();
       const searchLower = this.searchText.toLowerCase();
       const matchesSearch = title.includes(searchLower) || desc.includes(searchLower);
 
-      const matchesStatus = this.selectedStatus === 'all' || statusClass === this.selectedStatus;
+      const matchesStatus = this.matchesStatusBucket(quiz, this.selectedStatus);
       const matchesTopic = !this.selectedTopicId || (quiz.topicId || '').toString().toLowerCase() === this.selectedTopicId.toLowerCase();
       
       const qLevel = (quiz.level || 'beginner').toString().toLowerCase();
@@ -228,11 +284,6 @@ export class QuizBankComponent implements OnInit {
       this.searchText = input.value;
       this.cdr.detectChanges();
     }
-  }
-
-  changeFilter(status: string) {
-    this.selectedStatus = status;
-    this.cdr.detectChanges();
   }
 
   copyQuizSet(quizId: string, event: Event) {

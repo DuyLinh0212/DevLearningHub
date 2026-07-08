@@ -186,6 +186,32 @@
   border: 1px solid rgba(239, 68, 68, 0.24);
 }
 
+.status-chip.is-draft {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.submit-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.submit-hint i {
+  color: #38bdf8;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .roadmap-tree-main,
 .roadmap-empty-panel {
   min-width: 0;
@@ -473,6 +499,16 @@
 .btn-admin-act.blue-solid:hover,
 .btn-admin-act.purple-gradient:hover {
   background: #0284c7;
+  transform: translateY(-1px);
+}
+
+.btn-admin-act.green-solid {
+  background: #10b981;
+  color: #fff;
+}
+
+.btn-admin-act.green-solid:hover:not(:disabled) {
+  background: #059669;
   transform: translateY(-1px);
 }
 

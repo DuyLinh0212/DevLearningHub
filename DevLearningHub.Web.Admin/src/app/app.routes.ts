@@ -44,6 +44,7 @@ export const routes: Routes = [
       { path: 'admin/tags', component: TagManagementComponent, canActivate: [permissionGuard('tag:edit')] },
       { path: 'admin/posts', component: PostManagementComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
       { path: 'admin/posts/create', component: AdminPostCreateComponent, canActivate: [permissionGuard('post:create')] },
+      { path: 'admin/posts/:id/edit', component: AdminPostCreateComponent, canActivate: [permissionGuard('post:edit_any')] },
       { path: 'admin/posts/:id', component: AdminPostDetailComponent, canActivate: [permissionGuard(['post:hide_any', 'post:edit_any', 'post:delete_any'])] },
       // Legacy compatibility: the standalone user list now lives inside the unified
       // Phân quyền screen as the "Danh sách người dùng" tab (plan section 7.1).

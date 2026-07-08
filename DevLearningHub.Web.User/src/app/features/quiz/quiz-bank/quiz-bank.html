@@ -1,296 +1,220 @@
-<div class="dashboard-scroll-body playground-list-container">
-  <!-- Page Header -->
-  <header class="content-header qb-header">
-    <div class="qb-header-left">
-      <div class="top-breadcrumb">
-        <a routerLink="/dashboard">Học tập</a>
-        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-        <span>Bài tập Trắc nghiệm</span>
+<div class="dashboard-scroll-body qb-page">
+
+  <!-- Command bar: path eyebrow + title + primary action -->
+  <header class="qb-hero">
+    <div class="qb-hero-top">
+      <div class="qb-hero-copy">
+        <span class="qb-eyebrow">~/kho-de-trac-nghiem</span>
+        <h1 class="qb-title">Kho đề trắc nghiệm</h1>
+        <p class="qb-subtitle">Luyện lý thuyết lập trình theo từng bộ đề — tìm, lọc và bắt đầu ôn trong vài giây.</p>
       </div>
-      <h1 class="qb-page-title">Kho đề trắc nghiệm</h1>
+      <button class="qb-new-btn" (click)="onCreateQuizClick()">
+        <i class="bi bi-plus-lg"></i> Tạo đề mới
+      </button>
     </div>
-    <button class="btn-create" (click)="onCreateQuizClick()">
-      <i class="bi bi-plus-circle-fill"></i> Tạo đề thi mới
-    </button>
+
+    <!-- Status buckets rendered as monospace key=value chips; also the review-status filter -->
+    <div class="qb-stat-strip" role="tablist" aria-label="Lọc theo trạng thái">
+      <button type="button" class="qb-stat" role="tab" [attr.aria-selected]="selectedStatus === 'all'"
+        [class.is-active]="selectedStatus === 'all'" (click)="changeStatus('all')">
+        <span class="qb-stat-key">tất cả</span>
+        <span class="qb-stat-val">{{ statusCount('all') }}</span>
+      </button>
+      <button type="button" class="qb-stat state-published" role="tab" [attr.aria-selected]="selectedStatus === 'published'"
+        [class.is-active]="selectedStatus === 'published'" (click)="changeStatus('published')">
+        <span class="qb-stat-dot"></span>
+        <span class="qb-stat-key">đã phát hành</span>
+        <span class="qb-stat-val">{{ statusCount('published') }}</span>
+      </button>
+      <button type="button" class="qb-stat state-pending" role="tab" [attr.aria-selected]="selectedStatus === 'pending'"
+        [class.is-active]="selectedStatus === 'pending'" (click)="changeStatus('pending')">
+        <span class="qb-stat-dot"></span>
+        <span class="qb-stat-key">chờ duyệt</span>
+        <span class="qb-stat-val">{{ statusCount('pending') }}</span>
+      </button>
+      <button type="button" class="qb-stat state-private" role="tab" [attr.aria-selected]="selectedStatus === 'private'"
+        [class.is-active]="selectedStatus === 'private'" (click)="changeStatus('private')">
+        <span class="qb-stat-dot"></span>
+        <span class="qb-stat-key">riêng tư</span>
+        <span class="qb-stat-val">{{ statusCount('private') }}</span>
+      </button>
+    </div>
   </header>
 
-  <!-- Two-column Layout -->
-  <div class="quiz-layout-row">
+  <div class="qb-layout">
 
-    <!-- LEFT COLUMN: Main content -->
-    <div class="quiz-main-content-col">
+    <!-- MAIN -->
+    <div class="qb-main">
 
-      <!-- Banner cards row -->
-      <div class="lc-banners-row">
-        <div class="lc-banner-card card-blue">
-          <div class="card-inner">
-            <span class="card-comment">// DevLearningHub</span>
-            <h3>Luyện trắc nghiệm lập trình</h3>
-            <p>Kiểm tra và củng cố nhanh kiến thức lý thuyết cơ bản đến nâng cao.</p>
-          </div>
-          <div class="card-watermark">&lt;/&gt;</div>
+      <!-- Topic tags -->
+      @if (topics.length) {
+        <div class="qb-topics">
+          @for (t of topics; track t.id) {
+            <button
+              type="button"
+              class="qb-topic"
+              [class.is-active]="selectedTopicId === t.id"
+              (click)="selectedTopicId = (selectedTopicId === t.id ? '' : t.id)">
+              <span class="qb-topic-hash">#</span>{{ t.name }}
+              <span class="qb-topic-count">{{ getTopicProblemCount(t.id) }}</span>
+            </button>
+          }
         </div>
-        <div class="lc-banner-card card-green">
-          <div class="card-inner">
-            <span class="card-comment">// Database &amp; SQL</span>
-            <h3>Đề trắc nghiệm Cơ sở dữ liệu</h3>
-            <p>Hệ thống câu hỏi truy vấn SQL, thiết kế DB và chuẩn hóa.</p>
-          </div>
-          <div class="card-watermark">db</div>
-        </div>
-        <div class="lc-banner-card card-purple">
-          <div class="card-inner">
-            <span class="card-comment">// Interview Prep</span>
-            <h3>Lý thuyết phỏng vấn lập trình</h3>
-            <p>Tổng hợp OOP, cấu trúc dữ liệu, thuật toán và câu hỏi phỏng vấn.</p>
-          </div>
-          <div class="card-watermark">?</div>
-        </div>
-      </div>
+      }
 
-      <!-- Topic Pills Row -->
-      <div class="lc-topics-row">
-        @for (t of topics; track t.id) {
-          <button
-            class="lc-topic-pill"
-            (click)="selectedTopicId = (selectedTopicId === t.id ? '' : t.id)"
-            [class.active]="selectedTopicId === t.id"
-          >
-            <span class="pill-hash">#</span>{{ t.name }}
-            <span class="pill-count">{{ getTopicProblemCount(t.id) }}</span>
-          </button>
-        }
-      </div>
-
-      <!-- Filters & Search Controls -->
-      <div class="lc-controls-row">
-        <div class="lc-sub-topics">
-          <button class="lc-sub-pill" [class.active]="selectedStatus === 'all'" (click)="changeFilter('all')">Tất cả đề</button>
-          <button class="lc-sub-pill" [class.active]="selectedStatus === 'public'" (click)="changeFilter('public')">Đã phát hành</button>
-          <button class="lc-sub-pill" [class.active]="selectedStatus === 'draft'" (click)="changeFilter('draft')">Bản nháp</button>
+      <!-- Search + difficulty -->
+      <div class="qb-controls">
+        <div class="qb-search">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            [value]="searchText"
+            (input)="onSearchChange($event)"
+            placeholder="Tìm bộ đề theo tên hoặc mô tả…"
+            aria-label="Tìm bộ đề"
+          />
         </div>
-
-        <div class="lc-filter-inputs">
-          <div class="lc-search-box">
-            <i class="bi bi-search"></i>
-            <input
-              type="text"
-              [value]="searchText"
-              (input)="onSearchChange($event)"
-              placeholder="Tìm kiếm bộ đề..."
-            />
-          </div>
-          <div class="lc-select-box">
-            <select [(ngModel)]="selectedDifficulty">
-              <option value="">Tất cả độ khó</option>
-              <option value="easy">Dễ</option>
-              <option value="medium">Trung bình</option>
-              <option value="hard">Khó</option>
-            </select>
-          </div>
+        <div class="qb-diff-select">
+          <select [(ngModel)]="selectedDifficulty" aria-label="Lọc theo độ khó">
+            <option value="">Mọi độ khó</option>
+            <option value="easy">Dễ</option>
+            <option value="medium">Trung bình</option>
+            <option value="hard">Khó</option>
+          </select>
         </div>
       </div>
 
-      <!-- Quizzes Table -->
-      <div class="problems-table-card">
-        <div class="table-responsive">
-          <table class="problems-table">
-            <thead>
-              <tr>
-                <th class="col-status"></th>
-                <th class="col-title">Tên bộ đề</th>
-                <th class="col-cases">Số câu</th>
-                <th class="col-duration">Thời gian</th>
-                <th class="col-diff">Độ khó</th>
-                <th class="col-action" style="text-align: right; padding-right: 24px;">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (quiz of filteredQuizzes; track quiz.id; let idx = $index) {
-                <tr [class.solved-row]="quiz.statusClass === 'draft'" style="position: relative;">
+      <!-- Quiz-set list: an editor "file tree" of problem sets -->
+      <div class="qb-list">
+        @for (quiz of filteredQuizzes; track quiz.id; let idx = $index) {
+          <article class="qb-row" [attr.data-diff]="getDifficultyClass(quiz.level)">
 
-                  <!-- Status / Difficulty bar -->
-                  <td class="col-status" [ngClass]="'status-td-' + getDifficultyClass(quiz.level)">
-                    @if (quiz.statusClass === 'public') {
-                      <i class="bi bi-check-circle-fill text-success" title="Đã phát hành"></i>
-                    } @else if (quiz.statusClass === 'draft') {
-                      <i class="bi bi-pencil-square text-warning" title="Bản nháp"></i>
-                    } @else {
-                      <i class="bi bi-lock-fill text-muted-dark" title="Khóa"></i>
-                    }
-                  </td>
+            <!-- Signature: editor gutter (line index + difficulty node on a hairline rule) -->
+            <div class="qb-gutter" [attr.title]="getDifficultyLabel(quiz.level)">
+              <span class="qb-node"></span>
+              <span class="qb-idx">{{ pad2(idx + 1) }}</span>
+            </div>
 
-                  <!-- Title -->
-                  <td class="col-title">
-                    <div class="quiz-title-cell">
-                      <a
-                        [routerLink]="quiz.statusClass === 'public' ? ['/quiz', quiz.id] : ['/quiz-create']"
-                        [queryParams]="quiz.statusClass === 'draft' ? { id: quiz.id } : null"
-                        class="problem-link"
-                      >
-                        {{ idx + 1 }}. {{ quiz.title }}
-                      </a>
-                      @if (isMyQuiz(quiz)) {
-                        <app-review-status-badge [status]="quiz.reviewStatus"></app-review-status-badge>
-                      }
-                      <span class="quiz-desc-sub">{{ quiz.desc }}</span>
-                    </div>
-                  </td>
+            <div class="qb-row-body">
+              <div class="qb-row-head">
+                <a class="qb-row-title" [routerLink]="['/quiz', quiz.id]">{{ quiz.title }}</a>
+                @if (isMyQuiz(quiz)) {
+                  <span class="qb-state" [ngClass]="'is-' + getQuizState(quiz)">
+                    {{ getStateLabel(getQuizState(quiz)) }}
+                  </span>
+                }
+              </div>
+              <p class="qb-row-desc">{{ quiz.desc }}</p>
+              <div class="qb-meta">
+                <span class="qb-meta-item"><i class="bi bi-card-checklist"></i>{{ quiz.questions }} câu</span>
+                <span class="qb-meta-sep">·</span>
+                <span class="qb-meta-item"><i class="bi bi-clock"></i>{{ quiz.duration }} phút</span>
+                <span class="qb-diff-tag" [ngClass]="getDifficultyClass(quiz.level)">{{ getDifficultyLabel(quiz.level) }}</span>
+              </div>
+            </div>
 
-                  <!-- Questions count -->
-                  <td class="col-cases">
-                    <span class="cases-num">{{ quiz.questions }} câu</span>
-                  </td>
-
-                  <!-- Duration -->
-                  <td class="col-duration">
-                    <span class="duration-label">{{ quiz.duration }} phút</span>
-                  </td>
-
-                  <!-- Difficulty -->
-                  <td class="col-diff">
-                    <span class="diff-text-label" [ngClass]="getDifficultyClass(quiz.level)">
-                      {{ getDifficultyLabel(quiz.level) }}
-                    </span>
-                  </td>
-
-                  <!-- Actions -->
-                  <td class="col-action" style="text-align: right; padding-right: 24px;">
-                    <div class="row-actions">
-                      @if (compareIds(quiz.createdBy, currentUserId)) {
-                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">
-                          <i class="bi bi-pencil"></i> Sửa
-                        </a>
-                      }
-
-                      @if (quiz.statusClass === 'public') {
-                        <a class="btn-solve btn-solve-primary" [routerLink]="['/quiz', quiz.id]">
-                          Luyện tập <i class="bi bi-chevron-right"></i>
-                        </a>
-                      } @else if (quiz.statusClass === 'draft') {
-                        <a class="btn-solve" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }">
-                          Tiếp tục
-                        </a>
-                      }
-
-                      <!-- More options -->
-                      <div class="btn-more-options-wrapper">
-                        <button
-                          class="lc-comment-more-btn"
-                          (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"
-                          title="Tùy chọn"
-                        >
-                          <i class="bi bi-three-dots-vertical"></i>
-                        </button>
-                        @if (activeQuizMenuId === quiz.id) {
-                          <div class="comment-options-dropdown" (click)="$event.stopPropagation()">
-                            <button class="dropdown-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
-                              <i class="bi bi-eye"></i> Chi tiết
-                            </button>
-                            @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
-                              <button class="dropdown-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null">
-                                <i class="bi bi-copy"></i> Sao chép đề
-                              </button>
-                            }
-                            <button class="dropdown-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
-                              <i class="bi bi-send"></i> Chia sẻ
-                            </button>
-                            @if (compareIds(quiz.createdBy, currentUserId)) {
-                              <button class="dropdown-item danger" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
-                                <i class="bi bi-trash3"></i> Xóa bộ đề
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6" class="empty-table-cell">
-                    <div class="empty-state">
-                      <i class="bi bi-folder-x"></i>
-                      <h3>Không tìm thấy bộ đề</h3>
-                      <p>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.</p>
-                    </div>
-                  </td>
-                </tr>
+            <div class="qb-row-actions">
+              @if (compareIds(quiz.createdBy, currentUserId)) {
+                <a class="qb-icon-act" [routerLink]="['/quiz-create']" [queryParams]="{ id: quiz.id }"
+                  title="Chỉnh sửa" aria-label="Chỉnh sửa bộ đề">
+                  <i class="bi bi-pencil"></i>
+                </a>
               }
-            </tbody>
-          </table>
-        </div>
+
+              <a class="qb-practice" [routerLink]="['/quiz', quiz.id]">
+                Luyện tập <i class="bi bi-arrow-right-short"></i>
+              </a>
+
+              <div class="qb-more-wrap">
+                <button
+                  class="qb-icon-act"
+                  (click)="toggleQuizMenu(quiz.id, $event); $event.stopPropagation()"
+                  title="Tùy chọn" aria-label="Mở tùy chọn bộ đề">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                @if (activeQuizMenuId === quiz.id) {
+                  <div
+                    class="qb-menu"
+                    [style.top.px]="quizMenuPos.top"
+                    [style.right.px]="quizMenuPos.right"
+                    (click)="$event.stopPropagation()">
+                    <button class="qb-menu-item" [routerLink]="['/quiz', quiz.id]" (click)="activeQuizMenuId = null">
+                      <i class="bi bi-eye"></i> Chi tiết
+                    </button>
+                    @if (quiz.allowedCopy || compareIds(quiz.createdBy, currentUserId)) {
+                      <button class="qb-menu-item" (click)="copyQuizSet(quiz.id, $event); activeQuizMenuId = null">
+                        <i class="bi bi-files"></i> Sao chép đề
+                      </button>
+                    }
+                    <button class="qb-menu-item" (click)="shareQuiz(quiz.id, $event); activeQuizMenuId = null">
+                      <i class="bi bi-link-45deg"></i> Sao chép liên kết
+                    </button>
+                    @if (compareIds(quiz.createdBy, currentUserId)) {
+                      <div class="qb-menu-divider"></div>
+                      <button class="qb-menu-item is-danger" (click)="deleteQuiz(quiz.id, $event); activeQuizMenuId = null">
+                        <i class="bi bi-trash3"></i> Xóa bộ đề
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="qb-empty">
+            <i class="bi bi-folder2-open"></i>
+            <h3>Chưa có bộ đề nào ở đây</h3>
+            <p>Đổi bộ lọc, thử từ khóa khác, hoặc tạo bộ đề đầu tiên của bạn.</p>
+            <button class="qb-new-btn" (click)="onCreateQuizClick()">
+              <i class="bi bi-plus-lg"></i> Tạo đề mới
+            </button>
+          </div>
+        }
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Sidebar Widgets -->
-    <aside class="quiz-sidebar-widgets-col">
+    <!-- SIDEBAR -->
+    <aside class="qb-side">
 
-      <!-- Calendar Card -->
-      <div class="lc-calendar-card">
-        <div class="calendar-header">
-          <span class="calendar-title">{{ currentMonthYearLabel }}</span>
-          <span class="calendar-today-btn">Hôm nay</span>
+      <!-- Your sets, broken down by review state -->
+      <section class="qb-panel">
+        <div class="qb-panel-head">
+          <span class="qb-panel-eyebrow">// của bạn</span>
+          <h4>Bộ đề của bạn</h4>
         </div>
-        <div class="calendar-weekdays">
-          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        <div class="qb-mine-total">
+          <strong>{{ myStatusCount('all') }}</strong>
+          <span>bộ đề đã tạo</span>
         </div>
-        <div class="calendar-grid">
-          @for (day of calendarDays; track $index) {
-            <div class="calendar-day" [class.empty-day]="day === null" [class.today]="day === currentDay">
-              <span>{{ day }}</span>
-            </div>
-          }
-        </div>
-        <div class="calendar-footer-stats">
-          <span>Đã hoàn thành: <strong>0</strong> ngày liên tiếp</span>
-        </div>
-      </div>
+        <button type="button" class="qb-mine-row state-published" (click)="changeStatus('published')">
+          <span class="qb-mine-dot"></span>
+          <span class="qb-mine-label">Đã phát hành</span>
+          <span class="qb-mine-val">{{ myStatusCount('published') }}</span>
+        </button>
+        <button type="button" class="qb-mine-row state-pending" (click)="changeStatus('pending')">
+          <span class="qb-mine-dot"></span>
+          <span class="qb-mine-label">Chờ duyệt</span>
+          <span class="qb-mine-val">{{ myStatusCount('pending') }}</span>
+        </button>
+        <button type="button" class="qb-mine-row state-private" (click)="changeStatus('private')">
+          <span class="qb-mine-dot"></span>
+          <span class="qb-mine-label">Riêng tư &amp; nháp</span>
+          <span class="qb-mine-val">{{ myStatusCount('private') }}</span>
+        </button>
+      </section>
 
-      <!-- Quiz Stats widget -->
-      <div class="lc-premium-card">
-        <div class="premium-header">
-          <h4><i class="bi bi-bar-chart-line"></i> Tiến trình ôn luyện</h4>
+      <!-- Exam tips -->
+      <section class="qb-panel">
+        <div class="qb-panel-head">
+          <span class="qb-panel-eyebrow">// lưu ý</span>
+          <h4>Khi làm bài</h4>
         </div>
-        <p class="premium-desc">Thống kê kết quả ôn tập trắc nghiệm của bạn</p>
-        <div class="quiz-stats-list">
-          <div class="stat-row">
-            <span>Bộ đề khả dụng</span>
-            <strong>{{ quizzes.length }} đề</strong>
-          </div>
-          <div class="stat-row">
-            <span>Học viên</span>
-            <strong class="stat-accent">Học viên HUIT</strong>
-          </div>
-          <div class="stat-row">
-            <span>Trạng thái ôn thi</span>
-            <strong class="stat-ready">Sẵn sàng</strong>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quiz Rules card -->
-      <div class="lc-companies-card">
-        <h4 class="sidebar-card-title">Lưu ý khi làm bài thi</h4>
-        <ul class="rules-list">
-          <li>
-            <i class="bi bi-check2-circle"></i>
-            <span>Mỗi bộ đề thi đều có giới hạn thời gian cụ thể.</span>
-          </li>
-          <li>
-            <i class="bi bi-check2-circle"></i>
-            <span>Hệ thống sẽ tự động nộp bài khi hết giờ.</span>
-          </li>
-          <li>
-            <i class="bi bi-check2-circle"></i>
-            <span>Hãy tập trung làm bài và hạn chế chuyển tab.</span>
-          </li>
-          <li>
-            <i class="bi bi-check2-circle"></i>
-            <span>Hoàn thành bài thi tốt để tích lũy thêm điểm kinh nghiệm (XP).</span>
-          </li>
+        <ul class="qb-tips">
+          <li><i class="bi bi-hourglass-split"></i><span>Mỗi bộ đề có giới hạn thời gian riêng, hết giờ hệ thống tự nộp.</span></li>
+          <li><i class="bi bi-eye-slash"></i><span>Bộ đề <strong>chờ duyệt</strong> chỉ mình bạn thấy cho tới khi được duyệt.</span></li>
+          <li><i class="bi bi-lightning-charge"></i><span>Hoàn thành bài để tích thêm điểm kinh nghiệm (XP).</span></li>
         </ul>
-      </div>
+      </section>
     </aside>
   </div>
 </div>

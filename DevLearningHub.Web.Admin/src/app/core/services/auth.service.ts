@@ -39,6 +39,20 @@ export class AuthService {
     );
   }
 
+  googleLogin(idToken: string) {
+    return this.http.post<any>(`${this.apiUrl}/google`, { idToken }).pipe(
+      map((res) => res?.data || res),
+      tap((data) => {
+        if (data?.accessToken) {
+          localStorage.setItem('accessToken', data.accessToken);
+        }
+        if (data?.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+      })
+    );
+  }
+
   getCurrentUser(): Observable<UserProfile> {
     return this.http.get<any>('/api/users/me').pipe(
       map((res) => {

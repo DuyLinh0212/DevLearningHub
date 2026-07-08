@@ -658,8 +658,8 @@ public class PostsController : ControllerBase
     [HttpPost("{id:guid}/moderate")]
     [Authorize]
     // Hide or unhide a post.
-    // - Post author can always hide/unhide their own post (no permission required).
-    // - To hide/unhide someone else's post requires the post:hide permission (Moderator/Admin).
+    // - Post author needs the post:hide permission to hide/unhide their own post.
+    // - To hide/unhide someone else's post requires the post:hide_any permission (Moderator/Admin).
     public async Task<ActionResult<ApiResponse<object>>> ModeratePost(Guid id, ModerateRequest request)
     {
         try
@@ -676,10 +676,13 @@ public class PostsController : ControllerBase
             }
 
             var isOwner = post.AuthorId == moderatorId;
-            var canHideOwn = isOwner && await _permissions.HasPermissionAsync(moderatorId, "post:hide_own");
+            // NOTE: the permission catalog only ever seeds "post:hide" (see migrations), never
+            // "post:hide_own" — that key was renamed once but this check wasn't updated, which
+            // made the "Ẩn" checkbox in role-management a no-op (always 403). Check "post:hide".
+            var canHideOwn = isOwner && await _permissions.HasPermissionAsync(moderatorId, "post:hide");
             var canHideAny = await _permissions.HasPermissionAsync(moderatorId, "post:hide_any");
 
-            // Owner can hide/unhide their own post (requires post:hide_own); Moderator/Admin can hide/unhide any post (requires post:hide_any).
+            // Owner can hide/unhide their own post (requires post:hide); Moderator/Admin can hide/unhide any post (requires post:hide_any).
             if (!canHideOwn && !canHideAny)
             {
                 return StatusCode(StatusCodes.Status403Forbidden,

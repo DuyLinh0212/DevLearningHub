@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -14,7 +14,15 @@ import { HttpClient } from '@angular/common/http';
 export class AdminPostCreateComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+
+  // Edit mode: this same screen doubles as the "Sửa bài" form when a post id is
+  // present in the route (/admin/posts/:id/edit). Empty id => create mode.
+  editingPostId: string | null = null;
+  get isEditMode(): boolean {
+    return !!this.editingPostId;
+  }
 
   // Form states
   title = '';
@@ -25,6 +33,7 @@ export class AdminPostCreateComponent implements OnInit {
   tags: any[] = [];
   tagsLoading = false;
   isSaving = false;
+  isLoadingPost = false;
 
   // Dropdown & File upload states
   isTagDropdownOpen = false;
@@ -34,6 +43,37 @@ export class AdminPostCreateComponent implements OnInit {
 
   ngOnInit() {
     this.loadTags();
+
+    // If the route carries a post id, switch to edit mode and prefill the form.
+    this.editingPostId = this.route.snapshot.paramMap.get('id');
+    if (this.editingPostId) {
+      this.loadPostForEdit(this.editingPostId);
+    }
+  }
+
+  private loadPostForEdit(id: string) {
+    this.isLoadingPost = true;
+    this.cdr.detectChanges();
+    this.http.get<any>(`/api/posts/${id}`).subscribe({
+      next: (res) => {
+        const post = res?.data || res;
+        if (post) {
+          this.title = post.title || '';
+          this.bodyMarkdown = post.bodyMarkdown || '';
+          this.imageUrl = post.imageUrl || '';
+          // Post detail returns full tag objects; keep only their ids for the picker.
+          this.selectedTagIds = (post.tags || []).map((t: any) => t.id).filter(Boolean);
+        }
+        this.isLoadingPost = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải bài viết để sửa:', err);
+        alert(`Lỗi ${err.status || '?'}: Không thể tải bài viết cần sửa.`);
+        this.isLoadingPost = false;
+        this.router.navigate(['/admin/posts']);
+      }
+    });
   }
 
   loadTags() {
@@ -135,6 +175,11 @@ export class AdminPostCreateComponent implements OnInit {
       tagIds: this.selectedTagIds
     };
 
+    if (this.isEditMode) {
+      this.submitEdit(payload);
+      return;
+    }
+
     this.http.post<any>('/api/posts', payload).subscribe({
       next: (res) => {
         const createdPost = res?.data || res;
@@ -171,6 +216,45 @@ export class AdminPostCreateComponent implements OnInit {
       error: (err) => {
         console.error('Lỗi đăng bài viết:', err);
         alert(`Lỗi ${err.status}: Đăng bài viết thất bại.`);
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Edit an existing post via PUT /api/posts/{id} (backend enforces post:edit_any
+  // for non-authors). If a new local image file was picked, upload it afterwards.
+  private submitEdit(payload: any) {
+    const id = this.editingPostId!;
+    this.http.put<any>(`/api/posts/${id}`, payload).subscribe({
+      next: () => {
+        if (this.selectedFile) {
+          this.isUploadingImage = true;
+          this.cdr.detectChanges();
+          this.uploadPostImage(id, this.selectedFile).subscribe({
+            next: () => {
+              this.isUploadingImage = false;
+              this.isSaving = false;
+              alert('Cập nhật bài viết thành công!');
+              this.router.navigate(['/admin/posts', id]);
+            },
+            error: (err) => {
+              console.error('Lỗi tải ảnh lên Cloudinary:', err);
+              alert('Cập nhật bài viết thành công nhưng không thể tải ảnh lên.');
+              this.isUploadingImage = false;
+              this.isSaving = false;
+              this.router.navigate(['/admin/posts', id]);
+            }
+          });
+        } else {
+          this.isSaving = false;
+          alert('Cập nhật bài viết thành công!');
+          this.router.navigate(['/admin/posts', id]);
+        }
+      },
+      error: (err) => {
+        console.error('Lỗi cập nhật bài viết:', err);
+        alert(`Lỗi ${err.status}: Cập nhật bài viết thất bại.`);
         this.isSaving = false;
         this.cdr.detectChanges();
       }

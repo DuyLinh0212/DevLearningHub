@@ -6,6 +6,6 @@ smokeTest({
   describeName: 'User > Quiz Bank',
   featureSlug: 'quiz-bank',
   steps: [
-    { route: '/quiz-bank', assertBy: 'header.content-header' },
+    { route: '/quiz-bank', assertBy: 'header.qb-hero' },
   ],
 });

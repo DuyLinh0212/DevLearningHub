@@ -45,17 +45,30 @@ public class QuizSetsController : ControllerBase
     // List quiz sets, optionally including private ones for owner.
     public async Task<ActionResult<ApiResponse<List<QuizSetResponse>>>> GetQuizSets(
         [FromQuery] Guid? topicId,
-        [FromQuery] bool includePrivate = false)
+        [FromQuery] bool includePrivate = false,
+        [FromQuery] bool mine = false)
     {
-        var query = _db.QuizSets.AsNoTracking();
+        // "archived" = soft-deleted (has sessions, so it couldn't be hard-deleted): never list it.
+        var query = _db.QuizSets.AsNoTracking().Where(qs => qs.ReviewStatus != "archived");
         var hasUser = User.TryGetUserId(out var userId);
+
+        if (mine && !hasUser)
+        {
+            return Unauthorized(ApiResponse<List<QuizSetResponse>>.Fail("Unauthorized."));
+        }
 
         if (topicId.HasValue)
         {
             query = query.Where(qs => qs.TopicId == topicId.Value);
         }
 
-        if (hasUser)
+        // "mine" restricts the listing to the caller's own quiz sets regardless of visibility/review
+        // status. Used by the roadmap builder so learners can only attach quiz sets they own.
+        if (mine)
+        {
+            query = query.Where(qs => qs.CreatedBy == userId);
+        }
+        else if (hasUser)
         {
             var canManage = await _permissions.HasPermissionAsync(userId, "quiz:edit");
             var canReview = await _permissions.HasPermissionAsync(userId, "quiz:review");
@@ -168,7 +181,7 @@ public class QuizSetsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Forbidden."));
         }
-        if (quizSet.ReviewStatus is "pending" or "rejected" && !canManage)
+        if (quizSet.ReviewStatus is "pending" or "rejected" or "archived" && !canManage)
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<QuizSetDetailResponse>.Fail("Quiz set is waiting for review."));
         }
@@ -342,6 +355,10 @@ public class QuizSetsController : ControllerBase
             TopicId = source.TopicId,
             Level = source.Level,
             ExamQuestionCount = source.ExamQuestionCount,
+            // A copy always starts private and belongs to the caller, so it is auto-approved like
+            // any other private draft. Without this it would inherit the entity default "pending",
+            // leaving the owner's own copy stuck in a misleading "waiting for review" state.
+            ReviewStatus = await _autoApproval.EvaluateQuizSetAsync(userId, title, source.Description, false),
             CreatedAt = now
         };
 
@@ -460,7 +477,11 @@ public class QuizSetsController : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize]
-    // Delete quiz set if there are no sessions.
+    // Delete quiz set if there are no sessions. When sessions already exist, hard-deleting
+    // would orphan session/answer history, so we soft-delete instead: mark it "archived" and
+    // unpublish it, keeping the row (and its sessions/answers) intact for historical records.
+    // Also cascade-deletes any question that becomes orphaned (not used by another quiz set,
+    // never answered) as a result of a hard delete.
     public async Task<ActionResult<ApiResponse<object>>> DeleteQuizSet(Guid id)
     {
         if (!User.TryGetUserId(out var userId))
@@ -482,15 +503,74 @@ public class QuizSetsController : ControllerBase
         var hasSessions = await _db.QuizSessions.AnyAsync(qs => qs.QuizSetId == id);
         if (hasSessions)
         {
-            return BadRequest(ApiResponse<object>.Fail("Quiz set has sessions and cannot be deleted."));
+            var quizTitleArchived = quizSet.Title;
+            var quizCreatorIdArchived = quizSet.CreatedBy;
+
+            quizSet.IsPublic = false;
+            quizSet.ReviewStatus = "archived";
+            quizSet.ReviewedBy = userId;
+            quizSet.ReviewedAt = DateTime.UtcNow;
+            quizSet.ReviewNote = "Đã lưu trữ (ẩn) vì đã có người làm bài, không thể xóa vĩnh viễn.";
+
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("quiz.archive", "quiz_set", id, $"title={quizTitleArchived}");
+
+            await _notifications.NotifyAsync(
+                recipientId: quizCreatorIdArchived,
+                type: NotificationTypes.QuizDeleted,
+                message: $"Bộ đề \"{quizTitleArchived}\" của bạn đã được lưu trữ (ẩn khỏi danh sách) vì đã có người làm bài.",
+                refId: id,
+                refType: NotificationRefTypes.QuizSet,
+                actorId: userId);
+
+            return Ok(ApiResponse<object>.Ok(new { deleted = false, archived = true, message = "Quiz set has sessions, so it was archived (hidden) instead of permanently deleted." }));
         }
 
         var links = await _db.QuizSetQuestions.Where(qsq => qsq.QuizSetId == id).ToListAsync();
+        var linkedQuestionIds = links.Select(l => l.QuestionId).Distinct().ToList();
         var quizCreatorId = quizSet.CreatedBy;
         var quizTitle = quizSet.Title;
 
         _db.QuizSetQuestions.RemoveRange(links);
         _db.QuizSets.Remove(quizSet);
+
+        // Cascade-delete the questions that belonged to this quiz set: once its links are
+        // gone, a question is orphaned only if no other quiz set still references it. Skip
+        // any question that already has real submitted answers, to avoid breaking history.
+        if (linkedQuestionIds.Count > 0)
+        {
+            var stillReferencedIds = await _db.QuizSetQuestions
+                .Where(qsq => qsq.QuizSetId != id && linkedQuestionIds.Contains(qsq.QuestionId))
+                .Select(qsq => qsq.QuestionId)
+                .Distinct()
+                .ToListAsync();
+
+            var answeredIds = await _db.QuizAnswers
+                .Where(a => linkedQuestionIds.Contains(a.QuestionId))
+                .Select(a => a.QuestionId)
+                .Distinct()
+                .ToListAsync();
+
+            var orphanIds = linkedQuestionIds
+                .Except(stillReferencedIds)
+                .Except(answeredIds)
+                .ToList();
+
+            if (orphanIds.Count > 0)
+            {
+                var orphanQuestions = await _db.Questions
+                    .Where(q => orphanIds.Contains(q.Id))
+                    .Include(q => q.QuestionOptions)
+                    .ToListAsync();
+
+                foreach (var question in orphanQuestions)
+                {
+                    _db.QuestionOptions.RemoveRange(question.QuestionOptions);
+                }
+                _db.Questions.RemoveRange(orphanQuestions);
+            }
+        }
+
         await _db.SaveChangesAsync();
         await _audit.LogAsync("quiz.delete", "quiz_set", id, $"title={quizSet.Title}");
 
@@ -621,7 +701,7 @@ public class QuizSetsController : ControllerBase
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<List<QuizSetQuestionResponse>>.Fail("Forbidden."));
             }
         }
-        else if (quizSet.ReviewStatus is "pending" or "rejected")
+        else if (quizSet.ReviewStatus is "pending" or "rejected" or "archived")
         {
             var canAccess = false;
             if (User.TryGetUserId(out var userId))

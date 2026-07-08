@@ -20,8 +20,8 @@ test.describe.serial('User > Quiz Detail', () => {
   test('opens a published quiz from the quiz bank and loads its detail page', async () => {
     test.setTimeout(90000);
     await gotoRoute(page, env.USER_URL, '/quiz-bank');
-    await expect(page.locator('header.content-header')).toBeVisible();
-    await clickFirstListItemAndCapture(page, 'a.btn-solve-primary');
+    await expect(page.locator('header.qb-hero')).toBeVisible();
+    await clickFirstListItemAndCapture(page, 'a.qb-practice');
     await expect(page.locator('header.content-header')).toBeVisible();
     await takeScreenshot(page, 'user', 'quiz-detail', 'loaded');
   });

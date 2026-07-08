@@ -32,7 +32,14 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   post: any = null;
   comments: any[] = [];
   visibleComments: any[] = [];
-  
+
+  // Phân trang bình luận gốc kiểu Facebook: chỉ hiện N cái đầu, bấm "Xem thêm" để tải thêm.
+  private readonly rootCommentsPageSize = 10;
+  visibleRootCount = this.rootCommentsPageSize;
+
+  // Các bình luận gốc đang được mở rộng để xem bình luận con (id -> true).
+  private expandedReplyIds = new Set<string>();
+
   loading: boolean = false;
   currentUserId: string = '';
   currentUserRoles: string[] = [];
@@ -281,6 +288,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         arr = arr.filter((c: any) => !c.parentId);
         this.comments = this.staffUserService.annotateComments(arr);
         this.visibleComments = this.pruneRepliesOfHiddenComments(this.comments);
+        this.visibleRootCount = this.rootCommentsPageSize;
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -292,6 +300,41 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // --- PHÂN TRANG BÌNH LUẬN GỐC (kiểu Facebook: 10 cái/lần) ---
+  get pagedComments(): any[] {
+    return this.visibleComments.slice(0, this.visibleRootCount);
+  }
+
+  get hasMoreRootComments(): boolean {
+    return this.visibleComments.length > this.visibleRootCount;
+  }
+
+  get remainingRootCommentsCount(): number {
+    return Math.max(0, this.visibleComments.length - this.visibleRootCount);
+  }
+
+  loadMoreRootComments() {
+    this.visibleRootCount = Math.min(
+      this.visibleComments.length,
+      this.visibleRootCount + this.rootCommentsPageSize
+    );
+    this.cdr.detectChanges();
+  }
+
+  // --- XỔ/THU BÌNH LUẬN CON KIỂU FACEBOOK ---
+  isRepliesExpanded(commentId: string): boolean {
+    return this.expandedReplyIds.has(commentId);
+  }
+
+  toggleReplies(commentId: string) {
+    if (this.expandedReplyIds.has(commentId)) {
+      this.expandedReplyIds.delete(commentId);
+    } else {
+      this.expandedReplyIds.add(commentId);
+    }
+    this.cdr.detectChanges();
   }
 
 
@@ -619,27 +662,35 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   canEditPost(): boolean {
-    return this.isPostAuthor();
+    return this.isPostAuthor() || this.hasPermission('post:edit_any');
   }
 
   canDeletePost(): boolean {
-    return this.isPostAuthor();
+    return this.isPostAuthor() || this.hasPermission('post:delete_any');
   }
 
   canHidePost(): boolean {
-    return this.isPostAuthor();
+    // Chủ bài viết cần quyền post:hide để tự ẩn bài của mình; Mod/Admin cần post:hide_any
+    // để ẩn bài của người khác. Khớp với điều kiện ở PostsController.ModeratePost.
+    return (this.isPostAuthor() && this.hasPermission('post:hide')) || this.hasPermission('post:hide_any');
   }
 
+  // Bình luận chỉ tác giả mới được sửa (BE không có comment:edit_any).
   canEditComment(comment: any): boolean {
     return this.isCommentAuthor(comment);
   }
 
   canDeleteComment(comment: any): boolean {
-    return this.isCommentAuthor(comment);
+    return this.isCommentAuthor(comment) || this.hasPermission('comment:delete');
   }
 
   canModerateComment(): boolean {
-    return false;
+    return this.hasPermission('comment:hide');
+  }
+
+  // Chưa có quyền comment:create thì ẩn hẳn khung viết bình luận / nút trả lời.
+  canCreateComment(): boolean {
+    return this.hasPermission('comment:create');
   }
 
   toggleModerateComment(comment: any) {

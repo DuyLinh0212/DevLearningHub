@@ -65,6 +65,8 @@ export class RoadmapViewComponent implements OnInit {
   editingRoadmapId: string | null = null;
   roadmapForm: RoadmapFormState = this.createDefaultRoadmapForm();
 
+  isSubmittingRoadmap = false;
+
   isItemModalOpen = false;
   isSavingItem = false;
   itemSaveError = '';
@@ -268,6 +270,49 @@ export class RoadmapViewComponent implements OnInit {
     });
   }
 
+  canSubmitRoadmap(roadmap: any): boolean {
+    if (!roadmap || !this.canEditRoadmap(roadmap)) {
+      return false;
+    }
+    const status = (roadmap.reviewStatus || '').toLowerCase();
+    // Only a draft or a previously rejected roadmap can be (re)submitted for review.
+    return status === 'draft' || status === 'rejected' || status === '';
+  }
+
+  submitRoadmap(roadmap: any, event?: Event) {
+    event?.stopPropagation();
+
+    if (this.isSubmittingRoadmap || !this.canSubmitRoadmap(roadmap)) {
+      return;
+    }
+
+    if (!this.getRoadmapItemCount(roadmap)) {
+      this.loadError = 'Hãy thêm ít nhất một mục học trước khi gửi kiểm duyệt.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!confirm('Gửi lộ trình này đi kiểm duyệt? Sau khi gửi, bạn sẽ không thể chỉnh sửa cho tới khi có kết quả duyệt.')) {
+      return;
+    }
+
+    this.isSubmittingRoadmap = true;
+    this.loadError = '';
+    this.cdr.detectChanges();
+
+    this.roadmapService.submitRoadmap(roadmap.id).subscribe({
+      next: () => {
+        this.isSubmittingRoadmap = false;
+        this.loadUserRoadmaps(roadmap.id);
+      },
+      error: (err) => {
+        this.isSubmittingRoadmap = false;
+        this.loadError = this.getApiError(err, 'Không thể gửi lộ trình đi kiểm duyệt.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   openItemModal() {
     if (!this.activeRoadmap || !this.canEditRoadmap(this.activeRoadmap)) {
       return;
@@ -399,10 +444,15 @@ export class RoadmapViewComponent implements OnInit {
   }
 
   private getItemOptionsEndpoint(type: string): string {
+    // Quiz sets, code problems and problem banks are restricted to the current user's own
+    // content: a learner can only build a roadmap from material they created. Topics are shared
+    // knowledge categories, so they are listed for everyone.
     switch (type) {
-      case 'quiz_set': return '/api/quiz-sets';
-      case 'problem': return '/api/problems';
-      case 'problem_bank': return '/api/problem-banks';
+      case 'quiz_set': return '/api/quiz-sets?mine=true';
+      case 'problem': return '/api/problems?mine=true';
+      case 'problem_bank': return this.currentUserId
+        ? `/api/problem-banks?createdBy=${encodeURIComponent(this.currentUserId)}`
+        : '/api/problem-banks';
       default: return '/api/topics';
     }
   }
@@ -439,8 +489,10 @@ export class RoadmapViewComponent implements OnInit {
         return 'Đã duyệt';
       case 'rejected':
         return 'Bị từ chối';
-      default:
+      case 'pending':
         return 'Chờ duyệt';
+      default:
+        return 'Bản nháp';
     }
   }
 
@@ -450,8 +502,10 @@ export class RoadmapViewComponent implements OnInit {
         return 'is-approved';
       case 'rejected':
         return 'is-rejected';
-      default:
+      case 'pending':
         return 'is-pending';
+      default:
+        return 'is-draft';
     }
   }
 

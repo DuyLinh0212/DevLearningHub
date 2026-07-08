@@ -26,8 +26,10 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   recentUsers: any[] = [];
-  recentPosts: any[] = [];
   recentProblems: any[] = [];
+
+  // Nhãn giờ của lần làm mới dữ liệu gần nhất, hiển thị ở dải trạng thái hệ thống.
+  lastUpdatedLabel: string | null = null;
 
   get adminStats() {
     return [
@@ -83,8 +85,12 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  private loadBackendData() {
+  loadBackendData() {
     if (!this.checkAdminRole()) return;
+
+    // Ghi lại thời điểm bấm làm mới (không phải thời điểm từng API riêng lẻ trả về,
+    // vì các lệnh gọi bên dưới chạy song song và có thể hoàn tất ở các thời điểm khác nhau).
+    this.lastUpdatedLabel = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     // 1. Fetch Users & Recent Users
     this.http.get<any>('/api/admin/users?pageSize=5').subscribe({
@@ -131,21 +137,6 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Lá»—i láº¥y stats Topics:', err);
-      }
-    });
-
-    // 5. Fetch Recent Posts
-    this.http.get<any>('/api/posts?page=1&pageSize=5').subscribe({
-      next: (res: any) => {
-        const data = res?.data;
-        this.recentPosts = data?.items || data || res?.items || [];
-        if (!Array.isArray(this.recentPosts)) this.recentPosts = [];
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Lỗi lấy bài viết gần đây:', err);
-        this.recentPosts = [];
-        this.cdr.detectChanges();
       }
     });
   }

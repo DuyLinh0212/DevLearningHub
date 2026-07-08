@@ -85,7 +85,7 @@
 
 .mq-chip.active {
   background: var(--text-main);
-  color: var(--bg-body, #0f0f14);
+  color: var(--bg-main, #0f0f14);
   border-color: var(--text-main);
 }
 
@@ -462,7 +462,7 @@
 }
 
 .mq-detail-code {
-  background: var(--bg-body, #0f0f14);
+  background: var(--bg-main, #0f0f14);
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 0.78rem;

@@ -84,7 +84,7 @@ export class QuizService {
 	}
 
 	saveQuizSetFromAdmin(id: string, form: any): Observable<any> {
-		const payload = this.mapQuizSetPayload(form, form.statusClass !== 'draft');
+		const payload = this.mapQuizSetPayload(form, form.statusClass !== 'private');
 		if (id && !id.toString().startsWith('custom_')) {
 			return this.http.put<any>(`${this.apiUrl}/quiz-sets/${id}`, payload).pipe(map((res) => res?.data || res));
 		} else {
@@ -251,8 +251,8 @@ export class QuizService {
 			level: quiz.level || quiz.Level || '',
 			duration: quiz.timeLimitSeconds ? Math.ceil(quiz.timeLimitSeconds / 60) : (quiz.TimeLimitSeconds ? Math.ceil(quiz.TimeLimitSeconds / 60) : 15),
 			questionsCount: qCount,
-			statusClass: isPub ? 'public' : 'draft',
-			status: isPub ? 'Đã phát hành' : 'Bản nháp',
+			statusClass: isPub ? 'public' : 'private',
+			status: isPub ? 'Đã phát hành' : 'Riêng tư',
 			allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
 			examQuestionCount: quiz.examQuestionCount ?? quiz.ExamQuestionCount ?? null,
 			attempts: finalAttempts,

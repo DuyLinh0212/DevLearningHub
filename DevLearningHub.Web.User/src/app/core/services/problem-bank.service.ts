@@ -21,6 +21,8 @@ export interface ProblemBankSummary {
   likeCount: number;
   avgRating: number;
   ratingCount: number;
+  // Số người đã làm ít nhất 1 bài trong bộ đề này.
+  participantCount: number;
   myLiked: boolean;
   myRating: number | null;
   createdAt: string;

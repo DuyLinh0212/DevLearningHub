@@ -40,6 +40,12 @@ export class RoadmapService {
     );
   }
 
+  submitRoadmap(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/submit`, {}).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
   addTopicToRoadmap(roadmapId: string, topicId: string, orderIndex: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/${roadmapId}/topics`, { topicId, orderIndex });
   }

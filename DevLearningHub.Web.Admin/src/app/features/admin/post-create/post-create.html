@@ -1,13 +1,13 @@
 <header class="content-header">
   <div class="top-breadcrumb">
-    <a routerLink="/admin/posts">Bài viết</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>Tạo bài viết mới</span>
+    <a routerLink="/admin/posts">Bài viết</a> <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 4px;"></i> <span>{{ isEditMode ? 'Sửa bài viết' : 'Tạo bài viết mới' }}</span>
   </div>
 </header>
 
 <div class="dashboard-scroll-body">
   <div class="form-container-card">
-    <h2>Tạo bài viết mới</h2>
-    <p class="form-subtitle">Đăng bài viết trực tiếp từ trang quản trị, giống hệt trải nghiệm đăng bài trên diễn đàn.</p>
+    <h2>{{ isEditMode ? 'Sửa bài viết' : 'Tạo bài viết mới' }}</h2>
+    <p class="form-subtitle">{{ isEditMode ? 'Chỉnh sửa nội dung bài viết với quyền kiểm duyệt (post:edit_any).' : 'Đăng bài viết trực tiếp từ trang quản trị, giống hệt trải nghiệm đăng bài trên diễn đàn.' }}</p>
 
     <form (ngSubmit)="submitForm()" #postForm="ngForm" class="post-form">
       <!-- TIÊU ĐỀ -->
@@ -106,7 +106,7 @@
         <button type="button" class="btn-cancel" (click)="cancel()">Hủy bỏ</button>
         <button type="submit" class="btn-submit" [disabled]="!postForm.form.valid || selectedTagIds.length === 0 || isSaving">
           <i class="bi bi-cloud-arrow-up-fill"></i>
-          {{ isSaving ? 'ĐANG LƯU BÀI...' : 'ĐĂNG BÀI VIẾT' }}
+          {{ isSaving ? (isEditMode ? 'ĐANG LƯU...' : 'ĐANG LƯU BÀI...') : (isEditMode ? 'LƯU THAY ĐỔI' : 'ĐĂNG BÀI VIẾT') }}
         </button>
       </div>
     </form>

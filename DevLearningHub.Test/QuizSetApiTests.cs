@@ -398,7 +398,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task DeleteQuizSet_WithExistingSession_ShouldReturnBadRequest()
+    public async Task DeleteQuizSet_WithExistingSession_ShouldArchiveAndReturnOk()
     {
         var auth = await RegisterAndGetAuthAsync(
             username: "quizsetsession7509",
@@ -415,12 +415,17 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
 
         var response = await SendWithBearerAsync(HttpMethod.Delete, $"/api/quiz-sets/{quizSetId}", auth.AccessToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var document = await ReadDocumentAsync(response);
         var root = document.RootElement;
 
-        AssertFail(root, "Quiz set has sessions and cannot be deleted.");
+        AssertSuccess(root);
+
+        var data = root.GetProperty("data");
+        Assert.False(data.GetProperty("deleted").GetBoolean());
+        Assert.True(data.GetProperty("archived").GetBoolean());
+        Assert.Equal("Quiz set has sessions, so it was archived (hidden) instead of permanently deleted.", data.GetProperty("message").GetString());
     }
 
     private async Task<AuthTestData> RegisterAndGetAuthAsync(string username, string email, string fullName)

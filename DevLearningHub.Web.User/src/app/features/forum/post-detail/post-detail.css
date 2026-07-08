@@ -631,6 +631,47 @@
   padding-left: 12px;
 }
 
+.lc-replies-toggle-wrap {
+  margin-left: 20px;
+}
+
+/* Nút "Xem thêm N câu trả lời" kiểu Facebook */
+.lc-view-replies-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.lc-view-replies-btn:hover { color: var(--text-main); text-decoration: underline; }
+
+/* Nút "Xem thêm bình luận" (phân trang bình luận gốc) */
+.lc-load-more-comments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-nested);
+  border-radius: 8px;
+  background: var(--bg-card);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.lc-load-more-comments:hover { color: var(--text-main); background: var(--bg-nested); }
+
 /* =====================================================================
    NO COMMENTS / LOADING
    ===================================================================== */

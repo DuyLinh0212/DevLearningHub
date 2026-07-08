@@ -47,11 +47,29 @@ export class AdminPostDetailComponent implements OnInit {
   private imageDragBaseX = 0;
   private imageDragBaseY = 0;
 
-  // User roles and permissions
+  // User roles and permissions.
+  // Each moderation action is gated by its OWN permission so the toolbar buttons
+  // map 1:1 to the permission matrix. Hiding and deleting are separate powers:
+  // granting "hide" must not reveal the "delete" button (and vice versa).
   currentUserRoles: string[] = [];
   currentUserId: string = '';
-  canModerateComments: boolean = false;
-  canModeratePosts: boolean = false;
+  canHideComments: boolean = false;
+  canDeleteComments: boolean = false;
+  canHidePosts: boolean = false;
+  canDeletePosts: boolean = false;
+  canEditPosts: boolean = false;
+
+  // A staff member (Admin/Moderator role) implicitly holds every moderation power,
+  // matching how PermissionService expands the Admin role server-side.
+  private isModerationStaff(): boolean {
+    return this.currentUserRoles.includes('admin') || this.currentUserRoles.includes('moderator');
+  }
+
+  // Show the post action group / hide the "Moderator only" notice when the user
+  // can perform at least one post-level moderation action.
+  get canModeratePosts(): boolean {
+    return this.canHidePosts || this.canDeletePosts;
+  }
 
   ngOnInit() {
     this.loadCurrentUser();
@@ -70,14 +88,18 @@ export class AdminPostDetailComponent implements OnInit {
       next: (user) => {
         this.currentUserRoles = user.roles || [];
         this.currentUserId = user.id || '';
-        this.canModerateComments = user.permissions?.includes('comment:hide') ||
-                                    this.currentUserRoles.includes('moderator') ||
-                                    this.currentUserRoles.includes('admin');
-        this.canModeratePosts = this.currentUserRoles.includes('admin') ||
-                                this.currentUserRoles.includes('moderator') ||
-                                user.permissions?.includes('post:delete') ||
-                                user.permissions?.includes('post:delete_any') ||
-                                user.permissions?.includes('post:hide_any');
+        const perms: string[] = user.permissions || [];
+        const staff = this.isModerationStaff();
+
+        // Each button checks exactly the permission the backend enforces:
+        // comment:hide (CommentsController.ModerateComment), comment:delete
+        // (CommentsController.DeleteComment), post:hide_any / post:delete_any
+        // (PostsController). Staff roles get all of them.
+        this.canHideComments = staff || perms.includes('comment:hide');
+        this.canDeleteComments = staff || perms.includes('comment:delete');
+        this.canHidePosts = staff || perms.includes('post:hide_any');
+        this.canDeletePosts = staff || perms.includes('post:delete_any');
+        this.canEditPosts = staff || perms.includes('post:edit_any');
         this.cdr.detectChanges();
       },
       error: (err) => {

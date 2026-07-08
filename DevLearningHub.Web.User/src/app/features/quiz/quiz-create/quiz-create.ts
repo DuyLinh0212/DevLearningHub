@@ -48,9 +48,8 @@ export class QuizCreateComponent implements OnInit {
     title: '',
     desc: '',
     topicId: '',
-    level: 'medium',
+    level: 'Intermediate',
     duration: 15,
-    passRate: 70,
     shuffle: true,
     instantResult: true,
     isPublic: true,
@@ -101,13 +100,13 @@ export class QuizCreateComponent implements OnInit {
               const rawMode = target.mode || '';
               
               const dbLevel = (target.level || 'intermediate').toString().toLowerCase().trim();
-              let uiLevel = 'medium';
-              if (dbLevel === 'beginner') {
-                uiLevel = 'beginner';
-              } else if (dbLevel === 'advanced' || dbLevel === 'hard') {
-                uiLevel = 'hard';
+              let uiLevel = 'Intermediate';
+              if (dbLevel === 'beginner' || dbLevel === 'dễ') {
+                uiLevel = 'Beginner';
+              } else if (dbLevel === 'advanced' || dbLevel === 'hard' || dbLevel === 'khó') {
+                uiLevel = 'Advanced';
               } else {
-                uiLevel = 'medium'; 
+                uiLevel = 'Intermediate'; 
               }
 
               const examQuestionCount = target.examQuestionCount ?? target.ExamQuestionCount ?? null;
@@ -118,11 +117,10 @@ export class QuizCreateComponent implements OnInit {
                 topicId: target.topicId || this.quizMeta.topicId || this.topics[0]?.id || '',
                 level: uiLevel,
                 duration: target.timeLimitSeconds ? Math.floor(target.timeLimitSeconds / 60) : 15,
-                passRate: target.passRate || 70,
                 shuffle: rawMode.includes('shuf:T') || !rawMode.includes('shuf:F'),
                 instantResult: rawMode.includes('inst:T') || !rawMode.includes('inst:F'),
-                isPublic: target.isPublic ?? true,
-                allowedCopy: target.allowedCopy ?? target.AllowedCopy ?? true,
+                isPublic: (target.isPublic === false || target.isPublic === 'false' || target.IsPublic === false || target.IsPublic === 'false') ? false : true,
+                allowedCopy: (target.allowedCopy === false || target.allowedCopy === 'false' || target.AllowedCopy === false || target.AllowedCopy === 'false') ? false : true,
                 examUseAllQuestions: !examQuestionCount,
                 examQuestionCount: examQuestionCount || 10
               };
@@ -495,9 +493,9 @@ export class QuizCreateComponent implements OnInit {
 
     let mappedLevel = 'intermediate'; 
     const currentLevel = (this.quizMeta.level || '').toString().trim().toLowerCase();
-    if (currentLevel === 'dễ' || currentLevel === 'beginner') {
+    if (currentLevel === 'beginner' || currentLevel === 'dễ') {
       mappedLevel = 'beginner';
-    } else if (currentLevel === 'khó' || currentLevel === 'advanced' || currentLevel === 'hard') {
+    } else if (currentLevel === 'advanced' || currentLevel === 'hard' || currentLevel === 'khó') {
       mappedLevel = 'advanced';
     } else {
       mappedLevel = 'intermediate';

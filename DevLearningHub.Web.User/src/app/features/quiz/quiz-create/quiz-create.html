@@ -89,11 +89,7 @@
             <small class="form-help-info">Thời gian làm bài thi thử (từ 5 đến 180 phút)</small>
           </div>
 
-          <div class="input-field-group">
-            <label>Tỷ lệ điểm đạt (%) <span class="text-danger">*</span></label>
-            <input type="number" [(ngModel)]="quizMeta.passRate" min="10" max="100">
-            <small class="form-help-info">Tỷ lệ câu trả lời đúng tối thiểu để hoàn thành đề (Mặc định: 70%)</small>
-          </div>
+
 
           <div class="setting-toggle-row">
             <div class="toggle-text-left">
@@ -346,7 +342,6 @@
             <span><i class="bi bi-tag"></i> {{ getTopicName(quizMeta.topicId) }}</span>
             <span><i class="bi bi-bar-chart"></i> Mức độ: {{ getLevelName(quizMeta.level) }}</span>
             <span><i class="bi bi-clock"></i> Thời gian: {{ quizMeta.duration }} phút</span>
-            <span><i class="bi bi-check2-circle"></i> Điểm đạt: {{ quizMeta.passRate }}%</span>
             <span><i class="bi bi-shuffle"></i> Trộn đề: {{ quizMeta.shuffle ? 'Bật' : 'Tắt' }}</span>
           </div>
         </div>

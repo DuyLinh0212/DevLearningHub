@@ -93,7 +93,7 @@ test.describe.serial('Flow > User creates+submits quiz, Admin moderates', () => 
     test.setTimeout(90000);
 
     await userPage.goto(env.USER_URL + '/quiz-bank');
-    const quizLink = userPage.locator(`//a[contains(@class,'problem-link')][contains(text(),"${quizTitle}")]`);
+    const quizLink = userPage.locator(`//a[contains(@class,'qb-row-title')][contains(text(),"${quizTitle}")]`);
     await quizLink.waitFor();
     await quizLink.click();
 

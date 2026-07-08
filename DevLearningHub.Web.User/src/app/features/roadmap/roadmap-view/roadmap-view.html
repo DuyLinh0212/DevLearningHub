@@ -139,12 +139,24 @@
                     <i class="bi bi-pencil-square"></i> Sửa
                   </button>
                 }
+                @if (canSubmitRoadmap(activeRoadmap)) {
+                  <button class="btn-admin-act green-solid" type="button" (click)="submitRoadmap(activeRoadmap, $event)" [disabled]="isSubmittingRoadmap">
+                    <i class="bi" [class.bi-hourglass-split]="isSubmittingRoadmap" [class.bi-send-check]="!isSubmittingRoadmap"></i>
+                    {{ isSubmittingRoadmap ? 'Đang gửi...' : 'Gửi kiểm duyệt' }}
+                  </button>
+                }
                 @if (canDeleteRoadmap(activeRoadmap)) {
                   <button class="btn-admin-act danger-outline" type="button" (click)="deleteRoadmap(activeRoadmap, $event)">
                     <i class="bi bi-trash3"></i> Xóa
                   </button>
                 }
               </div>
+            }
+            @if (canSubmitRoadmap(activeRoadmap)) {
+              <p class="submit-hint">
+                <i class="bi bi-info-circle"></i>
+                Lộ trình đang ở dạng <strong>bản nháp</strong>. Thêm các mục học rồi bấm <strong>Gửi kiểm duyệt</strong> để đưa lên xét duyệt.
+              </p>
             }
           </div>
         </div>
@@ -251,7 +263,7 @@
           <input type="checkbox" [(ngModel)]="roadmapForm.isPublic">
           <div>
             <strong>Công khai lộ trình</strong>
-            <p>Nếu bạn bật tùy chọn này, lộ trình có thể vào trạng thái chờ duyệt tùy theo chính sách kiểm duyệt.</p>
+            <p>Lộ trình được lưu ở dạng bản nháp. Khi bạn bấm “Gửi kiểm duyệt”, lộ trình công khai sẽ chờ duyệt trước khi hiển thị cho mọi người.</p>
           </div>
         </label>
       </div>
