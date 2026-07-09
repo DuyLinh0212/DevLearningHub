@@ -205,7 +205,10 @@ export class QuizBankComponent implements OnInit, OnDestroy {
     if (this.isMyQuiz(quiz)) {
       if (review === 'pending') return 'pending';
       if (review === 'rejected') return 'rejected';
-      return quiz?.statusClass === 'public' ? 'published' : 'private';
+      if (quiz?.statusClass === 'public') {
+        return review === 'approved' ? 'published' : 'private';
+      }
+      return 'private';
     }
     // Sets from other authors are only ever listed once approved & public.
     return 'published';

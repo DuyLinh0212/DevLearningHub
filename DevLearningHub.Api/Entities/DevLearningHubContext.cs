@@ -672,6 +672,9 @@ public partial class DevLearningHubContext : DbContext
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .HasColumnName("title");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasColumnName("is_deleted");
         });
 
         modelBuilder.Entity<RoadmapTopic>(entity =>

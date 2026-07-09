@@ -52,6 +52,7 @@ public class RoadmapsController : ControllerBase
             .Include(r => r.RoadmapItems)
                 .ThenInclude(i => i.ProblemBank)
             .AsNoTracking()
+            .Where(r => !r.IsDeleted)
             .AsQueryable();
 
         if (!canManageAny)
@@ -85,7 +86,7 @@ public class RoadmapsController : ControllerBase
             .Include(r => r.RoadmapItems)
                 .ThenInclude(i => i.ProblemBank)
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapResponse>.Fail("Roadmap not found."));
@@ -114,19 +115,28 @@ public class RoadmapsController : ControllerBase
         }
 
         var maxOrder = await _db.Roadmaps.Select(r => (int?)r.OrderIndex).MaxAsync() ?? 0;
+        var roadmapId = Guid.NewGuid();
+        var title = request.Title.Trim();
+        var description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
 
-        // A newly created roadmap is always a private "draft": it is never pushed into the
-        // moderation queue on creation. The owner keeps building it (adding items) and only when
-        // they explicitly hit "Submit" (POST {id}/submit) is it evaluated for review/publication.
+        // Roadmap riêng tư (hoặc do admin tạo) được duyệt tự động ngay khi tạo — dùng chung policy với
+        // SubmitRoadmap/UpdateRoadmap để tránh trùng lặp logic. Roadmap công khai của user thường vẫn giữ
+        // "draft" như cũ, chờ họ bấm "Gửi kiểm duyệt" (SubmitRoadmap vẫn giữ nguyên yêu cầu phải có ít nhất
+        // 1 mục học trước khi chuyển sang "pending").
+        var evaluatedStatus = await _autoApproval.EvaluateRoadmapAsync(userId, roadmapId, title, description, request.IsPublic);
+        var initialReviewStatus = string.Equals(evaluatedStatus, "approved", StringComparison.OrdinalIgnoreCase)
+            ? "approved"
+            : "draft";
+
         var roadmap = new Roadmap
         {
-            Id = Guid.NewGuid(),
+            Id = roadmapId,
             CreatedBy = userId,
-            Title = request.Title.Trim(),
+            Title = title,
             Level = request.Level.Trim(),
-            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Description = description,
             IsPublic = request.IsPublic,
-            ReviewStatus = "draft",
+            ReviewStatus = initialReviewStatus,
             CreatedAt = DateTime.Now,
             OrderIndex = (short)(maxOrder + 1)
         };
@@ -162,7 +172,7 @@ public class RoadmapsController : ControllerBase
                 .ThenInclude(i => i.Problem)
             .Include(r => r.RoadmapItems)
                 .ThenInclude(i => i.ProblemBank)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapResponse>.Fail("Roadmap not found."));
@@ -200,9 +210,7 @@ public class RoadmapsController : ControllerBase
         }
 
         var roadmap = await _db.Roadmaps
-            .Include(r => r.RoadmapTopics)
-            .Include(r => r.RoadmapItems)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<string>.Fail("Roadmap not found."));
@@ -213,9 +221,12 @@ public class RoadmapsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<string>.Fail("Forbidden."));
         }
 
-        _db.RoadmapTopics.RemoveRange(roadmap.RoadmapTopics);
-        _db.RoadmapItems.RemoveRange(roadmap.RoadmapItems);
-        _db.Roadmaps.Remove(roadmap);
+        // Soft delete: roadmap_items may already have rows in user_roadmap_item_completions
+        // (FK_user_roadmap_item_completions_item, no cascade). Hard-deleting the roadmap
+        // (which cascades into roadmap_items) would violate that FK once any learner had
+        // completed a step. Flip the flag instead - the roadmap is filtered out of every
+        // listing/detail query above, and progress/XP already awarded is preserved.
+        roadmap.IsDeleted = true;
         await _db.SaveChangesAsync();
 
         return Ok(ApiResponse<string>.Ok("Deleted successfully."));
@@ -245,7 +256,7 @@ public class RoadmapsController : ControllerBase
                 .ThenInclude(i => i.Problem)
             .Include(r => r.RoadmapItems)
                 .ThenInclude(i => i.ProblemBank)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapResponse>.Fail("Roadmap not found."));
@@ -292,7 +303,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<string>.Fail("Roadmap not found."));
@@ -335,7 +346,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<string>.Fail("Roadmap not found."));
@@ -368,7 +379,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<RoadmapItemResponse>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapItemResponse>.Fail("Roadmap not found."));
@@ -418,7 +429,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<RoadmapItemResponse>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapItemResponse>.Fail("Roadmap not found."));
@@ -467,7 +478,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<object>.Fail("Roadmap not found."));
@@ -504,7 +515,7 @@ public class RoadmapsController : ControllerBase
             return Unauthorized(ApiResponse<RoadmapProgressResponse>.Fail("Unauthorized."));
         }
 
-        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == id);
+        var roadmap = await _db.Roadmaps.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         if (roadmap == null)
         {
             return NotFound(ApiResponse<RoadmapProgressResponse>.Fail("Roadmap not found."));
@@ -554,7 +565,7 @@ public class RoadmapsController : ControllerBase
     [HasPermission("roadmap:view_progress")]
     public async Task<ActionResult<ApiResponse<List<RoadmapParticipantResponse>>>> GetParticipants(Guid id)
     {
-        var exists = await _db.Roadmaps.AnyAsync(r => r.Id == id);
+        var exists = await _db.Roadmaps.AnyAsync(r => r.Id == id && !r.IsDeleted);
         if (!exists)
         {
             return NotFound(ApiResponse<List<RoadmapParticipantResponse>>.Fail("Roadmap not found."));

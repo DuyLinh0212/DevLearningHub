@@ -66,11 +66,18 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   topicsMap: Record<string, string> = {};
   importDefaultTopicId: string = '';
 
-  private readonly importTemplateCsv = 'assets/templates/quiz-import-template.csv';
   private readonly importTemplateJson = 'assets/templates/quiz-import-template.json';
 
-  downloadImportTemplate(format: 'csv' | 'json') {
-    const href = format === 'csv' ? this.importTemplateCsv : this.importTemplateJson;
+  downloadImportTemplate(format: 'json' | 'xlsx') {
+    if (format === 'xlsx') {
+      const rows = [{ 'Nội dung câu hỏi': 'Ví dụ: HTML là gì?', 'Đáp án A': 'Ngôn ngữ đánh dấu', 'Đáp án B': 'Cơ sở dữ liệu', 'Đáp án C': 'Hệ điều hành', 'Đáp án D': 'Trình biên dịch', 'Đáp án đúng': 'A', 'Giải thích': 'HTML dùng để đánh dấu cấu trúc trang web.', 'Điểm số': 10 }];
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
+      XLSX.writeFile(workbook, 'quiz-import-template.xlsx');
+      return;
+    }
+    const href = this.importTemplateJson;
     const link = document.createElement('a');
     link.href = href;
     link.download = href.split('/').pop() || `quiz-import-template.${format}`;
@@ -317,7 +324,7 @@ export class QuizManagementComponent implements OnInit, OnDestroy {
   }
 
 loadQuizSets() {
-    this.http.get<any>('/api/quiz-sets', { params: { includePrivate: true } }).subscribe({
+    this.http.get<any>('/api/quiz-sets', { params: { includePrivate: true, manageMode: true } }).subscribe({
       next: (res: any) => {
         const rawSets = res?.data || [];
         this.quizSets = rawSets.map((s: any) => ({

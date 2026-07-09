@@ -36,6 +36,18 @@ export class AdminPostDetailComponent implements OnInit {
   replyingCommentId: string | null = null;
   activeCommentActionId: string | null = null;
 
+  // Root comment pagination (kiểu Facebook, "Xem thêm N bình luận")
+  visibleComments: any[] = [];
+  private readonly rootCommentsPageSize = 10;
+  visibleRootCount = this.rootCommentsPageSize;
+
+  // Thu gọn/mở rộng reply theo từng bình luận gốc
+  private expandedReplyIds = new Set<string>();
+
+  // Sửa bình luận tại chỗ
+  editingCommentId: string | null = null;
+  editingCommentText: string = '';
+
   // Lightbox zoom state
   zoomedImageUrl: string | null = null;
   imageZoomLevel = 1;
@@ -58,6 +70,7 @@ export class AdminPostDetailComponent implements OnInit {
   canHidePosts: boolean = false;
   canDeletePosts: boolean = false;
   canEditPosts: boolean = false;
+  canCreateComments: boolean = false;
 
   // A staff member (Admin/Moderator role) implicitly holds every moderation power,
   // matching how PermissionService expands the Admin role server-side.
@@ -100,6 +113,7 @@ export class AdminPostDetailComponent implements OnInit {
         this.canHidePosts = staff || perms.includes('post:hide_any');
         this.canDeletePosts = staff || perms.includes('post:delete_any');
         this.canEditPosts = staff || perms.includes('post:edit_any');
+        this.canCreateComments = staff || perms.includes('comment:create');
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -153,16 +167,97 @@ export class AdminPostDetailComponent implements OnInit {
         // Lọc bỏ bình luận mồ côi ở gốc nhưng có parentId
         arr = arr.filter((c: any) => !c.parentId);
         this.comments = this.staffUserService.annotateComments(arr);
+        this.visibleComments = this.comments;
+        this.visibleRootCount = this.rootCommentsPageSize;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi tải bình luận:', err);
         this.comments = [];
+        this.visibleComments = [];
+        this.visibleRootCount = this.rootCommentsPageSize;
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  get pagedComments(): any[] {
+    return this.visibleComments.slice(0, this.visibleRootCount);
+  }
+
+  get hasMoreRootComments(): boolean {
+    return this.visibleComments.length > this.visibleRootCount;
+  }
+
+  get remainingRootCommentsCount(): number {
+    return Math.max(0, this.visibleComments.length - this.visibleRootCount);
+  }
+
+  loadMoreRootComments() {
+    this.visibleRootCount = Math.min(
+      this.visibleComments.length,
+      this.visibleRootCount + this.rootCommentsPageSize
+    );
+    this.cdr.detectChanges();
+  }
+
+  isRepliesExpanded(commentId: string): boolean {
+    return this.expandedReplyIds.has(commentId);
+  }
+
+  toggleReplies(commentId: string) {
+    if (this.expandedReplyIds.has(commentId)) {
+      this.expandedReplyIds.delete(commentId);
+    } else {
+      this.expandedReplyIds.add(commentId);
+    }
+    this.cdr.detectChanges();
+  }
+
+  isCommentAuthor(comment: any): boolean {
+    if (!comment || !this.currentUserId) return false;
+    const commentAuthorId = (comment.author?.id || comment.authorId || comment.createdBy || '').toString().toLowerCase();
+    return commentAuthorId === this.currentUserId.toString().toLowerCase();
+  }
+
+  canEditComment(comment: any): boolean {
+    return this.isCommentAuthor(comment);
+  }
+
+  startEditComment(comment: any) {
+    this.editingCommentId = comment.id;
+    this.editingCommentText = comment.bodyMarkdown;
+    this.cdr.detectChanges();
+  }
+
+  cancelEditComment() {
+    this.editingCommentId = null;
+    this.editingCommentText = '';
+    this.cdr.detectChanges();
+  }
+
+  saveEditComment(commentId: string) {
+    if (!this.editingCommentText.trim()) return;
+    const payload = { bodyMarkdown: this.editingCommentText.trim() };
+    this.http.put<any>(`/api/comments/${commentId}`, payload).subscribe({
+      next: () => {
+        this.editingCommentId = null;
+        this.editingCommentText = '';
+        this.loadComments();
+      },
+      error: (err) => {
+        console.error('Lỗi cập nhật bình luận:', err);
+        alert('Không thể lưu thay đổi.');
+      }
+    });
+  }
+
+  goToProfile(userId: string) {
+    if (userId) {
+      this.router.navigate(['/admin/users', userId]);
+    }
   }
 
   votePost(voteType: 'up' | 'down') {

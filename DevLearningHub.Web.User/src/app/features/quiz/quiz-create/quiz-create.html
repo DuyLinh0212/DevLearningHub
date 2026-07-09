@@ -35,9 +35,6 @@
           <p>Thiết lập thông tin chung, thời gian làm bài và quy tắc cho bộ đề trắc nghiệm</p>
         </div>
         <div class="header-action-buttons">
-          <button class="btn-secondary-action" [disabled]="!quizMeta.title.trim() || isSaving" (click)="saveDraft()">
-            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
-          </button>
           <button class="btn-primary-action" [disabled]="!quizMeta.title.trim() || !quizMeta.topicId" (click)="nextStep()">
             Tiếp tục biên soạn <i class="bi bi-chevron-right"></i>
           </button>
@@ -156,9 +153,6 @@
         <div class="header-action-buttons">
           <button class="btn-secondary-action btn-import-purple" type="button" (click)="openImportModal()">
             <i class="bi bi-upload"></i> Import đề
-          </button>
-          <button class="btn-secondary-action spacing-right-btn" [disabled]="isSaving" (click)="saveDraft()">
-            {{ isSaving ? 'Đang lưu...' : 'Lưu nháp' }}
           </button>
           <button class="btn-primary-action" [disabled]="questions.length === 0 || isSaving" (click)="openPreview()">
             Xem trước & Hoàn tất <i class="bi bi-check-lg"></i>
@@ -313,9 +307,6 @@
         <div class="import-modal-footer">
           <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('xlsx')">
             <i class="bi bi-file-earmark-excel"></i> Mẫu Excel
-          </button>
-          <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('csv')">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Mẫu CSV
           </button>
           <button class="btn-secondary-action" type="button" (click)="downloadImportTemplate('json')">
             <i class="bi bi-filetype-json"></i> Mẫu JSON

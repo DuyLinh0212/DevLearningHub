@@ -149,34 +149,41 @@
           </h2>
 
           <!-- Write box -->
-          <div class="lc-write-box">
-            <img src="assets/images/default-avatar.svg" class="lc-write-avatar" alt="You" />
-            <div class="lc-write-input-wrap">
-              <textarea
-                placeholder="Đóng góp câu trả lời (hỗ trợ Markdown)..."
-                [(ngModel)]="rootCommentText"
-                rows="3"
-                class="lc-comment-textarea"
-              ></textarea>
-              <div class="lc-write-actions">
-                <button
-                  class="lc-btn-comment"
-                  [disabled]="!rootCommentText.trim()"
-                  (click)="addRootComment()"
-                >
-                  <i class="bi bi-send-fill"></i> Comment
-                </button>
+          @if (canCreateComments) {
+            <div class="lc-write-box">
+              <img src="assets/images/default-avatar.svg" class="lc-write-avatar" alt="You" />
+              <div class="lc-write-input-wrap">
+                <textarea
+                  placeholder="Đóng góp câu trả lời (hỗ trợ Markdown)..."
+                  [(ngModel)]="rootCommentText"
+                  rows="3"
+                  class="lc-comment-textarea"
+                ></textarea>
+                <div class="lc-write-actions">
+                  <button
+                    class="lc-btn-comment"
+                    [disabled]="!rootCommentText.trim()"
+                    (click)="addRootComment()"
+                  >
+                    <i class="bi bi-send-fill"></i> Comment
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          }
 
           <!-- Comment list -->
           <div class="lc-comments-list">
-            @if (comments.length === 0) {
+            @if (visibleComments.length === 0) {
               <p class="lc-no-comments">Chưa có bình luận nào.</p>
             } @else {
-              @for (comment of comments; track comment.id) {
+              @for (comment of pagedComments; track comment.id) {
                 <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
+              }
+              @if (hasMoreRootComments) {
+                <button class="lc-load-more-comments" (click)="loadMoreRootComments()">
+                  Xem thêm {{ remainingRootCommentsCount }} bình luận
+                </button>
               }
             }
           </div>
@@ -256,8 +263,9 @@
 <!-- RECURSIVE COMMENT TEMPLATE -->
 <ng-template #commentTemplate let-comment="comment" let-depth="depth">
   <div class="lc-comment-node" [class.is-reply]="depth > 0"
-       [class.admin-highlight]="comment.author?.isAdmin"
-       [class.mod-highlight]="comment.author?.isStaff && !comment.author?.isAdmin">
+       [class.is-accepted]="comment.isAccepted"
+       [class.admin-highlight]="comment.isAdmin"
+       [class.mod-highlight]="comment.isStaff && !comment.isAdmin">
 
     <div class="lc-comment-layout">
       <!-- Avatar -->
@@ -266,6 +274,8 @@
           [src]="comment.author.avatarUrl || 'assets/images/default-avatar.svg'"
           class="lc-comment-avatar"
           (error)="onAvatarError($event)"
+          (click)="goToProfile(comment.author.id)"
+          style="cursor:pointer"
           alt="avatar"
         />
         @if (comment.replies?.length > 0) {
@@ -277,13 +287,15 @@
       <div class="lc-comment-body-col">
         <!-- Header -->
         <div class="lc-comment-head">
-          <span class="lc-comment-author">{{ comment.author.fullName || comment.author.username }}</span>
+          <span class="lc-comment-author" (click)="goToProfile(comment.author.id)" style="cursor:pointer">
+            {{ comment.author.fullName || comment.author.username }}
+          </span>
           @if (isPostAuthorComment(comment)) {
             <span class="lc-badge author-badge">Chủ bài</span>
           }
-          @if (comment.author?.isAdmin) {
+          @if (comment.isAdmin) {
             <span class="lc-badge admin-badge"><i class="bi bi-shield-fill"></i> Admin</span>
-          } @else if (comment.author?.isStaff) {
+          } @else if (comment.isStaff) {
             <span class="lc-badge admin-badge"><i class="bi bi-shield"></i> Mod</span>
           }
           @if (comment.isHidden) {
@@ -293,7 +305,17 @@
         </div>
 
         <!-- Body -->
-        <div class="lc-comment-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
+        @if (editingCommentId === comment.id) {
+          <div class="lc-edit-box">
+            <textarea [(ngModel)]="editingCommentText" rows="3" class="lc-comment-textarea"></textarea>
+            <div class="lc-edit-actions">
+              <button class="lc-btn-comment btn-sm" [disabled]="!editingCommentText.trim()" (click)="saveEditComment(comment.id)">Lưu</button>
+              <button class="lc-btn-cancel btn-sm" (click)="cancelEditComment()">Hủy</button>
+            </div>
+          </div>
+        } @else {
+          <div class="lc-comment-text" [innerHTML]="renderMarkdown(comment.bodyMarkdown)"></div>
+        }
 
         <!-- Footer actions -->
         <div class="lc-comment-footer" style="position: relative;">
@@ -307,25 +329,34 @@
             </button>
           </div>
 
+          @if (comment.isAccepted) {
+            <span class="lc-link-action accepted"><i class="bi bi-check-circle-fill"></i> Tốt nhất</span>
+          }
+
           <!-- 3-dots actions dropdown wrapper -->
-          <div class="comment-actions-dropdown-wrap" style="position: relative; display: inline-block;">
-            <button class="comment-actions-trigger-btn" (click)="toggleCommentActionDropdown(comment.id, $event)" title="Hành động" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: background 0.15s, color 0.15s;">
+          <div class="lc-comment-more-wrap" style="position: relative; display: inline-block; margin-left: auto;">
+            <button class="lc-comment-more-btn" (click)="toggleCommentActionDropdown(comment.id, $event)" title="Hành động" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: background 0.15s, color 0.15s;">
               <i class="bi bi-three-dots"></i>
             </button>
-            
+
             @if (activeCommentActionId === comment.id) {
-              <div class="comment-actions-menu" (click)="$event.stopPropagation()" style="position: absolute; bottom: 100%; left: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-nested); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-bottom: 4px; display: flex; flex-direction: column; padding: 4px 0; overflow: hidden;">
-                <button class="comment-action-item" (click)="toggleReplyForm(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: var(--text-main); font-weight: 500; transition: background 0.12s;">
+              <div class="comment-options-dropdown" (click)="$event.stopPropagation()" style="position: absolute; bottom: 100%; right: 0; min-width: 150px; background: var(--bg-card); border: 1px solid var(--border-nested); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-bottom: 4px; display: flex; flex-direction: column; padding: 4px 0; overflow: hidden;">
+                @if (canEditComment(comment)) {
+                  <button class="dropdown-item" (click)="startEditComment(comment); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: var(--text-main); font-weight: 500; transition: background 0.12s;">
+                    <i class="bi bi-pencil"></i> Sửa
+                  </button>
+                }
+                <button class="dropdown-item" (click)="toggleReplyForm(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: var(--text-main); font-weight: 500; transition: background 0.12s;">
                   <i class="bi bi-reply"></i> Trả lời
                 </button>
                 @if (canHideComments) {
-                  <button class="comment-action-item" (click)="toggleModerateComment(comment); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f59e0b; font-weight: 500; transition: background 0.12s;">
+                  <button class="dropdown-item" (click)="toggleModerateComment(comment); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f59e0b; font-weight: 500; transition: background 0.12s;">
                     <i class="bi" [class.bi-eye-slash]="!comment.isHidden" [class.bi-eye]="comment.isHidden"></i>
                     {{ comment.isHidden ? 'Hiện' : 'Ẩn' }}
                   </button>
                 }
                 @if (canDeleteComments) {
-                  <button class="comment-action-item" (click)="deleteComment(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f43f5e; font-weight: 500; transition: background 0.12s;">
+                  <button class="dropdown-item" (click)="deleteComment(comment.id); activeCommentActionId = null" style="display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 8px 12px; font-size: 0.78rem; text-align: left; cursor: pointer; color: #f43f5e; font-weight: 500; transition: background 0.12s;">
                     <i class="bi bi-trash"></i> Xóa
                   </button>
                 }
@@ -352,11 +383,22 @@
       </div>
     </div>
 
-    <!-- Nested replies -->
+    <!-- Nested replies: mặc định thu gọn, bấm "Xem thêm N câu trả lời" mới xổ ra -->
     @if (comment.replies?.length > 0) {
-      <div class="lc-replies-wrap">
-        @for (reply of comment.replies; track reply.id) {
-          <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: reply, depth: depth + 1 }"></ng-container>
+      <div class="lc-replies-toggle-wrap">
+        @if (!isRepliesExpanded(comment.id)) {
+          <button class="lc-view-replies-btn" (click)="toggleReplies(comment.id)">
+            <i class="bi bi-arrow-return-right"></i> Xem thêm {{ comment.replies.length }} câu trả lời
+          </button>
+        } @else {
+          <button class="lc-view-replies-btn" (click)="toggleReplies(comment.id)">
+            <i class="bi bi-arrow-return-right"></i> Ẩn bớt câu trả lời
+          </button>
+          <div class="lc-replies-wrap">
+            @for (reply of comment.replies; track reply.id) {
+              <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: reply, depth: depth + 1 }"></ng-container>
+            }
+          </div>
         }
       </div>
     }
@@ -413,10 +455,15 @@
 
           <!-- Comments in lightbox -->
           <div style="padding: 14px 22px; flex: 1; width: 100%; box-sizing: border-box;">
-            @for (comment of comments; track comment.id) {
+            @for (comment of pagedComments; track comment.id) {
               <ng-container *ngTemplateOutlet="commentTemplate; context: { comment: comment, depth: 0 }"></ng-container>
             }
-            @if (comments.length === 0) {
+            @if (hasMoreRootComments) {
+              <button class="lc-load-more-comments" (click)="loadMoreRootComments()">
+                Xem thêm {{ remainingRootCommentsCount }} bình luận
+              </button>
+            }
+            @if (visibleComments.length === 0) {
               <div style="text-align: center; color: var(--text-muted-dark); font-size: 0.82rem; padding: 20px 0;">
                 <i class="bi bi-chat-left-dots" style="font-size: 1.5rem; display: block; margin-bottom: 6px; opacity: 0.5;"></i>
                 Chưa có bình luận nào
@@ -426,23 +473,25 @@
         </div>
 
         <!-- Bottom comment box -->
-        <div style="border-top: 1px solid var(--border-nested); background: var(--bg-card); display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-shrink: 0;">
-          <textarea
-            placeholder="Viết bình luận..."
-            [(ngModel)]="rootCommentText"
-            class="comment-textarea"
-            rows="1"
-            style="flex: 1; border: 1px solid var(--border-nested); border-radius: 18px; padding: 8px 12px; background: var(--bg-nested); color: var(--text-main); outline: none; resize: none; font-size: 0.85rem;"
-          ></textarea>
-          <button
-            class="btn-submit-comment"
-            [disabled]="!rootCommentText.trim()"
-            (click)="addRootComment()"
-            style="border: none; background: none; color: #a855f7; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"
-          >
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
+        @if (canCreateComments) {
+          <div style="border-top: 1px solid var(--border-nested); background: var(--bg-card); display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-shrink: 0;">
+            <textarea
+              placeholder="Viết bình luận..."
+              [(ngModel)]="rootCommentText"
+              class="comment-textarea"
+              rows="1"
+              style="flex: 1; border: 1px solid var(--border-nested); border-radius: 18px; padding: 8px 12px; background: var(--bg-nested); color: var(--text-main); outline: none; resize: none; font-size: 0.85rem;"
+            ></textarea>
+            <button
+              class="btn-submit-comment"
+              [disabled]="!rootCommentText.trim()"
+              (click)="addRootComment()"
+              style="border: none; background: none; color: #a855f7; font-size: 1.2rem; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"
+            >
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+        }
       }
     </aside>
   </div>

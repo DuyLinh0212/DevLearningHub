@@ -229,6 +229,8 @@ export class QuizService {
 		const id = quiz.id || quiz.Id || '';
 		const isPub = quiz.isPublic ?? quiz.IsPublic ?? true;
 		const qCount = quiz.questionCount ?? quiz.QuestionCount ?? (quiz.questions?.length || quiz.Questions?.length || 0);
+		const reviewStatus = (quiz.reviewStatus ?? quiz.ReviewStatus ?? '').toString();
+		const reviewNote = quiz.reviewNote ?? quiz.ReviewNote ?? null;
 
 		const localAttempts = this.getAttempts(id);
 		let finalAttempts: number;
@@ -251,8 +253,11 @@ export class QuizService {
 			level: quiz.level || quiz.Level || '',
 			duration: quiz.timeLimitSeconds ? Math.ceil(quiz.timeLimitSeconds / 60) : (quiz.TimeLimitSeconds ? Math.ceil(quiz.TimeLimitSeconds / 60) : 15),
 			questionsCount: qCount,
+			isPublic: isPub,
 			statusClass: isPub ? 'public' : 'private',
 			status: isPub ? 'Đã phát hành' : 'Riêng tư',
+			reviewStatus,
+			reviewNote,
 			allowedCopy: quiz.allowedCopy ?? quiz.AllowedCopy ?? true,
 			examQuestionCount: quiz.examQuestionCount ?? quiz.ExamQuestionCount ?? null,
 			attempts: finalAttempts,

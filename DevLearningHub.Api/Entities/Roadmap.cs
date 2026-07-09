@@ -29,6 +29,13 @@ public partial class Roadmap
 
     public short OrderIndex { get; set; }
 
+    // Soft delete: roadmap_items rows referenced by a roadmap can already have
+    // user_roadmap_item_completions rows (FK_user_roadmap_item_completions_item), so hard-deleting
+    // a roadmap once any learner has completed a step violates that FK. Deleting a roadmap instead
+    // flips this flag and the roadmap is hidden from every listing/detail query, preserving history
+    // and already-awarded XP.
+    public bool IsDeleted { get; set; }
+
     public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual User? Reviewer { get; set; }

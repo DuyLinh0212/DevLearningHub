@@ -20,7 +20,6 @@ export class QuizCreateComponent implements OnInit {
   private topicService = inject(TopicService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
-  private readonly importTemplateCsv = 'assets/templates/quiz-import-template.csv';
   private readonly importTemplateJson = 'assets/templates/quiz-import-template.json';
 
   currentStep: number = 1;
@@ -313,7 +312,7 @@ export class QuizCreateComponent implements OnInit {
     this.onQuestionFileSelected({ target: input } as unknown as Event);
   }
 
-  downloadImportTemplate(format: 'csv' | 'json' | 'xlsx') {
+  downloadImportTemplate(format: 'json' | 'xlsx') {
     if (format === 'xlsx') {
       const rows = [{ 'Nội dung câu hỏi': 'Ví dụ: HTML là gì?', 'Đáp án A': 'Ngôn ngữ đánh dấu', 'Đáp án B': 'Cơ sở dữ liệu', 'Đáp án C': 'Hệ điều hành', 'Đáp án D': 'Trình biên dịch', 'Đáp án đúng': 'A', 'Giải thích': 'HTML dùng để đánh dấu cấu trúc trang web.', 'Điểm số': 10 }];
       const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -322,7 +321,7 @@ export class QuizCreateComponent implements OnInit {
       XLSX.writeFile(workbook, 'quiz-import-template.xlsx');
       return;
     }
-    const href = format === 'csv' ? this.importTemplateCsv : this.importTemplateJson;
+    const href = this.importTemplateJson;
     const link = document.createElement('a');
     link.href = href;
     link.download = href.split('/').pop() || `quiz-import-template.${format}`;
@@ -347,19 +346,6 @@ export class QuizCreateComponent implements OnInit {
 
   closePreview() { this.isPreviewModalOpen = false; }
 
-  saveDraft() {
-    if (!this.quizMeta.title.trim()) {
-      this.saveError = 'Vui lòng nhập tiêu đề bộ đề.';
-      return;
-    }
-    const validQuestions = this.questions.filter(question => this.isQuestionValid(question));
-    if (validQuestions.length > 0 && !this.quizMeta.topicId) {
-      this.saveError = 'Vui lòng chọn chủ đề trước khi lưu câu hỏi.';
-      return;
-    }
-    this.persistQuiz(validQuestions, true);
-  }
-
   completeQuiz() {
     const validationError = this.getPublishValidationError();
     if (validationError) {
@@ -367,7 +353,7 @@ export class QuizCreateComponent implements OnInit {
       this.isPreviewModalOpen = false;
       return;
     }
-    this.persistQuiz(this.questions, false);
+    this.persistQuiz(this.questions);
   }
 
   private loadTopics() {
@@ -486,7 +472,7 @@ export class QuizCreateComponent implements OnInit {
     return invalidIndex >= 0 ? `Câu hỏi ${invalidIndex + 1} cần nội dung, ít nhất hai đáp án và một đáp án đúng.` : null;
   }
 
-  private persistQuiz(questions: any[], isDraft: boolean) {
+  private persistQuiz(questions: any[]) {
     if (this.isSaving) return;
     this.isSaving = true;
     this.saveError = '';

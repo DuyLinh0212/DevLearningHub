@@ -46,7 +46,8 @@ public class QuizSetsController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<QuizSetResponse>>>> GetQuizSets(
         [FromQuery] Guid? topicId,
         [FromQuery] bool includePrivate = false,
-        [FromQuery] bool mine = false)
+        [FromQuery] bool mine = false,
+        [FromQuery] bool manageMode = false)
     {
         // "archived" = soft-deleted (has sessions, so it couldn't be hard-deleted): never list it.
         var query = _db.QuizSets.AsNoTracking().Where(qs => qs.ReviewStatus != "archived");
@@ -70,22 +71,18 @@ public class QuizSetsController : ControllerBase
         }
         else if (hasUser)
         {
-            var canManage = await _permissions.HasPermissionAsync(userId, "quiz:edit");
-            var canReview = await _permissions.HasPermissionAsync(userId, "quiz:review");
-            if (!canManage && !canReview)
+            // manageMode is an explicit opt-in (mirrors RoadmapsController.GetRoadmaps) so that only
+            // callers that genuinely need to browse/manage every quiz set (e.g. the admin quiz
+            // management screen) can bypass privacy filtering — merely holding quiz:edit/quiz:review
+            // must not leak other users' private drafts into the general quiz-bank browsing UI.
+            var canManage = manageMode
+                && (await _permissions.HasPermissionAsync(userId, "quiz:edit")
+                    || await _permissions.HasPermissionAsync(userId, "quiz:review"));
+            if (!canManage)
             {
-                if (includePrivate)
-                {
-                    query = query.Where(qs =>
-                        (qs.IsPublic && qs.ReviewStatus == "approved")
-                        || qs.CreatedBy == userId);
-                }
-                else
-                {
-                    query = query.Where(qs =>
-                        (qs.IsPublic && qs.ReviewStatus == "approved")
-                        || qs.CreatedBy == userId);
-                }
+                query = query.Where(qs =>
+                    (qs.IsPublic && qs.ReviewStatus == "approved")
+                    || qs.CreatedBy == userId);
             }
         }
         else

@@ -274,6 +274,9 @@ export class RoadmapViewComponent implements OnInit {
     if (!roadmap || !this.canEditRoadmap(roadmap)) {
       return false;
     }
+    if (roadmap.isPublic !== true) {
+      return false; // Roadmap riêng tư không cần kiểm duyệt, không hiện nút/gợi ý Gửi kiểm duyệt.
+    }
     const status = (roadmap.reviewStatus || '').toLowerCase();
     // Only a draft or a previously rejected roadmap can be (re)submitted for review.
     return status === 'draft' || status === 'rejected' || status === '';
