@@ -80,7 +80,7 @@ export class CodePlaygroundListComponent implements OnInit {
     { id: 3, slug: 'java', name: 'Java' },
     { id: 5, slug: 'cpp', name: 'C++' }
   ];
-  selectedLanguageIds: number[] = [1];
+  selectedLanguageIds: number[] = this.availableLanguages.map(lang => lang.id);
   sandbox = { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
   importFile: File | null = null;
   importReplaceExisting = false;
@@ -541,7 +541,7 @@ export class CodePlaygroundListComponent implements OnInit {
     };
     this.tagInput = '';
     this.selectedLangTab = 'javascript';
-    this.selectedLanguageIds = [this.availableLanguages[0]?.id || 1];
+    this.selectedLanguageIds = this.availableLanguages.map(lang => lang.id);
     this.sandbox = { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
     this.showCreateModal = true;
     this.cdr.detectChanges();
@@ -570,7 +570,7 @@ export class CodePlaygroundListComponent implements OnInit {
           starterCode: sc,
           testCases: [{ input: '', expectedOutput: '', isHidden: false }]
         };
-        this.selectedLanguageIds = detail.languageIds || [this.availableLanguages[0]?.id || 1];
+        this.selectedLanguageIds = detail.languageIds || this.availableLanguages.map(lang => lang.id);
         this.sandbox = detail.sandbox || { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
         this.tagInput = '';
         this.selectedLangTab = 'javascript';
@@ -697,17 +697,10 @@ export class CodePlaygroundListComponent implements OnInit {
       next: (languages) => {
         if (!Array.isArray(languages) || languages.length === 0) return;
         this.availableLanguages = languages.map((l: any) => ({ id: l.id, slug: l.slug, name: l.name }));
-        this.selectedLanguageIds = [this.availableLanguages[0].id];
+        this.selectedLanguageIds = this.availableLanguages.map(lang => lang.id);
         this.cdr.detectChanges();
       }
     });
-  }
-
-  toggleLanguage(id: number) {
-    this.selectedLanguageIds = this.selectedLanguageIds.includes(id)
-      ? this.selectedLanguageIds.filter(x => x !== id)
-      : [...this.selectedLanguageIds, id];
-    if (this.selectedLanguageIds.length === 0) this.selectedLanguageIds = [id];
   }
 
   onImportFile(event: Event) {

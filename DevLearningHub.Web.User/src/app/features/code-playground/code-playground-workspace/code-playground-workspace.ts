@@ -92,6 +92,8 @@ export class CodePlaygroundWorkspaceComponent implements OnInit {
 
   // Editor states
   userCode = '';
+  codeSuggestions: string[] = [];
+  selectedSuggestionIndex = 0;
   lineCountArr: number[] = [1];
   fontSize = 14;
 
@@ -333,10 +335,55 @@ int main() {
   onEditorCodeChange() {
     this.updateLineNumbers();
     this.updateHighlight();
+    this.updateCodeSuggestions();
+  }
+
+  private updateCodeSuggestions() {
+    const match = this.userCode.match(/[A-Za-z_][A-Za-z0-9_]*$/);
+    if (!match || match[0].length < 2) {
+      this.codeSuggestions = [];
+      return;
+    }
+    const prefix = match[0].toLowerCase();
+    const byLanguage: Record<string, string[]> = {
+      python: ['def ', 'for ', 'if ', 'input(', 'print(', 'return '],
+      javascript: ['function ', 'for ', 'if ', 'const ', 'console.log(', 'return '],
+      java: ['public class ', 'for ', 'if ', 'System.out.println(', 'return '],
+      cpp: ['#include <iostream>', 'for ', 'if ', 'std::cout << ', 'return ']
+    };
+    this.codeSuggestions = (byLanguage[this.selectedLanguage.slug] || [])
+      .filter(item => item.toLowerCase().startsWith(prefix))
+      .slice(0, 5);
+    this.selectedSuggestionIndex = 0;
+  }
+
+  insertCodeSuggestion(suggestion: string) {
+    const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
+    const match = this.userCode.match(/[A-Za-z_][A-Za-z0-9_]*$/);
+    if (!textarea || !match) return;
+    const start = textarea.selectionStart - match[0].length;
+    const end = textarea.selectionStart;
+    this.userCode = this.userCode.substring(0, start) + suggestion + this.userCode.substring(end);
+    this.codeSuggestions = [];
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + suggestion.length;
+    });
   }
 
   onKeyDown(event: KeyboardEvent) {
     const textarea = event.target as HTMLTextAreaElement;
+
+    if (this.codeSuggestions.length > 0 && (event.key === 'Tab' || event.key === 'Enter')) {
+      event.preventDefault();
+      this.insertCodeSuggestion(this.codeSuggestions[this.selectedSuggestionIndex]);
+      return;
+    }
+    if (event.key === 'Escape') {
+      this.codeSuggestions = [];
+      return;
+    }
     
     // Intercept Tab key to insert spaces
     if (event.key === 'Tab') {

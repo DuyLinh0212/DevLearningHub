@@ -589,12 +589,6 @@
             </div>
             <div class="modal-col-right">
               <div class="form-group form-group-grow">
-                <div class="language-check-list">
-                  <label *ngFor="let lang of availableLanguages">
-                    <input type="checkbox" [checked]="selectedLanguageIds.includes(lang.id)" (change)="toggleLanguage(lang.id)" />
-                    {{ lang.name }}
-                  </label>
-                </div>
                 <div class="lang-tabs">
                   <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'javascript'" (click)="selectedLangTab = 'javascript'">JS</button>
                   <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'python'" (click)="selectedLangTab = 'python'">Python</button>
@@ -609,10 +603,17 @@
               <div class="form-group">
                 <label class="form-label">Sandbox</label>
                 <div class="form-row-2">
-                  <input class="form-input" type="number" min="250" max="15000" [(ngModel)]="sandbox.timeLimitMs" placeholder="Timeout (ms)" />
-                  <input class="form-input" type="number" min="16384" max="524288" [(ngModel)]="sandbox.memoryLimitKb" placeholder="Memory (KB)" />
+                  <label class="sandbox-field">
+                    <span class="sandbox-field-label">Thời gian chạy tối đa (ms)</span>
+                    <input class="form-input" type="number" min="250" max="15000" [(ngModel)]="sandbox.timeLimitMs" placeholder="Ví dụ: 3000" />
+                  </label>
+                  <label class="sandbox-field">
+                    <span class="sandbox-field-label">Bộ nhớ tối đa (KB)</span>
+                    <input class="form-input" type="number" min="16384" max="524288" [(ngModel)]="sandbox.memoryLimitKb" placeholder="Ví dụ: 128000" />
+                  </label>
                 </div>
                 <label class="switch-label"><input type="checkbox" [(ngModel)]="sandbox.allowStdin" /> Cho phép stdin</label>
+                <p class="form-hint sandbox-note">Timeout giới hạn thời gian chạy mỗi lần nộp bài; Memory giới hạn bộ nhớ được phép dùng. Bật stdin khi bài tập cần đọc dữ liệu từ đầu vào chuẩn.</p>
               </div>
               <div class="form-group">
                 <div class="form-label-row">

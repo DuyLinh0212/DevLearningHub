@@ -753,6 +753,18 @@ html.light-theme .problem-row:hover {
   gap: 12px;
 }
 
+.sandbox-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sandbox-field-label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .form-textarea {
   padding: 10px 12px;
   background: var(--bg-nested);
