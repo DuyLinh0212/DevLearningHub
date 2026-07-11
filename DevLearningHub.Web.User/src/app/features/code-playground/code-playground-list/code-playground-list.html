@@ -589,7 +589,6 @@
             </div>
             <div class="modal-col-right">
               <div class="form-group form-group-grow">
-                <label class="form-label">Starter Code</label>
                 <div class="language-check-list">
                   <label *ngFor="let lang of availableLanguages">
                     <input type="checkbox" [checked]="selectedLanguageIds.includes(lang.id)" (change)="toggleLanguage(lang.id)" />
