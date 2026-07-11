@@ -30,8 +30,8 @@ test.describe.serial('User > CRUD > Code Playground Problem', () => {
 
     await page.locator('.btn-create-problem').click();
 
-    await page.locator('.modal-create .form-input').waitFor();
-    await page.locator('.modal-create .form-input').fill(`[e2e] Problem ${Date.now()}`);
+    await page.locator('.modal-create input[type="text"]').waitFor();
+    await page.locator('.modal-create input[type="text"]').fill(`[e2e] Problem ${Date.now()}`);
 
     const selects = page.locator('.modal-create select.form-select');
     const selectCount = await selects.count();

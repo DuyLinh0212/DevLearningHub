@@ -78,6 +78,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("practice", data.GetProperty("mode").GetString());
         Assert.Equal(900, data.GetProperty("timeLimitSeconds").GetInt32());
         Assert.True(data.GetProperty("isPublic").GetBoolean());
+        Assert.True(data.GetProperty("allowedCopy").GetBoolean());
         Assert.Equal(topicId, data.GetProperty("topicId").GetGuid());
         Assert.Equal("beginner", data.GetProperty("level").GetString());
         Assert.Equal(0, data.GetProperty("questionCount").GetInt32());
@@ -428,6 +429,45 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("Quiz set has sessions, so it was archived (hidden) instead of permanently deleted.", data.GetProperty("message").GetString());
     }
 
+    [Fact]
+    public async Task CopyQuizSet_WithValidRequest_ShouldReturnCopiedQuizSet()
+    {
+        var auth = await RegisterAndGetAuthAsync(
+            username: "quizsetcopier7512",
+            email: "quizsetcopier7512@gmail.com",
+            fullName: "Quiz Set Copier 7512");
+
+        var topicId = await SeedTopicAsync(
+            name: "Quiz Set Topic 7512",
+            slug: "quiz-set-topic-7512");
+
+        var sourceQuizSetId = await CreateQuizSetAndGetIdAsync(auth.AccessToken, topicId, "Source quiz set 7512", true);
+
+        var copyRequest = new
+        {
+            title = "Copied quiz set 7512"
+        };
+
+        var response = await SendWithBearerAsync(
+            HttpMethod.Post,
+            $"/api/quiz-sets/{sourceQuizSetId}/copy",
+            auth.AccessToken,
+            copyRequest);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadDocumentAsync(response);
+        var root = document.RootElement;
+
+        AssertSuccess(root);
+
+        var data = root.GetProperty("data");
+
+        Assert.False(data.GetProperty("id").GetGuid() == Guid.Empty);
+        Assert.NotEqual(sourceQuizSetId, data.GetProperty("id").GetGuid());
+        Assert.Equal("Copied quiz set 7512", data.GetProperty("title").GetString());
+    }
+
     private async Task<AuthTestData> RegisterAndGetAuthAsync(string username, string email, string fullName)
     {
         var request = new
@@ -463,6 +503,7 @@ public class QuizSetApiTests : IClassFixture<CustomWebApplicationFactory>
             mode = "practice",
             timeLimitSeconds = 900,
             isPublic,
+            allowedCopy = true,
             topicId,
             level = "beginner"
         };

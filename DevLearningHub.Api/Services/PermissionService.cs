@@ -36,7 +36,9 @@ public sealed class PermissionService : IPermissionService
         "post:create",
         "post:edit_own",
         "problem:create",
-        "problem:edit"
+        "problem:edit",
+        "roadmap:create",
+        "roadmap:edit"
     ];
 
     private readonly DevLearningHubContext _db;

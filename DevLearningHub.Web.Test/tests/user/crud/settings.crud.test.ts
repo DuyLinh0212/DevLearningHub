@@ -25,6 +25,7 @@ test.describe.serial('User > CRUD > Settings (edit own profile)', () => {
     const newLastName = `QA${Date.now() % 100000}`;
 
     await page.goto(env.USER_URL + '/settings');
+    await expect(page.locator('input[name="firstName"]')).not.toBeEmpty({ timeout: 15000 });
     await page.locator('input[name="lastName"]').waitFor();
 
     const lastNameInput = page.locator('input[name="lastName"]');
@@ -35,6 +36,7 @@ test.describe.serial('User > CRUD > Settings (edit own profile)', () => {
     await page.waitForTimeout(1500);
 
     await page.reload();
+    await expect(page.locator('input[name="firstName"]')).not.toBeEmpty({ timeout: 15000 });
     await page.locator('input[name="lastName"]').waitFor();
     const persistedValue = await page.locator('input[name="lastName"]').inputValue();
 

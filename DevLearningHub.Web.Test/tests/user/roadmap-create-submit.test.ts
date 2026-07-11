@@ -38,6 +38,9 @@ test.describe.serial('User > CRUD > Roadmap Create & Submit', () => {
     const roadmapModal = page.locator('section.roadmap-modal-sheet');
     await roadmapModal.waitFor();
     await roadmapModal.locator('input[type="text"]').fill(title);
+    // Chọn "Công khai lộ trình" để nó khởi tạo ở trạng thái "Bản nháp" và kiểm tra luồng gửi duyệt.
+    // Nếu để riêng tư, backend sẽ tự động duyệt ngay lúc tạo.
+    await roadmapModal.locator('input[type="checkbox"]').check();
 
     await takeScreenshot(page, 'user', 'roadmap-submit', 'step1-create-modal');
     await roadmapModal.locator('.modal-actions button.blue-solid').click();

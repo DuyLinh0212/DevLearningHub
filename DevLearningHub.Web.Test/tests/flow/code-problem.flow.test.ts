@@ -41,8 +41,8 @@ test.describe.serial('Flow > User creates+solves a code problem, Admin moderates
 
     await userPage.locator('.btn-create-problem').click();
 
-    await userPage.locator('.modal-create .form-input').waitFor();
-    await userPage.locator('.modal-create .form-input').fill(problemTitle);
+    await userPage.locator('.modal-create input[type="text"]').waitFor();
+    await userPage.locator('.modal-create input[type="text"]').fill(problemTitle);
 
     const selects = userPage.locator('.modal-create select.form-select');
     const selectCount = await selects.count();
