@@ -267,4 +267,26 @@ export class ModerationQueueComponent implements OnInit, OnDestroy {
     if (!d) return '';
     return new Date(d).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
   }
+
+  renderSafeMarkup(value: string | null | undefined): string {
+    if (!value) return '';
+    const allowed: string[] = [];
+    const source = value.replace(/<(\/?)(p|br|strong|em|b|i|ul|ol|li|h[1-4]|code|pre|a)([^>]*)>/gi, (_match, closing, tag, attrs) => {
+      let safeAttrs = '';
+      if (!closing && tag.toLowerCase() === 'a') {
+        const href = String(attrs).match(/href\s*=\s*["']([^"']+)["']/i)?.[1] || '';
+        if (/^(https?:|mailto:)/i.test(href)) safeAttrs = ` href="${href.replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer"`;
+      }
+      allowed.push(closing ? `</${tag.toLowerCase()}>` : `<${tag.toLowerCase()}${safeAttrs}>`);
+      return `___SAFE_TAG_${allowed.length - 1}___`;
+    });
+    let html = source.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    allowed.forEach((tag, index) => { html = html.replace(`___SAFE_TAG_${index}___`, tag); });
+    html = html.replace(/```([\w+#-]*)\n?([\s\S]*?)```/g, (_m, lang, code) => `<pre class="mq-detail-code"><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`);
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>').replace(/^## (.+)$/gm, '<h3>$1</h3>').replace(/^# (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/(^|[\s>])@([A-Za-z0-9_.-]{2,50})/g, '$1<span class="user-mention">@$2</span>');
+    return html.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>');
+  }
 }

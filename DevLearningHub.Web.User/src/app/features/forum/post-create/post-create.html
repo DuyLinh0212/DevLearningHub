@@ -52,7 +52,10 @@
       <!-- NỘI DUNG CHI TIẾT -->
       <div class="form-group">
         <label for="bodyMarkdown">Nội dung chi tiết <span class="text-danger">*</span></label>
-        <textarea id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" required rows="14" placeholder="Mô tả chi tiết câu hỏi, đính kèm code hỗ trợ định dạng Markdown...\n\nSử dụng `code` cho mã ngắn và ``` csharp\n // code ở đây\n ``` cho khối code." class="form-textarea"></textarea>
+        <textarea #bodyInput id="bodyMarkdown" name="bodyMarkdown" [(ngModel)]="bodyMarkdown" (input)="onBodyInput($event)" required rows="14" placeholder="Mô tả chi tiết, dùng @username để nhắc người khác..." class="form-textarea"></textarea>
+        @if (mentionUsers.length) {
+          <div class="mention-suggestions">@for (user of mentionUsers; track user.id) { <button type="button" (click)="chooseMention(user, bodyInput)"><b>@{{ user.username }}</b><small>{{ user.fullName || '' }}</small></button> }</div>
+        }
         <small class="form-help">Hỗ trợ định dạng Markdown để viết văn bản và khối code.</small>
       </div>
 

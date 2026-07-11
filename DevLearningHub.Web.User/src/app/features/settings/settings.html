@@ -42,6 +42,7 @@
         </button>
         <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'appearance'" (click)="setTab('appearance')"><i class="bi bi-palette"></i> Giao diện</button>
         <button type="button" class="settings-tab-btn" [class.active]="activeTab === 'privacy'" (click)="setTab('privacy')"><i class="bi bi-shield-shaded"></i> Riêng tư</button>
+        <a class="settings-tab-btn" routerLink="/feedback"><i class="bi bi-send"></i> Gửi ý kiến riêng</a>
       </div>
     </div>
 

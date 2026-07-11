@@ -82,6 +82,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Hệ thống',
       items: [
         { name: 'Nhật ký', path: '/admin/audit-logs', icon: 'bi bi-terminal', permissions: ['audit:view'] },
+        { name: 'Feedback riêng', path: '/admin/feedback', icon: 'bi bi-inbox', roles: ['Admin', 'Moderator'] },
         { name: 'Cài đặt', path: '/settings', icon: 'bi bi-gear', roles: ['Admin'] }
       ]
     }

@@ -110,7 +110,7 @@ public class CommentsController : ControllerBase
         var deleteIds = toDelete.Select(c => c.Id).ToList();
 
         // Clear the accepted-answer pointer if it targets a deleted comment.
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == comment.PostId);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == comment.PostId && !p.IsDeleted);
         if (post != null && post.AcceptedCommentId.HasValue && deleteIds.Contains(post.AcceptedCommentId.Value))
         {
             post.AcceptedCommentId = null;
@@ -192,7 +192,7 @@ public class CommentsController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Comment not found."));
         }
 
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == comment.PostId);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == comment.PostId && !p.IsDeleted);
         if (post == null)
         {
             return NotFound(ApiResponse<object>.Fail("Post not found."));

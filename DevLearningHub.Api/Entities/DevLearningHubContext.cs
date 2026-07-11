@@ -17,6 +17,10 @@ public partial class DevLearningHubContext : DbContext
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
+    public virtual DbSet<FeedbackRequest> FeedbackRequests { get; set; }
+
+    public virtual DbSet<UserMention> UserMentions { get; set; }
+
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<ModerationLog> ModerationLogs { get; set; }
@@ -156,6 +160,40 @@ public partial class DevLearningHubContext : DbContext
                 .HasConstraintName("FK_comments_post");
         });
 
+        modelBuilder.Entity<FeedbackRequest>(entity =>
+        {
+            entity.ToTable("feedback_requests");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AuthorId).HasColumnName("author_id");
+            entity.Property(e => e.Subject).HasMaxLength(200).IsRequired().HasColumnName("subject");
+            entity.Property(e => e.Body).IsRequired().HasColumnName("body");
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasColumnName("status");
+            entity.Property(e => e.AdminResponse).HasColumnName("admin_response");
+            entity.Property(e => e.RespondedBy).HasColumnName("responded_by");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.HasOne(e => e.Author).WithMany().HasForeignKey(e => e.AuthorId).OnDelete(DeleteBehavior.ClientSetNull);
+            entity.HasOne(e => e.Responder).WithMany().HasForeignKey(e => e.RespondedBy).OnDelete(DeleteBehavior.ClientSetNull);
+            entity.HasIndex(e => new { e.Status, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<UserMention>(entity =>
+        {
+            entity.ToTable("user_mentions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MentionedUserId).HasColumnName("mentioned_user_id");
+            entity.Property(e => e.AuthorId).HasColumnName("author_id");
+            entity.Property(e => e.SourceType).HasMaxLength(20).IsRequired().HasColumnName("source_type");
+            entity.Property(e => e.SourceId).HasColumnName("source_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.HasIndex(e => new { e.SourceType, e.SourceId });
+            entity.HasIndex(e => e.MentionedUserId);
+            entity.HasOne(e => e.MentionedUser).WithMany().HasForeignKey(e => e.MentionedUserId).OnDelete(DeleteBehavior.ClientSetNull);
+            entity.HasOne(e => e.Author).WithMany().HasForeignKey(e => e.AuthorId).OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
         modelBuilder.Entity<ModerationLog>(entity =>
         {
             entity.ToTable("moderation_logs");
@@ -258,6 +296,9 @@ public partial class DevLearningHubContext : DbContext
             entity.Property(e => e.Downvotes).HasColumnName("downvotes");
             entity.Property(e => e.ImageUrl).HasColumnName("image_url");
             entity.Property(e => e.IsHidden).HasColumnName("is_hidden");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+            entity.Property(e => e.DeletedBy).HasColumnName("deleted_by");
             entity.Property(e => e.Title)
                 .HasMaxLength(300)
                 .HasColumnName("title");
@@ -316,6 +357,11 @@ public partial class DevLearningHubContext : DbContext
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
             entity.Property(e => e.StarterCode).HasColumnName("starter_code");
+            entity.Property(e => e.StarterCodesJson).HasColumnName("starter_codes_json");
+            entity.Property(e => e.AllowedLanguageIdsJson).HasColumnName("allowed_language_ids_json");
+            entity.Property(e => e.SandboxTimeLimitMs).HasDefaultValue(3000).HasColumnName("sandbox_time_limit_ms");
+            entity.Property(e => e.SandboxMemoryLimitKb).HasDefaultValue(128000).HasColumnName("sandbox_memory_limit_kb");
+            entity.Property(e => e.SandboxAllowStdin).HasDefaultValue(true).HasColumnName("sandbox_allow_stdin");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .HasColumnName("title");

@@ -45,7 +45,7 @@ export class AuditLogsComponent implements OnInit {
   pageSize = 20;
   totalCount = 0;
   totalPages = 1;
-  pageNumbers: number[] = [];
+  pageNumbers: (number | string)[] = [];
 
   ngOnInit() {
     this.loadActions();
@@ -113,10 +113,12 @@ export class AuditLogsComponent implements OnInit {
   }
 
   calculatePageNumbers() {
-    this.pageNumbers = [];
-    for (let i = 1; i <= this.totalPages; i++) {
-      this.pageNumbers.push(i);
-    }
+    if (this.totalPages <= 9) { this.pageNumbers = Array.from({ length: this.totalPages }, (_, i) => i + 1); return; }
+    const values = new Set<number>([1, 2, this.totalPages - 1, this.totalPages, this.currentPage - 1, this.currentPage, this.currentPage + 1]);
+    const sorted = [...values].filter(p => p > 0 && p <= this.totalPages).sort((a, b) => a - b);
+    const result: (number | string)[] = [];
+    sorted.forEach((page, index) => { if (index > 0 && page - sorted[index - 1] > 1) result.push('...'); result.push(page); });
+    this.pageNumbers = result;
   }
 
   goToPage(page: number) {

@@ -197,6 +197,30 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ImportTestCases_ShouldReplaceExistingRowsFromJson()
+    {
+        await SeedDatabaseAsync();
+        using var client = CreateConfiguredClient();
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Admin");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", _testUserId.ToString());
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "problem:edit");
+        using var content = new MultipartFormDataContent();
+        var json = "[{\"input\":\"2 3\",\"expectedOutput\":\"5\",\"isHidden\":true}]";
+        content.Add(new StringContent(json), "file", "cases.json");
+        content.Add(new StringContent("true"), "replaceExisting");
+
+        var response = await client.PostAsync($"/api/problems/{_testProblemId}/test-cases/import", content);
+
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DevLearningHubContext>();
+        var rows = await db.TestCases.Where(tc => tc.ProblemId == _testProblemId).ToListAsync();
+        Assert.Single(rows);
+        Assert.Equal("5", rows[0].ExpectedOutput);
+        Assert.True(rows[0].IsHidden);
+    }
+
+    [Fact]
     public async Task ProblemOwner_ShouldUpdateProblemAndTestCase_WithoutEditPermission()
     {
         // Arrange

@@ -32,6 +32,8 @@ export class TestcaseManagementComponent implements OnInit {
     isHidden: false,
     orderIndex: 1
   };
+  importFile: File | null = null;
+  importReplaceExisting = false;
 
   ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('id') || '';
@@ -146,6 +148,21 @@ export class TestcaseManagementComponent implements OnInit {
         console.error(err);
         alert('Không thể xóa Test Case này.');
       }
+    });
+  }
+
+  onImportFile(event: Event) {
+    this.importFile = (event.target as HTMLInputElement).files?.[0] || null;
+  }
+
+  importTestCases() {
+    if (!this.importFile) return;
+    const body = new FormData();
+    body.append('file', this.importFile);
+    body.append('replaceExisting', String(this.importReplaceExisting));
+    this.http.post(`/api/problems/${this.problemId}/test-cases/import`, body).subscribe({
+      next: () => { this.importFile = null; this.loadTestCases(); },
+      error: err => alert(err?.error?.message || 'Import testcase thất bại.')
     });
   }
 }

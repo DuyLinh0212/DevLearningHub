@@ -10,6 +10,9 @@
       </div>
       
       <div class="admin-header-actions" style="margin-left: auto;">
+        <input type="file" accept=".json,.csv" (change)="onImportFile($event)" />
+        <label><input type="checkbox" [(ngModel)]="importReplaceExisting" /> Thay thế</label>
+        <button class="btn-admin-act" (click)="importTestCases()" [disabled]="!importFile"><i class="bi bi-upload"></i> Import</button>
         <button class="btn-admin-act purple" (click)="openModal()">
           <i class="bi bi-plus-circle-fill"></i> Thêm Test Case
         </button>

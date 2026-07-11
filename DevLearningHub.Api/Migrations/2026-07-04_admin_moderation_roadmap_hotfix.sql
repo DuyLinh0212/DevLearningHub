@@ -40,6 +40,8 @@ BEGIN
         CONSTRAINT DF_roadmaps_created_at DEFAULT getutcdate();
 END;
 
+GO
+
 DECLARE @RoadmapFallbackCreator uniqueidentifier;
 
 SELECT TOP 1 @RoadmapFallbackCreator = id

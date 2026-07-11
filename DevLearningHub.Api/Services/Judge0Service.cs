@@ -16,6 +16,9 @@ public sealed class Judge0Submission
     public int LanguageId { get; set; }
     public string Stdin { get; set; } = string.Empty;
     public string ExpectedOutput { get; set; } = string.Empty;
+    public int? CpuTimeLimitSeconds { get; set; }
+    public int? MemoryLimitKb { get; set; }
+    public bool AllowStdin { get; set; } = true;
 }
 
 public sealed class Judge0Result
@@ -56,7 +59,9 @@ public sealed class Judge0Service : IJudge0Service
         {
             source_code = sourceCode,
             language_id = languageId,
-            stdin
+            stdin,
+            cpu_time_limit = 3,
+            memory_limit = 128000
         };
 
         var response = await client.PostAsJsonAsync(url, body, _json);
@@ -79,7 +84,9 @@ public sealed class Judge0Service : IJudge0Service
                 source_code = s.SourceCode,
                 language_id = s.LanguageId,
                 stdin = s.Stdin,
-                expected_output = s.ExpectedOutput
+                expected_output = s.ExpectedOutput,
+                cpu_time_limit = s.CpuTimeLimitSeconds,
+                memory_limit = s.MemoryLimitKb
             }).ToArray()
         };
 

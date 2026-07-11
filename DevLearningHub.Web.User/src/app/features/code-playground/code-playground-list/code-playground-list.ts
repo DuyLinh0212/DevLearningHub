@@ -74,6 +74,16 @@ export class CodePlaygroundListComponent implements OnInit {
   showCreateModal = false;
   isSaving = false;
   selectedLangTab: 'javascript' | 'python' | 'java' | 'cpp' = 'javascript';
+  availableLanguages = [
+    { id: 1, slug: 'python', name: 'Python' },
+    { id: 2, slug: 'javascript', name: 'JavaScript' },
+    { id: 3, slug: 'java', name: 'Java' },
+    { id: 5, slug: 'cpp', name: 'C++' }
+  ];
+  selectedLanguageIds: number[] = [1];
+  sandbox = { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
+  importFile: File | null = null;
+  importReplaceExisting = false;
   tagInput = '';
   form = {
     title: '',
@@ -172,6 +182,7 @@ export class CodePlaygroundListComponent implements OnInit {
     this.loadCurrentUser();
     this.loadData();
     this.loadBanks();
+    this.loadProgrammingLanguages();
 
     // Support ?bankId= query param to open bank directly
     this.route.queryParams.subscribe(params => {
@@ -530,6 +541,8 @@ export class CodePlaygroundListComponent implements OnInit {
     };
     this.tagInput = '';
     this.selectedLangTab = 'javascript';
+    this.selectedLanguageIds = [this.availableLanguages[0]?.id || 1];
+    this.sandbox = { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
     this.showCreateModal = true;
     this.cdr.detectChanges();
   }
@@ -557,6 +570,8 @@ export class CodePlaygroundListComponent implements OnInit {
           starterCode: sc,
           testCases: [{ input: '', expectedOutput: '', isHidden: false }]
         };
+        this.selectedLanguageIds = detail.languageIds || [this.availableLanguages[0]?.id || 1];
+        this.sandbox = detail.sandbox || { timeLimitMs: 3000, memoryLimitKb: 128000, allowStdin: true };
         this.tagInput = '';
         this.selectedLangTab = 'javascript';
         this.loadTestCasesForEdit(problem.id);
@@ -636,6 +651,9 @@ export class CodePlaygroundListComponent implements OnInit {
       description: this.form.description.trim(),
       difficulty: this.form.difficulty,
       starterCode: JSON.stringify(this.form.starterCode),
+      starterCodes: this.form.starterCode,
+      languageIds: this.selectedLanguageIds,
+      sandbox: this.sandbox,
       isActive: this.form.isPublished,
       tagIds: [] as string[]
     };
@@ -671,6 +689,40 @@ export class CodePlaygroundListComponent implements OnInit {
         alert(msg);
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  private loadProgrammingLanguages() {
+    this.http.get<any[]>('/api/programming-languages').subscribe({
+      next: (languages) => {
+        if (!Array.isArray(languages) || languages.length === 0) return;
+        this.availableLanguages = languages.map((l: any) => ({ id: l.id, slug: l.slug, name: l.name }));
+        this.selectedLanguageIds = [this.availableLanguages[0].id];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleLanguage(id: number) {
+    this.selectedLanguageIds = this.selectedLanguageIds.includes(id)
+      ? this.selectedLanguageIds.filter(x => x !== id)
+      : [...this.selectedLanguageIds, id];
+    if (this.selectedLanguageIds.length === 0) this.selectedLanguageIds = [id];
+  }
+
+  onImportFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.importFile = input.files?.[0] || null;
+  }
+
+  importTestCases(problemId: string) {
+    if (!this.importFile) return;
+    const body = new FormData();
+    body.append('file', this.importFile);
+    body.append('replaceExisting', String(this.importReplaceExisting));
+    this.http.post(`/api/problems/${problemId}/test-cases/import`, body).subscribe({
+      next: () => { this.importFile = null; this.loadTestCasesForEdit(problemId); alert('Đã import testcase.'); },
+      error: err => alert(err?.error?.message || 'Import testcase thất bại.')
     });
   }
 

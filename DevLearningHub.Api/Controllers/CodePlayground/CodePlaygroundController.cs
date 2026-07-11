@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace DevLearningHub.Api.Controllers;
 
@@ -61,13 +62,23 @@ public class CodePlaygroundController : ControllerBase
         if (!testCases.Any())
             return BadRequest("Bài tập này hiện chưa có bộ Test Case để hệ thống chấm điểm.");
 
+        var problem = await _context.Problems.AsNoTracking().FirstAsync(p => p.Id == request.ProblemId);
+        var allowedLanguageIds = string.IsNullOrWhiteSpace(problem.AllowedLanguageIdsJson)
+            ? new List<int>()
+            : JsonSerializer.Deserialize<List<int>>(problem.AllowedLanguageIdsJson) ?? new();
+        if (allowedLanguageIds.Count > 0 && !allowedLanguageIds.Contains(request.LanguageId))
+            return BadRequest("Ngôn ngữ này không được phép cho bài tập.");
+
         // 3. Map sang định dạng Batch của Judge0 để gửi đi chấm song song
         var judge0Submissions = testCases.Select(tc => new Judge0Submission
         {
             SourceCode = request.Code,
             LanguageId = request.LanguageId,
             Stdin = tc.Input,
-            ExpectedOutput = tc.ExpectedOutput
+            ExpectedOutput = tc.ExpectedOutput,
+            CpuTimeLimitSeconds = Math.Max(1, problem.SandboxTimeLimitMs / 1000),
+            MemoryLimitKb = problem.SandboxMemoryLimitKb,
+            AllowStdin = problem.SandboxAllowStdin
         }).ToList();
 
         // 4. Gọi Judge0 chấm hàng loạt (Đã có sẵn logic Polling chờ kết quả bên trong Service của bạn)

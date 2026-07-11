@@ -82,7 +82,7 @@
                     <i class="bi bi-pencil-square"></i>
                   </button>
                 }
-                @if (canDelete && !role.isSystem && role.userCount === 0) {
+                @if (canDelete && !role.isSystem) {
                   <button class="btn-icon btn-danger" title="Xóa vai trò" (click)="confirmDelete(role); $event.stopPropagation()">
                     <i class="bi bi-trash3"></i>
                   </button>
@@ -196,7 +196,7 @@
   <div class="modal-overlay" (click)="deletingRole = null">
     <div class="modal modal-sm" (click)="$event.stopPropagation()">
       <h3 class="danger">Xóa vai trò</h3>
-      <p>Bạn chắc chắn muốn xóa vai trò <strong>{{ deletingRole.name }}</strong>? Hành động này không thể hoàn tác.</p>
+      <p>Bạn chắc chắn muốn xóa vai trò <strong>{{ deletingRole.name }}</strong>? {{ deletingRole.userCount }} người dùng sẽ được gỡ vai trò và nhận thông báo. Hành động này không thể hoàn tác.</p>
       <div class="modal-actions">
         <button class="btn-cancel" (click)="deletingRole = null">Hủy</button>
         <button class="btn-delete" (click)="executeDelete()">Xóa</button>

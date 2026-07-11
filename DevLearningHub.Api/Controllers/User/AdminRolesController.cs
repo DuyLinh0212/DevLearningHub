@@ -24,11 +24,13 @@ public class AdminRolesController : ControllerBase
 
     private readonly DevLearningHubContext _db;
     private readonly IAuditService _audit;
+    private readonly INotificationService _notifications;
 
-    public AdminRolesController(DevLearningHubContext db, IAuditService audit)
+    public AdminRolesController(DevLearningHubContext db, IAuditService audit, INotificationService notifications)
     {
         _db = db;
         _audit = audit;
+        _notifications = notifications;
     }
 
     [HttpGet]
@@ -159,16 +161,55 @@ public class AdminRolesController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("System roles cannot be deleted."));
         }
 
-        if (role.UserRoles.Count > 0)
+        var affectedUserIds = role.UserRoles.Select(ur => ur.UserId).Distinct().ToList();
+        var fallbackRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == "user" && r.IsActive && r.Id != id);
+        await using var transaction = _db.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory"
+            ? null
+            : await _db.Database.BeginTransactionAsync();
+        try
         {
-            return BadRequest(ApiResponse<object>.Fail("Cannot delete a role assigned to users."));
+            _db.UserRoles.RemoveRange(role.UserRoles);
+            if (fallbackRole != null && affectedUserIds.Count > 0)
+            {
+                var remaining = await _db.UserRoles
+                    .Where(ur => affectedUserIds.Contains(ur.UserId) && ur.RoleId != id)
+                    .Select(ur => ur.UserId)
+                    .Distinct()
+                    .ToListAsync();
+                var remainingSet = remaining.ToHashSet();
+                foreach (var userId in affectedUserIds.Where(uid => !remainingSet.Contains(uid)))
+                {
+                    _db.UserRoles.Add(new UserRole
+                    {
+                        UserId = userId,
+                        RoleId = fallbackRole.Id,
+                        AssignedAt = DateTime.Now,
+                        AssignedBy = User.TryGetUserId(out var adminId) ? adminId : null
+                    });
+                }
+            }
+
+            _db.Roles.Remove(role);
+            await _db.SaveChangesAsync();
+            if (transaction != null) await transaction.CommitAsync();
+        }
+        catch
+        {
+            if (transaction != null) await transaction.RollbackAsync();
+            throw;
         }
 
-        _db.Roles.Remove(role);
-        await _db.SaveChangesAsync();
-        await _audit.LogAsync("role.delete", "role", id, $"name={role.Name}");
+        await _audit.LogAsync("role.delete", "role", id, $"name={role.Name}; affectedUsers={affectedUserIds.Count}");
+        foreach (var userId in affectedUserIds)
+        {
+            await _notifications.NotifyAsync(
+                userId,
+                NotificationTypes.RoleRemoved,
+                $"Vai trò '{role.Name}' đã bị xóa. Tài khoản của bạn đã được cập nhật về quyền mặc định.",
+                refType: "role");
+        }
 
-        return Ok(ApiResponse<object>.Ok(new { deleted = true }));
+        return Ok(ApiResponse<object>.Ok(new { deleted = true, affectedUsers = affectedUserIds.Count }));
     }
 
     [HttpPut("{id:guid}/permissions")]

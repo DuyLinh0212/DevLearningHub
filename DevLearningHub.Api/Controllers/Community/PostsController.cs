@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace DevLearningHub.Api.Controllers.Community;
 
@@ -61,6 +62,7 @@ public class PostsController : ControllerBase
             && await _permissions.HasPermissionAsync(viewerId, "post:hide_any");
         var canReview = viewerId != Guid.Empty && await _permissions.HasPermissionAsync(viewerId, "post:review");
         var query = _db.Posts.AsNoTracking().Where(p =>
+            !p.IsDeleted &&
             (includeHidden || !p.IsHidden) &&
             (includeHidden
                 || canReview
@@ -151,7 +153,7 @@ public class PostsController : ControllerBase
                 .ThenInclude(a => a.UserRoleUsers)
                     .ThenInclude(ur => ur.Role)
             .Include(p => p.Tags)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
 
         if (post == null)
@@ -266,6 +268,7 @@ public class PostsController : ControllerBase
 
         _db.Posts.Add(post);
         await _db.SaveChangesAsync();
+        await SaveMentionsAsync(userId, "post", post.Id, body);
 
         if (post.ReviewStatus == "pending")
         {
@@ -290,7 +293,7 @@ public class PostsController : ControllerBase
         var post = await _db.Posts
             .Include(p => p.Author)
             .Include(p => p.Tags)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
         if (post == null)
         {
@@ -361,7 +364,7 @@ public class PostsController : ControllerBase
         var post = await _db.Posts
             .Include(p => p.Author)
             .Include(p => p.Tags)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
         if (post == null)
         {
@@ -405,7 +408,7 @@ public class PostsController : ControllerBase
         var post = await _db.Posts
             .Include(p => p.Comments)
             .Include(p => p.Tags)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
         if (post == null)
         {
@@ -419,20 +422,12 @@ public class PostsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Forbidden."));
         }
 
-        // Break the self-reference before removing comments.
-        post.AcceptedCommentId = null;
-        await _db.SaveChangesAsync();
-
-        var commentIds = post.Comments.Select(c => c.Id).ToList();
-        await DeleteVotesAsync(CommunityVotes.PostTarget, new List<Guid> { post.Id });
-        await DeleteVotesAsync(CommunityVotes.CommentTarget, commentIds);
-
         var postAuthorId = post.AuthorId;
         var postTitle = post.Title;
-
-        post.Tags.Clear();
-        _db.Comments.RemoveRange(post.Comments);
-        _db.Posts.Remove(post);
+        post.IsDeleted = true;
+        post.DeletedAt = DateTime.UtcNow;
+        post.DeletedBy = userId;
+        post.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
         // Tell the author their post was removed (skipped if they deleted it themselves).
@@ -463,7 +458,7 @@ public class PostsController : ControllerBase
             return BadRequest(ApiResponse<VoteResultResponse>.Fail("voteType must be 'up' or 'down'."));
         }
 
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsHidden);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsHidden && !p.IsDeleted);
         if (post == null)
         {
             return NotFound(ApiResponse<VoteResultResponse>.Fail("Post not found."));
@@ -483,7 +478,7 @@ public class PostsController : ControllerBase
     // Get nested comments for a post.
     public async Task<ActionResult<ApiResponse<List<CommentResponse>>>> GetComments(Guid id)
     {
-        var postExists = await _db.Posts.AnyAsync(p => p.Id == id);
+        var postExists = await _db.Posts.AnyAsync(p => p.Id == id && !p.IsDeleted);
         if (!postExists)
         {
             return NotFound(ApiResponse<List<CommentResponse>>.Fail("Post not found."));
@@ -548,7 +543,7 @@ public class PostsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<CommentResponse>.Fail("Forbidden. Missing permission: comment:create"));
         }
 
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsHidden);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsHidden && !p.IsDeleted);
         if (post == null)
         {
             return NotFound(ApiResponse<CommentResponse>.Fail("Post not found."));
@@ -588,6 +583,7 @@ public class PostsController : ControllerBase
 
         _db.Comments.Add(comment);
         await _db.SaveChangesAsync();
+        await SaveMentionsAsync(userId, "comment", comment.Id, body);
 
         var author = await _db.Users
             .Include(u => u.UserRoleUsers)
@@ -832,5 +828,19 @@ public class PostsController : ControllerBase
             post.ReviewedAt = null;
             post.ReviewNote = null;
         }
+    }
+
+    private async Task SaveMentionsAsync(Guid authorId, string sourceType, Guid sourceId, string text)
+    {
+        var names = Regex.Matches(text ?? string.Empty, "(?<![\\w@])@([A-Za-z0-9_.-]{2,50})")
+            .Select(m => m.Groups[1].Value).Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+        if (names.Count == 0) return;
+        var users = await _db.Users.Where(u => u.IsActive && names.Contains(u.Username) && u.Id != authorId).ToListAsync();
+        foreach (var user in users)
+        {
+            _db.UserMentions.Add(new UserMention { Id = Guid.NewGuid(), AuthorId = authorId, MentionedUserId = user.Id, SourceType = sourceType, SourceId = sourceId, CreatedAt = DateTime.UtcNow });
+            await _notifications.NotifyAsync(user.Id, "user_mention", $"Bạn được nhắc đến trong {sourceType}.", sourceId, sourceType, authorId);
+        }
+        await _db.SaveChangesAsync();
     }
 }

@@ -652,3 +652,4 @@
   color: #c084fc;
 }
 
+.mention-suggestions{display:grid;max-width:360px;background:var(--bg-card);border:1px solid var(--bg-card-border);border-radius:6px;overflow:hidden}.mention-suggestions button{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;background:transparent;color:var(--text-main);border:0;text-align:left;cursor:pointer}.mention-suggestions button:hover{background:var(--bg-nested)}.mention-suggestions small{color:var(--text-muted)}

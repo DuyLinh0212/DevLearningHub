@@ -24,6 +24,7 @@ import { ModerationLogComponent } from './features/admin/moderation-log/moderati
 import { RoleManagementComponent } from './features/admin/role-management/role-management';
 import { SettingsComponent } from './features/settings/settings';
 import { DashboardComponent } from './features/dashboard/dashboard';
+import { FeedbackManagementComponent } from './features/admin/feedback-management/feedback-management';
 import { adminGuard } from './core/guards/admin.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 export const routes: Routes = [
@@ -53,6 +54,7 @@ export const routes: Routes = [
       { path: 'admin/moderators', component: ModeratorManagementComponent, canActivate: [adminGuard] },
       { path: 'admin/moderator-dashboard', component: ModeratorDashboardComponent, canActivate: [permissionGuard(['post:review', 'post:hide_any', 'post:delete_any', 'post:edit_any', 'problem:review', 'quiz:review', 'problem_bank:review', 'roadmap:review', 'audit:view'])] },
       { path: 'admin/audit-logs', component: AuditLogsComponent, canActivate: [permissionGuard('audit:view')] },
+      { path: 'admin/feedback', component: FeedbackManagementComponent, canActivate: [adminGuard] },
       { path: 'admin/problems', component: ProblemManagementComponent, canActivate: [permissionGuard(['problem:create', 'problem:edit'])] },
       { path: 'admin/problems/:id/test-cases', component: TestcaseManagementComponent, canActivate: [permissionGuard(['problem:create', 'problem:edit'])] },
       { path: 'admin/reports', component: ReportManagementComponent, canActivate: [permissionGuard(['post:hide_any', 'post:delete_any'])] },

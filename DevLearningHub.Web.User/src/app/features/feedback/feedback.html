@@ -1,0 +1,17 @@
+<header class="content-header"><div class="top-breadcrumb"><a routerLink="/settings">Cài đặt</a><i class="bi bi-chevron-right"></i><span>Gửi ý kiến riêng</span></div></header>
+<div class="dashboard-scroll-body feedback-page">
+  <section class="feedback-layout">
+    <form class="feedback-form" (ngSubmit)="submit()">
+      <h2>Gửi yêu cầu cho Admin</h2><p>Ý kiến này chỉ hiển thị với đội ngũ quản trị.</p>
+      <label>Tiêu đề<input [(ngModel)]="subject" name="subject" maxlength="200" required></label>
+      <label>Nội dung<textarea [(ngModel)]="body" name="body" maxlength="5000" rows="8" required></textarea></label>
+      <button type="submit" [disabled]="saving || !subject.trim() || !body.trim()"><i class="bi bi-send"></i>{{ saving ? 'Đang gửi...' : 'Gửi riêng' }}</button>
+      @if (error) { <p class="feedback-error">{{ error }}</p> }
+    </form>
+    <section class="feedback-history"><h3>Lịch sử yêu cầu</h3>
+      @if (loading) { <p>Đang tải...</p> } @else if (!items.length) { <p class="muted">Chưa có yêu cầu nào.</p> } @else {
+        @for (item of items; track item.id) { <article><div class="feedback-row"><strong>{{ item.subject }}</strong><span class="status" [class]="'status ' + item.status">{{ item.status }}</span></div><p>{{ item.body }}</p>@if (item.adminResponse) { <div class="response"><b>Admin:</b> {{ item.adminResponse }}</div> }<small>{{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</small></article> }
+      }
+    </section>
+  </section>
+</div>

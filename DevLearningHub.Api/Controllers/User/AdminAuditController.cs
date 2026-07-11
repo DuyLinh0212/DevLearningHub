@@ -80,6 +80,11 @@ public class AdminAuditController : ControllerBase
         }
 
         var totalCount = await query.CountAsync();
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        if (page > totalPages)
+        {
+            page = totalPages;
+        }
         var items = await query
             .OrderByDescending(log => log.CreatedAt)
             .Skip((page - 1) * pageSize)

@@ -792,6 +792,8 @@ export class PostDetailComponent implements OnInit, OnDestroy {
       escaped = escaped.replace(`___CODEBLOCK_${index}___`, html);
     });
 
+    escaped = escaped.replace(/(^|[\s>])@([A-Za-z0-9_.-]{2,50})/g, '$1<span class="user-mention">@$2</span>');
+
     return `<p>${escaped}</p>`;
   }
 

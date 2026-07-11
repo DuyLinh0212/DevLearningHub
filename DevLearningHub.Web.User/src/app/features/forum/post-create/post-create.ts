@@ -38,6 +38,9 @@ export class PostCreateComponent implements OnInit {
   selectedFile: File | null = null;
   localFileUrl: string = '';
   isUploadingImage: boolean = false;
+  mentionUsers: any[] = [];
+  mentionQuery = '';
+  mentionStart = -1;
 
   ngOnInit() {
     // Kiem tra token truoc khi cho phep vao trang tao/sua
@@ -254,6 +257,25 @@ export class PostCreateComponent implements OnInit {
         }
       });
     }
+  }
+
+  onBodyInput(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    const before = this.bodyMarkdown.slice(0, textarea.selectionStart);
+    const match = before.match(/(?:^|\s)@([A-Za-z0-9_.-]*)$/);
+    if (!match) { this.mentionUsers = []; return; }
+    this.mentionQuery = match[1]; this.mentionStart = textarea.selectionStart - this.mentionQuery.length - 1;
+    if (this.mentionQuery.length < 2) { this.mentionUsers = []; return; }
+    this.http.get<any[]>(`/api/mentions/users?query=${encodeURIComponent(this.mentionQuery)}`).subscribe({ next: users => { this.mentionUsers = users || []; this.cdr.detectChanges(); } });
+  }
+
+  chooseMention(user: any, textarea: HTMLTextAreaElement) {
+    const end = textarea.selectionStart;
+    const prefix = this.bodyMarkdown.slice(0, this.mentionStart);
+    const suffix = this.bodyMarkdown.slice(end);
+    this.bodyMarkdown = `${prefix}@${user.username} ${suffix}`;
+    this.mentionUsers = [];
+    this.cdr.detectChanges();
   }
 
   cancel() {

@@ -50,7 +50,8 @@ export class ModerationService {
 
   getDetail(type: ModerationType, id: string): Observable<any> {
     const base = ModerationService.detailEndpoints[type];
-    return this.http.get<any>(`${base}/${id}`).pipe(map((res) => res?.data ?? res));
+    const suffix = type === 'roadmap' ? '?manageMode=true' : '';
+    return this.http.get<any>(`${base}/${id}${suffix}`).pipe(map((res) => res?.data ?? res));
   }
 
   getLogs(page: number, pageSize: number, type?: ModerationType, action?: string): Observable<{

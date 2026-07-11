@@ -28,6 +28,9 @@ public class ProblemDetailResponse
     public string Description { get; set; } = string.Empty;
     public string Difficulty { get; set; } = string.Empty;
     public string? StarterCode { get; set; }
+    public Dictionary<string, string> StarterCodes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<int> LanguageIds { get; set; } = new();
+    public SandboxConfigResponse Sandbox { get; set; } = new();
     public bool IsActive { get; set; }
     public string ReviewStatus { get; set; } = string.Empty;
     public string? ReviewNote { get; set; }
@@ -61,6 +64,10 @@ public class CreateProblemRequest
 
     public string? StarterCode { get; set; }
 
+    public Dictionary<string, string> StarterCodes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<int> LanguageIds { get; set; } = new();
+    public SandboxConfigRequest Sandbox { get; set; } = new();
+
     public List<Guid> TagIds { get; set; } = new();
 }
 
@@ -81,9 +88,39 @@ public class UpdateProblemRequest
 
     public string? StarterCode { get; set; }
 
+    public Dictionary<string, string> StarterCodes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<int> LanguageIds { get; set; } = new();
+    public SandboxConfigRequest Sandbox { get; set; } = new();
+
     public bool IsActive { get; set; } = true;
 
     public List<Guid> TagIds { get; set; } = new();
+}
+
+public class SandboxConfigRequest
+{
+    [Range(250, 15000)]
+    public int TimeLimitMs { get; set; } = 3000;
+
+    [Range(16384, 524288)]
+    public int MemoryLimitKb { get; set; } = 128000;
+
+    public bool AllowStdin { get; set; } = true;
+}
+
+public class SandboxConfigResponse
+{
+    public int TimeLimitMs { get; set; } = 3000;
+    public int MemoryLimitKb { get; set; } = 128000;
+    public bool AllowStdin { get; set; } = true;
+}
+
+public class ImportTestCasesRequest
+{
+    [Required]
+    public Microsoft.AspNetCore.Http.IFormFile File { get; set; } = null!;
+
+    public bool ReplaceExisting { get; set; }
 }
 
 // ── Test Cases ────────────────────────────────────────────────────────────────

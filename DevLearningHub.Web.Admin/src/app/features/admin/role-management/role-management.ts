@@ -236,7 +236,6 @@ export class RoleManagementComponent implements OnInit {
 
   confirmDelete(role: RoleItem) {
     if (role.isSystem) { alert('Không thể xóa vai trò hệ thống.'); return; }
-    if (role.userCount > 0) { alert(`Vai trò "${role.name}" đang được gán cho ${role.userCount} người dùng. Gỡ họ khỏi vai trò này trước khi xóa.`); return; }
     this.deletingRole = role;
   }
 

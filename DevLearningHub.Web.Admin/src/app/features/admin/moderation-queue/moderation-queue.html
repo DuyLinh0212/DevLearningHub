@@ -135,7 +135,7 @@
         } @else if (detailContent) {
           <!-- Post -->
           @if (detailTarget.type === 'post') {
-            <p class="mq-detail-text">{{ detailContent.bodyMarkdown }}</p>
+            <div class="mq-detail-text" [innerHTML]="renderSafeMarkup(detailContent.bodyMarkdown)"></div>
             @if (detailContent.imageUrl) {
               <img class="mq-detail-image" [src]="detailContent.imageUrl" alt="" />
             }
@@ -158,7 +158,8 @@
           }
           <!-- Problem (code) -->
           @if (detailTarget.type === 'problem') {
-            <p class="mq-detail-text">{{ detailContent.description }}</p>
+            <div class="mq-detail-text" [innerHTML]="renderSafeMarkup(detailContent.description)"></div>
+            @if (detailContent.starterCode) { <pre class="mq-detail-code"><code>{{ detailContent.starterCode }}</code></pre> }
             <div class="mq-detail-list">
               @for (tc of detailContent.sampleTestCases; track tc.id) {
                 <div class="mq-detail-item">
@@ -181,10 +182,11 @@
           }
           <!-- Roadmap -->
           @if (detailTarget.type === 'roadmap') {
-            @if (detailContent.description) { <p class="mq-detail-text">{{ detailContent.description }}</p> }
+            @if (detailContent.description) { <div class="mq-detail-text" [innerHTML]="renderSafeMarkup(detailContent.description)"></div> }
+            <div class="mq-roadmap-meta"><span>{{ detailContent.level }}</span><span>{{ detailContent.isPublic ? 'Công khai' : 'Riêng tư' }}</span><span>{{ detailContent.items?.length || 0 }} mục</span></div>
             <div class="mq-detail-list">
               @for (it of detailContent.items; track it.id) {
-                <div class="mq-detail-item"><i class="bi bi-signpost-split"></i> {{ it.title }} <span class="mq-detail-tag">{{ it.itemType }}</span></div>
+                <div class="mq-detail-item"><i class="bi bi-signpost-split"></i><div><b>{{ it.orderIndex + 1 }}. {{ it.title }}</b>@if (it.description) { <div class="mq-item-description" [innerHTML]="renderSafeMarkup(it.description)"></div> }</div><span class="mq-detail-tag">{{ it.itemType }}{{ it.isRequired ? ' · bắt buộc' : '' }}</span></div>
               }
             </div>
           }

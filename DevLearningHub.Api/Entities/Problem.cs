@@ -19,6 +19,16 @@ public partial class Problem
 
     public string? StarterCode { get; set; }
 
+    public string? StarterCodesJson { get; set; }
+
+    public string? AllowedLanguageIdsJson { get; set; }
+
+    public int SandboxTimeLimitMs { get; set; } = 3000;
+
+    public int SandboxMemoryLimitKb { get; set; } = 128000;
+
+    public bool SandboxAllowStdin { get; set; } = true;
+
     public bool IsActive { get; set; }
 
     public string ReviewStatus { get; set; } = "pending";

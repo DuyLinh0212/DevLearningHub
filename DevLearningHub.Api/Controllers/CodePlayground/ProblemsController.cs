@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DevLearningHub.Api.Controllers.CodePlayground;
 
@@ -114,13 +115,16 @@ public class ProblemsController : ControllerBase
             Description = problem.Description,
             Difficulty = problem.Difficulty,
             StarterCode = problem.StarterCode,
+            StarterCodes = ReadStarterCodes(problem),
+            LanguageIds = ReadLanguageIds(problem),
+            Sandbox = ToSandbox(problem),
             IsActive = problem.IsActive,
             ReviewStatus = problem.ReviewStatus,
             ReviewNote = problem.ReviewNote,
             CreatedAt = problem.CreatedAt,
             Tags = problem.Tags.Select(t => t.Name).ToList(),
             SampleTestCases = problem.TestCases
-                .Where(tc => !tc.IsHidden)
+                .Where(tc => !tc.IsHidden || canReview || canManage)
                 .OrderBy(tc => tc.OrderIndex)
                 .Select(tc => new PublicTestCaseResponse
                 {
@@ -149,6 +153,11 @@ public class ProblemsController : ControllerBase
             Description = request.Description.Trim(),
             Difficulty = request.Difficulty,
             StarterCode = request.StarterCode,
+            StarterCodesJson = JsonSerializer.Serialize(request.StarterCodes ?? new()),
+            AllowedLanguageIdsJson = JsonSerializer.Serialize(await ValidateLanguageIdsAsync(request.LanguageIds)),
+            SandboxTimeLimitMs = request.Sandbox.TimeLimitMs,
+            SandboxMemoryLimitKb = request.Sandbox.MemoryLimitKb,
+            SandboxAllowStdin = request.Sandbox.AllowStdin,
             IsActive = true,
             ReviewStatus = reviewStatus,
             CreatedAt = DateTime.Now
@@ -182,6 +191,9 @@ public class ProblemsController : ControllerBase
             Description = problem.Description,
             Difficulty = problem.Difficulty,
             StarterCode = problem.StarterCode,
+            StarterCodes = ReadStarterCodes(problem),
+            LanguageIds = ReadLanguageIds(problem),
+            Sandbox = ToSandbox(problem),
             IsActive = problem.IsActive,
             ReviewStatus = problem.ReviewStatus,
             ReviewNote = problem.ReviewNote,
@@ -212,6 +224,11 @@ public class ProblemsController : ControllerBase
         problem.Description = request.Description.Trim();
         problem.Difficulty = request.Difficulty;
         problem.StarterCode = request.StarterCode;
+        problem.StarterCodesJson = JsonSerializer.Serialize(request.StarterCodes ?? new());
+        problem.AllowedLanguageIdsJson = JsonSerializer.Serialize(await ValidateLanguageIdsAsync(request.LanguageIds));
+        problem.SandboxTimeLimitMs = request.Sandbox.TimeLimitMs;
+        problem.SandboxMemoryLimitKb = request.Sandbox.MemoryLimitKb;
+        problem.SandboxAllowStdin = request.Sandbox.AllowStdin;
         problem.IsActive = request.IsActive;
 
         var reviewStatus = await _autoApproval.EvaluateProblemAsync(problem.CreatedBy, problem.Title, problem.Description, problem.IsActive);
@@ -277,6 +294,73 @@ public class ProblemsController : ControllerBase
             .ToListAsync();
 
         return Ok(testCases);
+    }
+
+    [HttpGet("programming-languages")]
+    [Authorize]
+    public async Task<IActionResult> GetProgrammingLanguages()
+    {
+        var languages = await _context.ProgrammingLanguages.AsNoTracking()
+            .Where(l => l.IsActive)
+            .OrderBy(l => l.Name)
+            .Select(l => new { l.Id, l.Name, l.Slug, l.Judge0LanguageId })
+            .ToListAsync();
+        return Ok(languages);
+    }
+
+    [HttpPost("problems/{id:guid}/test-cases/import")]
+    [Authorize]
+    [RequestSizeLimit(1024 * 1024)]
+    public async Task<IActionResult> ImportTestCases(Guid id, [FromForm] ImportTestCasesRequest request)
+    {
+        var problem = await _context.Problems.Include(p => p.TestCases).FirstOrDefaultAsync(p => p.Id == id);
+        if (problem == null) return NotFound();
+        if (!CanManageProblem(problem)) return Forbid();
+        if (request.File == null || request.File.Length == 0) return BadRequest("File is required.");
+
+        var rows = new List<(string Input, string ExpectedOutput, bool IsHidden)>();
+        using var reader = new StreamReader(request.File.OpenReadStream());
+        var content = await reader.ReadToEndAsync();
+        try
+        {
+            if (request.File.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                var jsonRows = JsonSerializer.Deserialize<List<ImportTestCaseRow>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                rows.AddRange(jsonRows.Select(r => (r.Input ?? string.Empty, r.ExpectedOutput ?? string.Empty, r.IsHidden)));
+            }
+            else
+            {
+                var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines.Skip(1))
+                {
+                    var cells = line.Split(',', 3);
+                    if (cells.Length < 2) return BadRequest("CSV must contain input,expectedOutput,isHidden columns.");
+                    rows.Add((cells[0].Trim(), cells[1].Trim(), cells.Length > 2 && bool.TryParse(cells[2].Trim(), out var hidden) && hidden));
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return BadRequest("Invalid testcase file format.");
+        }
+
+        if (rows.Count == 0 || rows.Count > 500) return BadRequest("File must contain 1-500 test cases.");
+        if (rows.Any(r => string.IsNullOrWhiteSpace(r.Input) || string.IsNullOrWhiteSpace(r.ExpectedOutput)))
+            return BadRequest("Input and expectedOutput are required for every row.");
+
+        await using var transaction = _context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory"
+            ? null
+            : await _context.Database.BeginTransactionAsync();
+        if (request.ReplaceExisting) _context.TestCases.RemoveRange(problem.TestCases);
+        var start = request.ReplaceExisting ? 0 : (problem.TestCases.Count == 0 ? 0 : problem.TestCases.Max(t => t.OrderIndex) + 1);
+        _context.TestCases.AddRange(rows.Select((r, index) => new TestCase
+        {
+            Id = Guid.NewGuid(), ProblemId = id, Input = r.Input, ExpectedOutput = r.ExpectedOutput,
+            IsHidden = r.IsHidden, OrderIndex = (short)(start + index)
+        }));
+        await _context.SaveChangesAsync();
+        if (transaction != null) await transaction.CommitAsync();
+        return Ok(new { imported = rows.Count, replaceExisting = request.ReplaceExisting });
     }
 
     [HttpPost("problems/{id:guid}/test-cases")]
@@ -381,5 +465,42 @@ public class ProblemsController : ControllerBase
             problem.ReviewedAt = null;
             problem.ReviewNote = null;
         }
+    }
+
+    private async Task<List<int>> ValidateLanguageIdsAsync(IEnumerable<int>? ids)
+    {
+        var requested = (ids ?? Enumerable.Empty<int>()).Distinct().ToList();
+        if (requested.Count == 0) return new();
+        var active = await _context.ProgrammingLanguages.Where(l => requested.Contains(l.Id) && l.IsActive).Select(l => l.Id).ToListAsync();
+        if (active.Count != requested.Count) throw new ArgumentException("One or more programming languages are inactive or invalid.");
+        return active;
+    }
+
+    private static Dictionary<string, string> ReadStarterCodes(Problem problem)
+    {
+        if (string.IsNullOrWhiteSpace(problem.StarterCodesJson)) return new(StringComparer.OrdinalIgnoreCase);
+        try { return JsonSerializer.Deserialize<Dictionary<string, string>>(problem.StarterCodesJson) ?? new(StringComparer.OrdinalIgnoreCase); }
+        catch (JsonException) { return new(StringComparer.OrdinalIgnoreCase); }
+    }
+
+    private static List<int> ReadLanguageIds(Problem problem)
+    {
+        if (string.IsNullOrWhiteSpace(problem.AllowedLanguageIdsJson)) return new();
+        try { return JsonSerializer.Deserialize<List<int>>(problem.AllowedLanguageIdsJson) ?? new(); }
+        catch (JsonException) { return new(); }
+    }
+
+    private static SandboxConfigResponse ToSandbox(Problem problem) => new()
+    {
+        TimeLimitMs = problem.SandboxTimeLimitMs,
+        MemoryLimitKb = problem.SandboxMemoryLimitKb,
+        AllowStdin = problem.SandboxAllowStdin
+    };
+
+    private sealed class ImportTestCaseRow
+    {
+        public string? Input { get; set; }
+        public string? ExpectedOutput { get; set; }
+        public bool IsHidden { get; set; }
     }
 }

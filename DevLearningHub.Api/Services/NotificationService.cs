@@ -19,6 +19,7 @@ public static class NotificationTypes
     public const string ProblemDeleted = "problem_deleted";
     public const string ContentApproved = "content_approved";
     public const string ContentRejected = "content_rejected";
+    public const string RoleRemoved = "role_removed";
 }
 
 public static class NotificationRefTypes

@@ -590,6 +590,12 @@
             <div class="modal-col-right">
               <div class="form-group form-group-grow">
                 <label class="form-label">Starter Code</label>
+                <div class="language-check-list">
+                  <label *ngFor="let lang of availableLanguages">
+                    <input type="checkbox" [checked]="selectedLanguageIds.includes(lang.id)" (change)="toggleLanguage(lang.id)" />
+                    {{ lang.name }}
+                  </label>
+                </div>
                 <div class="lang-tabs">
                   <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'javascript'" (click)="selectedLangTab = 'javascript'">JS</button>
                   <button class="lang-tab" type="button" [class.active]="selectedLangTab === 'python'" (click)="selectedLangTab = 'python'">Python</button>
@@ -602,10 +608,25 @@
                 @if (selectedLangTab === 'cpp')        { <textarea class="form-textarea form-textarea-code" [(ngModel)]="form.starterCode.cpp"></textarea> }
               </div>
               <div class="form-group">
+                <label class="form-label">Sandbox</label>
+                <div class="form-row-2">
+                  <input class="form-input" type="number" min="250" max="15000" [(ngModel)]="sandbox.timeLimitMs" placeholder="Timeout (ms)" />
+                  <input class="form-input" type="number" min="16384" max="524288" [(ngModel)]="sandbox.memoryLimitKb" placeholder="Memory (KB)" />
+                </div>
+                <label class="switch-label"><input type="checkbox" [(ngModel)]="sandbox.allowStdin" /> Cho phép stdin</label>
+              </div>
+              <div class="form-group">
                 <div class="form-label-row">
                   <label class="form-label">Test Cases</label>
                   <button class="btn-add-tc" type="button" (click)="addTestCase()"><i class="bi bi-plus"></i> Thêm</button>
                 </div>
+                @if (isEditMode && editingProblemId) {
+                  <div class="testcase-import-row">
+                    <input type="file" accept=".json,.csv" (change)="onImportFile($event)" />
+                    <label><input type="checkbox" [(ngModel)]="importReplaceExisting" /> Thay thế testcase hiện tại</label>
+                    <button type="button" class="btn-add-tc" [disabled]="!importFile" (click)="importTestCases(editingProblemId)">Import</button>
+                  </div>
+                }
                 <div class="tc-list">
                   @for (tc of form.testCases; track $index; let i = $index) {
                     <div class="tc-item">

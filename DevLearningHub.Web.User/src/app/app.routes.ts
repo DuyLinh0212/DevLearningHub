@@ -34,6 +34,7 @@ export const routes: Routes = [
       { path: 'quiz/:id', component: QuizDetailComponent, canActivate: [quizAccessGuard] },      { path: 'dashboard/progress', component: UserProgressComponent },
       { path: 'leaderboard', loadComponent: () => import('./features/leaderboard/leaderboard').then(m => m.LeaderboardComponent) },
       { path: 'settings', component: SettingsComponent },
+      { path: 'feedback', loadComponent: () => import('./features/feedback/feedback').then(m => m.FeedbackComponent) },
       { path: 'forum', loadComponent: () => import('./features/forum/forum').then(m => m.ForumComponent) },
       { path: 'forum/post/:id', loadComponent: () => import('./features/forum/post-detail/post-detail').then(m => m.PostDetailComponent) },
       { path: 'forum/create', loadComponent: () => import('./features/forum/post-create/post-create').then(m => m.PostCreateComponent) },
