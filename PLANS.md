@@ -5,6 +5,7 @@
 - Phases 0-7 backend contracts and User/Admin UI are implemented and build-verified.
 - Audit page clamping, role deletion cleanup/notifications, playground language+sandbox persistence, JSON/CSV testcase import, feedback screens, mention autocomplete/highlighting, mention persistence on new posts/comments, and Admin testcase import are included.
 - API regression coverage includes testcase import and feedback creation (`105/105` tests pass). Phase 5 moderation now uses sanitized Markdown/HTML rendering, exposes reviewer-visible hidden test cases, and loads complete roadmap details. Phase 7 uses compact audit pagination with ellipses. SQL migration execution remains environment-specific: the configured `Agrimotor\\SQLEXPRESS` instance was not reachable from this session.
+- Code submission now maps the Judge0 language ID to the programming-language database ID before enforcing each problem's allowed-language list; workspace options are filtered to the languages allowed by the problem.
 
 ## Context
 

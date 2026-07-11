@@ -32,10 +32,18 @@ export interface ProblemDetail {
   description: string;
   difficulty: string;
   starterCode: string | null;
+  languageIds: number[];
   isActive: boolean;
   createdAt: string;
   tags: string[];
   sampleTestCases: PublicTestCase[];
+}
+
+export interface ProgrammingLanguageOption {
+  id: number;
+  name: string;
+  slug: string;
+  judge0LanguageId: number;
 }
 
 export interface CodeRunResponse {
@@ -105,6 +113,10 @@ export class CodeService {
 
   getProblem(id: string): Observable<ProblemDetail> {
     return this.http.get<ProblemDetail>(`/api/problems/${id}`);
+  }
+
+  getProgrammingLanguages(): Observable<ProgrammingLanguageOption[]> {
+    return this.http.get<ProgrammingLanguageOption[]>('/api/programming-languages');
   }
 
   runCode(code: string, languageId: number, stdin: string): Observable<CodeRunResponse> {

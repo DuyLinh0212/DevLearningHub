@@ -209,6 +209,22 @@ int main() {
         this.problem = res;
         this.isLoading = false;
 
+        this.codeService.getProgrammingLanguages().subscribe({
+          next: (available) => {
+            const allowedIds = res.languageIds || [];
+            const allowed = available
+              .filter(language => allowedIds.length === 0 || allowedIds.includes(language.id))
+              .map(language => ({ id: language.judge0LanguageId, name: language.name, slug: language.slug }));
+            if (allowed.length > 0) {
+              this.languages = allowed;
+              this.selectedLanguage = allowed[0];
+            }
+            this.loadStarterCode();
+            this.cdr.detectChanges();
+          },
+          error: () => this.loadStarterCode()
+        });
+
         // Parse markdown description to safe HTML
         this.parsedDescription = this.sanitizer.bypassSecurityTrustHtml(
           this.parseMarkdown(res.description || '')
@@ -263,8 +279,6 @@ int main() {
           this.stdinInput = res.sampleTestCases[0].input;
         }
 
-        // Set default starter code
-        this.loadStarterCode();
         this.cdr.detectChanges();
       },
       error: (err) => {

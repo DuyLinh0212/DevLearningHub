@@ -50,8 +50,10 @@ public class CodePlaygroundController : ControllerBase
 
         // 1. Lấy thông tin ngôn ngữ lập trình để lưu slug ngôn ngữ (ví dụ: "cpp", "python")
         var langEntity = await _context.ProgrammingLanguages
-            .FirstOrDefaultAsync(l => l.Judge0LanguageId == request.LanguageId);
-        string languageName = langEntity?.Slug ?? "python";
+            .FirstOrDefaultAsync(l => l.Judge0LanguageId == request.LanguageId && l.IsActive);
+        if (langEntity == null)
+            return BadRequest("Ngôn ngữ lập trình không hợp lệ hoặc đã bị vô hiệu hóa.");
+        string languageName = langEntity.Slug;
 
         // 2. Lấy toàn bộ test cases của bài tập ra
         var testCases = await _context.TestCases
@@ -66,7 +68,7 @@ public class CodePlaygroundController : ControllerBase
         var allowedLanguageIds = string.IsNullOrWhiteSpace(problem.AllowedLanguageIdsJson)
             ? new List<int>()
             : JsonSerializer.Deserialize<List<int>>(problem.AllowedLanguageIdsJson) ?? new();
-        if (allowedLanguageIds.Count > 0 && !allowedLanguageIds.Contains(request.LanguageId))
+        if (allowedLanguageIds.Count > 0 && !allowedLanguageIds.Contains(langEntity.Id))
             return BadRequest("Ngôn ngữ này không được phép cho bài tập.");
 
         // 3. Map sang định dạng Batch của Judge0 để gửi đi chấm song song

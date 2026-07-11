@@ -97,6 +97,7 @@ public class CodePlaygroundApiTests : IClassFixture<CustomWebApplicationFactory>
             Description = "Cho 2 số nguyên A và B. Tính A + B",
             Difficulty = "easy",
             IsActive = true,
+            AllowedLanguageIdsJson = "[1]",
             ReviewStatus = "approved",
             CreatedAt = DateTime.Now
         };
