@@ -1,0 +1,50 @@
+name: Angular Frontend CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-admin:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Kéo source code về máy ảo
+      uses: actions/checkout@v3
+
+    - name: ⚙️ Cài đặt Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: 'DevLearningHub.Web.Admin/package-lock.json'
+
+    - name: 📦 Cài đặt thư viện (Web Admin)
+      working-directory: ./DevLearningHub.Web.Admin
+      run: npm install
+
+    - name: 🛠️ Biên dịch (Build Web Admin)
+      working-directory: ./DevLearningHub.Web.Admin
+      run: npm run build
+
+  build-user:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Kéo source code về máy ảo
+      uses: actions/checkout@v3
+
+    - name: ⚙️ Cài đặt Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: 'DevLearningHub.Web.User/package-lock.json'
+
+    - name: 📦 Cài đặt thư viện (Web User)
+      working-directory: ./DevLearningHub.Web.User
+      run: npm install
+
+    - name: 🛠️ Biên dịch (Build Web User)
+      working-directory: ./DevLearningHub.Web.User
+      run: npm run build

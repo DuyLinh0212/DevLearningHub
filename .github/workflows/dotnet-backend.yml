@@ -1,0 +1,29 @@
+name: .NET Backend CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Kéo source code về máy ảo
+      uses: actions/checkout@v3
+
+    - name: ⚙️ Cài đặt .NET 8
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: 📦 Cài đặt các thư viện (Restore)
+      run: dotnet restore DevLearningHub.Api/DevLearningHub.Api.csproj
+
+    - name: 🛠️ Biên dịch mã nguồn (Build)
+      run: dotnet build DevLearningHub.Api/DevLearningHub.Api.csproj --no-restore
+
+    - name: 🧪 Chạy Unit Test (Test)
+      run: dotnet test DevLearningHub.Test/DevLearningHub.Test.csproj --no-build --verbosity normal
