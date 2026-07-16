@@ -13,10 +13,10 @@ jobs:
     - name: 📥 Kéo source code về máy ảo
       uses: actions/checkout@v3
 
-    - name: ⚙️ Cài đặt Node.js 18
+    - name: ⚙️ Cài đặt Node.js 22
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: 22.x
         cache: 'npm'
         cache-dependency-path: 'DevLearningHub.Web.Admin/package-lock.json'
 
@@ -34,10 +34,10 @@ jobs:
     - name: 📥 Kéo source code về máy ảo
       uses: actions/checkout@v3
 
-    - name: ⚙️ Cài đặt Node.js 18
+    - name: ⚙️ Cài đặt Node.js 22
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: 22.x
         cache: 'npm'
         cache-dependency-path: 'DevLearningHub.Web.User/package-lock.json'
 
